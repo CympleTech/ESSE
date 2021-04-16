@@ -40,6 +40,7 @@ It is recommended to use [rust.sh](./rust.sh) to auto-compile the Rust code
 
 ##### Windows
 - `cp target/release/esse.dll core/windows/share/esse.dll`
+- `cp target/release/esse.dll.lib core/windows/share/esse.dll.lib`
 
 ##### Android
 1. Add your android device target

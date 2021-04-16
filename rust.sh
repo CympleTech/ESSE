@@ -52,6 +52,7 @@ function windows() {
     cargo build --release ### there maybe not use in other windows distribution.
     echo 'Rust: windows release build ok!'
     cp target/release/esse.dll core/windows/share/esse.dll
+    cp target/release/esse.dll.lib core/windows/share/esse.dll.lib
     echo 'Flutter: windows dynamic library is ok!'
 }
 
