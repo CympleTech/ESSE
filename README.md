@@ -17,16 +17,16 @@ ESSE, stands for Encrypted Symmetrical Session Engine, positioned as an engine. 
 [About ESSE(English)](https://github.com/CympleTech/esse/wiki/About-ESSE) / [关于ESSE(简体中文)](https://github.com/CympleTech/esse/wiki/%E5%85%B3%E4%BA%8E-ESSE)
 
 ## Usage
-### 1. Use Binary executable.
+### 1. Use Binary executable
 [Download](https://github.com/cympletech/esse/releases)
 
 ### 2. Compile
-#### 2.1. pre-installed.
+#### 2.1. Pre-installed
 - Rustup [install](https://rustup.rs/)
 - Rust (Nightly Version)
 - Flutter (Master channel)
 
-You can use [rust.sh](./rust.sh) to auto compile Rust code.
+It is recommended to use [rust.sh](./rust.sh) to auto-compile the Rust code.
 
 #### 2.2. Compile Rust code to dynamic link library (FFI)
 ##### Linux / MacOS / Windows
@@ -50,21 +50,21 @@ You can use [rust.sh](./rust.sh) to auto compile Rust code.
 
 2. Configure your NDK.
 
-3. Build a jniLibs.
+3. Build the jniLibs.
 - `cargo build --release --target=aarch64-linux-android`
 - `cp target/aarch64-linux-android/release/libesse.so core/android/src/main/jniLibs/arm64-v8a/`
 
-##### IOS
+##### iOS
 1. Install [lipo](https://github.com/TimNN/cargo-lipo)
 2. `cargo lipo --release`
 3. `cp target/universal/release/libesse.a core/ios/share/libesse.a`
 
 #### 2.3. Run flutter to build binary
-- `flutter run` or `flutter run --release` in terminal run.
-- Or Android `flutter build apk`
-- If Linux `flutter build linux`
-- If MacOS `flutter build macos`
-- If Windows `flutter build windows`
+- Run `flutter run` or `flutter run --release` in terminal, or
+- for Android, run `flutter build apk`, or
+- for Linux, run `flutter build linux`, or
+- for MacOS, run `flutter build macos`, or
+- for Windows, run `flutter build windows`
 
 ## License
 
