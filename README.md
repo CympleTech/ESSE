@@ -33,13 +33,13 @@ It is recommended to use [rust.sh](./rust.sh) to auto-compile the Rust code
 - `cargo build --release`
 
 ##### Linux
-- `cp target/release/libesse.so core/linux/share/libesse.so`
+- `cp target/release/libesse.a core/linux/share/libesse.a`
 
 ##### MacOS
 - `cp target/release/libesse.a core/macos/share/libesse.a`
 
 ##### Windows
-- `cp target/release/libesse.so core/windows/share/esse.dll`
+- `cp target/release/esse.dll core/windows/share/esse.dll`
 
 ##### Android
 1. Add your android device target

@@ -35,7 +35,7 @@ function ios() {
 function linux() {
     cargo build --release ### there maybe not use in other linux distribution.
     echo 'Rust: Linux release build ok!'
-    cp target/release/libesse.so core/linux/share/libesse.so
+    cp target/release/libesse.a core/linux/share/libesse.a
     echo 'Flutter: Linux dynamic library is ok!'
 }
 
@@ -51,7 +51,7 @@ function macos() {
 function windows() {
     cargo build --release ### there maybe not use in other windows distribution.
     echo 'Rust: windows release build ok!'
-    cp target/release/libesse.so core/windows/share/esse.dll
+    cp target/release/esse.dll core/windows/share/esse.dll
     echo 'Flutter: windows dynamic library is ok!'
 }
 

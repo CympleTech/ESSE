@@ -7,6 +7,7 @@
 build/
 
 linux/share/libesse.so
+linux/share/libesse.a
 macos/share/libesse.a
 windows/share/esse.lib
 windows/share/esse.dll

@@ -31,6 +31,6 @@ target_link_libraries(${PLUGIN_NAME} PRIVATE libesse.so)
 
 # List of absolute paths to libraries that should be bundled with the plugin
 set(esse_core_bundled_libraries
-  "${CMAKE_CURRENT_SOURCE_DIR}/share/libesse.so"
+  "${CMAKE_CURRENT_SOURCE_DIR}/share/libesse.a"
   PARENT_SCOPE
 )
