@@ -26,7 +26,7 @@ ESSE, stands for Encrypted Symmetrical Session Engine, positioned as an engine. 
 - Rust (Nightly Version)
 - Flutter (Master channel)
 
-It is recommended to use [rust.sh](./rust.sh) to auto-compile the Rust code.
+It is recommended to use [rust.sh](./rust.sh) to auto-compile the Rust code
 
 #### 2.2. Compile Rust code to dynamic link library (FFI)
 ##### Linux / MacOS / Windows
@@ -42,15 +42,15 @@ It is recommended to use [rust.sh](./rust.sh) to auto-compile the Rust code.
 - `cp target/release/libesse.so core/windows/share/esse.dll`
 
 ##### Android
-1. Add your android device target.
+1. Add your android device target
 
 - `rustup target add aarch64-linux-android`
 - `rustup target add armv7-linux-androideabi`
 - `rustup target add x86_64-linux-android`
 
-2. Configure your NDK.
+2. Configure your NDK
 
-3. Build the jniLibs.
+3. Build the jniLibs
 - `cargo build --release --target=aarch64-linux-android`
 - `cp target/aarch64-linux-android/release/libesse.so core/android/src/main/jniLibs/arm64-v8a/`
 
