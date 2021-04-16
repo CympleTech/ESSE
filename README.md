@@ -14,7 +14,7 @@ ESSE, stands for Encrypted Symmetrical Session Engine, positioned as an engine. 
 - Built-in IM Application
 - Multi-platform Support: Android, iOS, iPadOS, MacOS, Windows, Linux, etc.
 
-[Detail (English)](https://github.com/CympleTech/esse/wiki/About-ESSE) / [详细介绍 (简体中文)](https://github.com/CympleTech/esse/wiki/%E5%85%B3%E4%BA%8E-ESSE)
+[About ESSE(English)](https://github.com/CympleTech/esse/wiki/About-ESSE) / [关于ESSE(简体中文)](https://github.com/CympleTech/esse/wiki/%E5%85%B3%E4%BA%8E-ESSE)
 
 ## Usage
 ### 1. Use Binary executable.
