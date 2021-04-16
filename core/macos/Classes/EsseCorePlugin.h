@@ -1,0 +1,1 @@
+void start(const char *db_path);

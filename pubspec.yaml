@@ -1,0 +1,99 @@
+name: esse
+description: Encrypted Secure Session Engine.
+author: CympleTech
+homepage: https://cympletech.com
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ">=2.7.0 <3.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  esse_core:
+    path: ./core
+  convert: any
+  flutter_localizations: # localizations i18n.
+    sdk: flutter
+  flutter_localized_locales: any
+  provider: any # state manager
+  shared_preferences: any
+  path_provider: any
+  url_launcher: any
+  permission_handler: any
+  image_picker: any # pick image
+  image_gallery_saver: any # Mobile save image to gallery
+  file_picker: any # pick file
+  file_selector: any # pick file
+  file_selector_linux:
+    git:
+      url: git://github.com/google/flutter-desktop-embedding.git
+      path: plugins/file_selector/file_selector_linux
+      #ref: ff9c2aebbbf673f9726f5c8052f6a21099fa51fd
+  file_selector_macos:
+    git:
+      url: git://github.com/google/flutter-desktop-embedding.git
+      path: plugins/file_selector/file_selector_macos
+  file_selector_windows:
+    git:
+      url: git://github.com/google/flutter-desktop-embedding.git
+      path: plugins/file_selector/file_selector_windows
+  open_file: any # open file in mobile.
+  crypto: any
+  #pointycastle: any
+  crop: any
+  unorm_dart: any
+  qr_flutter: any
+  qr_code_scanner: any
+  web_socket_channel: any
+  record: any
+  just_audio: any
+  device_info_plus: any
+  percent_indicator: any
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  integration_test:
+    sdk: flutter
+  flutter_launcher_icons: any #flutter pub run flutter_launcher_icons:main
+
+flutter_icons:
+  android: "ic_launcher"
+  ios: true
+  image_path: "assets/logo/logo_dark.png"
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/logo/logo_dark.png
+    - assets/logo/logo_light.png
+    - assets/images/background_light.jpg
+    - assets/images/background_dark.jpg
+    - assets/images/image_missing.png
+    - assets/images/file_default.png
+    - assets/images/file_pdf.png
+    - assets/images/file_image.png
+    - assets/images/file_markdown.png
+    - assets/images/file_word.png
+    - assets/images/file_sheet.png
+    - assets/images/file_video.png
+    - assets/images/dir_folder.png
+    - assets/images/dir_favorites.png
+    - assets/mnemonic/chinese_simplified.txt
+    - assets/mnemonic/chinese_traditional.txt
+    - assets/mnemonic/english.txt
+    - assets/mnemonic/french.txt
+    - assets/mnemonic/italian.txt
+    - assets/mnemonic/japanese.txt
+    - assets/mnemonic/korean.txt
+    - assets/mnemonic/spanish.txt
+  # fonts:
+  #   - family: 'Noto'
+  #     fonts:
+  #       - asset: assets/fonts/NotoSans-Regular.ttf # default
+  #   - family: 'EmojiFont'
+  #     fonts:
+  #       - asset: assets/fonts/twemoji.ttf
+        #- asset: assets/fonts/NotoColorEmoji.ttf

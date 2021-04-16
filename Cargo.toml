@@ -1,0 +1,42 @@
+[package]
+name = "esse"
+version = "0.1.0"
+authors = ["CympleTech <contact@cympletech.com>"]
+edition = "2018"
+license = "MIT/Apache-2.0"
+
+[lib]
+name = "esse"
+crate-type = ["cdylib", "staticlib"]
+
+[[bin]]
+name = "esse"
+path = "src/daemon.rs"
+
+[profile.release]
+opt-level = 's'
+lto = true
+codegen-units = 1
+panic = 'abort'
+
+[dependencies]
+log = "0.4"
+rand = "0.7"
+simplelog = "0.8"
+image = "0.23"
+base64 = "0.13"
+sha2 = "0.9"
+blake3 = "0.3"
+aes-gcm = "0.8"
+async-lock = "2.3"
+async-channel = "1.4"
+async-fs = "1.5"
+serde = { version = "1", features = ["derive"] }
+postcard = { version = "0.5", default-features = false, features = ["alloc"] }
+sysinfo = "0.16"
+tdn = { git = "https://github.com/cypherlink/TDN", branch="main", default-features = false, features = ["full"] }
+tdn-did = { git = "https://github.com/cypherlink/tdn-did", branch="main" }
+tdn-storage = { git = "https://github.com/cypherlink/tdn-storage", branch="main" }
+
+[target.'cfg(target_os="android")'.dependencies]
+jni = { version = "0.19", default-features = false }

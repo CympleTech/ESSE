@@ -1,0 +1,17 @@
+.DS_Store
+.dart_tool/
+
+.packages
+.pub/
+
+build/
+
+linux/share/libesse.so
+macos/share/libesse.a
+windows/share/esse.lib
+windows/share/esse.dll
+windows/share/esse.dll.lib
+ios/share/libesse.a
+android/src/main/jniLibs/arm64-v8a/libesse.so
+android/src/main/jniLibs/armeabi-v7a/libesse.so
+android/src/main/jniLibs/x86/libesse.so
