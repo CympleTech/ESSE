@@ -26,9 +26,11 @@ ESSE, stands for Encrypted Symmetrical Session Engine, positioned as an engine. 
 - Rust (Nightly Version)
 - Flutter (Master channel)
 
+#### 2.2. Compile Rust code to dynamic link library (FFI)
+##### 2.2.1. Auto-compile script
 It is recommended to use [rust.sh](./rust.sh) to auto-compile the Rust code
 
-#### 2.2. Compile Rust code to dynamic link library (FFI)
+##### 2.2.2. Manually compile
 ##### Linux / MacOS / Windows
 - `cargo build --release`
 
