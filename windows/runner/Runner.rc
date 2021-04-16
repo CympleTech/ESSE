@@ -92,10 +92,10 @@ BEGIN
             VALUE "CompanyName", "com.cympletech" "\0"
             VALUE "FileDescription", "Encrypted Secure Session Engine" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "Esse" "\0"
+            VALUE "InternalName", "ESSE" "\0"
             VALUE "LegalCopyright", "Copyright (C) 2021 cympletech.com All rights reserved." "\0"
             VALUE "OriginalFilename", "esse.exe" "\0"
-            VALUE "ProductName", "Esse" "\0"
+            VALUE "ProductName", "ESSE" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

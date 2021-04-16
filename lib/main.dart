@@ -48,7 +48,7 @@ class MyApp extends StatelessWidget {
     final options = context.watch<Options>();
 
     return MaterialApp(
-      title: 'Esse',
+      title: 'ESSE',
       debugShowCheckedModeBanner: false,
       themeMode: options.themeMode,
       theme: AppTheme.lightThemeData,
