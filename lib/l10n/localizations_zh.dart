@@ -141,6 +141,8 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String get qrFriend => '扫二维码加好友';
   @override
+  String get friendInfo => '好友信息';
+  @override
   String get scanQr => '扫描二维码';
   @override
   String get scanImage => '识别图片';

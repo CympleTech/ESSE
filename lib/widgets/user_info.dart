@@ -47,13 +47,34 @@ class _UserInfoState extends State<UserInfo> {
             border: Border.all(color: Color(0x40ADB0BB)),
             color: Colors.white,
           ),
-          child: Center(
-            child: QrImage(
-              data: json.encode(widget.qrInfo),
-              version: QrVersions.auto,
-              foregroundColor: Colors.black,
-            ),
-          ),
+          child: Stack(
+            alignment:Alignment.center,
+            children: [
+              QrImage(
+                data: json.encode(widget.qrInfo),
+                version: QrVersions.auto,
+                foregroundColor: Colors.black,
+              ),
+              Container(
+                height: 44,
+                width: 44,
+                padding: EdgeInsets.all(2.0),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(10.0),
+                  border: Border.all(color: Color(0x40ADB0BB)),
+                  color: Colors.white,
+                ),
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(10.0),
+                    image: DecorationImage(
+                      image: AssetImage('assets/logo/logo_40.jpg'),
+                    ),
+                  ),
+                )
+              ),
+            ]
+          )
         ),
         const SizedBox(height: 20),
         Center(child: Text(lang.qrFriend, style: TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold))),

@@ -277,7 +277,7 @@ class _ChatDetailState extends State<ChatDetail> {
                     showShadowDialog(
                       context,
                       Icons.info,
-                      lang.info,
+                      lang.friendInfo,
                       UserInfo(
                         id: 'EH' + this.friend.gid.toUpperCase(),
                         name: this.friend.name,
@@ -349,7 +349,7 @@ class _ChatDetailState extends State<ChatDetail> {
                 itemBuilder: (context) {
                   return <PopupMenuEntry<int>>[
                     _menuItem(color.primary, 1, Icons.vertical_align_top_rounded, this.friend.isTop ? lang.cancelTop : lang.setTop),
-                    _menuItem(color.primary, 2, Icons.qr_code_rounded, lang.info),
+                    _menuItem(color.primary, 2, Icons.qr_code_rounded, lang.friendInfo),
                     //_menuItem(color.primary, 3, Icons.turned_in_rounded, lang.remark),
                     this.friend.isClosed
                     ? _menuItem(color.primary, 5, Icons.send_rounded, lang.addFriend)

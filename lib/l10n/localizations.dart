@@ -113,6 +113,7 @@ abstract class AppLocalizations {
   // friend
   String get myQrcode;
   String get qrFriend;
+  String get friendInfo;
   String get scanQr;
   String get scanImage;
   String get contactCard;

@@ -141,6 +141,8 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get qrFriend => 'Scan for friend';
   @override
+  String get friendInfo => 'Friend Info';
+  @override
   String get scanQr => 'Scan Qrcode';
   @override
   String get scanImage => 'Scan Image';
