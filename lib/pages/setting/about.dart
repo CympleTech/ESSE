@@ -21,9 +21,9 @@ class _AboutDetailState extends State<AboutDetail> {
     final lang = AppLocalizations.of(context);
     return Column(
       children: [
-        Text(lang.openSource, style: Theme.of(context).textTheme.headline6),
+        Text(lang.about1, style: Theme.of(context).textTheme.headline6),
         const SizedBox(height: 10.0),
-        Text(lang.tdnBased, style: Theme.of(context).textTheme.headline6),
+        Text(lang.about2, style: Theme.of(context).textTheme.headline6),
         const SizedBox(height: 15.0),
         // Container(
         //   width: 400.0,

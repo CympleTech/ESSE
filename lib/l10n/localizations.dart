@@ -149,8 +149,8 @@ abstract class AppLocalizations {
   String get memory;
   String get swap;
   String get disk;
-  String get openSource;
-  String get tdnBased;
+  String get about1;
+  String get about2;
   String get donate;
   String get website;
   String get email;

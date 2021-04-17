@@ -211,9 +211,9 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get deviceQrcodeIntro => 'Tips: Scan to Login and sync, use it with care, and do not tell others';
   @override
-  String get openSource => 'Open Source Power By CympleTech.';
+  String get about1 => 'ESSE (Encrypted Symmetrical Session Engine)';
   @override
-  String get tdnBased => 'A Distributed Network and Application build on TDN.';
+  String get about2 => 'An open source encrypted peer-to-peer session system would allow data to be sent securely from one terminal to another without going through third-party services.';
   @override
   String get donate => 'Donate';
   @override
