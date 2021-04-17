@@ -23,7 +23,7 @@ target_link_libraries(${PLUGIN_NAME} PRIVATE PkgConfig::GTK)
 
 ## First Time & Debug To Lanuch install libraries.
 target_link_directories(${PLUGIN_NAME} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/share")
-target_link_libraries(${PLUGIN_NAME} PRIVATE libesse.so)
+target_link_libraries(${PLUGIN_NAME} PRIVATE libesse.a)
 
 ## Secound Time, because libraries had in lib, and can found.
 #find_library(ESSE_LIB NAMES libesse.so esse)
