@@ -208,6 +208,7 @@ class _ChatDetailState extends State<ChatDetail> {
         child: Text('Waiting...')
       );
     }
+    final isOnline = this.friend.online;
 
     return Column(
       children: [
@@ -238,7 +239,7 @@ class _ChatDetailState extends State<ChatDetail> {
                     SizedBox(height: 6.0),
                     Text(this.friend.isClosed
                       ? lang.unfriended
-                      : (this.friend.online ? lang.online : lang.offline),
+                      : (isOnline ? lang.online : lang.offline),
                       style: TextStyle(
                         color: color.onPrimary.withOpacity(0.5),
                         fontSize: 14.0))
@@ -373,12 +374,11 @@ class _ChatDetailState extends State<ChatDetail> {
         )),
         if (!this.friend.isClosed)
         Container(
-          padding:
-          const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
+          padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
           child: Row(
             children: [
               GestureDetector(
-                onTap: () async {
+                onTap: isOnline ? () async {
                   if (recordShow) {
                     recordShow = false;
                     textFocus.requestFocus();
@@ -391,10 +391,10 @@ class _ChatDetailState extends State<ChatDetail> {
                         textFocus.unfocus();
                     });
                   }
-                },
+                } : null,
                 child: Container(
                   width: 20.0,
-                  child: Icon(Icons.mic_rounded, color: color.primary)),
+                  child: Icon(Icons.mic_rounded, color: isOnline ? color.primary : Color(0xFFADB0BB))),
               ),
               SizedBox(width: 10.0),
               Expanded(
@@ -405,6 +405,7 @@ class _ChatDetailState extends State<ChatDetail> {
                     borderRadius: BorderRadius.circular(15.0),
                   ),
                   child: TextField(
+                    enabled: isOnline,
                     style: TextStyle(fontSize: 14.0),
                     textInputAction: TextInputAction.send,
                     onChanged: (value) {
@@ -434,7 +435,7 @@ class _ChatDetailState extends State<ChatDetail> {
               ),
               SizedBox(width: 10.0),
               GestureDetector(
-                onTap: () {
+                onTap: isOnline ? () {
                   if (emojiShow) {
                     textFocus.requestFocus();
                   } else {
@@ -445,19 +446,19 @@ class _ChatDetailState extends State<ChatDetail> {
                         textFocus.unfocus();
                     });
                   }
-                },
+                } : null,
                 child: Container(
                   width: 20.0,
                   child: Icon(
                     emojiShow
                     ? Icons.keyboard_rounded
                     : Icons.emoji_emotions_rounded,
-                    color: color.primary)),
+                    color: isOnline ? color.primary : Color(0xFFADB0BB))),
               ),
               SizedBox(width: 10.0),
               sendShow
               ? GestureDetector(
-                onTap: _sendMessage,
+                onTap: isOnline ? _sendMessage : null,
                 child: Container(
                   width: 50.0,
                   height: 30.0,
@@ -470,7 +471,7 @@ class _ChatDetailState extends State<ChatDetail> {
                       color: Colors.white, size: 20.0))),
               )
               : GestureDetector(
-                onTap: () {
+                onTap: isOnline ? () {
                   if (menuShow) {
                     textFocus.requestFocus();
                   } else {
@@ -481,23 +482,23 @@ class _ChatDetailState extends State<ChatDetail> {
                         textFocus.unfocus();
                     });
                   }
-                },
+                }  : null,
                 child: Container(
                   width: 20.0,
                   child: Icon(Icons.add_circle_rounded,
-                    color: color.primary)),
+                    color: isOnline ? color.primary : Color(0xFFADB0BB))),
               ),
             ],
           ),
         ),
-        if (emojiShow) Emoji(action: _selectEmoji),
-        if (recordShow)
+        if (emojiShow && isOnline) Emoji(action: _selectEmoji),
+        if (recordShow && isOnline)
         Container(
           height: 100.0,
           child: AudioRecorder(
             path: Global.recordPath + _recordName, onStop: _sendRecord),
         ),
-        if (menuShow)
+        if (menuShow && isOnline)
         Container(
           height: 100.0,
           child: Wrap(
