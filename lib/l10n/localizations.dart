@@ -84,8 +84,6 @@ abstract class AppLocalizations {
 
   // langs
   String get lang;
-  String get langEn;
-  String get langZh;
 
   // security page (did)
   String get loginChooseAccount;
@@ -140,6 +138,16 @@ abstract class AppLocalizations {
   String get deviceLocal;
   String get deviceQrcode;
   String get deviceQrcodeIntro;
+  String get addDevice;
+  String get reconnect;
+  String get status;
+  String get uptime;
+  String get days;
+  String get hours;
+  String get minutes;
+  String get memory;
+  String get swap;
+  String get disk;
   String get openSource;
   String get tdnBased;
   String get donate;

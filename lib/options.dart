@@ -95,14 +95,14 @@ extension ThemeTypeExtension on ThemeMode {
 }
 
 extension LocaleTypeExtension on Locale {
-  String localizations(BuildContext context) {
+  String localizations() {
     switch (this) {
       case Locale('en'):
-        return AppLocalizations.of(context).langEn;
+        return 'English';
       case Locale('zh'):
-        return AppLocalizations.of(context).langZh;
+        return '简体中文';
       default:
-        return AppLocalizations.of(context).langEn;
+        return 'English';
     }
   }
 

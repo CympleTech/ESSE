@@ -88,10 +88,6 @@ class AppLocalizationsZh extends AppLocalizations {
   // langs
   @override
   String get lang => '语言';
-  @override
-  String get langEn => '英语';
-  @override
-  String get langZh => '简体中文';
 
   // security page (did)
   @override
@@ -190,6 +186,26 @@ class AppLocalizationsZh extends AppLocalizations {
   String get deviceLocal => '本机';
   @override
   String get deviceQrcode => '设备二维码';
+  @override
+  String get addDevice => '添加设备';
+  @override
+  String get reconnect => '重连';
+  @override
+  String get status => '查看状态';
+  @override
+  String get uptime => '已运行';
+  @override
+  String get days => '天';
+  @override
+  String get hours => '小时';
+  @override
+  String get minutes => '分钟';
+  @override
+  String get memory => '内存';
+  @override
+  String get swap => '虚拟内存';
+  @override
+  String get disk => '硬盘';
   @override
   String get deviceQrcodeIntro => '扫码登陆与同步账户，小心使用，请勿告知他人';
   @override

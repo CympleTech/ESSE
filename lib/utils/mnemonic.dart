@@ -7,10 +7,7 @@ import 'package:flutter/services.dart' show rootBundle;
 
 import 'package:convert/convert.dart';
 import 'package:crypto/crypto.dart';
-//import 'package:pointycastle/pointycastle.dart';
 import 'package:unorm_dart/unorm_dart.dart';
-
-import '../l10n/localizations.dart';
 
 enum MnemonicLang {
   CHINESE_SIMPLIFIED,
@@ -29,15 +26,14 @@ final MNEMONIC_LANGS = [
 ];
 
 extension MnemonicLangExtension on MnemonicLang {
-  String localizations(context) {
-    final lang = AppLocalizations.of(context);
+  String localizations() {
     switch (this) {
       case MnemonicLang.CHINESE_SIMPLIFIED:
-        return lang.langZh;
+      return '简体中文';
       case MnemonicLang.ENGLISH:
-        return lang.langEn;
+        return 'English';
       default:
-        return lang.langEn;
+        return 'English';
     }
   }
 

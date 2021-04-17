@@ -10,6 +10,7 @@ import 'package:esse/models/device.dart';
 import 'package:esse/widgets/shadow_dialog.dart';
 import 'package:esse/widgets/input_text.dart';
 import 'package:esse/widgets/button_text.dart';
+import 'package:esse/widgets/show_pin.dart';
 import 'package:esse/provider/device.dart';
 import 'package:esse/provider/account.dart';
 import 'package:esse/global.dart';
@@ -25,10 +26,10 @@ class _DevicesPageState extends State<DevicesPage> {
   FocusNode _addrFocus = FocusNode();
 
   _inputAddress(lang) {
-    showShadowDialog(context, Icons.qr_code_rounded, lang.deviceQrcode,
+    showShadowDialog(context, Icons.devices_rounded, lang.addDevice,
       Column(
         children: [
-          InputText(icon: Icons.location_on, text: lang.address,
+          InputText(icon: Icons.location_on, text: "${lang.address} (0x...)",
             controller: this._addrController, focus: this._addrFocus),
           const SizedBox(height: 32.0),
           ButtonText(
@@ -110,9 +111,9 @@ class _DevicesPageState extends State<DevicesPage> {
     // TODO
   }
 
-  Widget deviceWidget(ColorScheme color, Device device, String local, bool isDesktop, double widgetWidth) {
+  Widget deviceWidget(ColorScheme color, Device device, bool isDesktop, double widgetWidth, lang) {
     final bool isLocal = '0x' + device.addr == Global.addr;
-    final String name = isLocal ? (device.name + " (${local})") : device.name;
+    final String name = isLocal ? (device.name + " (${lang.deviceLocal})") : device.name;
 
     return Container(
       width: widgetWidth,
@@ -138,14 +139,14 @@ class _DevicesPageState extends State<DevicesPage> {
             children: <Widget>[
               if (!isLocal && !device.online)
               TextButton(
-                child: const Text('RE-CONNECT'),
+                child: Text(lang.reconnect),
                 onPressed: () {
                   Provider.of<DeviceProvider>(context, listen: false).connect(device.addr);
                 },
               ),
               if (isLocal || device.online)
               TextButton(
-                child: const Text('VIEW DETAIL'),
+                child: Text(lang.status),
                 onPressed: () {
                   Provider.of<DeviceProvider>(context, listen: false).updateActived(device.id);
                   final widget = DeviceListenPage();
@@ -158,10 +159,9 @@ class _DevicesPageState extends State<DevicesPage> {
               ),
               if (!isLocal)
               TextButton(
-                child: const Text('DELETE', style: TextStyle(color: Colors.red)),
+                child: Text(lang.delete, style: TextStyle(color: Colors.red)),
                 onPressed: () {},
               ),
-              //const SizedBox(width: 10.0),
             ],
           ),
         ],
@@ -181,9 +181,8 @@ class _DevicesPageState extends State<DevicesPage> {
       widgetWidth = (MediaQuery.of(context).size.width - 450) / 2;
     }
 
-    final localDevice = lang.deviceLocal;
     final List<Widget> devicesWidgets = provider.devices.values.map((device) {
-        return deviceWidget(color, device, localDevice, isDesktop, widgetWidth);
+        return deviceWidget(color, device, isDesktop, widgetWidth, lang);
     }).toList();
 
     return Scaffold(
@@ -214,31 +213,55 @@ class _DevicesPageState extends State<DevicesPage> {
                         // input address to connect.
                         _inputAddress(lang);
                       } else if (value == 1) {
-                        // input fields.
-                        _scanQrCode();
-                      } else if (value == 2) {
                         // show qrcode.
-                        final account = Provider.of<AccountProvider>(context, listen: false).activedAccount;
-                        _showQrCode(
-                          account.name,
-                          account.id,
-                          Global.addr,
-                          account.lock,
-                          color,
-                          lang,
-                        );
+                        final account = Provider.of<AccountProvider>(
+                          context, listen: false).activedAccount;
+                        showShadowDialog(
+                          context,
+                          Icons.security_rounded,
+                          lang.verifyPin,
+                          PinWords(
+                            hashPin: account.lock,
+                            callback: (_key, _hash) async {
+                              Navigator.of(context).pop();
+                              _showQrCode(
+                                account.name,
+                                account.id,
+                                Global.addr,
+                                account.lock,
+                                color,
+                                lang,
+                              );
+                        }));
                       }
                     },
                     itemBuilder: (context) {
                       return <PopupMenuEntry<int>>[
                         PopupMenuItem<int>(value: 0,
-                          child: Text(lang.address, style: TextStyle(color: Colors.black)),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.only(right: 10.0),
+                                width: 30.0,
+                                height: 30.0,
+                                child: Icon(Icons.add_rounded, color: color.primary),
+                              ),
+                              Text(lang.addDevice, style: TextStyle(color: Colors.black)),
+                            ]
+                          )
                         ),
                         PopupMenuItem<int>(value: 1,
-                          child: Text(lang.scan, style: TextStyle(color: Colors.black)),
-                        ),
-                        PopupMenuItem<int>(value: 2,
-                          child: Text(lang.deviceQrcode, style: TextStyle(color: Colors.black)),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.only(right: 10.0),
+                                width: 30.0,
+                                height: 30.0,
+                                child: Icon(Icons.qr_code_rounded, color: color.primary),
+                              ),
+                              Text(lang.deviceQrcode, style: TextStyle(color: Colors.black)),
+                            ]
+                          )
                         ),
                       ];
                     }
@@ -296,18 +319,6 @@ class _DeviceListenPageState extends State<DeviceListenPage> {
     );
   }
 
-  Widget memoryWidget() {
-    return Text('Memory');
-  }
-
-  Widget swapWidget() {
-    return Text('Swap');
-  }
-
-  Widget diskWidget() {
-    return Text('Disk');
-  }
-
   @override
   Widget build(BuildContext context) {
     final color = Theme.of(context).colorScheme;
@@ -353,7 +364,7 @@ class _DeviceListenPageState extends State<DeviceListenPage> {
                   ),
                   Expanded(
                     child: Text(
-                      "Uptime: ${uptimes[0]} Days, ${uptimes[1]} Hours, ${uptimes[2]} Minutes",
+                      "${lang.uptime}: ${uptimes[0]} ${lang.days}, ${uptimes[1]} ${lang.hours}, ${uptimes[2]} ${lang.minutes}",
                       style: TextStyle(fontWeight: FontWeight.bold),
                       textAlign: TextAlign.right,
                     ),
@@ -378,7 +389,7 @@ class _DeviceListenPageState extends State<DeviceListenPage> {
                           ),
                           percentWidget(
                             status.memory_p(),
-                            "Memory: ${status.memory_u()}",
+                            "${lang.memory}: ${status.memory_u()}",
                             radius,
                             Colors.blue,
                           ),
@@ -389,13 +400,13 @@ class _DeviceListenPageState extends State<DeviceListenPage> {
                         children: [
                           percentWidget(
                             status.swap_p(),
-                            "Swap: ${status.memory_u()}",
+                            "${lang.swap}: ${status.memory_u()}",
                             radius,
                             Colors.green,
                           ),
                           percentWidget(
                             status.disk_p(),
-                            "Disk: ${status.disk_u()}",
+                            "${lang.disk}: ${status.disk_u()}",
                             radius,
                             Colors.purple,
                           ),

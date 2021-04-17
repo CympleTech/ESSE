@@ -88,10 +88,6 @@ class AppLocalizationsEn extends AppLocalizations {
   // langs
   @override
   String get lang => 'Language';
-  @override
-  String get langEn => 'English';
-  @override
-  String get langZh => 'Chinese';
 
   // security page (did)
   @override
@@ -190,6 +186,26 @@ class AppLocalizationsEn extends AppLocalizations {
   String get deviceLocal => 'Local';
   @override
   String get deviceQrcode => 'Device QR Code';
+  @override
+  String get addDevice => 'Add Device';
+  @override
+  String get reconnect => 'Re-Connect';
+  @override
+  String get status => 'View Status';
+  @override
+  String get uptime => 'Uptime';
+  @override
+  String get days => 'Days';
+  @override
+  String get hours => 'Hours';
+  @override
+  String get minutes => 'Minutes';
+  @override
+  String get memory => 'Memory';
+  @override
+  String get swap => 'Swap';
+  @override
+  String get disk => 'Disk';
   @override
   String get deviceQrcodeIntro => 'Tips: Scan to Login and sync, use it with care, and do not tell others';
   @override

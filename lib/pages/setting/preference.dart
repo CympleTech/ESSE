@@ -45,7 +45,7 @@ class _PreferenceDetailState extends State<PreferenceDetail> {
                   items: AppLocalizations.supportedLocales.map((Locale locale) {
                     return DropdownMenuItem<Locale>(
                       value: locale,
-                      child: Text(locale.localizations(context),
+                      child: Text(locale.localizations(),
                           style:
                               TextStyle(color: color.primary, fontSize: 16.0)),
                     );

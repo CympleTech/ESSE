@@ -259,7 +259,7 @@ class _AccountGeneratePageState extends State<AccountGeneratePage> {
                             items: MNEMONIC_LANGS.map((MnemonicLang m) {
                                 return DropdownMenuItem<int>(
                                   value: m.toInt(),
-                                  child: Text(m.localizations(context),
+                                  child: Text(m.localizations(),
                                     style: TextStyle(fontSize: 16)));
                             }).toList(),
                         )),
