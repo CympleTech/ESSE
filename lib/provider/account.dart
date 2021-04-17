@@ -510,6 +510,9 @@ class AccountProvider extends ChangeNotifier {
       if (params.length == 8) {
         final msg = Message.fromList(params);
         if (msg.fid == this.activedFriendId) {
+          if (!msg.isDelivery) {
+            msg.isDelivery = null; // When message create, set is is none;
+          }
           this.friends[msg.fid].updateLastMessage(msg, true);
           this.activedMessages[msg.id] = msg;
           rpc.send('friend-readed', [this.activedFriendId]);

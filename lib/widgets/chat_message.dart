@@ -376,14 +376,13 @@ class ChatMessage extends StatelessWidget {
                     color: color.onPrimary.withOpacity(0.5),
                     fontSize: 12.0)),
                 SizedBox(width: 4.0),
-                message.isMe
-                ? Icon(
-                  message.isDelivery ? Icons.done : Icons.hourglass_top,
+                Icon(
+                  message.isDelivery == null ? Icons.hourglass_top
+                  : (message.isDelivery ? Icons.done : Icons.error),
                   size: 12.0,
-                  color: message.isDelivery
-                  ? color.primary
-                  : color.primaryVariant)
-                : Icon(Icons.done, size: 12.0, color: color.primary),
+                  color: message.isDelivery == null ? color.primaryVariant
+                  : (message.isDelivery ? color.primary : Colors.red)
+                ),
           ]))
     ]));
   }
