@@ -1,3 +1,5 @@
+#!/bin/bash
+
 #### Default Current Machine
 function current() {
     cargo build --release
@@ -71,9 +73,9 @@ then
     echo "  all        build all versions libraries."
     echo "  android    only build for Android."
     echo "  ios        only build for IOS."
-    echo "  linux      only build for Linux."
-    echo "  macos      only build for MacOS."
-    echo "  windows    only build for Windows."
+    echo "  linux      only build for Linux. (Linux Machine)"
+    echo "  macos      only build for MacOS. (MacOS Machine)"
+    echo "  windows    only build for Windows. (Windows Machine)"
     echo "  web        only build for web (wasm)."
 else
     echo "Now is building: $1"
