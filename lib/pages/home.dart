@@ -367,7 +367,7 @@ class _HomeListState extends State<HomeList> {
                   callback: () => showFriends()),
               ListSystemApp(
                   name: lang.groups,
-                  icon: Icons.apps_rounded,
+                  icon: Icons.grid_view_rounded,
                   callback: () => showGroups()),
               ListSystemApp(
                   name: lang.files,

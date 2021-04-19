@@ -97,7 +97,17 @@ class FilePage extends StatelessWidget {
   final String title;
   const FilePage({Key key, this.title}) : super(key: key);
 
+  String remove_dir(String name) {
+    if (name.endsWith('.dir')) {
+      final i = name.lastIndexOf('.');
+      return name.substring(0, i);
+    }
+
+    return name;
+  }
+
   Widget item(String name) {
+    final trueName = remove_dir(name);
     return Container(
       width: 80.0,
       child: Column(
@@ -111,8 +121,8 @@ class FilePage extends StatelessWidget {
             child: fileIcon(name, 48.0),
           ),
           Tooltip(
-            message: name,
-            child: Text(name, style: TextStyle(fontSize: 16.0), maxLines: 1, overflow: TextOverflow.ellipsis),
+            message: trueName,
+            child: Text(trueName, style: TextStyle(fontSize: 16.0), maxLines: 1, overflow: TextOverflow.ellipsis),
           )
         ]
       )
@@ -212,20 +222,20 @@ class FilePage extends StatelessWidget {
                   runSpacing: 16.0,
                   alignment: WrapAlignment.start,
                   children: <Widget> [
-                    item('aaa.dir'),
-                    item('adadd.dir'),
-                    item('aaa.dir'),
-                    item('adadd.dir'),
-                    item('a.jpg'),
-                    item('daaaaaaaa.png'),
-                    item('cssssss.doc'),
-                    item('cssssss.xls'),
-                    item('cssssss.pdf'),
-                    item('cssssss.ppt'),
-                    item('aaaaa.md'),
-                    item('aaaaa.mp4'),
-                    item('bbbbb'),
-                    item('cccccaaaaa.json'),
+                    item('myworks.dir'),
+                    item('ESSE-infos-public.dir'),
+                    item('personal.dir'),
+                    item('others.dir'),
+                    item('logo.jpg'),
+                    item('cat.png'),
+                    item('what-is-esse_en.doc'),
+                    item('20210101-customers.xls'),
+                    item('product.pdf'),
+                    item('deck.ppt'),
+                    item('coder.md'),
+                    item('how-to-live-in-happy.mp4'),
+                    item('something_important'),
+                    item('car.json'),
                   ],
                 )
               )
