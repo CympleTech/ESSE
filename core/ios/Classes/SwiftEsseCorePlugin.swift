@@ -9,6 +9,12 @@ public class SwiftEsseCorePlugin: NSObject, FlutterPlugin {
   }
 
   public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
+    let url = URL(string: "http://www.apple.com")!
+    let task = URLSession.shared.dataTask(with: url) { data, response, error in
+
+    }
+    task.resume()
+
     switch call.method {
     case "getPlatformVersion":
       result("iOS " + UIDevice.current.systemVersion)
