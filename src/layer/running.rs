@@ -5,7 +5,7 @@ use tdn::types::{
     primitive::{new_io_error, PeerAddr, Result},
 };
 
-use crate::models::session::Friend;
+use crate::apps::chat::Friend;
 use crate::storage::session_db;
 
 /// online info.

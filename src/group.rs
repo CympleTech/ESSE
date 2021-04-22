@@ -12,9 +12,12 @@ use tdn::{
 };
 use tdn_did::{user::User, Proof};
 
+use crate::account::Account;
+use crate::apps::device::rpc as device_rpc;
+use crate::apps::device::Device;
+use crate::consensus::Event;
 use crate::event::{InnerEvent, StatusEvent, SyncEvent};
 use crate::layer::Layer;
-use crate::models::{account::Account, consensus::Event, device::Device};
 use crate::rpc;
 use crate::storage::{account_db, account_init, consensus_db};
 use crate::utils::device_status::device_status as local_device_status;
@@ -97,7 +100,7 @@ impl Group {
                 for (_, account) in &mut self.runnings {
                     if let Some(device) = account.distributes.get_mut(&addr) {
                         device.1 = false;
-                        results.rpcs.push(rpc::device_offline(gid, device.0));
+                        results.rpcs.push(device_rpc::device_offline(gid, device.0));
                     }
                 }
             }
@@ -182,7 +185,7 @@ impl Group {
 
                 if let Some(v) = running.distributes.get_mut(&addr) {
                     v.1 = true;
-                    results.rpcs.push(rpc::device_online(*gid, v.0));
+                    results.rpcs.push(device_rpc::device_online(*gid, v.0));
                     (remote_height, remote_event, new_addrs)
                 } else {
                     let mut device = Device::new(device_name, device_info, addr);
@@ -190,8 +193,10 @@ impl Group {
                     device.insert(&db)?;
                     db.close()?;
                     running.distributes.insert(addr, (device.id, true));
-                    results.rpcs.push(rpc::device_create(*gid, &device));
-                    results.rpcs.push(rpc::device_online(*gid, device.id));
+                    results.rpcs.push(device_rpc::device_create(*gid, &device));
+                    results
+                        .rpcs
+                        .push(device_rpc::device_online(*gid, device.id));
                     (remote_height, remote_event, new_addrs)
                 }
             }
@@ -215,7 +220,7 @@ impl Group {
 
                 let v = self.running_mut(gid)?;
                 let did = v.add_online(&addr)?;
-                results.rpcs.push(rpc::device_online(*gid, did));
+                results.rpcs.push(device_rpc::device_online(*gid, did));
                 (remote_height, remote_event, vec![])
             }
         };
@@ -575,7 +580,7 @@ impl Group {
         let (ancestors, hashes, is_min) = if to >= from {
             let (ancestors, is_min) = Self::ancestor(from, to);
             let db = consensus_db(&self.base, gid)?;
-            let hashes = crate::models::consensus::Event::get_assign_hash(&db, &ancestors)?;
+            let hashes = crate::consensus::Event::get_assign_hash(&db, &ancestors)?;
             db.close()?;
             (ancestors, hashes, is_min)
         } else {
@@ -665,7 +670,7 @@ impl GroupEvent {
             GroupEvent::DeviceOffline => {
                 let v = group.running_mut(&gid)?;
                 let did = v.offline(&addr)?;
-                results.rpcs.push(rpc::device_offline(gid, did));
+                results.rpcs.push(device_rpc::device_offline(gid, did));
             }
             GroupEvent::StatusRequest => {
                 let (cpu_n, mem_s, swap_s, disk_s, cpu_p, mem_p, swap_p, disk_p) =
@@ -700,7 +705,7 @@ impl GroupEvent {
                 swap_p,
                 disk_p,
                 uptime,
-            ) => results.rpcs.push(rpc::device_status(
+            ) => results.rpcs.push(device_rpc::device_status(
                 gid, cpu_n, mem_s, swap_s, disk_s, cpu_p, mem_p, swap_p, disk_p, uptime,
             )),
             GroupEvent::Event(eheight, eid, pre, inner_event) => {
@@ -726,7 +731,7 @@ impl GroupEvent {
                 if account.height != remote_height || account.event != remote_event {
                     // check ancestor and merge.
                     let db = consensus_db(&group.base, &gid)?;
-                    let ours = crate::models::consensus::Event::get_assign_hash(&db, &ancestors)?;
+                    let ours = crate::consensus::Event::get_assign_hash(&db, &ancestors)?;
                     drop(db);
 
                     if ours.len() == 0 {

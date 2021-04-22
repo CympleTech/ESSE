@@ -12,12 +12,12 @@ use tdn::{
     types::primitive::HandleResult,
 };
 
+use crate::account::Account;
 use crate::group::Group;
 use crate::layer::Layer;
 use crate::migrate::main_migrate;
-use crate::models::account::Account;
 use crate::primitives::network_seeds;
-use crate::rpc::{inner_rpc, new_rpc_handler};
+use crate::rpc::{init_rpc, inner_rpc};
 use crate::storage::account_db;
 
 pub const DEFAULT_WS_ADDR: &'static str = "127.0.0.1:8080";
@@ -67,7 +67,7 @@ pub async fn start(db_path: String) -> Result<()> {
         Layer::init(db_path, peer_id, group.clone()).await?,
     ));
 
-    let rpc = new_rpc_handler(peer_id, group.clone(), layer.clone());
+    let rpc = init_rpc(peer_id, group.clone(), layer.clone());
     //let mut group_rpcs: HashMap<u64, GroupId> = HashMap::new();
     let mut now_rpc_uid = 0;
 

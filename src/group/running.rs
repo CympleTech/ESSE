@@ -8,7 +8,7 @@ use tdn::types::{
 
 use tdn_did::Keypair;
 
-use crate::models::device::Device;
+use crate::apps::device::Device;
 use crate::storage::consensus_db;
 
 pub(crate) struct RunningAccount {

@@ -5,11 +5,13 @@ use std::ffi::CStr;
 use std::os::raw::c_char;
 use tdn::smol;
 
+mod account;
+mod apps;
+mod consensus;
 mod event;
 mod group;
 mod layer;
 mod migrate;
-mod models;
 mod primitives;
 mod rpc;
 mod server;

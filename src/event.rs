@@ -12,16 +12,18 @@ use tdn::types::{
 use tdn_did::user::User;
 use tdn_storage::local::DStorage;
 
+use crate::account::Account;
+use crate::consensus::Event;
 use crate::group::{Group, GroupEvent};
 use crate::layer::running::Online;
 use crate::layer::{Layer, LayerEvent};
 use crate::migrate::consensus::{
     ACCOUNT_TABLE_PATH, FILE_TABLE_PATH, FRIEND_TABLE_PATH, MESSAGE_TABLE_PATH, REQUEST_TABLE_PATH,
 };
-use crate::models::account::Account;
-use crate::models::consensus::Event;
-use crate::models::file::{FileId, FileType};
-use crate::models::session::{Friend, Message, NetworkMessage, Request};
+
+use crate::apps::chat::rpc as chat_rpc;
+use crate::apps::chat::{Friend, Message, NetworkMessage, Request};
+use crate::apps::file::{FileId, FileType};
 use crate::rpc;
 use crate::storage::{
     account_db, consensus_db, delete_avatar_sync, read_avatar_sync, session_db, write_avatar_sync,
@@ -255,7 +257,7 @@ impl InnerEvent {
                 }
                 if let Some(req) = Request::get(&db, &remote.id)? {
                     req.delete(&db)?; // delete the old request.
-                    results.rpcs.push(rpc::request_delete(gid, req.id));
+                    results.rpcs.push(chat_rpc::request_delete(gid, req.id));
                 }
                 let mut request =
                     Request::new(remote.id, remote.addr, remote.name, remark, is_me, true);
@@ -264,7 +266,7 @@ impl InnerEvent {
                 drop(db);
                 // save the avatar.
                 write_avatar_sync(group.base(), &gid, &remote.id, remote.avatar)?;
-                results.rpcs.push(rpc::request_create(gid, &request));
+                results.rpcs.push(chat_rpc::request_create(gid, &request));
                 (REQUEST_TABLE_PATH, request.id)
             }
             InnerEvent::SessionRequestHandle(rgid, is_ok, avatar) => {
@@ -292,9 +294,11 @@ impl InnerEvent {
                             }
                         })
                         .detach();
-                        results.rpcs.push(rpc::request_agree(gid, rid, &friend));
+                        results
+                            .rpcs
+                            .push(chat_rpc::request_agree(gid, rid, &friend));
                     } else {
-                        results.rpcs.push(rpc::request_reject(gid, rid));
+                        results.rpcs.push(chat_rpc::request_reject(gid, rid));
                     }
                     (REQUEST_TABLE_PATH, rid)
                 } else {
@@ -310,7 +314,7 @@ impl InnerEvent {
                     if Friend::get(&db, &request.gid)?.is_none() {
                         delete_avatar_sync(group.base(), &gid, &request.gid)?;
                     }
-                    results.rpcs.push(rpc::request_delete(gid, rid));
+                    results.rpcs.push(chat_rpc::request_delete(gid, rid));
                     (REQUEST_TABLE_PATH, rid)
                 } else {
                     return Ok(());
@@ -340,7 +344,7 @@ impl InnerEvent {
                     }
 
                     let msg = m.handle(is_me, gid, group.base(), &db, f.id, hash)?;
-                    results.rpcs.push(rpc::message_create(gid, &msg));
+                    results.rpcs.push(chat_rpc::message_create(gid, &msg));
                     (MESSAGE_TABLE_PATH, msg.id)
                 } else {
                     return Ok(());
@@ -350,7 +354,7 @@ impl InnerEvent {
                 let db = session_db(group.base(), &gid)?;
                 if let Some(m) = Message::get_it(&db, &hash)? {
                     m.delete(&db)?;
-                    results.rpcs.push(rpc::message_delete(gid, m.id));
+                    results.rpcs.push(chat_rpc::message_delete(gid, m.id));
                     (MESSAGE_TABLE_PATH, m.id)
                 } else {
                     return Ok(());
@@ -365,7 +369,7 @@ impl InnerEvent {
                     if ravatar.len() > 0 {
                         write_avatar_sync(group.base(), &gid, &rgid, ravatar)?;
                     }
-                    results.rpcs.push(rpc::friend_info(gid, &f));
+                    results.rpcs.push(chat_rpc::friend_info(gid, &f));
                     (FRIEND_TABLE_PATH, f.id)
                 } else {
                     return Ok(());
@@ -379,7 +383,7 @@ impl InnerEvent {
                     f.me_update(&db)?;
                     results
                         .rpcs
-                        .push(rpc::friend_update(gid, f.id, is_top, &f.remark));
+                        .push(chat_rpc::friend_update(gid, f.id, is_top, &f.remark));
                     (FRIEND_TABLE_PATH, f.id)
                 } else {
                     return Ok(());
@@ -389,7 +393,7 @@ impl InnerEvent {
                 let db = session_db(group.base(), &gid)?;
                 if let Some(f) = Friend::get_it(&db, &rgid)? {
                     f.close(&db)?;
-                    results.rpcs.push(rpc::friend_close(gid, f.id));
+                    results.rpcs.push(chat_rpc::friend_close(gid, f.id));
 
                     let rfid = f.id;
                     let layer_lock = layer.clone();
@@ -418,7 +422,7 @@ impl InnerEvent {
                 let db = session_db(group.base(), &gid)?;
                 if let Some(f) = Friend::get_it(&db, &rgid)? {
                     f.delete(&db)?;
-                    results.rpcs.push(rpc::friend_delete(gid, f.id));
+                    results.rpcs.push(chat_rpc::friend_delete(gid, f.id));
                     delete_avatar_sync(group.base(), &gid, &f.gid)?;
 
                     let rfid = f.id;
@@ -494,7 +498,9 @@ impl StatusEvent {
             StatusEvent::SessionFriendOnline(rgid) => {
                 let db = session_db(group.base(), &gid)?;
                 if let Some(f) = Friend::get_it(&db, &rgid)? {
-                    results.rpcs.push(rpc::friend_online(gid, f.id, f.addr));
+                    results
+                        .rpcs
+                        .push(chat_rpc::friend_online(gid, f.id, f.addr));
                     let layer_lock = layer.clone();
                     let rgid = f.gid;
                     let ggid = gid.clone();
@@ -517,8 +523,11 @@ impl StatusEvent {
                     tdn::smol::spawn(async move {
                         if let Ok(running) = layer_lock.write().await.running_mut(&ggid) {
                             if running.check_offline(&rgid, &addr) {
-                                let msg =
-                                    SendMessage::Rpc(uid, rpc::friend_offline(ggid, rid), true);
+                                let msg = SendMessage::Rpc(
+                                    uid,
+                                    chat_rpc::friend_offline(ggid, rid),
+                                    true,
+                                );
                                 let _ = sender.send(msg).await;
                             }
                         }
@@ -752,7 +761,7 @@ impl SyncEvent {
                             if Friend::get(&session_db, &rgid)?.is_none() {
                                 delete_avatar_sync(&base, &gid, &rgid)?;
                             }
-                            results.rpcs.push(rpc::request_delete(gid, req.id));
+                            results.rpcs.push(chat_rpc::request_delete(gid, req.id));
                         }
 
                         req.is_ok = is_ok;
@@ -768,13 +777,13 @@ impl SyncEvent {
                         // save to db.
                         request.insert(&session_db)?;
                         let rid = request.id;
-                        results.rpcs.push(rpc::request_create(gid, &request));
+                        results.rpcs.push(chat_rpc::request_create(gid, &request));
 
                         if is_delete {
                             if Friend::get(&session_db, &rgid)?.is_none() {
                                 delete_avatar_sync(&base, &gid, &rgid)?;
                             }
-                            results.rpcs.push(rpc::request_delete(gid, rid));
+                            results.rpcs.push(chat_rpc::request_delete(gid, rid));
                         }
 
                         request
@@ -795,9 +804,11 @@ impl SyncEvent {
                             }
                         })
                         .detach();
-                        results.rpcs.push(rpc::request_agree(gid, rid, &friend));
+                        results
+                            .rpcs
+                            .push(chat_rpc::request_agree(gid, rid, &friend));
                     } else {
-                        results.rpcs.push(rpc::request_reject(gid, rid));
+                        results.rpcs.push(chat_rpc::request_reject(gid, rid));
                     }
                     session_db.close()?;
 
@@ -859,9 +870,9 @@ impl SyncEvent {
                         }
 
                         if friend.is_deleted {
-                            results.rpcs.push(rpc::friend_delete(gid, friend.id));
+                            results.rpcs.push(chat_rpc::friend_delete(gid, friend.id));
                         } else {
-                            results.rpcs.push(rpc::friend_info(gid, &friend));
+                            results.rpcs.push(chat_rpc::friend_info(gid, &friend));
                         }
 
                         friend.id
@@ -887,7 +898,7 @@ impl SyncEvent {
 
                     let id = if let Some(f) = Friend::get_it(&session_db, &fgid)? {
                         let msg = m.handle(is_me, gid, &base, &session_db, f.id, eid)?;
-                        results.rpcs.push(rpc::message_create(gid, &msg));
+                        results.rpcs.push(chat_rpc::message_create(gid, &msg));
                         msg.id
                     } else {
                         -1

@@ -12,11 +12,12 @@ use tdn::{
 };
 use tdn_did::{user::User, Proof};
 
+use crate::apps::chat::{Friend, Message, MessageType, NetworkMessage, Request};
 use crate::event::{InnerEvent, StatusEvent};
 use crate::group::Group;
 use crate::migrate::consensus::{FRIEND_TABLE_PATH, MESSAGE_TABLE_PATH, REQUEST_TABLE_PATH};
-use crate::models::session::{Friend, Message, MessageType, NetworkMessage, Request};
-use crate::rpc;
+
+use crate::apps::chat::rpc;
 use crate::storage::{
     read_avatar, read_file, read_record, session_db, write_avatar_sync, write_file, write_image,
 };
