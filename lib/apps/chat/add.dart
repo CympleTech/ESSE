@@ -6,28 +6,31 @@ import 'package:provider/provider.dart';
 
 import 'package:esse/l10n/localizations.dart';
 import 'package:esse/utils/adaptive.dart';
-import 'package:esse/models/friend.dart';
+import 'package:esse/utils/better_print.dart';
 import 'package:esse/widgets/button_text.dart';
 import 'package:esse/widgets/input_text.dart';
 import 'package:esse/widgets/user_info.dart';
 import 'package:esse/widgets/shadow_button.dart';
 import 'package:esse/widgets/shadow_dialog.dart';
 import 'package:esse/widgets/qr_scan.dart';
-import 'package:esse/provider/account.dart';
 import 'package:esse/global.dart';
+import 'package:esse/provider.dart';
 
-class FriendAddPage extends StatefulWidget {
+import 'package:esse/apps/chat/models.dart';
+import 'package:esse/apps/chat/provider.dart';
+
+class ChatAddPage extends StatefulWidget {
   final String id;
   final String addr;
   final String name;
 
-  FriendAddPage({Key key, this.id = '', this.addr = '', this.name = ''}) : super(key: key);
+  ChatAddPage({Key key, this.id = '', this.addr = '', this.name = ''}) : super(key: key);
 
   @override
-  _FriendAddPageState createState() => _FriendAddPageState();
+  _ChatAddPageState createState() => _ChatAddPageState();
 }
 
-class _FriendAddPageState extends State<FriendAddPage> {
+class _ChatAddPageState extends State<ChatAddPage> {
   final _formKey = GlobalKey<FormState>();
   TextEditingController userIdEditingController = TextEditingController();
   TextEditingController addrEditingController = TextEditingController();
@@ -69,7 +72,7 @@ class _FriendAddPageState extends State<FriendAddPage> {
     var name = nameEditingController.text;
     var remark = remarkEditingController.text;
 
-    context.read<AccountProvider>().requestCreate(Request(id, addr, name, remark));
+    context.read<ChatProvider>().requestCreate(Request(id, addr, name, remark));
     setState(() {
         userIdEditingController.text = '';
         addrEditingController.text = '';
@@ -95,7 +98,7 @@ class _FriendAddPageState extends State<FriendAddPage> {
         setState(() {});
     });
     new Future.delayed(Duration.zero, () {
-        context.read<AccountProvider>().requestList();
+        context.read<ChatProvider>().requestList();
     });
   }
 
@@ -104,9 +107,11 @@ class _FriendAddPageState extends State<FriendAddPage> {
     final isDesktop = isDisplayDesktop(context);
     final color = Theme.of(context).colorScheme;
     final lang = AppLocalizations.of(context);
-    final provider = context.watch<AccountProvider>();
+    final provider = context.watch<ChatProvider>();
     final requests = provider.requests;
-    final account = provider.activedAccount;
+
+    final account = context.read<AccountProvider>().activedAccount;
+
     final requestKeys = requests.keys.toList().reversed.toList(); // it had sorted.
 
     return Scaffold(
@@ -119,7 +124,7 @@ class _FriendAddPageState extends State<FriendAddPage> {
                   if (!isDesktop)
                   GestureDetector(
                     onTap: () {
-                      context.read<AccountProvider>().requestClear();
+                      context.read<ChatProvider>().requestClear();
                       Navigator.pop(context);
                     },
                     child: Container(
@@ -249,7 +254,7 @@ class _RequestItem extends StatelessWidget {
           Expanded(
             child: Tooltip(
               message: text,
-              child: Text(Friend.betterPrint(text)),
+              child: Text(betterPrint(text)),
             )
           )
         ]
@@ -276,7 +281,7 @@ class _RequestItem extends StatelessWidget {
         InkWell(
           onTap: () {
             Navigator.pop(context);
-            Provider.of<AccountProvider>(context, listen: false).requestDelete(request.id);
+            Provider.of<ChatProvider>(context, listen: false).requestDelete(request.id);
           },
           hoverColor: Colors.transparent,
           child: Container(
@@ -296,7 +301,7 @@ class _RequestItem extends StatelessWidget {
             InkWell(
               onTap: () {
                 Navigator.pop(context);
-                Provider.of<AccountProvider>(context, listen: false).requestReject(request.id);
+                Provider.of<ChatProvider>(context, listen: false).requestReject(request.id);
               },
               hoverColor: Colors.transparent,
               child: Container(
@@ -312,7 +317,7 @@ class _RequestItem extends StatelessWidget {
             InkWell(
               onTap: () {
                 Navigator.pop(context);
-                Provider.of<AccountProvider>(context, listen: false).requestAgree(request.id);
+                Provider.of<ChatProvider>(context, listen: false).requestAgree(request.id);
               },
               hoverColor: Colors.transparent,
               child: Container(
@@ -334,7 +339,7 @@ class _RequestItem extends StatelessWidget {
             InkWell(
               onTap: () {
                 Navigator.pop(context);
-                Provider.of<AccountProvider>(context, listen: false).requestDelete(request.id);
+                Provider.of<ChatProvider>(context, listen: false).requestDelete(request.id);
               },
               hoverColor: Colors.transparent,
               child: Container(
@@ -350,7 +355,7 @@ class _RequestItem extends StatelessWidget {
             InkWell(
               onTap: () {
                 Navigator.pop(context);
-                Provider.of<AccountProvider>(context, listen: false).requestCreate(request);
+                Provider.of<ChatProvider>(context, listen: false).requestCreate(request);
               },
               hoverColor: Colors.transparent,
               child: Container(
@@ -414,7 +419,7 @@ class _RequestItem extends StatelessWidget {
                     )),
                     if (!request.over && !request.isMe)
                     InkWell(
-                      onTap: () => context.read<AccountProvider>().requestAgree(request.id),
+                      onTap: () => context.read<ChatProvider>().requestAgree(request.id),
                       hoverColor: Colors.transparent,
                       child: Container(
                         height: 35.0,

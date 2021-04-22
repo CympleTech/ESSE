@@ -1,6 +1,6 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:esse/models/account.dart';
+import 'package:esse/account.dart';
 
 const LOGINED_CACHE_NAME = 'logined';
 

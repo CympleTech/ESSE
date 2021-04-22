@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
 import 'package:esse/l10n/localizations.dart';
+import 'package:esse/utils/better_print.dart';
 import 'package:esse/widgets/socket_input.dart';
-import 'package:esse/models/friend.dart';
 import 'package:esse/global.dart';
 import 'package:esse/rpc.dart';
 
@@ -173,7 +173,7 @@ class _NetworkDetailState extends State<NetworkDetail> {
                       size: 18.0,
                       color: color.primary),
                     SizedBox(width: 15.0),
-                    Text(Friend.betterPrint(item[0]),
+                    Text(betterPrint(item[0]),
                       style: TextStyle(fontSize: 14.0))
               ]));
           }),
@@ -193,7 +193,7 @@ class _NetworkDetailState extends State<NetworkDetail> {
                     Icon(Icons.cloud_done_outlined,
                       size: 18.0, color: color.primary),
                     SizedBox(width: 15.0),
-                    Text(Friend.betterPrint(item),
+                    Text(betterPrint(item),
                       style: TextStyle(fontSize: 14.0)),
               ]));
           }),

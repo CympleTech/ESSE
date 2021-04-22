@@ -4,16 +4,18 @@ import 'package:provider/provider.dart';
 
 import 'package:esse/l10n/localizations.dart';
 import 'package:esse/utils/device_info.dart';
-import 'package:esse/models/account.dart';
 import 'package:esse/widgets/button_text.dart';
 import 'package:esse/widgets/shadow_dialog.dart';
 import 'package:esse/widgets/show_pin.dart';
 import 'package:esse/widgets/qr_scan.dart';
 import 'package:esse/pages/home.dart';
-import 'package:esse/provider/device.dart';
-import 'package:esse/provider/account.dart';
+import 'package:esse/account.dart';
 import 'package:esse/global.dart';
 import 'package:esse/rpc.dart';
+import 'package:esse/provider.dart';
+
+import 'package:esse/apps/device/provider.dart';
+import 'package:esse/apps/chat/provider.dart';
 
 class AccountRestorePage extends StatefulWidget {
   const AccountRestorePage({Key key}) : super(key: key);
@@ -380,8 +382,11 @@ class _AccountRestorePageState extends State<AccountRestorePage> {
           if (res.isOk) {
             // save this User
             final account = Account(res.params[0], this._name, lock);
+
             Provider.of<AccountProvider>(context, listen: false).addAccount(account);
-            Provider.of<DeviceProvider>(context, listen: false).init();
+            Provider.of<DeviceProvider>(context, listen: false).updateActived();
+            Provider.of<ChatProvider>(context, listen: false).updateActived();
+
             Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => HomePage()));
           } else {
             // TODO tostor error

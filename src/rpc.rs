@@ -62,7 +62,12 @@ pub(crate) fn network_seed(peers: Vec<SocketAddr>) -> RpcParam {
 
 #[inline]
 pub(crate) fn account_update(mgid: GroupId, name: &str, avatar: String) -> RpcParam {
-    rpc_response(0, "account-update", json!([name, avatar]), mgid)
+    rpc_response(
+        0,
+        "account-update",
+        json!([mgid.to_hex(), name, avatar]),
+        mgid,
+    )
 }
 
 #[inline]
@@ -146,7 +151,7 @@ fn new_rpc_handler(
         Ok(HandleResult::rpc(json!(params)))
     });
 
-    handler.add_method("system-info", move |_, _, _| async move {
+    handler.add_method("account-system-info", move |_, _, _| async move {
         Ok(HandleResult::rpc(json!(vec![addr.to_hex()])))
     });
 

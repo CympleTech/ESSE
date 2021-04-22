@@ -3,19 +3,21 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import 'package:esse/l10n/localizations.dart';
-import 'package:esse/models/account.dart';
 import 'package:esse/widgets/button_text.dart';
 import 'package:esse/widgets/shadow_dialog.dart';
 import 'package:esse/widgets/show_pin.dart';
 import 'package:esse/pages/home.dart';
 import 'package:esse/pages/account_generate.dart';
 import 'package:esse/pages/account_restore.dart';
-import 'package:esse/provider/device.dart';
-import 'package:esse/provider/account.dart';
 import 'package:esse/utils/logined_cache.dart';
+import 'package:esse/account.dart';
 import 'package:esse/global.dart';
 import 'package:esse/options.dart';
 import 'package:esse/rpc.dart';
+import 'package:esse/provider.dart';
+
+import 'package:esse/apps/device/provider.dart';
+import 'package:esse/apps/chat/provider.dart';
 
 class SecurityPage extends StatefulWidget {
   const SecurityPage({Key key}) : super(key: key);
@@ -161,8 +163,11 @@ class _SecurityPageState extends State<SecurityPage> {
         loginedAccounts.forEach((account) {
             accounts[account.gid] = account;
         });
+
         Provider.of<AccountProvider>(context, listen: false).autoAccounts(mainAccount.gid, accounts);
-        Provider.of<DeviceProvider>(context, listen: false).init();
+        Provider.of<DeviceProvider>(context, listen: false).updateActived();
+        Provider.of<ChatProvider>(context, listen: false).updateActived();
+
         Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => HomePage()));
         return;
       } else {
@@ -208,8 +213,11 @@ class _SecurityPageState extends State<SecurityPage> {
 
           if (res.isOk) {
             final mainAccount = this._accounts[this._selectedUserId];
+
             Provider.of<AccountProvider>(context, listen: false).updateActivedAccount(mainAccount.gid);
-            Provider.of<DeviceProvider>(context, listen: false).init();
+            Provider.of<DeviceProvider>(context, listen: false).updateActived();
+            Provider.of<ChatProvider>(context, listen: false).updateActived();
+
             Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => HomePage()));
           } else {
             // TODO tostor error

@@ -6,15 +6,16 @@ import 'package:qr_flutter/qr_flutter.dart';
 
 import 'package:esse/utils/adaptive.dart';
 import 'package:esse/l10n/localizations.dart';
-import 'package:esse/models/device.dart';
 import 'package:esse/widgets/shadow_dialog.dart';
 import 'package:esse/widgets/input_text.dart';
 import 'package:esse/widgets/button_text.dart';
 import 'package:esse/widgets/show_pin.dart';
-import 'package:esse/provider/device.dart';
-import 'package:esse/provider/account.dart';
 import 'package:esse/global.dart';
 import 'package:esse/rpc.dart';
+import 'package:esse/provider.dart';
+
+import 'package:esse/apps/device/provider.dart';
+import 'package:esse/apps/device/models.dart';
 
 class DevicesPage extends StatefulWidget {
   @override
@@ -148,7 +149,7 @@ class _DevicesPageState extends State<DevicesPage> {
               TextButton(
                 child: Text(lang.status),
                 onPressed: () {
-                  Provider.of<DeviceProvider>(context, listen: false).updateActived(device.id);
+                  Provider.of<DeviceProvider>(context, listen: false).updateActivedDevice(device.id);
                   final widget = DeviceListenPage();
                   if (isDesktop) {
                     Provider.of<AccountProvider>(context, listen: false).updateActivedApp(widget);
@@ -352,7 +353,7 @@ class _DeviceListenPageState extends State<DeviceListenPage> {
                 children: [
                   GestureDetector(
                     onTap: () {
-                      Provider.of<DeviceProvider>(context, listen: false).clearActived();
+                      Provider.of<DeviceProvider>(context, listen: false).clear();
                       if (isDesktop) {
                         Provider.of<AccountProvider>(context, listen: false).updateActivedApp(DevicesPage());
                       } else {

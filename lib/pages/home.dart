@@ -8,26 +8,29 @@ import 'package:provider/provider.dart';
 import 'package:flutter/cupertino.dart' show CupertinoSwitch;
 
 import 'package:esse/l10n/localizations.dart';
-import 'package:esse/models/account.dart';
 import 'package:esse/utils/adaptive.dart';
 import 'package:esse/widgets/shadow_dialog.dart';
 import 'package:esse/widgets/user_info.dart';
 import 'package:esse/widgets/list_system_app.dart';
-import 'package:esse/widgets/list_friend.dart';
 import 'package:esse/widgets/show_pin.dart';
 import 'package:esse/widgets/qr_scan.dart';
-import 'package:esse/pages/device.dart';
-import 'package:esse/pages/file.dart';
-import 'package:esse/pages/friend_add.dart';
-import 'package:esse/pages/group_add.dart';
 import 'package:esse/pages/setting/profile.dart';
 import 'package:esse/pages/setting/preference.dart';
 import 'package:esse/pages/setting/network.dart';
 import 'package:esse/pages/setting/about.dart';
-import 'package:esse/provider/account.dart';
-import 'package:esse/provider/device.dart';
+import 'package:esse/account.dart';
 import 'package:esse/global.dart';
 import 'package:esse/options.dart';
+import 'package:esse/provider.dart';
+
+import 'package:esse/apps/device/provider.dart';
+import 'package:esse/apps/device/page.dart';
+import 'package:esse/apps/chat/provider.dart';
+import 'package:esse/apps/chat/list.dart';
+import 'package:esse/apps/chat/add.dart';
+import 'package:esse/apps/file/page.dart';
+import 'package:esse/apps/service/list.dart';
+import 'package:esse/apps/service/add.dart';
 
 class HomePage extends StatelessWidget {
   static GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<ScaffoldState>();
@@ -168,7 +171,7 @@ class _HomeListState extends State<HomeList> {
                     final id = params[0];
                     final addr = params[1];
                     final name = params[2];
-                    final widget = FriendAddPage(id: id, addr: addr, name: name);
+                    final widget = ChatAddPage(id: id, addr: addr, name: name);
                     Provider.of<AccountProvider>(context, listen: false)
                         .systemAppGroupAddNew = false;
                     if (isDesktop) {
@@ -194,10 +197,9 @@ class _HomeListState extends State<HomeList> {
     final color = Theme.of(context).colorScheme;
     final lang = AppLocalizations.of(context);
     final provider = context.watch<AccountProvider>();
-
-    final topKeys = provider.topKeys;
-    final chatKeys = provider.orderChats;
-    final groupKeys = provider.groupKeys;
+    final chatProvider = context.watch<ChatProvider>();
+    final chatTops = chatProvider.topKeys;
+    final friends = chatProvider.friends;
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 10.0),
@@ -217,41 +219,16 @@ class _HomeListState extends State<HomeList> {
                     size: 28.0,
                   ),
                 ),
-                // Expanded(
-                //   child: Container(
-                //     height: 40.0,
-                //     decoration: BoxDecoration(
-                //         color: color.surface,
-                //         borderRadius: BorderRadius.circular(15.0)),
-                //     child: TextField(
-                //       autofocus: false,
-                //       textInputAction: TextInputAction.search,
-                //       textAlignVertical: TextAlignVertical.center,
-                //       style: TextStyle(fontSize: 14.0),
-                //       onSubmitted: (value) {
-                //         toast(context, lang.wip);
-                //       },
-                //       decoration: InputDecoration(
-                //         hintText: lang.search,
-                //         hintStyle:
-                //             TextStyle(color: color.onPrimary.withOpacity(0.5)),
-                //         border: InputBorder.none,
-                //         contentPadding: EdgeInsets.only(
-                //             left: 15.0, right: 15.0, bottom: 15.0),
-                //       ),
-                //     ),
-                //   ),
-                // ),
                 Expanded(
-                    child: Center(
-                  child: Text(
-                    isShowFriends
-                        ? lang.chats
-                        : (isShowGroups
-                            ? lang.groups
-                            : (isShowFiles ? lang.files : '')),
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
+                  child: Center(
+                    child: Text(
+                      isShowFriends
+                      ? lang.chats
+                      : (isShowGroups
+                        ? lang.groups
+                        : (isShowFiles ? lang.files : '')),
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
                 )),
                 Icon(Icons.search_rounded, color: color.primary),
                 const SizedBox(width: 20.0),
@@ -271,7 +248,7 @@ class _HomeListState extends State<HomeList> {
                                   if (value == 0) {
                                     scanQr(isDesktop);
                                   } else if (value == 1) {
-                                    final widget = FriendAddPage();
+                                    final widget = ChatAddPage();
                                     if (isDesktop) {
                                       provider.updateActivedApp(widget);
                                     } else {
@@ -376,29 +353,17 @@ class _HomeListState extends State<HomeList> {
               const SizedBox(height: 5.0),
               const Divider(height: 1.0, color: Color(0x40ADB0BB)),
               const SizedBox(height: 5.0),
-            ]),
+          ]),
           if (this.isShowHome)
-            Expanded(
-                child: ListView.builder(
-              itemCount: topKeys.length,
-              itemBuilder: (BuildContext ctx, int index) => ListFriend(
-                  friend: provider.friends[topKeys.elementAt(index)]),
-            )),
-          if (this.isShowFriends)
-            Expanded(
-                child: ListView.builder(
-              itemCount: chatKeys.length,
-              itemBuilder: (BuildContext ctx, int index) =>
-                  ListFriend(friend: provider.friends[chatKeys[index]]),
-            )),
-          if (this.isShowGroups)
-            Expanded(
-                child: ListView.builder(
-              itemCount: groupKeys.length,
-              itemBuilder: (BuildContext ctx, int index) =>
-                  ListFriend(friend: provider.groups[groupKeys[index]]),
-            )),
-          if (this.isShowFiles) ListFolder(),
+          Expanded(
+            child: ListView.builder(
+              itemCount: chatTops.length,
+              itemBuilder: (BuildContext ctx, int index) => ListChat(
+                friend: friends[chatTops.keys.elementAt(index)]),
+          )),
+          if (this.isShowFriends) ChatList(),
+          if (this.isShowGroups) ServiceList(),
+          if (this.isShowFiles) FolderList(),
         ],
       ),
     );
@@ -414,7 +379,8 @@ class DrawerWidget extends StatelessWidget {
             ? () {
                 Navigator.of(context).pop();
                 Provider.of<AccountProvider>(context, listen: false).updateActivedAccount(account.gid);
-                Provider.of<DeviceProvider>(context, listen: false).init();
+                Provider.of<DeviceProvider>(context, listen: false).updateActived();
+                Provider.of<ChatProvider>(context, listen: false).updateActived();
               }
             : null,
         child: Padding(
@@ -542,8 +508,6 @@ class DrawerWidget extends StatelessWidget {
                           style: TextStyle(fontSize: 16.0)),
                       onTap: () {
                         Navigator.pop(context);
-                        //showShadowDialog(context, Icons.devices_other_rounded, lang.devices,
-                        // DevicesPage());
                         _showDevices(context, isDesktop);
                       }),
                   ListTile(
@@ -600,6 +564,8 @@ class DrawerWidget extends StatelessWidget {
                           style: TextStyle(fontSize: 16.0)),
                       onTap: () {
                         context.read<AccountProvider>().logout();
+                        context.read<DeviceProvider>().clear();
+                        context.read<ChatProvider>().clear();
                         Navigator.of(context).pushReplacementNamed('/');
                       }),
                   SizedBox(height: 20.0),

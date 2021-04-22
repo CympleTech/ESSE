@@ -5,13 +5,13 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:esse/l10n/localizations.dart';
-import 'package:esse/models/friend.dart';
-import 'package:esse/provider/account.dart';
 import 'package:esse/utils/pick_image.dart';
+import 'package:esse/utils/better_print.dart';
 import 'package:esse/widgets/shadow_dialog.dart';
 import 'package:esse/widgets/show_pin.dart';
 import 'package:esse/global.dart';
 import 'package:esse/rpc.dart';
+import 'package:esse/provider.dart';
 
 class ProfileDetail extends StatefulWidget {
   ProfileDetail({Key key}) : super(key: key);
@@ -128,7 +128,7 @@ class _ProfileDetailState extends State<ProfileDetail> {
         Expanded(
             child: Tooltip(
           message: text,
-          child: Text(Friend.betterPrint(text)),
+          child: Text(betterPrint(text)),
         ))
       ]),
     );

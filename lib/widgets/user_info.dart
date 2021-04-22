@@ -5,7 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 import 'package:esse/l10n/localizations.dart';
-import 'package:esse/models/friend.dart';
+import 'package:esse/utils/better_print.dart';
 
 class UserInfo extends StatefulWidget {
   final String id;
@@ -95,7 +95,7 @@ class _UserInfoState extends State<UserInfo> {
               children: [
                 Icon(Icons.person, size: 20.0, color: color.primary),
                 Spacer(),
-                Text(Friend.betterPrint(widget.id), style: TextStyle(fontSize: 14, color: idColor)),
+                Text(betterPrint(widget.id), style: TextStyle(fontSize: 14, color: idColor)),
                 Spacer(),
                 Icon(idCopy ? Icons.file_copy : Icons.copy, size: 20.0, color: color.primary),
               ]
@@ -117,7 +117,7 @@ class _UserInfoState extends State<UserInfo> {
               children: [
                 Icon(Icons.location_on, size: 20.0, color: color.primary),
                 Spacer(),
-                Text(Friend.betterPrint(widget.addr), style: TextStyle(fontSize: 14, color: addrColor)),
+                Text(betterPrint(widget.addr), style: TextStyle(fontSize: 14, color: addrColor)),
                 Spacer(),
                 Icon(addrCopy ? Icons.file_copy : Icons.copy, size: 20.0, color: color.primary),
               ]

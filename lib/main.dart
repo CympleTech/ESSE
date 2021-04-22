@@ -3,14 +3,16 @@ import 'package:provider/provider.dart';
 import 'package:esse_core/esse_core.dart';
 
 import 'package:esse/l10n/localizations.dart';
-import 'package:esse/provider/device.dart';
-import 'package:esse/provider/account.dart';
 import 'package:esse/utils/home_dir.dart';
 import 'package:esse/theme.dart';
 import 'package:esse/global.dart';
 import 'package:esse/options.dart';
 import 'package:esse/security.dart';
 import 'package:esse/rpc.dart';
+
+import 'package:esse/provider.dart';
+import 'package:esse/apps/device/provider.dart';
+import 'package:esse/apps/chat/provider.dart';
 
 void coreServer() async {
   final path = await homeDir();
@@ -37,6 +39,7 @@ void main() {
         }),
         ChangeNotifierProvider(create: (_) => AccountProvider()),
         ChangeNotifierProvider(create: (_) => DeviceProvider()),
+        ChangeNotifierProvider(create: (_) => ChatProvider()),
       ],
       child: MyApp(),
   ));

@@ -6,16 +6,17 @@ import 'package:provider/provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:open_file/open_file.dart';
 
-import 'package:esse/models/message.dart';
-import 'package:esse/models/friend.dart';
 import 'package:esse/l10n/localizations.dart';
-import 'package:esse/provider/account.dart';
 import 'package:esse/utils/adaptive.dart';
 import 'package:esse/utils/file_image.dart';
+import 'package:esse/utils/better_print.dart';
 import 'package:esse/widgets/avatar.dart';
 import 'package:esse/widgets/audio_player.dart';
 import 'package:esse/widgets/shadow_dialog.dart';
 import 'package:esse/global.dart';
+
+import 'package:esse/apps/chat/models.dart';
+import 'package:esse/apps/chat/provider.dart';
 
 class ChatMessage extends StatelessWidget {
   final String name;
@@ -219,7 +220,7 @@ class ChatMessage extends StatelessWidget {
               InkWell(
                 onTap: () {
                   Navigator.pop(context);
-                  Provider.of<AccountProvider>(context, listen: false).requestCreate(
+                  Provider.of<ChatProvider>(context, listen: false).requestCreate(
                     Request(infos[1], infos[2], infos[0], lang.fromContactCard(name))
                   );
                 },
@@ -264,7 +265,7 @@ class ChatMessage extends StatelessWidget {
                           style: TextStyle(
                             color: color.onPrimary, fontSize: 16.0)),
                         SizedBox(height: 5.0),
-                        Text(Friend.betterPrint(gid),
+                        Text(betterPrint(gid),
                           style: TextStyle(
                             color: Colors.grey, fontSize: 12.0)),
                   ])),
@@ -325,7 +326,7 @@ class ChatMessage extends StatelessWidget {
           Expanded(
             child: Tooltip(
               message: text,
-              child: Text(Friend.betterPrint(text)),
+              child: Text(betterPrint(text)),
             )
           )
         ]

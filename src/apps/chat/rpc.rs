@@ -18,72 +18,72 @@ use super::{Friend, Message, MessageType, Request};
 
 #[inline]
 pub(crate) fn friend_online(mgid: GroupId, fid: i64, addr: PeerAddr) -> RpcParam {
-    rpc_response(0, "friend-online", json!([fid, addr.to_hex()]), mgid)
+    rpc_response(0, "chat-friend-online", json!([fid, addr.to_hex()]), mgid)
 }
 
 #[inline]
 pub(crate) fn friend_offline(mgid: GroupId, fid: i64) -> RpcParam {
-    rpc_response(0, "friend-offline", json!([fid]), mgid)
+    rpc_response(0, "chat-friend-offline", json!([fid]), mgid)
 }
 
 #[inline]
 pub(crate) fn friend_info(mgid: GroupId, friend: &Friend) -> RpcParam {
-    rpc_response(0, "friend-info", json!(friend.to_rpc()), mgid)
+    rpc_response(0, "chat-friend-info", json!(friend.to_rpc()), mgid)
 }
 
 #[inline]
 pub(crate) fn friend_update(mgid: GroupId, fid: i64, is_top: bool, remark: &str) -> RpcParam {
-    rpc_response(0, "friend-update", json!([fid, is_top, remark]), mgid)
+    rpc_response(0, "chat-friend-update", json!([fid, is_top, remark]), mgid)
 }
 
 #[inline]
 pub(crate) fn friend_close(mgid: GroupId, fid: i64) -> RpcParam {
-    rpc_response(0, "friend-close", json!([fid]), mgid)
+    rpc_response(0, "chat-friend-close", json!([fid]), mgid)
 }
 
 #[inline]
 pub(crate) fn friend_delete(mgid: GroupId, fid: i64) -> RpcParam {
-    rpc_response(0, "friend-delete", json!([fid]), mgid)
+    rpc_response(0, "chat-friend-delete", json!([fid]), mgid)
 }
 
 #[inline]
 pub(crate) fn request_create(mgid: GroupId, req: &Request) -> RpcParam {
-    rpc_response(0, "request-create", json!(req.to_rpc()), mgid)
+    rpc_response(0, "chat-request-create", json!(req.to_rpc()), mgid)
 }
 
 #[inline]
 pub(crate) fn request_delivery(mgid: GroupId, id: i64, is_d: bool) -> RpcParam {
-    rpc_response(0, "request-delivery", json!([id, is_d]), mgid)
+    rpc_response(0, "chat-request-delivery", json!([id, is_d]), mgid)
 }
 
 #[inline]
 pub(crate) fn request_agree(mgid: GroupId, id: i64, friend: &Friend) -> RpcParam {
-    rpc_response(0, "request-agree", json!([id, friend.to_rpc()]), mgid)
+    rpc_response(0, "chat-request-agree", json!([id, friend.to_rpc()]), mgid)
 }
 
 #[inline]
 pub(crate) fn request_reject(mgid: GroupId, id: i64) -> RpcParam {
-    rpc_response(0, "request-reject", json!([id]), mgid)
+    rpc_response(0, "chat-request-reject", json!([id]), mgid)
 }
 
 #[inline]
 pub(crate) fn request_delete(mgid: GroupId, id: i64) -> RpcParam {
-    rpc_response(0, "request-delete", json!([id]), mgid)
+    rpc_response(0, "chat-request-delete", json!([id]), mgid)
 }
 
 #[inline]
 pub(crate) fn message_create(mgid: GroupId, msg: &Message) -> RpcParam {
-    rpc_response(0, "message-create", json!(msg.to_rpc()), mgid)
+    rpc_response(0, "chat-message-create", json!(msg.to_rpc()), mgid)
 }
 
 #[inline]
 pub(crate) fn message_delivery(mgid: GroupId, id: i64, is_d: bool) -> RpcParam {
-    rpc_response(0, "message-delivery", json!([id, is_d]), mgid)
+    rpc_response(0, "chat-message-delivery", json!([id, is_d]), mgid)
 }
 
 #[inline]
 pub(crate) fn message_delete(mgid: GroupId, id: i64) -> RpcParam {
-    rpc_response(0, "message-delete", json!([id]), mgid)
+    rpc_response(0, "chat-message-delete", json!([id]), mgid)
 }
 
 #[inline]
@@ -120,7 +120,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
     });
 
     handler.add_method(
-        "friend-list",
+        "chat-friend-list",
         |gid: GroupId, _params: Vec<RpcParam>, state: Arc<RpcState>| async move {
             let friends = state.layer.read().await.all_friends_with_online(&gid)?;
             Ok(HandleResult::rpc(friend_list(friends)))
@@ -128,7 +128,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
     );
 
     handler.add_method(
-        "friend-update",
+        "chat-friend-update",
         |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
             let id = params[0].as_i64()?;
             let remark = params[1].as_str()?;
@@ -157,7 +157,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
     );
 
     handler.add_method(
-        "friend-readed",
+        "chat-friend-readed",
         |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
             let fid = params[0].as_i64()?;
 
@@ -170,7 +170,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
     );
 
     handler.add_method(
-        "friend-close",
+        "chat-friend-close",
         |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
             let id = params[0].as_i64()?;
 
@@ -210,7 +210,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
     );
 
     handler.add_method(
-        "friend-delete",
+        "chat-friend-delete",
         |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
             let id = params[0].as_i64()?;
 
@@ -251,7 +251,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
     );
 
     handler.add_method(
-        "request-list",
+        "chat-request-list",
         |gid: GroupId, _params: Vec<RpcParam>, state: Arc<RpcState>| async move {
             let layer_lock = state.layer.read().await;
             let db = session_db(layer_lock.base(), &gid)?;
@@ -263,7 +263,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
     );
 
     handler.add_method(
-        "request-create",
+        "chat-request-create",
         |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
             let remote_gid = GroupId::from_hex(params[0].as_str()?)?;
             let remote_addr = PeerAddr::from_hex(params[1].as_str()?)?;
@@ -320,7 +320,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
     );
 
     handler.add_method(
-        "request-agree",
+        "chat-request-agree",
         |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
             let id = params[0].as_i64()?;
 
@@ -358,7 +358,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
     );
 
     handler.add_method(
-        "request-reject",
+        "chat-request-reject",
         |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
             let id = params[0].as_i64()?;
 
@@ -385,7 +385,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
     );
 
     handler.add_method(
-        "request-delete",
+        "chat-request-delete",
         |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
             let id = params[0].as_i64()?;
 
@@ -415,7 +415,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
     );
 
     handler.add_method(
-        "message-list",
+        "chat-message-list",
         |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
             let fid = params[0].as_i64()?;
 
@@ -431,7 +431,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
     );
 
     handler.add_method(
-        "message-create",
+        "chat-message-create",
         |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
             let fid = params[0].as_i64()?;
             let fgid = GroupId::from_hex(params[1].as_str()?)?;
@@ -468,7 +468,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
     );
 
     handler.add_method(
-        "message-delete",
+        "chat-message-delete",
         |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
             let id = params[0].as_i64()?;
 

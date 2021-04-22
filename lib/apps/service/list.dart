@@ -3,14 +3,31 @@ import 'package:provider/provider.dart';
 
 import 'package:esse/utils/adaptive.dart';
 import 'package:esse/l10n/localizations.dart';
-import 'package:esse/models/friend.dart';
-import 'package:esse/pages/friend.dart';
-import 'package:esse/provider/account.dart';
+import 'package:esse/provider.dart';
 
-class ListFriend extends StatelessWidget {
-  final Friend friend;
+class ServiceList extends StatefulWidget {
+  const ServiceList({Key key}) : super(key: key);
 
-  const ListFriend({Key key, this.friend}) : super(key: key);
+  @override
+  _ServiceListState createState() => _ServiceListState();
+}
+
+class _ServiceListState extends State<ServiceList> {
+  @override
+  Widget build(BuildContext context) {
+    final serviceKeys = [];
+    final services = {};
+
+    return Expanded(
+      child: ListView.builder(
+        itemCount: serviceKeys.length,
+        itemBuilder: (BuildContext ctx, int index) => _ListService(),
+    ));
+  }
+}
+
+class _ListService extends StatelessWidget {
+  const _ListService({Key key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -21,15 +38,12 @@ class ListFriend extends StatelessWidget {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () {
-        context.read<AccountProvider>().updateActivedFriend(friend.id, isDesktop);
-        if (!isDesktop) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => ChatPage(),
-            ),
-          );
-        }
+        // final widget = AssistantPage();
+        // if (isDesktop) {
+        //   Provider.of<AccountProvider>(context, listen: false).updateActivedApp(widget);
+        // } else {
+        //   Navigator.push(context, MaterialPageRoute(builder: (_) => widget));
+        // }
       },
       child: Container(
         height: 55.0,
@@ -39,7 +53,13 @@ class ListFriend extends StatelessWidget {
               width: 45.0,
               height: 45.0,
               margin: const EdgeInsets.only(left: 20.0, right: 15.0),
-              child: friend.showAvatar(),
+              decoration: BoxDecoration(
+                image: DecorationImage(
+                  image: AssetImage('assets/logo/logo_light.png'),
+                  fit: BoxFit.cover,
+                ),
+                borderRadius: BorderRadius.circular(15.0)
+              ),
             ),
             Expanded(
               child: Container(
@@ -52,35 +72,25 @@ class ListFriend extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Expanded(
-                          child: Text(friend.name,
+                          child: Text('esse',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(fontSize: 16.0))
                         ),
                         Container(
                           margin: const EdgeInsets.only(left: 15.0, right: 20.0),
-                          child: Text(friend.lastMessageTime.toString(),
+                          child: Text('2021-11-12',
                             style: const TextStyle(color: Color(0xFFADB0BB), fontSize: 12.0),
                           ),
                         )
                     ]),
                     SizedBox(height: 5.0),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(friend.lastMessageContent,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(color: Color(0xFFADB0BB), fontSize: 12.0)),
-                        ),
-                        if (this.friend.isClosed)
-                        Container(
-                          margin: const EdgeInsets.only(left: 15.0, right: 20.0),
-                          child: Text(lang.unfriended,
-                            style: TextStyle(color: color.primary, fontSize: 12.0),
-                          ),
-                        )
-                    ]),
+                    Expanded(
+                      child: Text('esse is a echo robot',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(color: Color(0xFFADB0BB), fontSize: 12.0)),
+                    ),
                   ],
                 ),
               ),
