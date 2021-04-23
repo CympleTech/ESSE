@@ -71,25 +71,15 @@ class _ListService extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: Text('esse',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(fontSize: 16.0))
-                        ),
-                        Container(
-                          margin: const EdgeInsets.only(left: 15.0, right: 20.0),
-                          child: Text('2021-11-12',
-                            style: const TextStyle(color: Color(0xFFADB0BB), fontSize: 12.0),
-                          ),
-                        )
-                    ]),
+                    Expanded(
+                      child: Text('esse',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(fontSize: 16.0))
+                    ),
                     SizedBox(height: 5.0),
                     Expanded(
-                      child: Text('esse is a echo robot',
+                      child: Text(lang.robotEsse,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(color: Color(0xFFADB0BB), fontSize: 12.0)),

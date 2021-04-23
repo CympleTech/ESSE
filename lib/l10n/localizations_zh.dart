@@ -78,6 +78,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get open => '打开';
   @override
   String get unknown => '未知';
+  @override
+  String get robotEsse => 'esse 是个机器人';
 
   // theme
   @override

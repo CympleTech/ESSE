@@ -78,6 +78,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get open => 'Open';
   @override
   String get unknown => 'Unknown';
+  @override
+  String get robotEsse => 'esse is a robot';
 
   // theme
   @override
