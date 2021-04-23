@@ -79,7 +79,7 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get unknown => 'Unknown';
   @override
-  String get robotEsse => 'esse is a robot';
+  String get robotEsse => 'esse is a robot, only belongs to you.';
 
   // theme
   @override

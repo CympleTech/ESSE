@@ -79,7 +79,7 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String get unknown => '未知';
   @override
-  String get robotEsse => 'esse 是个机器人';
+  String get robotEsse => 'esse 是个机器人，只属于你。';
 
   // theme
   @override
