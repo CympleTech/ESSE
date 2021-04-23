@@ -14,6 +14,8 @@ use file::FILE_VERSIONS;
 use service::SERVICE_VERSIONS;
 use session::SESSION_VERSIONS;
 
+use crate::apps::assistant::ASSISTANT_VERSIONS;
+
 // Account's main database name.
 pub(crate) const ACCOUNT_DB: &'static str = "account.db";
 
@@ -29,111 +31,83 @@ pub(crate) const FILE_DB: &'static str = "file.db";
 /// Account's service database name
 pub(crate) const SERVICE_DB: &'static str = "service.db";
 
+/// Account's assistant database name
+pub(crate) const ASSISTANT_DB: &'static str = "assistant.db";
+
 pub(crate) fn main_migrate(path: &PathBuf) -> std::io::Result<()> {
     let mut db_path = path.clone();
     db_path.push(ACCOUNT_DB);
 
     if db_path.exists() {
         let db = DStorage::open(db_path)?;
+
         // 1. get current version.
-        let mut matrix = db.query("select account_version, consensus_version, session_version, file_version, service_version from versions")?;
-        let mut values = matrix.pop().unwrap();
-
-        let current_service = values.pop().unwrap().as_i64() as usize;
-        let current_file = values.pop().unwrap().as_i64() as usize;
-        let current_session = values.pop().unwrap().as_i64() as usize;
-        let current_consensus = values.pop().unwrap().as_i64() as usize;
-        let current_account = values.pop().unwrap().as_i64() as usize;
-
-        if current_account != ACCOUNT_VERSIONS.len() {
+        let first_matrix =
+            db.query("SELECT name FROM sqlite_master WHERE type='table' AND name='migrates'")?;
+        if first_matrix.len() == 0 {
             // 2. migrate.
-            for i in &ACCOUNT_VERSIONS[current_account..] {
+            for i in &ACCOUNT_VERSIONS[1..] {
                 db.execute(i)?;
             }
+
             db.update(&format!(
-                "UPDATE versions SET account_version = {}",
-                ACCOUNT_VERSIONS.len()
+                "UPDATE migrates SET version = {} where db_name = '{}'",
+                ACCOUNT_VERSIONS.len(),
+                ACCOUNT_DB,
             ))?;
         }
 
-        if current_consensus != CONSENSUS_VERSIONS.len() {
-            let mut matrix = db.query("select gid from accounts")?;
-            while matrix.len() > 0 {
-                let mut account_path = path.clone();
-                account_path.push(matrix.pop().unwrap().pop().unwrap().as_str());
-                account_path.push(CONSENSUS_DB);
-                let account_db = DStorage::open(account_path)?;
-                // migrate
-                for i in &CONSENSUS_VERSIONS[current_consensus..] {
-                    account_db.execute(i)?;
+        let matrix = db.query("select db_name, version from migrates")?;
+
+        for mut values in matrix {
+            let db_version = values.pop().unwrap().as_i64() as usize;
+            let db_name = values.pop().unwrap().as_string();
+
+            let current_versions = match db_name.as_str() {
+                ACCOUNT_DB => {
+                    if db_version != ACCOUNT_VERSIONS.len() {
+                        // 2. migrate.
+                        for i in &ACCOUNT_VERSIONS[db_version..] {
+                            db.execute(i)?;
+                        }
+                        db.update(&format!(
+                            "UPDATE migrates SET version = {} where db_name = '{}'",
+                            ACCOUNT_VERSIONS.len(),
+                            db_name,
+                        ))?;
+                    }
+                    continue;
                 }
-                account_db.close()?;
-            }
-
-            db.update(&format!(
-                "UPDATE versions SET consensus_version = {}",
-                CONSENSUS_VERSIONS.len()
-            ))?;
-        }
-
-        if current_session != SESSION_VERSIONS.len() {
-            let mut matrix = db.query("select gid from accounts")?;
-            while matrix.len() > 0 {
-                let mut account_path = path.clone();
-                account_path.push(matrix.pop().unwrap().pop().unwrap().as_str());
-                account_path.push(SESSION_DB);
-                let account_db = DStorage::open(account_path)?;
-                // migrate
-                for i in &SESSION_VERSIONS[current_session..] {
-                    account_db.execute(i)?;
+                CONSENSUS_DB => CONSENSUS_VERSIONS.as_ref(),
+                SESSION_DB => SESSION_VERSIONS.as_ref(),
+                FILE_DB => FILE_VERSIONS.as_ref(),
+                SERVICE_DB => SERVICE_VERSIONS.as_ref(),
+                ASSISTANT_DB => ASSISTANT_VERSIONS.as_ref(),
+                _ => {
+                    continue;
                 }
-                account_db.close()?;
-            }
+            };
 
-            db.update(&format!(
-                "UPDATE versions SET session_version = {}",
-                SESSION_VERSIONS.len()
-            ))?;
-        }
-
-        if current_file != FILE_VERSIONS.len() {
-            let mut matrix = db.query("select gid from accounts")?;
-            while matrix.len() > 0 {
-                let mut account_path = path.clone();
-                account_path.push(matrix.pop().unwrap().pop().unwrap().as_str());
-                account_path.push(FILE_DB);
-                let account_db = DStorage::open(account_path)?;
-                // migrate.
-                for i in &FILE_VERSIONS[current_file..] {
-                    account_db.execute(i)?;
+            if db_version != current_versions.len() {
+                let mut matrix = db.query("select gid from accounts")?;
+                while matrix.len() > 0 {
+                    let mut account_path = path.clone();
+                    account_path.push(matrix.pop().unwrap().pop().unwrap().as_str());
+                    account_path.push(&db_name);
+                    let account_db = DStorage::open(account_path)?;
+                    // migrate
+                    for i in &current_versions[db_version..] {
+                        account_db.execute(i)?;
+                    }
+                    account_db.close()?;
                 }
-                account_db.close()?;
+
+                db.update(&format!(
+                    "UPDATE migrates SET version = {} where db_name = '{}'",
+                    current_versions.len(),
+                    db_name,
+                ))?;
             }
-
-            db.update(&format!(
-                "UPDATE versions SET file_version = {}",
-                FILE_VERSIONS.len()
-            ))?;
-        }
-
-        if current_service != SERVICE_VERSIONS.len() {
-            let mut matrix = db.query("select gid from accounts")?;
-            while matrix.len() > 0 {
-                let mut account_path = path.clone();
-                account_path.push(matrix.pop().unwrap().pop().unwrap().as_str());
-                account_path.push(SERVICE_DB);
-                let account_db = DStorage::open(account_path)?;
-                // 2. migrate.
-                for i in &SERVICE_VERSIONS[current_service..] {
-                    account_db.execute(i)?;
-                }
-                account_db.close()?;
-            }
-
-            db.update(&format!(
-                "UPDATE versions SET service_version = {}",
-                SERVICE_VERSIONS.len()
-            ))?;
         }
 
         db.close()?;
@@ -143,55 +117,86 @@ pub(crate) fn main_migrate(path: &PathBuf) -> std::io::Result<()> {
         for i in ACCOUNT_VERSIONS.iter() {
             db.execute(i)?;
         }
-        db.insert(&format!(
-            "INSERT INTO versions (account_version, consensus_version, session_version, file_version, service_version) VALUES ({}, {}, {}, {}, {})",
+
+        db.update(&format!(
+            "UPDATE migrates SET version = {} where db_name = '{}'",
             ACCOUNT_VERSIONS.len(),
-            CONSENSUS_VERSIONS.len(),
-            SESSION_VERSIONS.len(),
-            FILE_VERSIONS.len(),
-            SERVICE_VERSIONS.len(),
+            ACCOUNT_DB,
         ))?;
+
+        db.update(&format!(
+            "UPDATE migrates SET version = {} where db_name = '{}'",
+            CONSENSUS_VERSIONS.len(),
+            CONSENSUS_DB,
+        ))?;
+
+        db.update(&format!(
+            "UPDATE migrates SET version = {} where db_name = '{}'",
+            SESSION_VERSIONS.len(),
+            SESSION_DB,
+        ))?;
+
+        db.update(&format!(
+            "UPDATE migrates SET version = {} where db_name = '{}'",
+            FILE_VERSIONS.len(),
+            FILE_DB,
+        ))?;
+
+        db.update(&format!(
+            "UPDATE migrates SET version = {} where db_name = '{}'",
+            SERVICE_VERSIONS.len(),
+            SERVICE_DB,
+        ))?;
+
+        db.update(&format!(
+            "UPDATE migrates SET version = {} where db_name = '{}'",
+            ASSISTANT_VERSIONS.len(),
+            ASSISTANT_DB,
+        ))?;
+
         db.close()?;
     }
 
     Ok(())
 }
 
-pub(crate) fn consensus_migrate(path: &PathBuf) -> std::io::Result<()> {
+pub(crate) fn account_init_migrate(path: &PathBuf) -> std::io::Result<()> {
     let mut db_path = path.clone();
     db_path.push(CONSENSUS_DB);
     let db = DStorage::open(db_path)?;
     for i in &CONSENSUS_VERSIONS {
         db.execute(i)?;
     }
-    db.close()
-}
+    db.close()?;
 
-pub(crate) fn session_migrate(path: &PathBuf) -> std::io::Result<()> {
     let mut db_path = path.clone();
     db_path.push(SESSION_DB);
     let db = DStorage::open(db_path)?;
     for i in &SESSION_VERSIONS {
         db.execute(i)?;
     }
-    db.close()
-}
+    db.close()?;
 
-pub(crate) fn file_migrate(path: &PathBuf) -> std::io::Result<()> {
     let mut db_path = path.clone();
     db_path.push(FILE_DB);
     let db = DStorage::open(db_path)?;
     for i in &FILE_VERSIONS {
         db.execute(i)?;
     }
-    db.close()
-}
+    db.close()?;
 
-pub(crate) fn service_migrate(path: &PathBuf) -> std::io::Result<()> {
     let mut db_path = path.clone();
     db_path.push(SERVICE_DB);
     let db = DStorage::open(db_path)?;
     for i in &SERVICE_VERSIONS {
+        db.execute(i)?;
+    }
+    db.close()?;
+
+    let mut db_path = path.clone();
+    db_path.push(ASSISTANT_DB);
+    let db = DStorage::open(db_path)?;
+    for i in &ASSISTANT_VERSIONS {
         db.execute(i)?;
     }
     db.close()

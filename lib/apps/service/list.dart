@@ -5,6 +5,9 @@ import 'package:esse/utils/adaptive.dart';
 import 'package:esse/l10n/localizations.dart';
 import 'package:esse/provider.dart';
 
+import 'package:esse/apps/assistant/page.dart';
+import 'package:esse/apps/assistant/provider.dart';
+
 class ServiceList extends StatefulWidget {
   const ServiceList({Key key}) : super(key: key);
 
@@ -15,7 +18,7 @@ class ServiceList extends StatefulWidget {
 class _ServiceListState extends State<ServiceList> {
   @override
   Widget build(BuildContext context) {
-    final serviceKeys = [];
+    final serviceKeys = [1];
     final services = {};
 
     return Expanded(
@@ -38,12 +41,12 @@ class _ListService extends StatelessWidget {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () {
-        // final widget = AssistantPage();
-        // if (isDesktop) {
-        //   Provider.of<AccountProvider>(context, listen: false).updateActivedApp(widget);
-        // } else {
-        //   Navigator.push(context, MaterialPageRoute(builder: (_) => widget));
-        // }
+        final widget = AssistantPage();
+        if (isDesktop) {
+          Provider.of<AccountProvider>(context, listen: false).updateActivedApp(widget);
+        } else {
+          Navigator.push(context, MaterialPageRoute(builder: (_) => widget));
+        }
       },
       child: Container(
         height: 55.0,
@@ -55,7 +58,7 @@ class _ListService extends StatelessWidget {
               margin: const EdgeInsets.only(left: 20.0, right: 15.0),
               decoration: BoxDecoration(
                 image: DecorationImage(
-                  image: AssetImage('assets/logo/logo_light.png'),
+                  image: AssetImage('assets/logo/logo_esse.jpg'),
                   fit: BoxFit.cover,
                 ),
                 borderRadius: BorderRadius.circular(15.0)

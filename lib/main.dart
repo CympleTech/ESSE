@@ -13,6 +13,7 @@ import 'package:esse/rpc.dart';
 import 'package:esse/provider.dart';
 import 'package:esse/apps/device/provider.dart';
 import 'package:esse/apps/chat/provider.dart';
+import 'package:esse/apps/assistant/provider.dart';
 
 void coreServer() async {
   final path = await homeDir();
@@ -40,6 +41,7 @@ void main() {
         ChangeNotifierProvider(create: (_) => AccountProvider()),
         ChangeNotifierProvider(create: (_) => DeviceProvider()),
         ChangeNotifierProvider(create: (_) => ChatProvider()),
+        ChangeNotifierProvider(create: (_) => AssistantProvider()),
       ],
       child: MyApp(),
   ));

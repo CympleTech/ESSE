@@ -4,7 +4,6 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 
 import 'package:esse/utils/relative_time.dart';
-import 'package:esse/global.dart';
 import 'package:esse/rpc.dart';
 
 import 'package:esse/apps/chat/models.dart';
@@ -186,7 +185,7 @@ class ChatProvider extends ChangeNotifier {
   }
 
   /// list all friends.
-  _friendList(List params) async {
+  _friendList(List params) {
     this.orderKeys.clear();
     this.friends.clear();
 
@@ -201,7 +200,7 @@ class ChatProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  _friendOnline(List params) async {
+  _friendOnline(List params) {
     final id = params[0];
     if (this.friends.containsKey(id)) {
       this.friends[id].online = true;
@@ -210,7 +209,7 @@ class ChatProvider extends ChangeNotifier {
     }
   }
 
-  _friendOffline(List params) async {
+  _friendOffline(List params) {
     final id = params[0];
     if (this.friends.containsKey(id)) {
       this.friends[id].online = false;
@@ -218,7 +217,7 @@ class ChatProvider extends ChangeNotifier {
     }
   }
 
-  _friendInfo(List params) async {
+  _friendInfo(List params) {
     final id = params[0];
     this.friends[id] = Friend.fromList(params);
     if (this.friends[id].isTop) {
@@ -227,7 +226,7 @@ class ChatProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  _friendUpdate(List params) async {
+  _friendUpdate(List params) {
     final id = params[0];
     if (this.friends.containsKey(id)) {
       this.friends[id].isTop = params[1];
@@ -240,7 +239,7 @@ class ChatProvider extends ChangeNotifier {
     }
   }
 
-  _friendClose(List params) async {
+  _friendClose(List params) {
     final id = params[0];
     if (this.friends.containsKey(id)) {
       this.friends[id].isClosed = true;
@@ -250,7 +249,7 @@ class ChatProvider extends ChangeNotifier {
   }
 
   /// list requests for friend.
-  _requestList(List params) async {
+  _requestList(List params) {
     this.requests.clear();
     params.forEach((param) {
         if (param.length == 10) {
@@ -261,13 +260,13 @@ class ChatProvider extends ChangeNotifier {
   }
 
   /// receive a request for friend.
-  _requestCreate(List params) async {
+  _requestCreate(List params) {
     this.requests[params[0]] = Request.fromList(params);
     notifyListeners();
   }
 
   /// created request had delivery.
-  _requestDelivery(List params) async {
+  _requestDelivery(List params) {
     final id = params[0];
     final isDelivery = params[1];
     if (this.requests.containsKey(id)) {
@@ -277,7 +276,7 @@ class ChatProvider extends ChangeNotifier {
   }
 
   /// request for friend receive agree.
-  _requestAgree(List params) async {
+  _requestAgree(List params) {
     final id = params[0]; // request's id.
     if (this.requests.containsKey(id)) {
       this.requests[id].overIt(true);
@@ -289,7 +288,7 @@ class ChatProvider extends ChangeNotifier {
   }
 
   /// request for friend receive reject.
-  _requestReject(List params) async {
+  _requestReject(List params) {
     final id = params[0];
     if (this.requests.containsKey(id)) {
       this.requests[id].overIt(false);
@@ -297,13 +296,13 @@ class ChatProvider extends ChangeNotifier {
     }
   }
 
-  _requestDelete(List params) async {
+  _requestDelete(List params) {
     this.requests.remove(params[0]);
     notifyListeners();
   }
 
   /// list message with friend.
-  _messageList(List params) async {
+  _messageList(List params) {
     params.forEach((param) {
         if (param.length == 8) {
           this.activedMessages[param[0]] = Message.fromList(param);
@@ -313,7 +312,7 @@ class ChatProvider extends ChangeNotifier {
   }
 
   /// friend send message to me.
-  _messageCreate(List params) async {
+  _messageCreate(List params) {
     final msg = Message.fromList(params);
     if (msg.fid == this.activedFriendId) {
       if (!msg.isDelivery) {
@@ -337,7 +336,7 @@ class ChatProvider extends ChangeNotifier {
   }
 
   /// created message had delivery.
-  _messageDelivery(List params) async {
+  _messageDelivery(List params) {
     final id = params[0];
     final isDelivery = params[1];
     if (this.activedMessages.containsKey(id)) {

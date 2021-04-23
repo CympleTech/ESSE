@@ -11,8 +11,7 @@ use tdn::types::{
 use tdn_storage::local::DStorage;
 
 use crate::migrate::{
-    consensus_migrate, file_migrate, service_migrate, session_migrate, ACCOUNT_DB, CONSENSUS_DB,
-    FILE_DB, SERVICE_DB, SESSION_DB,
+    account_init_migrate, ACCOUNT_DB, ASSISTANT_DB, CONSENSUS_DB, FILE_DB, SERVICE_DB, SESSION_DB,
 };
 
 const FILES_DIR: &'static str = "files";
@@ -338,6 +337,13 @@ pub(crate) fn _service_db(base: &PathBuf, gid: &GroupId) -> Result<DStorage> {
     DStorage::open(db_path)
 }
 
+pub(crate) fn assistant_db(base: &PathBuf, gid: &GroupId) -> Result<DStorage> {
+    let mut db_path = base.clone();
+    db_path.push(gid.to_hex());
+    db_path.push(ASSISTANT_DB);
+    DStorage::open(db_path)
+}
+
 /// account independent db and storage directory.
 pub(crate) async fn account_init(base: &PathBuf, gid: &GroupId) -> Result<()> {
     let mut db_path = base.clone();
@@ -345,8 +351,5 @@ pub(crate) async fn account_init(base: &PathBuf, gid: &GroupId) -> Result<()> {
     init_local_files(&db_path).await?;
 
     // Inner Database.
-    consensus_migrate(&db_path)?;
-    session_migrate(&db_path)?;
-    file_migrate(&db_path)?;
-    service_migrate(&db_path)
+    account_init_migrate(&db_path)
 }

@@ -1,6 +1,6 @@
 #[rustfmt::skip]
 pub(super) const SESSION_VERSIONS: [&str; 3] = [
-  "CREATE TABLE friends(
+  "CREATE TABLE IF NOT EXISTS friends(
     id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
     gid TEXT NOT NULL,
     addr TEXT NOT NULL,
@@ -12,7 +12,7 @@ pub(super) const SESSION_VERSIONS: [&str; 3] = [
     last_message_content TEXT,
     last_message_readed INTEGER,
     is_deleted INTEGER NOT NULL);",
-  "CREATE TABLE requests(
+  "CREATE TABLE IF NOT EXISTS requests(
     id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
     gid TEXT NOT NULL,
     addr TEXT NOT NULL,
@@ -24,7 +24,7 @@ pub(super) const SESSION_VERSIONS: [&str; 3] = [
     is_delivery INTEGER NOT NULL,
     datetime INTEGER NOT NULL,
     is_deleted INTEGER NOT NULL);",
-  "CREATE TABLE messages(
+  "CREATE TABLE IF NOT EXISTS messages(
     id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
     hash TEXT NOT NULL,
     fid INTEGER NOT NULL,

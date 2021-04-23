@@ -6,15 +6,16 @@ import 'package:esse/utils/toast.dart';
 import 'package:esse/utils/pick_image.dart';
 import 'package:esse/utils/pick_file.dart';
 import 'package:esse/l10n/localizations.dart';
-import 'package:esse/models/friend.dart';
-import 'package:esse/models/message.dart';
 import 'package:esse/widgets/emoji.dart';
 import 'package:esse/widgets/shadow_dialog.dart';
 import 'package:esse/widgets/audio_recorder.dart';
 import 'package:esse/widgets/user_info.dart';
-import 'package:esse/widgets/chat_message.dart';
-import 'package:esse/provider/account.dart';
 import 'package:esse/global.dart';
+
+import 'package:esse/apps/chat/provider.dart';
+import 'package:esse/apps/assistant/models.dart';
+import 'package:esse/apps/assistant/provider.dart';
+import 'package:esse/apps/assistant/message.dart';
 
 class AssistantPage extends StatefulWidget {
   const AssistantPage({Key key}) : super(key: key);
@@ -35,6 +36,9 @@ class _AssistantPageState extends State<AssistantPage> {
   @override
   initState() {
     super.initState();
+    Future.delayed(Duration.zero, () {
+        Provider.of<AssistantProvider>(context, listen: false).actived();
+    });
     textFocus.addListener(() {
         if (textFocus.hasFocus) {
           setState(() {
@@ -46,6 +50,12 @@ class _AssistantPageState extends State<AssistantPage> {
     });
   }
 
+  @override
+  void deactivate() {
+    Provider.of<AssistantProvider>(context, listen: false).inactived();
+    super.deactivate();
+  }
+
   _generateRecordPath() {
     this._recordName = DateTime.now().millisecondsSinceEpoch.toString() + '_assistant.m4a';
   }
@@ -55,7 +65,7 @@ class _AssistantPageState extends State<AssistantPage> {
       return;
     }
 
-    // TODO send
+    context.read<AssistantProvider>().create(MessageType.String, textController.text);
 
     setState(() {
         textController.text = '';
@@ -75,7 +85,7 @@ class _AssistantPageState extends State<AssistantPage> {
   void _sendImage() async {
     final image = await pickImage();
     if (image != null) {
-      // TODO send
+      context.read<AssistantProvider>().create(MessageType.Image, image);
     }
     setState(() {
         textFocus.requestFocus();
@@ -89,7 +99,7 @@ class _AssistantPageState extends State<AssistantPage> {
   void _sendFile() async {
     final file = await pickFile();
     if (file != null) {
-      // TODO send
+      context.read<AssistantProvider>().create(MessageType.File, file);
     }
     setState(() {
         textFocus.requestFocus();
@@ -102,7 +112,7 @@ class _AssistantPageState extends State<AssistantPage> {
 
   void _sendRecord(int time) async {
     final raw = Message.rawRecordName(time, _recordName);
-    // TODO send
+    context.read<AssistantProvider>().create(MessageType.Record, raw);
 
     setState(() {
         textFocus.requestFocus();
@@ -147,7 +157,7 @@ class _AssistantPageState extends State<AssistantPage> {
                 return GestureDetector(
                   behavior: HitTestBehavior.opaque,
                   onTap: () async {
-                    // TODO send
+                    context.read<AssistantProvider>().create(MessageType.Contact, "${contact.id}");
                     Navigator.of(context).pop();
                     setState(() {
                         textFocus.requestFocus();
@@ -178,8 +188,7 @@ class _AssistantPageState extends State<AssistantPage> {
     final color = Theme.of(context).colorScheme;
     final lang = AppLocalizations.of(context);
     final isDesktop = isDisplayDesktop(context);
-
-    final recentMessages = {};
+    final recentMessages = context.watch<AssistantProvider>().messages;
     final recentMessageKeys = recentMessages.keys.toList().reversed.toList();
 
     return Column(
@@ -238,22 +247,11 @@ class _AssistantPageState extends State<AssistantPage> {
                 onSelected: (int value) {
                   if (value == 1) {
                     // TODO set top
-                  } else if (value == 2) {
-                    showShadowDialog(
-                      context,
-                      Icons.info,
-                      lang.friendInfo,
-                      UserInfo(
-                        id: 'ES0000000000000000000000000000000000000000000000000000000000000000',
-                        name: 'esse',
-                        addr: '0x0000000000000000000000000000000000000000000000000000000000000000')
-                    );
                   }
                 },
                 itemBuilder: (context) {
                   return <PopupMenuEntry<int>>[
                     _menuItem(color.primary, 1, Icons.vertical_align_top_rounded, lang.cancelTop),
-                    _menuItem(color.primary, 2, Icons.qr_code_rounded, lang.friendInfo),
                   ];
                 },
               )
@@ -266,7 +264,7 @@ class _AssistantPageState extends State<AssistantPage> {
             padding: EdgeInsets.symmetric(horizontal: 20.0),
             itemCount: recentMessageKeys.length,
             reverse: true,
-            itemBuilder: (BuildContext context, index) => ChatMessage(
+            itemBuilder: (BuildContext context, index) => AssistantMessage(
               name: 'esse',
               message: recentMessages[recentMessageKeys[index]],
             )
@@ -416,7 +414,7 @@ class _AssistantPageState extends State<AssistantPage> {
                 icon: Icons.person_rounded,
                 text: lang.contact,
                 action: () => _sendContact(color, lang,
-                  context.read<AccountProvider>().friends.values),
+                  context.read<ChatProvider>().friends.values),
                 bgColor: color.surface,
                 iconColor: color.primary),
             ],

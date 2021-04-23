@@ -1,12 +1,7 @@
-use tdn::types::{
-    primitive::HandleResult,
-    rpc::{json, RpcHandler},
-};
+mod migrate;
+mod models;
+pub(crate) mod rpc;
 
-use crate::rpc::RpcState;
-
-pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
-    handler.add_method("assistant-echo", |_, params, _| async move {
-        Ok(HandleResult::rpc(json!(params)))
-    });
-}
+pub(crate) use migrate::ASSISTANT_VERSIONS;
+pub(crate) use models::{Message, MessageType};
+pub(crate) use rpc::new_rpc_handler;

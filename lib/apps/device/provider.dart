@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'package:esse/global.dart';
 import 'package:esse/rpc.dart';
-
 import 'package:esse/apps/device/models.dart';
 
 class DeviceProvider extends ChangeNotifier {
