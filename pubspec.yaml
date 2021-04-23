@@ -91,6 +91,8 @@ flutter:
     - assets/mnemonic/japanese.txt
     - assets/mnemonic/korean.txt
     - assets/mnemonic/spanish.txt
+    - assets/answers/chinese_simplified.txt
+    - assets/answers/english.txt
   # fonts:
   #   - family: 'Noto'
   #     fonts:

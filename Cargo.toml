@@ -21,7 +21,7 @@ panic = 'abort'
 
 [dependencies]
 log = "0.4"
-rand = "0.7"
+rand = "0.8"
 simplelog = "0.8"
 image = "0.23"
 base64 = "0.13"

@@ -11,11 +11,13 @@ import 'package:esse/widgets/shadow_dialog.dart';
 import 'package:esse/widgets/audio_recorder.dart';
 import 'package:esse/widgets/user_info.dart';
 import 'package:esse/global.dart';
+import 'package:esse/options.dart';
 
 import 'package:esse/apps/chat/provider.dart';
 import 'package:esse/apps/assistant/models.dart';
 import 'package:esse/apps/assistant/provider.dart';
 import 'package:esse/apps/assistant/message.dart';
+import 'package:esse/apps/assistant/answer.dart';
 
 class AssistantPage extends StatefulWidget {
   const AssistantPage({Key key}) : super(key: key);
@@ -32,12 +34,16 @@ class _AssistantPageState extends State<AssistantPage> {
   bool menuShow = false;
   bool recordShow = false;
   String _recordName;
+  List<String> answers;
 
   @override
   initState() {
     super.initState();
-    Future.delayed(Duration.zero, () {
+    Future.delayed(Duration.zero, () async {
         Provider.of<AssistantProvider>(context, listen: false).actived();
+        final options = context.read<Options>();
+        this.answers = await loadAnswers(options.locale);
+        setState(() {});
     });
     textFocus.addListener(() {
         if (textFocus.hasFocus) {
@@ -65,7 +71,9 @@ class _AssistantPageState extends State<AssistantPage> {
       return;
     }
 
-    context.read<AssistantProvider>().create(MessageType.String, textController.text);
+    final value = textController.text.trim();
+    final a_type = (value.endsWith('?') || value.endsWith('？')) ? MessageType.Answer : MessageType.String;
+    context.read<AssistantProvider>().create(a_type, textController.text);
 
     setState(() {
         textController.text = '';
@@ -267,6 +275,7 @@ class _AssistantPageState extends State<AssistantPage> {
             itemBuilder: (BuildContext context, index) => AssistantMessage(
               name: 'esse',
               message: recentMessages[recentMessageKeys[index]],
+              answers: this.answers,
             )
         )),
         Container(

@@ -1,3 +1,4 @@
+use rand::Rng;
 use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
 use tdn::types::{
@@ -18,6 +19,7 @@ pub(crate) enum MessageType {
     Contact,
     Emoji,
     Record,
+    Answer,
 }
 
 impl MessageType {
@@ -29,6 +31,7 @@ impl MessageType {
             MessageType::Contact => 3,
             MessageType::Emoji => 4,
             MessageType::Record => 5,
+            MessageType::Answer => 6,
         }
     }
 
@@ -40,29 +43,29 @@ impl MessageType {
             3 => MessageType::Contact,
             4 => MessageType::Emoji,
             5 => MessageType::Record,
+            6 => MessageType::Answer,
             _ => MessageType::String,
         }
     }
 
     pub async fn handle(
-        &self,
+        self,
         base: &PathBuf,
         mgid: &GroupId,
         content: String,
-    ) -> std::result::Result<String, tdn::types::rpc::RpcError> {
-        match self {
-            MessageType::String => Ok(content),
+    ) -> std::result::Result<Message, tdn::types::rpc::RpcError> {
+        let (q_type, q_raw, a_type, a_raw) = match self {
             MessageType::Image => {
                 let bytes = read_file(&PathBuf::from(content)).await?;
                 let image_name = write_image(base, &mgid, &bytes).await?;
-                Ok(image_name)
+                (self, image_name.clone(), MessageType::Image, image_name)
             }
             MessageType::File => {
                 let file_path = PathBuf::from(content);
                 let bytes = read_file(&file_path).await?;
                 let old_name = file_path.file_name()?.to_str()?;
                 let filename = write_file(base, mgid, old_name, &bytes).await?;
-                Ok(filename)
+                (self, filename.clone(), MessageType::File, filename)
             }
             MessageType::Contact => {
                 let cid: i64 = content.parse().map_err(|_e| new_io_error("id error"))?;
@@ -70,16 +73,22 @@ impl MessageType {
                 let contact = Friend::get_id(&db, cid)??;
                 db.close()?;
                 let tmp_name = contact.name.replace(";", "-;");
-                Ok(format!(
+                let raw = format!(
                     "{};;{};;{}",
                     tmp_name,
                     contact.gid.to_hex(),
                     contact.addr.to_hex()
-                ))
+                );
+                (self, raw.clone(), MessageType::Contact, raw)
             }
-            MessageType::Record => Ok(content),
-            MessageType::Emoji => Ok(content),
-        }
+            MessageType::Answer => {
+                let a_raw = format!("{}", rand::thread_rng().gen_range(0..171));
+                (MessageType::String, content, MessageType::Answer, a_raw)
+            }
+            _ => (self.clone(), content.clone(), self, content),
+        };
+
+        Ok(Message::new(q_type, q_raw, a_type, a_raw))
     }
 }
 

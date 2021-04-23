@@ -56,13 +56,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             let q_content = params[1].as_str()?.to_string();
 
             let base = state.layer.read().await.base().clone();
-            let q_raw = q_type.handle(&base, &gid, q_content).await?;
-
-            // echo
-            let a_type = q_type.clone();
-            let a_content = q_raw.clone();
-
-            let mut msg = Message::new(q_type, q_raw, a_type, a_content);
+            let mut msg = q_type.handle(&base, &gid, q_content).await?;
             let db = assistant_db(state.layer.read().await.base(), &gid)?;
             msg.insert(&db)?;
             db.close()?;

@@ -8,6 +8,7 @@ enum MessageType {
   Contact,
   Emoji,
   Record,
+  Answer,
 }
 
 // use 00-99
@@ -26,6 +27,8 @@ extension MessageTypeExtension on MessageType {
         return 4;
       case MessageType.Record:
         return 5;
+      case MessageType.Answer:
+        return 6;
       default:
         return 0;
     }
@@ -45,6 +48,8 @@ extension MessageTypeExtension on MessageType {
         return MessageType.Emoji;
       case 5:
         return MessageType.Record;
+      case 6:
+        return MessageType.Answer;
       default:
         return MessageType.String;
     }
@@ -92,19 +97,6 @@ class Message {
       return [time, path];
     } else {
       return [0, content];
-    }
-  }
-
-  String shortShow() {
-    switch (this.q_type) {
-      case MessageType.Image:
-        return '[IMAGE]';
-      case MessageType.Record:
-        return '[RECORD]';
-      case MessageType.Contact:
-        return '[CONTACT CARD]';
-      default:
-        return this.q_content;
     }
   }
 

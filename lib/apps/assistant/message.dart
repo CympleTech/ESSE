@@ -20,8 +20,9 @@ import 'package:esse/apps/assistant/models.dart';
 class AssistantMessage extends StatelessWidget {
   final String name;
   final Message message;
+  final List<String> answers;
 
-  const AssistantMessage({Key key, this.name, this.message}): super(key: key);
+  const AssistantMessage({Key key, this.name, this.message, this.answers}): super(key: key);
 
   Widget _showText(context, color, isDesktop, content, isMe) {
     final width = MediaQuery.of(context).size.width * 0.6;
@@ -339,6 +340,10 @@ class AssistantMessage extends StatelessWidget {
       return _showContact(context, lang, color, content);
     } else if (type == MessageType.Record) {
       return  _showRecord(content);
+    } else if (type == MessageType.Answer) {
+      final index = int.parse(content);
+      final value = this.answers != null && this.answers.length > index ? this.answers[index] : content;
+      return _showText(context, color, isDesktop, value, isMe);
     }
     return _showText(context, color, isDesktop, content, isMe);
   }
