@@ -24,7 +24,6 @@ class AssistantProvider extends ChangeNotifier {
   inactived() {
     this.messages.clear();
     this.isActived = false;
-    print("============");
   }
 
   create(MessageType q_type, String q_content) {

@@ -69,6 +69,15 @@ It is recommended to use [rust.sh](./rust.sh) to auto-compile the Rust code
 - for MacOS, run `flutter build macos`, or
 - for Windows, run `flutter build windows`
 
+
+For more information, please visit:
+Website: https://cympletech.com/
+Github: https://github.com/CympleTech/esse
+Twitter: https://twitter.com/cympletech
+E-mail: contact@cympletech.com
+
+ESSE is still in its infancy, both technical and financial support are welcome. Thank you in advance for your support.
+
 ## License
 
 This project is licensed under either of
