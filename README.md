@@ -16,6 +16,8 @@ ESSE, stands for Encrypted Symmetrical Session Engine, positioned as an engine. 
 
 [About ESSE(English)](https://github.com/CympleTech/esse/wiki/About-ESSE) / [关于ESSE(简体中文)](https://github.com/CympleTech/esse/wiki/%E5%85%B3%E4%BA%8E-ESSE)
 
+**ESSE is still in its infancy, both technical and financial support are welcome. Thank you in advance for your support.**
+
 ## Usage
 ### 1. Use Binary executable
 [Download](https://github.com/cympletech/esse/releases)
@@ -69,15 +71,6 @@ It is recommended to use [rust.sh](./rust.sh) to auto-compile the Rust code
 - for MacOS, run `flutter build macos`, or
 - for Windows, run `flutter build windows`
 
-
-For more information, please visit:
-- Website: https://cympletech.com/
-- Github: https://github.com/CympleTech/esse
-- Twitter: https://twitter.com/cympletech
-- E-mail: contact@cympletech.com
-
-**ESSE is still in its infancy, both technical and financial support are welcome. Thank you in advance for your support.**
-
 ## License
 
 This project is licensed under either of
@@ -88,3 +81,10 @@ This project is licensed under either of
    http://opensource.org/licenses/MIT)
 
 at your option.
+
+
+**For more information, please visit:**
+- Website: https://cympletech.com/
+- Github: https://github.com/CympleTech/esse
+- Twitter: https://twitter.com/cympletech
+- E-mail: contact@cympletech.com
