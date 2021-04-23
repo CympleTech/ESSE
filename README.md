@@ -71,12 +71,12 @@ It is recommended to use [rust.sh](./rust.sh) to auto-compile the Rust code
 
 
 For more information, please visit:
-Website: https://cympletech.com/
-Github: https://github.com/CympleTech/esse
-Twitter: https://twitter.com/cympletech
-E-mail: contact@cympletech.com
+- Website: https://cympletech.com/
+- Github: https://github.com/CympleTech/esse
+- Twitter: https://twitter.com/cympletech
+- E-mail: contact@cympletech.com
 
-ESSE is still in its infancy, both technical and financial support are welcome. Thank you in advance for your support.
+**ESSE is still in its infancy, both technical and financial support are welcome. Thank you in advance for your support.**
 
 ## License
 
