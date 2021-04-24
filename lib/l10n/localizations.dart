@@ -77,7 +77,7 @@ abstract class AppLocalizations {
   String get delete;
   String get open;
   String get unknown;
-  String get robotEsse;
+  String get robotJarvis;
 
   // theme
   String get themeDark;

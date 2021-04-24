@@ -17,7 +17,7 @@ class InputText extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 20.0),
       height: 50.0,
       decoration: BoxDecoration(
-        color: focus.hasFocus ? color.primaryVariant : color.surface,
+        color: color.surface,
         border: Border.all(color: focus.hasFocus ? color.primary : color.surface),
         borderRadius: BorderRadius.circular(15.0)
       ),

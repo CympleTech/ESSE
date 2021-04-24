@@ -323,7 +323,7 @@ class _ProfileDetailState extends State<ProfileDetail> {
       _mnemoicWords.asMap().forEach((index, value) {
         mnemonicWordWidgets.add(Chip(
           avatar: CircleAvatar(
-              backgroundColor: color.primary,
+            backgroundColor: Color(0xFF6174FF),
               child: Text("${index + 1}",
                   style: TextStyle(fontSize: 12, color: Colors.white))),
           label: Text(value.trim(), style: TextStyle(fontSize: 16)),

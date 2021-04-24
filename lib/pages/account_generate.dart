@@ -214,7 +214,7 @@ class _AccountGeneratePageState extends State<AccountGeneratePage> {
       this._mnemoicWords.split(" ").asMap().forEach((index, value) {
           mnemonicWordWidgets.add(Chip(
               avatar: CircleAvatar(
-                backgroundColor: color.primary,
+                backgroundColor: Color(0xFF6174FF),
                 child: Text("${index + 1}",
                   style: TextStyle(fontSize: 12, color: Colors.white))),
               label: Text(value.trim(), style: TextStyle(fontSize: 16)),
@@ -231,7 +231,7 @@ class _AccountGeneratePageState extends State<AccountGeneratePage> {
 
     return Column(
       children: <Widget>[
-        _header(lang.newMnemonicTitle, color, () => Navigator.of(context).pop()),
+        _header(lang.newMnemonicTitle, () => Navigator.of(context).pop()),
         SizedBox(height: maxHeight),
         Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -278,7 +278,7 @@ class _AccountGeneratePageState extends State<AccountGeneratePage> {
                       child: Container(
                         height: 45.0,
                         decoration: BoxDecoration(
-                          color: color.primary,
+                          color: Color(0xFF6174FF),
                           borderRadius: BorderRadius.circular(15.0)),
                         child: Center(
                           child: Text(lang.newMnemonicInput,
@@ -327,7 +327,7 @@ class _AccountGeneratePageState extends State<AccountGeneratePage> {
 
     return Column(crossAxisAlignment: CrossAxisAlignment.center, children: <
       Widget>[
-        _header(lang.newAccountTitle, color, () => setState(() { this._isAccount = false; })),
+        _header(lang.newAccountTitle, () => setState(() { this._isAccount = false; })),
         SizedBox(height: maxHeight),
         Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -340,14 +340,13 @@ class _AccountGeneratePageState extends State<AccountGeneratePage> {
               width: 450.0,
               padding: const EdgeInsets.symmetric(horizontal: 20.0),
               decoration: BoxDecoration(
-                color:
-                _nameFocus.hasFocus ? color.primaryVariant : color.surface,
+                color: color.surface,
                 border: Border.all(
                   color: _nameFocus.hasFocus ? color.primary : color.surface),
                 borderRadius: BorderRadius.circular(15.0),
               ),
               child: TextField(
-                style: TextStyle(color: Color(0xFF1C1939), fontSize: 16.0),
+                style: TextStyle(fontSize: 16.0),
                 decoration: InputDecoration(
                   border: InputBorder.none,
                   hintText: lang.newAccountName,
@@ -418,7 +417,7 @@ class _AccountGeneratePageState extends State<AccountGeneratePage> {
   }
 }
 
-Widget _header(String value, ColorScheme color, Function callback) {
+Widget _header(String value, Function callback) {
   return Container(
     width: 700.0,
     child: Row(
@@ -431,7 +430,7 @@ Widget _header(String value, ColorScheme color, Function callback) {
             width: 40.0,
             height: 40.0,
             decoration: BoxDecoration(
-              color: color.primaryVariant,
+              color: Color(0xFF6174FF),
               borderRadius: BorderRadius.circular(15.0)),
             child: Center(child: Icon(Icons.arrow_back, color: Colors.white)),
         )),

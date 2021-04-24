@@ -284,25 +284,12 @@ class _HomeListState extends State<HomeList> {
                                 },
                                 itemBuilder: (context) {
                                   return <PopupMenuEntry<int>>[
-                                    _menuItem(
-                                        color.primary,
-                                        0,
-                                        Icons.qr_code_scanner_rounded,
-                                        lang.scan),
-                                    _menuItem(
-                                        color.primary,
-                                        1,
-                                        Icons.person_add_rounded,
-                                        lang.addFriend,
-                                        provider.systemAppFriendAddNew),
-                                    _menuItem(
-                                        color.primary,
-                                        2,
-                                        Icons.add_business_rounded,
-                                        lang.addGroup,
-                                        provider.systemAppGroupAddNew),
-                                    _menuItem(color.primary, 3,
-                                        Icons.qr_code_rounded, lang.myQrcode),
+                                    _menuItem(0, Icons.qr_code_scanner_rounded, lang.scan),
+                                    _menuItem(1, Icons.person_add_rounded, lang.addFriend,
+                                      provider.systemAppFriendAddNew),
+                                    _menuItem(2, Icons.add_business_rounded, lang.addGroup,
+                                      provider.systemAppGroupAddNew),
+                                    _menuItem(3, Icons.qr_code_rounded, lang.myQrcode),
                                   ];
                                 },
                               )
@@ -548,7 +535,7 @@ class DrawerWidget extends StatelessWidget {
                       trailing: Transform.scale(
                         scale: 0.7,
                         child: CupertinoSwitch(
-                          activeColor: color.primary,
+                          activeColor: Color(0xFF6174FF),
                           value: !isLight,
                           onChanged: (_) {
                             final themeMode =
@@ -575,7 +562,7 @@ class DrawerWidget extends StatelessWidget {
   }
 }
 
-Widget _menuItem(Color color, int value, IconData icon, String text,
+Widget _menuItem(int value, IconData icon, String text,
     [bool hasNew = false]) {
   return PopupMenuItem<int>(
     value: value,
@@ -585,7 +572,7 @@ Widget _menuItem(Color color, int value, IconData icon, String text,
           Container(
             width: 30.0,
             height: 30.0,
-            child: Icon(icon, color: color),
+            child: Icon(icon, color: Color(0xFF6174FF)),
           ),
           if (hasNew)
             Positioned(

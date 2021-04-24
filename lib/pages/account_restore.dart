@@ -58,7 +58,7 @@ class _AccountRestorePageState extends State<AccountRestorePage> {
     this._mnemoicWords.asMap().forEach((index, value) {
       mnemonicWordWidgets.add(Chip(
           avatar: CircleAvatar(
-              backgroundColor: color.primary,
+              backgroundColor: Color(0xFF6174FF),
               child: Text("${index + 1}",
                   style: TextStyle(fontSize: 12, color: Colors.white))),
           label: Text(value.trim(), style: TextStyle(fontSize: 16)),
@@ -87,7 +87,7 @@ class _AccountRestorePageState extends State<AccountRestorePage> {
                               width: 40.0,
                               height: 40.0,
                               decoration: BoxDecoration(
-                                color: color.primaryVariant,
+                                color: Color(0xFF6174FF),
                                 borderRadius: BorderRadius.circular(15.0)),
                               child: Center(
                                 child: Icon(Icons.arrow_back, color: Colors.white)),
@@ -125,9 +125,7 @@ class _AccountRestorePageState extends State<AccountRestorePage> {
                                   padding: const EdgeInsets.symmetric(
                                     horizontal: 20.0),
                                   decoration: BoxDecoration(
-                                    color: this._addrFocus.hasFocus
-                                    ? color.primaryVariant
-                                    : color.surface,
+                                    color: color.surface,
                                     border: Border.all(
                                       color: this._addrFocus.hasFocus
                                       ? color.primary
@@ -135,9 +133,7 @@ class _AccountRestorePageState extends State<AccountRestorePage> {
                                     borderRadius: BorderRadius.circular(15.0),
                                   ),
                                   child: TextField(
-                                    style: TextStyle(
-                                      color: Color(0xFF1C1939),
-                                      fontSize: 16.0),
+                                    style: TextStyle(fontSize: 16.0),
                                     decoration: InputDecoration(
                                       border: InputBorder.none,
                                       hintText: lang.address),
@@ -171,7 +167,7 @@ class _AccountRestorePageState extends State<AccountRestorePage> {
                                     height: 45.0,
                                     decoration: BoxDecoration(
                                       color: this._addrChecked
-                                      ? color.primary
+                                      ? Color(0xFF6174FF)
                                       : Color(0xFFADB0BB),
                                       borderRadius:
                                       BorderRadius.circular(15.0)),
@@ -215,7 +211,7 @@ class _AccountRestorePageState extends State<AccountRestorePage> {
                                 height: 40.0,
                                 child: CircleAvatar(
                                   backgroundColor: this._wordFocus.hasFocus
-                                  ? color.primary
+                                  ? Color(0xFF6174FF)
                                   : color.surface,
                                   child: Text(
                                     (this._mnemoicWords.length + 1)
@@ -229,9 +225,7 @@ class _AccountRestorePageState extends State<AccountRestorePage> {
                                   padding: const EdgeInsets.symmetric(
                                     horizontal: 20.0),
                                   decoration: BoxDecoration(
-                                    color: this._wordFocus.hasFocus
-                                    ? color.primaryVariant
-                                    : color.surface,
+                                    color: color.surface,
                                     border: Border.all(
                                       color: this._wordFocus.hasFocus
                                       ? color.primary
@@ -267,7 +261,7 @@ class _AccountRestorePageState extends State<AccountRestorePage> {
                                     height: 45.0,
                                     decoration: BoxDecoration(
                                       color: this._wordChecked
-                                      ? color.primary
+                                      ? Color(0xFF6174FF)
                                       : Color(0xFFADB0BB),
                                       borderRadius:
                                       BorderRadius.circular(15.0)),

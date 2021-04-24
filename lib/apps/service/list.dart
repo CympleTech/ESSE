@@ -72,14 +72,14 @@ class _ListService extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Expanded(
-                      child: Text('esse',
+                      child: Text('Jarvis',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(fontSize: 16.0))
                     ),
                     SizedBox(height: 5.0),
                     Expanded(
-                      child: Text(lang.robotEsse,
+                      child: Text(lang.robotJarvis,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(color: Color(0xFFADB0BB), fontSize: 12.0)),

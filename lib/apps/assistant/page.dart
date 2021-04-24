@@ -220,7 +220,7 @@ class _AssistantPageState extends State<AssistantPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('esse',
+                    Text('Jarvis',
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
                     SizedBox(height: 6.0),
@@ -259,7 +259,7 @@ class _AssistantPageState extends State<AssistantPage> {
                 },
                 itemBuilder: (context) {
                   return <PopupMenuEntry<int>>[
-                    _menuItem(color.primary, 1, Icons.vertical_align_top_rounded, lang.cancelTop),
+                    _menuItem(Color(0xFF6174FF), 1, Icons.vertical_align_top_rounded, lang.cancelTop),
                   ];
                 },
               )
@@ -273,7 +273,7 @@ class _AssistantPageState extends State<AssistantPage> {
             itemCount: recentMessageKeys.length,
             reverse: true,
             itemBuilder: (BuildContext context, index) => AssistantMessage(
-              name: 'esse',
+              name: 'Jarvis',
               message: recentMessages[recentMessageKeys[index]],
               answers: this.answers,
             )

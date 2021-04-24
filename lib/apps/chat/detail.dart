@@ -349,12 +349,12 @@ class _ChatDetailState extends State<ChatDetail> {
                 },
                 itemBuilder: (context) {
                   return <PopupMenuEntry<int>>[
-                    _menuItem(color.primary, 1, Icons.vertical_align_top_rounded, this.friend.isTop ? lang.cancelTop : lang.setTop),
-                    _menuItem(color.primary, 2, Icons.qr_code_rounded, lang.friendInfo),
+                    _menuItem(Color(0xFF6174FF), 1, Icons.vertical_align_top_rounded, this.friend.isTop ? lang.cancelTop : lang.setTop),
+                    _menuItem(Color(0xFF6174FF), 2, Icons.qr_code_rounded, lang.friendInfo),
                     //_menuItem(color.primary, 3, Icons.turned_in_rounded, lang.remark),
                     this.friend.isClosed
-                    ? _menuItem(color.primary, 5, Icons.send_rounded, lang.addFriend)
-                    : _menuItem(color.primary, 4, Icons.block_rounded, lang.unfriend),
+                    ? _menuItem(Color(0xFF6174FF), 5, Icons.send_rounded, lang.addFriend)
+                    : _menuItem(Color(0xFF6174FF), 4, Icons.block_rounded, lang.unfriend),
                     _menuItem(Colors.red, 6, Icons.delete_rounded, lang.delete),
                   ];
                 },

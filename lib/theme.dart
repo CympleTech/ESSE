@@ -60,8 +60,8 @@ class AppTheme {
   );
 
   static const ColorScheme darkColorScheme = ColorScheme(
-    primary: Color(0xFF009688),
-    primaryVariant: Color(0xFF4DB6AC),
+    primary: Colors.white, //Color(0xFF009688),
+    primaryVariant: Color(0xFFADB0BB), //Color(0xFF4DB6AC),
     secondary: Color(0xFF4D1F7C),
     secondaryVariant: Color(0xFF451B6F),
     background: Color(0xFF241E30),

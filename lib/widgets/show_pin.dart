@@ -152,10 +152,10 @@ class _PinWordsState extends State<PinWords> {
             margin: EdgeInsets.all(5.0),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(15.0),
-              color: color.primary,
+              color: Color(0xFF6174FF),
               boxShadow: [
                 BoxShadow(
-                  color: color.primary.withOpacity(0.5),
+                  color: Color(0x2A6174FF),
                   spreadRadius: 0.0,
                   blurRadius: 10.0,
                   offset: Offset(0, 10),
@@ -291,10 +291,10 @@ class _SetPinWordsState extends State<SetPinWords> {
             margin: EdgeInsets.all(5.0),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(15.0),
-              color: color.primary,
+              color: Color(0xFF6174FF),
               boxShadow: [
                 BoxShadow(
-                  color: color.primary.withOpacity(0.5),
+                  color: Color(0x2A6174FF),
                   spreadRadius: 0.0,
                   blurRadius: 10.0,
                   offset: Offset(0, 10),

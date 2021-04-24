@@ -19,15 +19,13 @@ class ButtonText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = Theme.of(context).colorScheme;
-
     return InkWell(
       onTap: this.enable ? action : () {},
       child: Container(
         width: width,
         height: height,
         decoration: BoxDecoration(
-          color: this.enable ? color.primary : Color(0xFFADB0BB),
+          color: this.enable ? Color(0xFF6174FF) : Color(0xFFADB0BB),
           borderRadius: BorderRadius.circular(15.0)),
         child: Center(child: Text(text, style: TextStyle(
               fontSize: 20.0,

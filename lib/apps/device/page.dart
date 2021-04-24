@@ -127,7 +127,7 @@ class _DevicesPageState extends State<DevicesPage> {
         children: <Widget>[
           ListTile(
             leading: (isLocal || device.online)
-            ? Icon(Icons.cloud_done_rounded, size: 38.0, color: Colors.green)
+            ? Icon(Icons.cloud_done_rounded, size: 38.0, color: Color(0xFF6174FF))
             : Icon(Icons.cloud_off_rounded, size: 38.0, color: Colors.grey),
             title: Text(name),
             subtitle: Container(
@@ -386,7 +386,7 @@ class _DeviceListenPageState extends State<DeviceListenPage> {
                             status.cpu_p(),
                             "CPU: ${status.cpu_u()} cores",
                             radius,
-                            color.primary,
+                            Color(0xFF6174FF),
                           ),
                           percentWidget(
                             status.memory_p(),

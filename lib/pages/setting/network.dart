@@ -101,7 +101,7 @@ class _NetworkDetailState extends State<NetworkDetail> {
           width: 500.0,
           padding: const EdgeInsets.all(20.0),
           decoration: BoxDecoration(
-            color: color.primary, borderRadius: BorderRadius.circular(15.0)),
+            color: Color(0xFF6174FF), borderRadius: BorderRadius.circular(15.0)),
           child: Row(children: [
               Container(
                 width: 40.0,
@@ -110,7 +110,7 @@ class _NetworkDetailState extends State<NetworkDetail> {
                 decoration: BoxDecoration(
                   color: color.background,
                   borderRadius: BorderRadius.circular(15.0)),
-                child: Icon(Icons.info, color: color.primary, size: 24.0),
+                child: Icon(Icons.info, color: Color(0xFF6174FF), size: 24.0),
               ),
               Expanded(
                 child: Text(

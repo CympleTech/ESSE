@@ -31,7 +31,7 @@ class AssistantMessage extends StatelessWidget {
       constraints: BoxConstraints(minWidth: 50, maxWidth: isDesktop ? width - 300.0 : width),
       padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 14.0),
       decoration: BoxDecoration(
-        color: isMe ? color.primary : color.primaryVariant,
+        color: isMe ? Color(0xFF6174FF) : color.primaryVariant,
         borderRadius: BorderRadius.circular(15.0),
       ),
       child: Text(content,
