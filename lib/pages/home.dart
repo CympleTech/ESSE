@@ -96,32 +96,32 @@ class HomeList extends StatefulWidget {
   _HomeListState createState() => _HomeListState();
 }
 
-class _HomeListState extends State<HomeList> {
+class _HomeListState extends State<HomeList> with SingleTickerProviderStateMixin {
   bool isShowHome = true;
   bool isShowFriends = false;
   bool isShowGroups = false;
   bool isShowFiles = false;
 
   bool isProcess = true;
-  double processNum = 0.0;
-  Timer timer;
+  AnimationController controller;
 
   @override
   void initState() {
-    super.initState();
-    timer = Timer.periodic(Duration(seconds: 1), (Timer _t) {
-      processNum += 0.1;
-      if (processNum > 1.0) {
-        isProcess = false;
-        timer?.cancel();
-      }
-      setState(() {});
+    controller = AnimationController(
+      vsync: this, duration: const Duration(seconds: 5)
+    )..addListener(() {
+        if (controller.value == 1.0) {
+          isProcess = false;
+        }
+        setState(() {});
     });
+    controller.forward();
+    super.initState();
   }
 
   @override
   void dispose() {
-    timer?.cancel();
+    controller.dispose();
     super.dispose();
   }
 
@@ -319,7 +319,7 @@ class _HomeListState extends State<HomeList> {
               ? LinearProgressIndicator(
                   backgroundColor: Color(0x40ADB0BB),
                   valueColor: AlwaysStoppedAnimation(color.primary),
-                  value: processNum,
+                  value: controller.value,
                 )
               : const Divider(height: 1.0, color: Color(0x40ADB0BB)),
           const SizedBox(height: 5.0),
