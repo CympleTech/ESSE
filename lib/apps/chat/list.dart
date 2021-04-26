@@ -89,7 +89,7 @@ class ListChat extends StatelessWidget {
                           ),
                         )
                     ]),
-                    SizedBox(height: 5.0),
+                    const SizedBox(height: 4.0),
                     Row(
                       children: [
                         Expanded(

@@ -105,16 +105,24 @@ class ListInnerService extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: Text(this.name, maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(fontSize: 16.0))
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(this.name, maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(fontSize: 16.0)))
+                      ]
                     ),
-                    Expanded(
-                      child: Text(this.bio, maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(color: Color(0xFFADB0BB), fontSize: 12.0)),
-                    ),
+                    const SizedBox(height: 4.0),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(this.bio, maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(color: Color(0xFFADB0BB), fontSize: 12.0)),
+                        ),
+                      ]
+                    )
                   ],
                 ),
               ),
