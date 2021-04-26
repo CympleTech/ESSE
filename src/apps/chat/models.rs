@@ -491,7 +491,9 @@ impl Request {
     }
 
     pub fn to_friend(self) -> Friend {
-        Friend::new(self.gid, self.addr, self.name, self.remark)
+        let mut friend = Friend::new(self.gid, self.addr, self.name, self.remark);
+        friend.is_top = true; // default set to top page.
+        friend
     }
 
     /// here is zero-copy and unwrap is safe. checked.

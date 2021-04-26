@@ -58,6 +58,7 @@ class ChatProvider extends ChangeNotifier {
     this.orderKeys.clear();
     this.requests.clear();
     this.activedMessages.clear();
+    this.topKeys.clear();
   }
 
   updateActived() {
@@ -65,6 +66,7 @@ class ChatProvider extends ChangeNotifier {
 
     // load friends.
     rpc.send('chat-friend-list', []);
+    notifyListeners();
   }
 
   updateActivedFriend(int id) {

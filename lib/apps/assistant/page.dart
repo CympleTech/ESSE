@@ -19,14 +19,26 @@ import 'package:esse/apps/assistant/provider.dart';
 import 'package:esse/apps/assistant/message.dart';
 import 'package:esse/apps/assistant/answer.dart';
 
-class AssistantPage extends StatefulWidget {
+class AssistantPage extends StatelessWidget {
   const AssistantPage({Key key}) : super(key: key);
 
   @override
-  _AssistantPageState createState() => _AssistantPageState();
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: SafeArea(
+        child: AssistantDetail(),
+    ));
+  }
 }
 
-class _AssistantPageState extends State<AssistantPage> {
+class AssistantDetail extends StatefulWidget {
+  const AssistantDetail({Key key}) : super(key: key);
+
+  @override
+  _AssistantDetailState createState() => _AssistantDetailState();
+}
+
+class _AssistantDetailState extends State<AssistantDetail> {
   TextEditingController textController = TextEditingController();
   FocusNode textFocus = FocusNode();
   bool emojiShow = false;

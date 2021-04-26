@@ -78,8 +78,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get open => 'Open';
   @override
   String get unknown => 'Unknown';
-  @override
-  String get robotJarvis => 'Jarvis is a robot, only belongs to you.';
 
   // theme
   @override
@@ -128,8 +126,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get chats => 'Sessions';
   @override
   String get groups => 'Services';
-  @override
-  String get files => 'Files';
   @override
   String get devices => 'Devices';
   @override
@@ -222,4 +218,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get website => 'Website';
   @override
   String get email => 'Email';
+
+  // services
+  @override
+  String get files => 'Files';
+  @override
+  String get filesBio => 'Sync & manager files between devices';
+  @override
+  String get assistant => 'Jarvis';
+  @override
+  String get assistantBio => 'Jarvis is a robot, only belongs to you.';
 }

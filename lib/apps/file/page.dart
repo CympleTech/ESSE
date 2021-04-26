@@ -84,11 +84,10 @@ class _FolderListState extends State<FolderList> {
     final color = Theme.of(context).colorScheme;
     final isDesktop = isDisplayDesktop(context);
 
-    return Expanded(
-      child: ListView.builder(
-        itemCount: FILE_DIRECTORY.length,
-        itemBuilder: (BuildContext ctx, int index) => item(index, color, isDesktop),
-    ));
+    return ListView.builder(
+      itemCount: FILE_DIRECTORY.length,
+      itemBuilder: (BuildContext ctx, int index) => item(index, color, isDesktop),
+    );
   }
 }
 

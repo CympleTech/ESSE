@@ -23,11 +23,10 @@ class _ChatListState extends State<ChatList> {
     final friends = provider.friends;
     final chatKeys = provider.orderKeys;
 
-    return Expanded(
-      child: ListView.builder(
-        itemCount: chatKeys.length,
-        itemBuilder: (BuildContext ctx, int index) => ListChat(friend: friends[chatKeys[index]]),
-    ));
+    return ListView.builder(
+      itemCount: chatKeys.length,
+      itemBuilder: (BuildContext ctx, int index) => ListChat(friend: friends[chatKeys[index]]),
+    );
   }
 }
 

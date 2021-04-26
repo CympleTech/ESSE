@@ -31,6 +31,7 @@ import 'package:esse/apps/chat/add.dart';
 import 'package:esse/apps/file/page.dart';
 import 'package:esse/apps/service/list.dart';
 import 'package:esse/apps/service/add.dart';
+import 'package:esse/apps/assistant/page.dart';
 
 class HomePage extends StatelessWidget {
   static GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<ScaffoldState>();
@@ -89,7 +90,6 @@ class HomePage extends StatelessWidget {
 
 class HomeList extends StatefulWidget {
   final GlobalKey<ScaffoldState> _scaffoldKey;
-
   HomeList(this._scaffoldKey);
 
   @override
@@ -97,11 +97,6 @@ class HomeList extends StatefulWidget {
 }
 
 class _HomeListState extends State<HomeList> with SingleTickerProviderStateMixin {
-  bool isShowHome = true;
-  bool isShowFriends = false;
-  bool isShowGroups = false;
-  bool isShowFiles = false;
-
   bool isProcess = true;
   AnimationController controller;
 
@@ -125,70 +120,34 @@ class _HomeListState extends State<HomeList> with SingleTickerProviderStateMixin
     super.dispose();
   }
 
-  showHome() {
-    setState(() {
-      this.isShowHome = true;
-      this.isShowFriends = false;
-      this.isShowGroups = false;
-      this.isShowFiles = false;
-    });
-  }
-
-  showFriends() {
-    setState(() {
-      this.isShowHome = false;
-      this.isShowFriends = true;
-      this.isShowGroups = false;
-      this.isShowFiles = false;
-    });
-  }
-
-  showGroups() {
-    setState(() {
-      this.isShowHome = false;
-      this.isShowFriends = false;
-      this.isShowGroups = true;
-      this.isShowFiles = false;
-    });
-  }
-
-  showFiles() {
-    setState(() {
-      this.isShowHome = false;
-      this.isShowFriends = false;
-      this.isShowGroups = false;
-      this.isShowFiles = true;
-    });
-  }
-
-  scanQr(bool isDesktop) {
+  _scanQr(bool isDesktop) {
     Navigator.push(
-        context,
-        MaterialPageRoute(
-            builder: (context) => QRScan(callback: (isOk, app, params) {
-                  Navigator.of(context).pop();
-                  if (app == 'add-friend' && params.length == 3) {
-                    final id = params[0];
-                    final addr = params[1];
-                    final name = params[2];
-                    final widget = ChatAddPage(id: id, addr: addr, name: name);
-                    Provider.of<AccountProvider>(context, listen: false)
-                        .systemAppGroupAddNew = false;
-                    if (isDesktop) {
-                      Provider.of<AccountProvider>(context, listen: false)
-                          .updateActivedApp(widget);
-                    } else {
-                      Navigator.push(
-                          context, MaterialPageRoute(builder: (_) => widget));
-                    }
-                  } else if (app == 'distribute' && params.length == 4) {
-                    final _name = params[0];
-                    final id = params[1];
-                    final addr = params[2];
-                    final _mnemonicWords = params[3];
-                    Provider.of<DeviceProvider>(context, listen: false).connect(addr);
-                  }
-                })));
+      context,
+      MaterialPageRoute(
+        builder: (context) => QRScan(callback: (isOk, app, params) {
+            Navigator.of(context).pop();
+            if (app == 'add-friend' && params.length == 3) {
+              final id = params[0];
+              final addr = params[1];
+              final name = params[2];
+              final widget = ChatAddPage(id: id, addr: addr, name: name);
+              Provider.of<AccountProvider>(context, listen: false)
+              .systemAppGroupAddNew = false;
+              if (isDesktop) {
+                Provider.of<AccountProvider>(context, listen: false)
+                .updateActivedApp(widget);
+              } else {
+                Navigator.push(
+                  context, MaterialPageRoute(builder: (_) => widget));
+              }
+            } else if (app == 'distribute' && params.length == 4) {
+              final _name = params[0];
+              final id = params[1];
+              final addr = params[2];
+              final _mnemonicWords = params[3];
+              Provider.of<DeviceProvider>(context, listen: false).connect(addr);
+            }
+    })));
   }
 
   @override
@@ -221,94 +180,79 @@ class _HomeListState extends State<HomeList> with SingleTickerProviderStateMixin
                 ),
                 Expanded(
                   child: Center(
-                    child: Text(
-                      isShowFriends
-                      ? lang.chats
-                      : (isShowGroups
-                        ? lang.groups
-                        : (isShowFiles ? lang.files : '')),
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
+                    child: Text(provider.homeShowTitle, style: TextStyle(fontWeight: FontWeight.bold)),
                 )),
                 Icon(Icons.search_rounded, color: color.primary),
                 const SizedBox(width: 20.0),
                 Stack(
                   children: <Widget>[
                     Container(
-                        width: 28.0,
-                        height: 28.0,
-                        child: this.isShowHome
-                            ? PopupMenuButton<int>(
-                                shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(15)),
-                                color: const Color(0xFFEDEDED),
-                                child: Icon(Icons.add_circle_outline_rounded,
-                                    color: color.primary),
-                                onSelected: (int value) {
-                                  if (value == 0) {
-                                    scanQr(isDesktop);
-                                  } else if (value == 1) {
-                                    final widget = ChatAddPage();
-                                    if (isDesktop) {
-                                      provider.updateActivedApp(widget);
-                                    } else {
-                                      provider.systemAppFriendAddNew = false;
-                                      setState(() {});
-                                      Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                              builder: (_) => widget));
-                                    }
-                                  } else if (value == 2) {
-                                    final widget = GroupAddPage();
-                                    if (isDesktop) {
-                                      provider.updateActivedApp(widget);
-                                    } else {
-                                      provider.systemAppFriendAddNew = false;
-                                      setState(() {});
-                                      Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                              builder: (_) => widget));
-                                    }
-                                  } else if (value == 3) {
-                                    showShadowDialog(
-                                        context,
-                                        Icons.info,
-                                        lang.info,
-                                        UserInfo(
-                                            id: provider.activedAccount.id,
-                                            name: provider.activedAccount.name,
-                                            addr: Global.addr));
-                                  }
-                                },
-                                itemBuilder: (context) {
-                                  return <PopupMenuEntry<int>>[
-                                    _menuItem(0, Icons.qr_code_scanner_rounded, lang.scan),
-                                    _menuItem(1, Icons.person_add_rounded, lang.addFriend,
-                                      provider.systemAppFriendAddNew),
-                                    _menuItem(2, Icons.add_business_rounded, lang.addGroup,
-                                      provider.systemAppGroupAddNew),
-                                    _menuItem(3, Icons.qr_code_rounded, lang.myQrcode),
-                                  ];
-                                },
-                              )
-                            : GestureDetector(
-                                onTap: showHome,
-                                child: Icon(Icons.home_outlined,
-                                    color: color.primary))),
-                    if (provider.systemAppFriendAddNew ||
-                        provider.systemAppGroupAddNew)
-                      Positioned(
-                          top: 0,
-                          right: 0,
-                          child: Container(
-                              width: 8.0,
-                              height: 8.0,
-                              decoration: BoxDecoration(
-                                color: Colors.red,
-                                shape: BoxShape.circle,
-                              ))),
+                      width: 28.0,
+                      height: 28.0,
+                      child: provider.homeShowTitle == ''
+                      ? PopupMenuButton<int>(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(15)),
+                        color: const Color(0xFFEDEDED),
+                        child: Icon(Icons.add_circle_outline_rounded,
+                          color: color.primary),
+                        onSelected: (int value) {
+                          if (value == 0) {
+                            _scanQr(isDesktop);
+                          } else if (value == 1) {
+                            final widget = ChatAddPage();
+                            if (isDesktop) {
+                              provider.updateActivedApp(widget);
+                            } else {
+                              provider.systemAppFriendAddNew = false;
+                              setState(() {});
+                              Navigator.push(context, MaterialPageRoute(builder: (_) => widget));
+                            }
+                          } else if (value == 2) {
+                            final widget = GroupAddPage();
+                            if (isDesktop) {
+                              provider.updateActivedApp(widget);
+                            } else {
+                              provider.systemAppFriendAddNew = false;
+                              setState(() {});
+                              Navigator.push(context, MaterialPageRoute(builder: (_) => widget));
+                            }
+                          } else if (value == 3) {
+                            showShadowDialog(
+                              context,
+                              Icons.info,
+                              lang.info,
+                              UserInfo(
+                                id: provider.activedAccount.id,
+                                name: provider.activedAccount.name,
+                                addr: Global.addr)
+                            );
+                          }
+                        },
+                        itemBuilder: (context) {
+                          return <PopupMenuEntry<int>>[
+                            _menuItem(0, Icons.qr_code_scanner_rounded, lang.scan),
+                            _menuItem(1, Icons.person_add_rounded, lang.addFriend,
+                              provider.systemAppFriendAddNew),
+                            _menuItem(2, Icons.add_business_rounded, lang.addGroup,
+                              provider.systemAppGroupAddNew),
+                            _menuItem(3, Icons.qr_code_rounded, lang.myQrcode),
+                          ];
+                        },
+                      )
+                      : GestureDetector(onTap: () => provider.updateToHome(),
+                        child: Icon(Icons.home_outlined, color: color.primary))),
+                    if (provider.systemAppFriendAddNew || provider.systemAppGroupAddNew)
+                    Positioned(
+                      top: 0,
+                      right: 0,
+                      child: Container(
+                        width: 8.0,
+                        height: 8.0,
+                        decoration: BoxDecoration(
+                          color: Colors.red,
+                          shape: BoxShape.circle,
+                    ))),
                   ],
                 ),
               ],
@@ -316,41 +260,16 @@ class _HomeListState extends State<HomeList> with SingleTickerProviderStateMixin
           ),
           const SizedBox(height: 10.0),
           isProcess
-              ? LinearProgressIndicator(
-                  backgroundColor: Color(0x40ADB0BB),
-                  valueColor: AlwaysStoppedAnimation(color.primary),
-                  value: controller.value,
-                )
-              : const Divider(height: 1.0, color: Color(0x40ADB0BB)),
+          ? LinearProgressIndicator(
+            backgroundColor: Color(0x40ADB0BB),
+            valueColor: AlwaysStoppedAnimation(color.primary),
+            value: controller.value,
+          )
+          : const Divider(height: 1.0, color: Color(0x40ADB0BB)),
           const SizedBox(height: 5.0),
-          if (this.isShowHome)
-            Column(children: [
-              ListSystemApp(
-                  name: lang.chats,
-                  icon: Icons.people_rounded,
-                  callback: () => showFriends()),
-              ListSystemApp(
-                  name: lang.groups,
-                  icon: Icons.grid_view_rounded,
-                  callback: () => showGroups()),
-              ListSystemApp(
-                  name: lang.files,
-                  icon: Icons.folder_rounded,
-                  callback: () => showFiles()),
-              const SizedBox(height: 5.0),
-              const Divider(height: 1.0, color: Color(0x40ADB0BB)),
-              const SizedBox(height: 5.0),
-          ]),
-          if (this.isShowHome)
           Expanded(
-            child: ListView.builder(
-              itemCount: chatTops.length,
-              itemBuilder: (BuildContext ctx, int index) => ListChat(
-                friend: friends[chatTops.keys.elementAt(index)]),
-          )),
-          if (this.isShowFriends) ChatList(),
-          if (this.isShowGroups) ServiceList(),
-          if (this.isShowFiles) FolderList(),
+            child: provider.homeShowWidget,
+          )
         ],
       ),
     );

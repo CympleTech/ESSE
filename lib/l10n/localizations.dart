@@ -77,7 +77,6 @@ abstract class AppLocalizations {
   String get delete;
   String get open;
   String get unknown;
-  String get robotJarvis;
 
   // theme
   String get themeDark;
@@ -106,7 +105,6 @@ abstract class AppLocalizations {
   String get addGroup;
   String get chats;
   String get groups;
-  String get files;
   String get devices;
   String get nightly;
   String get scan;
@@ -155,6 +153,12 @@ abstract class AppLocalizations {
   String get donate;
   String get website;
   String get email;
+
+  // services
+  String get files;
+  String get filesBio;
+  String get assistant;
+  String get assistantBio;
 }
 
 class _AppLocalizationsDelegate

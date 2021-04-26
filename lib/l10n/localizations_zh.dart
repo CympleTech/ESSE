@@ -78,8 +78,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get open => '打开';
   @override
   String get unknown => '未知';
-  @override
-  String get robotJarvis => 'Jarvis 是个机器人，只属于你。';
 
   // theme
   @override
@@ -128,8 +126,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get chats => '聊天列表';
   @override
   String get groups => '服务列表';
-  @override
-  String get files => '文件管理';
   @override
   String get devices => '关联设备';
   @override
@@ -222,4 +218,14 @@ class AppLocalizationsZh extends AppLocalizations {
   String get website => '官网';
   @override
   String get email => '联系邮件';
+
+  // services
+  @override
+  String get files => '文件管理';
+  @override
+  String get filesBio => '同步和管理各设备上的文件';
+  @override
+  String get assistant => 'Jarvis';
+  @override
+  String get assistantBio => 'Jarvis 是个机器人，只属于你。';
 }

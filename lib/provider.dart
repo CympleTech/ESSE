@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:esse/account.dart';
 import 'package:esse/utils/logined_cache.dart';
 import 'package:esse/widgets/default_core_show.dart';
+import 'package:esse/widgets/default_home_show.dart';
 import 'package:esse/global.dart';
 import 'package:esse/rpc.dart';
 
@@ -23,9 +24,14 @@ class AccountProvider extends ChangeNotifier {
   /// current user's did.
   String get id => this.activedAccount.id;
 
+  String homeShowTitle = '';
+  Widget defaultListShow = DefaultHomeShow();
+  Widget currentListShow = null;
   Widget coreShowWidget = DefaultCoreShow();
   bool systemAppFriendAddNew = false;
   bool systemAppGroupAddNew = false;
+
+  Widget get homeShowWidget => this.currentListShow ?? this.defaultListShow;
 
   AccountProvider() {
     // rpc notice when account not actived.
@@ -86,8 +92,8 @@ class AccountProvider extends ChangeNotifier {
     this.clearActivedAccount();
     this.activedAccountId = gid;
     this.activedAccount.hasNew = false;
-
-    rpc.send('friend-list', []);
+    this.coreShowWidget = DefaultCoreShow();
+    this.currentListShow = null;
 
     if (!this.activedAccount.online) {
       this.activedAccount.online = true;
@@ -103,6 +109,7 @@ class AccountProvider extends ChangeNotifier {
   logout() {
     this.accounts.clear();
     this.clearActivedAccount();
+    this.currentListShow = null;
     rpc.send('account-logout', []);
     clearLogined();
   }
@@ -130,8 +137,20 @@ class AccountProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  updateActivedApp(Widget widget) {
-    this.coreShowWidget = widget;
+  updateToHome() {
+    this.homeShowTitle = '';
+    this.currentListShow = null;
+    notifyListeners();
+  }
+
+  updateActivedApp([Widget coreWidget, String title, Widget homeWidget]) {
+    if (homeWidget != null && title != null) {
+      this.homeShowTitle = title;
+      this.currentListShow = homeWidget;
+    }
+    if (coreWidget != null) {
+      this.coreShowWidget = coreWidget;
+    }
     this.systemAppFriendAddNew = false;
     notifyListeners();
   }

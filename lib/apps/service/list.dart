@@ -5,8 +5,16 @@ import 'package:esse/utils/adaptive.dart';
 import 'package:esse/l10n/localizations.dart';
 import 'package:esse/provider.dart';
 
+import 'package:esse/apps/service/models.dart';
 import 'package:esse/apps/assistant/page.dart';
 import 'package:esse/apps/assistant/provider.dart';
+import 'package:esse/apps/assistant/models.dart';
+import 'package:esse/apps/file/page.dart';
+
+const List<InnerService> INNER_SERVICES = [
+  InnerService.Files,
+  InnerService.Assistant,
+];
 
 class ServiceList extends StatefulWidget {
   const ServiceList({Key key}) : super(key: key);
@@ -18,34 +26,60 @@ class ServiceList extends StatefulWidget {
 class _ServiceListState extends State<ServiceList> {
   @override
   Widget build(BuildContext context) {
-    final serviceKeys = [1];
-    final services = {};
-
-    return Expanded(
-      child: ListView.builder(
-        itemCount: serviceKeys.length,
-        itemBuilder: (BuildContext ctx, int index) => _ListService(),
-    ));
-  }
-}
-
-class _ListService extends StatelessWidget {
-  const _ListService({Key key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    final color = Theme.of(context).colorScheme;
     final lang = AppLocalizations.of(context);
     final isDesktop = isDisplayDesktop(context);
 
+    return Column(
+      children: [
+        Column(
+          children: INNER_SERVICES.map((v) {
+              final params = v.params(lang);
+              return ListInnerService(
+                name: params[0],
+                bio: params[1],
+                logo: params[2],
+                callback: () => v.callback(context, isDesktop, lang),
+                isDesktop: isDesktop,
+              );
+          }).toList()
+        ),
+        // Expanded(
+        //   child: ListView.builder(
+        //     itemCount: serviceKeys.length,
+        //     itemBuilder: (BuildContext ctx, int index) => _ListService(),
+        // )),
+      ]
+    );
+  }
+}
+
+class ListInnerService extends StatelessWidget {
+  final String name;
+  final String bio;
+  final String logo;
+  final Function callback;
+  final bool isDesktop;
+
+  const ListInnerService({Key key,
+      this.name, this.bio, this.logo, this.callback, this.isDesktop
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () {
-        final widget = AssistantPage();
-        if (isDesktop) {
-          Provider.of<AccountProvider>(context, listen: false).updateActivedApp(widget);
-        } else {
-          Navigator.push(context, MaterialPageRoute(builder: (_) => widget));
+        final widgets = this.callback();
+        if (widgets != null) {
+          if (this.isDesktop) {
+            Provider.of<AccountProvider>(context, listen: false).updateActivedApp(widgets[0], widgets[1], widgets[2]);
+          } else {
+            if (widgets[2] != null) {
+              Provider.of<AccountProvider>(context, listen: false).updateActivedApp(null, widgets[1], widgets[2]);
+            } else {
+              Navigator.push(context, MaterialPageRoute(builder: (_) => widgets[0]));
+            }
+          }
         }
       },
       child: Container(
@@ -55,16 +89,16 @@ class _ListService extends StatelessWidget {
             Container(
               width: 45.0,
               height: 45.0,
+              padding: EdgeInsets.all(6.0),
               margin: const EdgeInsets.only(left: 20.0, right: 15.0),
               decoration: BoxDecoration(
-                image: DecorationImage(
-                  image: AssetImage('assets/logo/logo_esse.jpg'),
-                  fit: BoxFit.cover,
-                ),
-                borderRadius: BorderRadius.circular(15.0)
+                borderRadius: BorderRadius.circular(15.0),
               ),
+              child: Image.asset(this.logo),
             ),
-            Expanded(
+            this.bio == null
+            ? Text(this.name, style: TextStyle(fontSize: 16.0))
+            : Expanded(
               child: Container(
                 height: 55.0,
                 child: Column(
@@ -72,15 +106,12 @@ class _ListService extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Expanded(
-                      child: Text('Jarvis',
-                        maxLines: 1,
+                      child: Text(this.name, maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(fontSize: 16.0))
                     ),
-                    SizedBox(height: 5.0),
                     Expanded(
-                      child: Text(lang.robotJarvis,
-                        maxLines: 1,
+                      child: Text(this.bio, maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(color: Color(0xFFADB0BB), fontSize: 12.0)),
                     ),
