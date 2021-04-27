@@ -284,6 +284,9 @@ class ChatProvider extends ChangeNotifier {
       this.requests[id].overIt(true);
     }
     var friend = Friend.fromList(params[1]);
+    if (friend.isTop) {
+      this.topKeys[friend.id] = friend.lastMessageTime;
+    }
     this.friends[friend.id] = friend;
     orderFriends(friend.id);
     notifyListeners();
