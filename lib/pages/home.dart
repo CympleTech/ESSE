@@ -103,7 +103,7 @@ class _HomeListState extends State<HomeList> with SingleTickerProviderStateMixin
   @override
   void initState() {
     controller = AnimationController(
-      vsync: this, duration: const Duration(seconds: 5)
+      vsync: this, duration: const Duration(seconds: 8)
     )..addListener(() {
         if (controller.value == 1.0) {
           isProcess = false;
@@ -132,7 +132,7 @@ class _HomeListState extends State<HomeList> with SingleTickerProviderStateMixin
               final name = params[2];
               final widget = ChatAddPage(id: id, addr: addr, name: name);
               Provider.of<AccountProvider>(context, listen: false)
-              .systemAppGroupAddNew = false;
+              .systemAppFriendAddNew = false;
               if (isDesktop) {
                 Provider.of<AccountProvider>(context, listen: false)
                 .updateActivedApp(widget);
@@ -209,15 +209,6 @@ class _HomeListState extends State<HomeList> with SingleTickerProviderStateMixin
                               Navigator.push(context, MaterialPageRoute(builder: (_) => widget));
                             }
                           } else if (value == 2) {
-                            final widget = GroupAddPage();
-                            if (isDesktop) {
-                              provider.updateActivedApp(widget);
-                            } else {
-                              provider.systemAppFriendAddNew = false;
-                              setState(() {});
-                              Navigator.push(context, MaterialPageRoute(builder: (_) => widget));
-                            }
-                          } else if (value == 3) {
                             showShadowDialog(
                               context,
                               Icons.info,
@@ -234,15 +225,13 @@ class _HomeListState extends State<HomeList> with SingleTickerProviderStateMixin
                             _menuItem(0, Icons.qr_code_scanner_rounded, lang.scan),
                             _menuItem(1, Icons.person_add_rounded, lang.addFriend,
                               provider.systemAppFriendAddNew),
-                            _menuItem(2, Icons.add_business_rounded, lang.addGroup,
-                              provider.systemAppGroupAddNew),
-                            _menuItem(3, Icons.qr_code_rounded, lang.myQrcode),
+                            _menuItem(2, Icons.qr_code_rounded, lang.myQrcode),
                           ];
                         },
                       )
                       : GestureDetector(onTap: () => provider.updateToHome(),
                         child: Icon(Icons.home_outlined, color: color.primary))),
-                    if (provider.systemAppFriendAddNew || provider.systemAppGroupAddNew)
+                    if (provider.systemAppFriendAddNew)
                     Positioned(
                       top: 0,
                       right: 0,

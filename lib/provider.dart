@@ -29,13 +29,12 @@ class AccountProvider extends ChangeNotifier {
   Widget currentListShow = null;
   Widget coreShowWidget = DefaultCoreShow();
   bool systemAppFriendAddNew = false;
-  bool systemAppGroupAddNew = false;
 
   Widget get homeShowWidget => this.currentListShow ?? this.defaultListShow;
 
   AccountProvider() {
     // rpc notice when account not actived.
-    rpc.addNotice(_accountNotice);
+    rpc.addNotice(_accountNotice, _newRequestNotice);
 
     // rpc
     rpc.addListener('account-system-info', _systemInfo, false);
@@ -195,6 +194,13 @@ class AccountProvider extends ChangeNotifier {
   _accountNotice(String gid) {
     if (this.accounts.containsKey(gid)) {
       this.accounts[gid].hasNew = true;
+      notifyListeners();
+    }
+  }
+
+  _newRequestNotice(String gid) {
+    if (this.activedAccountId == gid) {
+      this.systemAppFriendAddNew = true;
       notifyListeners();
     }
   }

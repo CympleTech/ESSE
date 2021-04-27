@@ -279,7 +279,6 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
                 false,
             );
 
-            let mut results = HandleResult::rpc(Default::default());
             let me = state.group.read().await.clone_user(&gid)?;
 
             let mut layer_lock = state.layer.write().await;
@@ -287,15 +286,17 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             if Friend::is_friend(&db, &request.gid)? {
                 debug!("had friend.");
                 drop(layer_lock);
-                return Ok(results);
+                return Ok(HandleResult::new());
             }
 
             if let Some(req) = Request::get(&db, &request.gid)? {
-                println!("Had this request.");
+                debug!("Had this request.");
                 req.delete(&db)?;
             }
             request.insert(&db)?;
             drop(db);
+
+            let mut results = HandleResult::rpc(json!(request.to_rpc()));
 
             state.group.write().await.broadcast(
                 &gid,

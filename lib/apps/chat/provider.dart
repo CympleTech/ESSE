@@ -41,7 +41,7 @@ class ChatProvider extends ChangeNotifier {
     rpc.addListener('chat-friend-update', _friendUpdate, false);
     rpc.addListener('chat-friend-close', _friendClose, false);
     rpc.addListener('chat-request-list', _requestList, false);
-    rpc.addListener('chat-request-create', _requestCreate, true);
+    rpc.addListener('chat-request-create', _requestCreate, true, true);
     rpc.addListener('chat-request-delivery', _requestDelivery, false);
     rpc.addListener('chat-request-agree', _requestAgree, false);
     rpc.addListener('chat-request-reject', _requestReject, false);
