@@ -258,23 +258,23 @@ class _AssistantDetailState extends State<AssistantDetail> {
                     color: Color(0x26ADB0BB))),
               ),
               SizedBox(width: 20.0),
-              PopupMenuButton<int>(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(15)
-                ),
-                color: const Color(0xFFEDEDED),
-                child: Icon(Icons.more_vert_rounded, color: color.primary),
-                onSelected: (int value) {
-                  if (value == 1) {
-                    // TODO set top
-                  }
-                },
-                itemBuilder: (context) {
-                  return <PopupMenuEntry<int>>[
-                    _menuItem(Color(0xFF6174FF), 1, Icons.vertical_align_top_rounded, lang.cancelTop),
-                  ];
-                },
-              )
+              // PopupMenuButton<int>(
+              //   shape: RoundedRectangleBorder(
+              //     borderRadius: BorderRadius.circular(15)
+              //   ),
+              //   color: const Color(0xFFEDEDED),
+              //   child: Icon(Icons.more_vert_rounded, color: color.primary),
+              //   onSelected: (int value) {
+              //     if (value == 1) {
+              //       // TODO set top
+              //     }
+              //   },
+              //   itemBuilder: (context) {
+              //     return <PopupMenuEntry<int>>[
+              //       _menuItem(Color(0xFF6174FF), 1, Icons.vertical_align_top_rounded, lang.cancelTop),
+              //     ];
+              //   },
+              // )
             ]
           ),
         ),

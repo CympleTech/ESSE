@@ -288,7 +288,7 @@ class _RequestItem extends StatelessWidget {
             width: 300.0,
             padding: const EdgeInsets.symmetric(vertical: 10.0),
             decoration: BoxDecoration(
-              border: Border.all(),
+              border: Border.all(color: color.primary),
               borderRadius: BorderRadius.circular(10.0)),
             child: Center(child: Text(lang.ignore,
                 style: TextStyle(fontSize: 14.0))),
