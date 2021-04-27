@@ -89,6 +89,7 @@ at your option.
 ESSE is still in its infancy, both technical and financial support are welcome. Thank you for your support.
 
 ETH：0xbB64D716FAbDEC3a106bb913Fb4f82c1EeC851b8
+
 gitcoin：[**https://gitcoin.co/grants/2516/esse-an-encrypted-peer-to-peer-session-system**](https://gitcoin.co/grants/2516/esse-an-encrypted-peer-to-peer-session-system)
 
 ## For more information, please visit:
