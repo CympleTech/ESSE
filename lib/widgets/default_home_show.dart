@@ -29,7 +29,7 @@ class DefaultHomeShow extends StatelessWidget {
             null, lang.chats, ChatList())),
         ListSystemApp(name: lang.groups, icon: Icons.grid_view_rounded,
           callback: () => Provider.of<AccountProvider>(context, listen: false).updateActivedApp(
-            null, lang.chats, ServiceList())),
+            null, lang.groups, ServiceList())),
         const SizedBox(height: 5.0),
         const Divider(height: 1.0, color: Color(0x40ADB0BB)),
         const SizedBox(height: 5.0),
