@@ -464,7 +464,7 @@ class _ChatDetailState extends State<ChatDetail> {
                   width: 50.0,
                   height: 30.0,
                   decoration: BoxDecoration(
-                    color: color.primary,
+                    color: Color(0xFF6174FF),
                     borderRadius: BorderRadius.circular(10.0),
                   ),
                   child: Center(
