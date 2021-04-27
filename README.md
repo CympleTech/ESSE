@@ -84,6 +84,12 @@ This project is licensed under either of
 at your option.
 
 
+## Donation
+
+ESSE is still in its infancy, both technical and financial support are welcome. Thank you for your support.
+
+ETH：0xbB64D716FAbDEC3a106bb913Fb4f82c1EeC851b8
+
 **For more information, please visit:**
 - Website: https://cympletech.com/
 - Github: https://github.com/CympleTech/esse
