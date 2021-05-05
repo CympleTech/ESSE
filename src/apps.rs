@@ -11,6 +11,7 @@ pub(crate) mod chat;
 pub(crate) mod device;
 pub(crate) mod domain;
 pub(crate) mod file;
+pub(crate) mod group_chat;
 
 pub(crate) fn app_rpc_inject(handler: &mut RpcHandler<RpcState>) {
     device::new_rpc_handler(handler);
@@ -18,6 +19,7 @@ pub(crate) fn app_rpc_inject(handler: &mut RpcHandler<RpcState>) {
     assistant::new_rpc_handler(handler);
     domain::new_rpc_handler(handler);
     file::new_rpc_handler(handler);
+    group_chat::new_rpc_handler(handler);
 }
 
 pub(crate) fn _app_layer_handle(

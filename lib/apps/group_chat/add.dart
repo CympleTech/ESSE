@@ -18,6 +18,7 @@ import 'package:esse/provider.dart';
 
 import 'package:esse/apps/chat/models.dart';
 import 'package:esse/apps/chat/provider.dart';
+import 'package:esse/apps/group_chat/provider.dart';
 
 class GroupAddPage extends StatefulWidget {
   final String id;
@@ -51,6 +52,8 @@ class _GroupAddPageState extends State<GroupAddPage> {
   bool _groupNeedAgree = false;
   bool _groupHasKey = true;
   bool _groupHasNeedAgree = true;
+  bool _addrOnline = false;
+  bool _addrChecked = false;
 
   // 0 => encrypted, 1 => common, 2 => open.
   Widget _groupTypeWidget(String text, int value, ColorScheme color) {
@@ -83,6 +86,14 @@ class _GroupAddPageState extends State<GroupAddPage> {
 
   _checkAddrPermission() {
     //
+  }
+
+  _checkGroupAddr() {
+    String addr = _createAddrController.text;
+    if (addr.substring(0, 2) == '0x') {
+      addr = addr.substring(2);
+    }
+    context.read<GroupChatProvider>().check(addr);
   }
 
   _scanCallback(bool isOk, String app, List params) {
@@ -307,13 +318,13 @@ class _GroupAddPageState extends State<GroupAddPage> {
                                     onChanged: (v) {
                                       if (v.length > 0) {
                                         setState(() {
-                                            //this._addrChecked = true;
+                                            _addrChecked = true;
                                         });
                                       }
                                   }),
                                 ),
                               ),
-                              //if (this._addrOnline)
+                              if (_addrOnline)
                               Container(
                                 padding: const EdgeInsets.only(left: 8.0),
                                 child: Icon(Icons.cloud_done_rounded,
@@ -323,7 +334,7 @@ class _GroupAddPageState extends State<GroupAddPage> {
                               Container(
                                 width: 100.0,
                                 child: InkWell(
-                                  //onTap: this._addrChecked ? _checkAddrOnline : null,
+                                  onTap: _addrChecked ? _checkGroupAddr : null,
                                   child: Container(
                                     height: 45.0,
                                     decoration: BoxDecoration(
