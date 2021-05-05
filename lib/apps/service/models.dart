@@ -6,10 +6,13 @@ import 'package:esse/provider.dart';
 
 import 'package:esse/apps/assistant/page.dart';
 import 'package:esse/apps/file/page.dart';
+import 'package:esse/apps/group_chat/page.dart';
+
 
 enum InnerService {
   Files,
   Assistant,
+  GroupChat,
 }
 
 extension InnerServiceExtension on InnerService {
@@ -19,6 +22,8 @@ extension InnerServiceExtension on InnerService {
         return [lang.files, lang.filesBio, 'assets/logo/logo_files.png'];
       case InnerService.Assistant:
         return [lang.assistant, lang.assistantBio, 'assets/logo/logo_assistant.png'];
+      case InnerService.GroupChat:
+        return [lang.groupChat, lang.groupChatBio, 'assets/logo/logo_assistant.png'];
     }
   }
 
@@ -36,6 +41,10 @@ extension InnerServiceExtension on InnerService {
         case InnerService.Assistant:
           coreWidget = AssistantDetail();
           break;
+        case InnerService.GroupChat:
+          listTitle = lang.groupChat;
+          listHome = GroupChatList();
+          break;
       }
       Provider.of<AccountProvider>(context, listen: false).updateActivedApp(coreWidget, listTitle, listHome);
     } else {
@@ -45,6 +54,9 @@ extension InnerServiceExtension on InnerService {
           break;
         case InnerService.Assistant:
           Navigator.push(context, MaterialPageRoute(builder: (_) => AssistantPage()));
+          break;
+        case InnerService.GroupChat:
+          Provider.of<AccountProvider>(context, listen: false).updateActivedApp(null, lang.groupChat, GroupChatList());
           break;
       }
     }

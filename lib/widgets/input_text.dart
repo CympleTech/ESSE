@@ -16,6 +16,7 @@ class InputText extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20.0),
       height: 50.0,
+      width: 600.0,
       decoration: BoxDecoration(
         color: color.surface,
         border: Border.all(color: focus.hasFocus ? color.primary : color.surface),

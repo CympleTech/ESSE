@@ -8,6 +8,7 @@ import 'package:esse/provider.dart';
 import 'package:esse/apps/chat/provider.dart';
 import 'package:esse/apps/chat/models.dart';
 import 'package:esse/apps/chat/detail.dart';
+import 'package:esse/apps/chat/add.dart';
 
 class ChatList extends StatefulWidget {
   const ChatList({Key key}) : super(key: key);
@@ -20,12 +21,27 @@ class _ChatListState extends State<ChatList> {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<ChatProvider>();
+    final isDesktop = isDisplayDesktop(context);
     final friends = provider.friends;
     final chatKeys = provider.orderKeys;
 
-    return ListView.builder(
-      itemCount: chatKeys.length,
-      itemBuilder: (BuildContext ctx, int index) => ListChat(friend: friends[chatKeys[index]]),
+    return Scaffold(
+      body: ListView.builder(
+        itemCount: chatKeys.length,
+        itemBuilder: (BuildContext ctx, int index) => ListChat(friend: friends[chatKeys[index]]),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          final widget = ChatAddPage();
+          if (isDesktop) {
+            Provider.of<AccountProvider>(context, listen: false).updateActivedApp(widget);
+          } else {
+            Navigator.push(context, MaterialPageRoute(builder: (_) => widget));
+          }
+        },
+        child: const Icon(Icons.add, color: Colors.white),
+        backgroundColor: Color(0xFF6174FF),
+      ),
     );
   }
 }

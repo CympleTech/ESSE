@@ -14,6 +14,7 @@ import 'package:esse/apps/file/page.dart';
 const List<InnerService> INNER_SERVICES = [
   InnerService.Files,
   InnerService.Assistant,
+  InnerService.GroupChat,
 ];
 
 class ServiceList extends StatefulWidget {

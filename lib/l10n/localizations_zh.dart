@@ -78,6 +78,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get open => '打开';
   @override
   String get unknown => '未知';
+  @override
+  String get create => '创建';
 
   // theme
   @override
@@ -228,4 +230,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get assistant => 'Jarvis';
   @override
   String get assistantBio => 'Jarvis 是个机器人，只属于你。';
+  @override
+  String get groupChat => '群聊';
+  @override
+  String get groupChatBio => '各种各样的群聊';
 }

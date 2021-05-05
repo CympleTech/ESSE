@@ -78,6 +78,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get open => 'Open';
   @override
   String get unknown => 'Unknown';
+  @override
+  String get create => 'Create';
 
   // theme
   @override
@@ -228,4 +230,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assistant => 'Jarvis';
   @override
   String get assistantBio => 'Jarvis is a robot, only belongs to you.';
+  @override
+  String get groupChat => 'Group Chats';
+  @override
+  String get groupChatBio => 'Multiple group chats';
 }

@@ -77,6 +77,7 @@ abstract class AppLocalizations {
   String get delete;
   String get open;
   String get unknown;
+  String get create;
 
   // theme
   String get themeDark;
@@ -159,6 +160,8 @@ abstract class AppLocalizations {
   String get filesBio;
   String get assistant;
   String get assistantBio;
+  String get groupChat;
+  String get groupChatBio;
 }
 
 class _AppLocalizationsDelegate
