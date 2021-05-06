@@ -97,3 +97,4 @@ gitcoin：[**https://gitcoin.co/grants/2516/esse-an-encrypted-peer-to-peer-sessi
 - Github: https://github.com/CympleTech/esse
 - Twitter: https://twitter.com/cympletech
 - E-mail: contact@cympletech.com
+- Discord: https://discord.gg/UfFjp6Kaj4
