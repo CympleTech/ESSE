@@ -1,5 +1,6 @@
 use tdn::types::{
     group::GroupId,
+    message::RecvType,
     primitive::{HandleResult, PeerAddr, Result},
     rpc::RpcHandler,
 };
@@ -22,13 +23,18 @@ pub(crate) fn app_rpc_inject(handler: &mut RpcHandler<RpcState>) {
     group_chat::new_rpc_handler(handler);
 }
 
-pub(crate) fn _app_layer_handle(
-    _gid: GroupId,
-    _fgid: GroupId,
-    _addr: PeerAddr,
-    _data: Vec<u8>,
+pub(crate) fn app_layer_handle(
+    fgid: GroupId,
+    mgid: GroupId,
+    msg: RecvType,
 ) -> Result<HandleResult> {
-    todo!()
+    match fgid {
+        group_chat::GROUP_ID => group_chat::layer_handle(mgid, msg),
+        _ => {
+            // todo!()
+            Ok(HandleResult::new())
+        }
+    }
 }
 
 pub(crate) fn _app_group_handle() -> Result<HandleResult> {

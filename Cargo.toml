@@ -38,6 +38,7 @@ tdn = { git = "https://github.com/cypherlink/TDN", branch="main", default-featur
 tdn-did = { git = "https://github.com/cypherlink/tdn-did", branch="main" }
 tdn-storage = { git = "https://github.com/cypherlink/tdn-storage", branch="main" }
 group-chat-types = { git = "https://github.com/cympletech/group-chat", branch="main" }
+# group-chat-types = { path = "../group-chat/types" }
 
 [target.'cfg(target_os="android")'.dependencies]
 jni = { version = "0.19", default-features = false }

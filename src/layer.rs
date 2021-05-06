@@ -17,6 +17,7 @@ use crate::event::{InnerEvent, StatusEvent};
 use crate::group::Group;
 use crate::migrate::consensus::{FRIEND_TABLE_PATH, MESSAGE_TABLE_PATH, REQUEST_TABLE_PATH};
 
+use crate::apps::app_layer_handle;
 use crate::apps::chat::rpc;
 use crate::storage::{
     read_avatar, read_file, read_record, session_db, write_avatar_sync, write_file, write_image,
@@ -75,14 +76,15 @@ impl Layer {
         mgid: GroupId,
         msg: RecvType,
     ) -> Result<HandleResult> {
-        let mut results = HandleResult::new();
-
         // 1. check to account is online. if not online, nothing.
         if !self.runnings.contains_key(&mgid) {
-            return Ok(results);
+            return Err(new_io_error("running account not found."));
         }
 
+        // TODO app_layer_handle(fgid, mgid, msg)
+
         // 2. handle receive message by type.
+        let mut results = HandleResult::new();
         match msg {
             RecvType::Connect(addr, data) => {
                 let request: LayerRequest = postcard::from_bytes(&data)

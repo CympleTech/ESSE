@@ -8,6 +8,7 @@ use tdn::types::{
 };
 
 //use crate::group::GroupEvent;
+use super::add_layer;
 use crate::rpc::RpcState;
 
 pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
@@ -22,12 +23,11 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
                 .map_err(|_e| new_io_error("PeerAddr invalid!"))?;
             println!("addr: {}", addr.to_hex());
 
+            let mut results = HandleResult::new();
             let data = postcard::to_allocvec(&GroupConnect::Check).unwrap_or(vec![]);
-            Ok(HandleResult::layer(
-                gid,
-                gid,
-                SendType::Connect(0, addr, None, None, data),
-            ))
+            let s = SendType::Connect(0, addr, None, None, data);
+            add_layer(&mut results, gid, s);
+            Ok(results)
         },
     );
 }
