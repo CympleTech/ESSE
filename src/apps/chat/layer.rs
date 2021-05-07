@@ -8,8 +8,7 @@ use tdn::types::{
 use tdn_did::{user::User, Proof};
 
 use crate::event::{InnerEvent, StatusEvent};
-use crate::layer::running::Online;
-use crate::layer::Layer;
+use crate::layer::{Layer, Online};
 use crate::migrate::consensus::{FRIEND_TABLE_PATH, MESSAGE_TABLE_PATH, REQUEST_TABLE_PATH};
 use crate::storage::{
     read_avatar, read_file, read_record, session_db, write_avatar_sync, write_file, write_image,
