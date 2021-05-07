@@ -1,11 +1,13 @@
-use group_chat_types::{Event, GroupConnect, GroupEvent, GroupInfo, GroupResult, GroupType};
 use std::sync::Arc;
 use tdn::types::{
     group::GroupId,
     message::SendType,
     primitive::{new_io_error, HandleResult, PeerAddr},
-    rpc::{json, rpc_response, RpcHandler, RpcParam},
+    rpc::{json, RpcHandler, RpcParam},
 };
+
+use group_chat_types::GroupConnect;
+//use group_chat_types::{Event, GroupConnect, GroupEvent, GroupInfo, GroupResult, GroupType};
 
 //use crate::group::GroupEvent;
 use super::add_layer;

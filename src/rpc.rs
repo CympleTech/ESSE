@@ -13,9 +13,10 @@ use tdn::{
 };
 
 use crate::apps::app_rpc_inject;
+use crate::apps::chat::{conn_req_message, LayerEvent};
 use crate::event::InnerEvent;
 use crate::group::Group;
-use crate::layer::{Layer, LayerEvent};
+use crate::layer::Layer;
 
 pub(crate) fn init_rpc(
     addr: PeerAddr,
@@ -362,7 +363,7 @@ fn new_rpc_handler(
             let layer_lock = state.layer.read().await;
             let friends = layer_lock.all_friends(&gid)?;
             for friend in friends {
-                let msg = layer_lock.conn_req_message(&gid, friend.addr).await?;
+                let msg = conn_req_message(&layer_lock, &gid, friend.addr).await?;
                 results.layers.push((gid, friend.gid, msg));
             }
             drop(layer_lock);

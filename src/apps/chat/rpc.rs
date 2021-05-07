@@ -9,11 +9,11 @@ use tdn::types::{
 use tdn_did::user::User;
 
 use crate::event::InnerEvent;
-use crate::layer::LayerEvent;
 use crate::migrate::consensus::{FRIEND_TABLE_PATH, MESSAGE_TABLE_PATH, REQUEST_TABLE_PATH};
 use crate::rpc::{sleep_waiting_close_stable, RpcState};
 use crate::storage::{delete_avatar, session_db};
 
+use super::layer::LayerEvent;
 use super::{Friend, Message, MessageType, Request};
 
 #[inline]
@@ -310,9 +310,11 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
                 &mut results,
             )?;
 
-            results
-                .layers
-                .push((gid, remote_gid, layer_lock.req_message(me, request)));
+            results.layers.push((
+                gid,
+                remote_gid,
+                super::layer::req_message(&mut layer_lock, me, request),
+            ));
 
             drop(layer_lock);
 
@@ -348,7 +350,8 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
                 results.rpcs.push(json!([id, f.to_rpc()]));
 
                 let proof = group_lock.prove_addr(&gid, &f.addr)?;
-                let msg = layer_lock.rpc_agree_message(id, proof, me, &gid, f.addr)?;
+                let msg =
+                    super::layer::rpc_agree_message(&mut layer_lock, id, proof, me, &gid, f.addr)?;
                 results.layers.push((gid, f.gid, msg));
             }
             db.close()?;
@@ -370,7 +373,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             req.is_over = true;
             req.update(&db)?;
             drop(db);
-            let msg = layer_lock.reject_message(id, req.addr, gid);
+            let msg = super::layer::reject_message(&mut layer_lock, id, req.addr, gid);
             drop(layer_lock);
 
             let mut results = HandleResult::layer(gid, req.gid, msg);
@@ -445,7 +448,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
 
             let (msg, nw) = LayerEvent::from_message(base, gid, fid, m_type, content).await?;
             let event = LayerEvent::Message(msg.hash, nw);
-            let s = layer_lock.event_message(msg.id, gid, faddr, &event);
+            let s = super::layer::event_message(&mut layer_lock, msg.id, gid, faddr, &event);
             drop(layer_lock);
 
             let mut results = HandleResult::rpc(json!(msg.to_rpc()));

@@ -1,3 +1,4 @@
+mod layer;
 mod models;
 
 pub use group_chat_types::GROUP_CHAT_ID as GROUP_ID;
@@ -10,7 +11,5 @@ pub(super) fn add_layer(results: &mut HandleResult, gid: GroupId, msg: SendType)
 }
 
 pub(crate) mod rpc;
-pub(crate) use rpc::new_rpc_handler;
-
-mod layer;
 pub(crate) use layer::handle as layer_handle;
+pub(crate) use rpc::new_rpc_handler;

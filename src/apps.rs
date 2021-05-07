@@ -1,10 +1,11 @@
 use tdn::types::{
     group::GroupId,
     message::RecvType,
-    primitive::{HandleResult, PeerAddr, Result},
+    primitive::{HandleResult, Result},
     rpc::RpcHandler,
 };
 
+use crate::layer::Layer;
 use crate::rpc::RpcState;
 
 pub(crate) mod assistant;
@@ -23,17 +24,15 @@ pub(crate) fn app_rpc_inject(handler: &mut RpcHandler<RpcState>) {
     group_chat::new_rpc_handler(handler);
 }
 
-pub(crate) fn app_layer_handle(
+pub(crate) async fn app_layer_handle(
+    layer: &mut Layer,
     fgid: GroupId,
     mgid: GroupId,
     msg: RecvType,
 ) -> Result<HandleResult> {
     match fgid {
         group_chat::GROUP_ID => group_chat::layer_handle(mgid, msg),
-        _ => {
-            // todo!()
-            Ok(HandleResult::new())
-        }
+        _ => chat::layer_handle(layer, fgid, mgid, msg).await,
     }
 }
 

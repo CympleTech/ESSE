@@ -23,7 +23,7 @@ extension InnerServiceExtension on InnerService {
       case InnerService.Assistant:
         return [lang.assistant, lang.assistantBio, 'assets/logo/logo_assistant.png'];
       case InnerService.GroupChat:
-        return [lang.groupChat, lang.groupChatBio, 'assets/logo/logo_assistant.png'];
+        return [lang.groupChat, lang.groupChatBio, 'assets/logo/logo_group_chat.png'];
     }
   }
 

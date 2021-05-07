@@ -13,10 +13,11 @@ use tdn_did::user::User;
 use tdn_storage::local::DStorage;
 
 use crate::account::Account;
+use crate::apps::chat::LayerEvent;
 use crate::consensus::Event;
 use crate::group::{Group, GroupEvent};
 use crate::layer::running::Online;
-use crate::layer::{Layer, LayerEvent};
+use crate::layer::Layer;
 use crate::migrate::consensus::{
     ACCOUNT_TABLE_PATH, FILE_TABLE_PATH, FRIEND_TABLE_PATH, MESSAGE_TABLE_PATH, REQUEST_TABLE_PATH,
 };
