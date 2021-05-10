@@ -16,8 +16,7 @@ import 'package:esse/widgets/qr_scan.dart';
 import 'package:esse/global.dart';
 import 'package:esse/provider.dart';
 
-import 'package:esse/apps/chat/models.dart';
-import 'package:esse/apps/chat/provider.dart';
+import 'package:esse/apps/chat/models.dart' show Request; // TODO delete.
 import 'package:esse/apps/group_chat/models.dart';
 import 'package:esse/apps/group_chat/provider.dart';
 
@@ -125,7 +124,7 @@ class _GroupAddPageState extends State<GroupAddPage> {
     var name = _joinNameController.text;
     var remark = _joinRemarkController.text;
 
-    context.read<ChatProvider>().requestCreate(Request(id, addr, name, remark));
+    //context.read<GroupChatProvider>().requestCreate(Request(id, addr, name, remark));
     setState(() {
         _joinIdController.text = '';
         _joinAddrController.text = '';
@@ -204,7 +203,7 @@ class _GroupAddPageState extends State<GroupAddPage> {
                 if (!isDesktop)
                 GestureDetector(
                   onTap: () {
-                    context.read<ChatProvider>().requestClear();
+                    //context.read<ChatProvider>().requestClear();
                     Navigator.pop(context);
                   },
                   child: Container(
@@ -529,7 +528,7 @@ class _RequestItem extends StatelessWidget {
         InkWell(
           onTap: () {
             Navigator.pop(context);
-            Provider.of<ChatProvider>(context, listen: false).requestDelete(request.id);
+            //Provider.of<ChatProvider>(context, listen: false).requestDelete(request.id);
           },
           hoverColor: Colors.transparent,
           child: Container(
@@ -549,7 +548,7 @@ class _RequestItem extends StatelessWidget {
             InkWell(
               onTap: () {
                 Navigator.pop(context);
-                Provider.of<ChatProvider>(context, listen: false).requestReject(request.id);
+                //Provider.of<ChatProvider>(context, listen: false).requestReject(request.id);
               },
               hoverColor: Colors.transparent,
               child: Container(
@@ -565,7 +564,7 @@ class _RequestItem extends StatelessWidget {
             InkWell(
               onTap: () {
                 Navigator.pop(context);
-                Provider.of<ChatProvider>(context, listen: false).requestAgree(request.id);
+                //Provider.of<ChatProvider>(context, listen: false).requestAgree(request.id);
               },
               hoverColor: Colors.transparent,
               child: Container(
@@ -587,7 +586,7 @@ class _RequestItem extends StatelessWidget {
             InkWell(
               onTap: () {
                 Navigator.pop(context);
-                Provider.of<ChatProvider>(context, listen: false).requestDelete(request.id);
+                //Provider.of<ChatProvider>(context, listen: false).requestDelete(request.id);
               },
               hoverColor: Colors.transparent,
               child: Container(
@@ -603,7 +602,7 @@ class _RequestItem extends StatelessWidget {
             InkWell(
               onTap: () {
                 Navigator.pop(context);
-                Provider.of<ChatProvider>(context, listen: false).requestCreate(request);
+                //Provider.of<ChatProvider>(context, listen: false).requestCreate(request);
               },
               hoverColor: Colors.transparent,
               child: Container(
@@ -667,7 +666,7 @@ class _RequestItem extends StatelessWidget {
                     )),
                     if (!request.over && !request.isMe)
                     InkWell(
-                      onTap: () => context.read<ChatProvider>().requestAgree(request.id),
+                      onTap: () => null, //context.read<ChatProvider>().requestAgree(request.id),
                       hoverColor: Colors.transparent,
                       child: Container(
                         height: 35.0,

@@ -3,6 +3,8 @@ import 'package:esse/utils/relative_time.dart';
 import 'package:esse/widgets/avatar.dart';
 import 'package:esse/global.dart';
 
+import 'package:esse/apps/primitives.dart';
+
 enum GroupType {
   Encrypted,
   Common,
@@ -117,5 +119,29 @@ class GroupChat {
       needOnline: needOnline,
       hasNew: !this.lastReaded,
     );
+  }
+}
+
+class Message extends BaseMessage {
+  int height;
+  int fid;
+  int mid;
+
+  Message(int fid, MessageType type, String content) {
+    this.fid = fid;
+    this.type = type;
+    this.content = content;
+  }
+
+  Message.fromList(List params) {
+    this.id = params[0];
+    this.height = params[1];
+    this.isMe = params[2];
+    this.fid = params[3];
+    this.mid = params[4];
+    this.type = MessageTypeExtension.fromInt(params[5]);
+    this.content = params[6];
+    this.isDelivery = params[7];
+    this.time = RelativeTime.fromInt(params[8]);
   }
 }

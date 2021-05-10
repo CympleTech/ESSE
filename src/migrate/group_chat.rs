@@ -42,6 +42,7 @@ pub(super) const GROUP_CHAT_VERSIONS: [&str; 4] = [
     fid INTEGER NOT NULL,
     mid INTEGER NOT NULL,
     height INTEGER NOT NULL,
+    is_me INTEGER NOT NULL,
     m_type INTEGER NOT NULL,
     content TEXT NOT NULL,
     is_delivery INTEGER NOT NULL,

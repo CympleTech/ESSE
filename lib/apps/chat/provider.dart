@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:esse/utils/relative_time.dart';
 import 'package:esse/rpc.dart';
 
+import 'package:esse/apps/primitives.dart';
 import 'package:esse/apps/chat/models.dart';
 import 'package:esse/apps/chat/detail.dart';
 

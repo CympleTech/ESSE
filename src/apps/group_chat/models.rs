@@ -8,6 +8,8 @@ use tdn::types::{
 };
 use tdn_storage::local::{DStorage, DsValue};
 
+use crate::apps::chat::MessageType;
+
 pub(super) struct GroupChatKey(Vec<u8>);
 
 impl GroupChatKey {
@@ -262,28 +264,18 @@ pub(super) struct Member {
     datetime: i64,
 }
 
-/// Group Chat message type.
-pub(super) enum MessageType {
-    String,
-    Image,
-    File,
-    Contact,
-    Emoji,
-    Record,
-    Phone,
-    Video,
-}
-
 /// Group Chat Message Model.
 pub(super) struct Message {
     /// db auto-increment id.
     id: i64,
+    /// group message consensus height.
+    height: i64,
+    /// message is mine.
+    is_me: bool,
     /// group's db id.
     fid: i64,
     /// member's db id.
     m_id: i64,
-    /// group message consensus height.
-    height: i64,
     /// message type.
     m_type: MessageType,
     /// message content.

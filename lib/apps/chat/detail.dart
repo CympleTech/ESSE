@@ -14,6 +14,7 @@ import 'package:esse/widgets/chat_message.dart';
 import 'package:esse/global.dart';
 import 'package:esse/provider.dart';
 
+import 'package:esse/apps/primitives.dart';
 import 'package:esse/apps/chat/models.dart';
 import 'package:esse/apps/chat/provider.dart';
 
@@ -118,7 +119,7 @@ class _ChatDetailState extends State<ChatDetail> {
   }
 
   void _sendRecord(int time) async {
-    final raw = Message.rawRecordName(time, _recordName);
+    final raw = BaseMessage.rawRecordName(time, _recordName);
     context.read<ChatProvider>().messageCreate(Message(friend.id, MessageType.Record, raw));
 
     setState(() {

@@ -15,12 +15,13 @@ import 'package:esse/widgets/audio_player.dart';
 import 'package:esse/widgets/shadow_dialog.dart';
 import 'package:esse/global.dart';
 
-import 'package:esse/apps/chat/models.dart';
+import 'package:esse/apps/primitives.dart';
+import 'package:esse/apps/chat/models.dart' show Request;
 import 'package:esse/apps/chat/provider.dart';
 
 class ChatMessage extends StatelessWidget {
   final String name;
-  final Message message;
+  final BaseMessage message;
 
   const ChatMessage({Key key, this.name, this.message}): super(key: key);
 
