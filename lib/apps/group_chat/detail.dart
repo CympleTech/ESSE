@@ -15,6 +15,7 @@ import 'package:esse/global.dart';
 import 'package:esse/provider.dart';
 
 import 'package:esse/apps/chat/provider.dart';
+import 'package:esse/apps/chat/models.dart' show Message;
 import 'package:esse/apps/group_chat/models.dart';
 import 'package:esse/apps/group_chat/provider.dart';
 
@@ -74,7 +75,7 @@ class _GroupChatDetailState extends State<GroupChatDetail> {
       return;
     }
 
-    context.read<GroupChatProvider>().messageCreate(Message(group.id, MessageType.String, textController.text));
+    //context.read<GroupChatProvider>().messageCreate(Message(group.id, MessageType.String, textController.text));
     setState(() {
         textController.text = '';
         textFocus.requestFocus();
@@ -93,7 +94,7 @@ class _GroupChatDetailState extends State<GroupChatDetail> {
   void _sendImage() async {
     final image = await pickImage();
     if (image != null) {
-      context.read<GroupChatProvider>().messageCreate(Message(group.id, MessageType.Image, image));
+      //context.read<GroupChatProvider>().messageCreate(Message(group.id, MessageType.Image, image));
     }
     setState(() {
         textFocus.requestFocus();
@@ -107,7 +108,7 @@ class _GroupChatDetailState extends State<GroupChatDetail> {
   void _sendFile() async {
     final file = await pickFile();
     if (file != null) {
-      context.read<GroupChatProvider>().messageCreate(Message(group.id, MessageType.File, file));
+      //context.read<GroupChatProvider>().messageCreate(Message(group.id, MessageType.File, file));
     }
     setState(() {
         textFocus.requestFocus();
@@ -120,7 +121,7 @@ class _GroupChatDetailState extends State<GroupChatDetail> {
 
   void _sendRecord(int time) async {
     final raw = Message.rawRecordName(time, _recordName);
-    context.read<GroupChatProvider>().messageCreate(Message(group.id, MessageType.Record, raw));
+    //context.read<GroupChatProvider>().messageCreate(Message(group.id, MessageType.Record, raw));
 
     setState(() {
         textFocus.requestFocus();
@@ -165,7 +166,7 @@ class _GroupChatDetailState extends State<GroupChatDetail> {
                 return GestureDetector(
                   behavior: HitTestBehavior.opaque,
                   onTap: () async {
-                    context.read<GroupChatProvider>().messageCreate(Message(friend.id, MessageType.Contact, "${contact.id}"));
+                    //context.read<GroupChatProvider>().messageCreate(Message(friend.id, MessageType.Contact, "${contact.id}"));
                     Navigator.of(context).pop();
                     setState(() {
                         textFocus.requestFocus();
@@ -273,13 +274,12 @@ class _GroupChatDetailState extends State<GroupChatDetail> {
                 child: Icon(Icons.more_vert_rounded, color: color.primary),
                 onSelected: (int value) {
                   if (value == 1) {
-                    Provider.of<GroupChatProvider>(context, listen: false).groupUpdate(
-                      this.group.id, isTop: !this.group.isTop);
+                    //Provider.of<GroupChatProvider>(context, listen: false).groupUpdate(this.group.id, isTop: !this.group.isTop);
                   } else if (value == 2) {
                     showShadowDialog(
                       context,
                       Icons.info,
-                      lang.groupInfo,
+                      lang.friendInfo,
                       UserInfo(
                         id: 'EH' + this.group.gid.toUpperCase(),
                         name: this.group.name,
@@ -304,8 +304,7 @@ class _GroupChatDetailState extends State<GroupChatDetail> {
                               child: Text(lang.ok),
                               onPressed:  () {
                                 Navigator.pop(context);
-                                Provider.of<GroupChatProvider>(
-                                  context, listen: false).groupClose(this.group.id);
+                                //Provider.of<GroupChatProvider>(context, listen: false).groupClose(this.group.id);
                                 if (!isDesktop) {
                                   Navigator.pop(context);
                                 }
@@ -316,14 +315,14 @@ class _GroupChatDetailState extends State<GroupChatDetail> {
                       },
                     );
                   } else if (value == 5) {
-                    Provider.of<GroupChatProvider>(context, listen: false).requestCreate(
-                      Request(this.group.gid, this.group.addr, this.group.name, lang.fromContactCard(meName)));
+                    // Provider.of<GroupChatProvider>(context, listen: false).requestCreate(
+                    //   Request(this.group.gid, this.group.addr, this.group.name, lang.fromContactCard(meName)));
                   } else if (value == 6) {
                     showDialog(
                       context: context,
                       builder: (BuildContext context) {
                         return AlertDialog(
-                          title: Text(lang.delete + " " + lang.group),
+                          title: Text(lang.delete),
                           content: Text(this.group.name,
                             style: TextStyle(color: Colors.red)),
                           actions: [
@@ -335,8 +334,7 @@ class _GroupChatDetailState extends State<GroupChatDetail> {
                               child: Text(lang.ok),
                               onPressed:  () {
                                 Navigator.pop(context);
-                                Provider.of<GroupChatProvider>(
-                                  context, listen: false).groupDelete(this.group.id);
+                                //Provider.of<GroupChatProvider>(context, listen: false).groupDelete(this.group.id);
                                 if (!isDesktop) {
                                   Navigator.pop(context);
                                 }
@@ -351,12 +349,12 @@ class _GroupChatDetailState extends State<GroupChatDetail> {
                 itemBuilder: (context) {
                   return <PopupMenuEntry<int>>[
                     _menuItem(Color(0xFF6174FF), 1, Icons.vertical_align_top_rounded, this.group.isTop ? lang.cancelTop : lang.setTop),
-                    _menuItem(Color(0xFF6174FF), 2, Icons.qr_code_rounded, lang.groupInfo),
-                    //_menuItem(color.primary, 3, Icons.turned_in_rounded, lang.remark),
-                    this.group.isClosed
-                    ? _menuItem(Color(0xFF6174FF), 5, Icons.send_rounded, lang.addGroup)
-                    : _menuItem(Color(0xFF6174FF), 4, Icons.block_rounded, lang.ungroup),
-                    _menuItem(Colors.red, 6, Icons.delete_rounded, lang.delete),
+                    // _menuItem(Color(0xFF6174FF), 2, Icons.qr_code_rounded, lang.friendInfo),
+                    // _menuItem(color.primary, 3, Icons.turned_in_rounded, lang.remark),
+                    // this.group.isClosed
+                    // ? _menuItem(Color(0xFF6174FF), 5, Icons.send_rounded, lang.addGroup)
+                    // : _menuItem(Color(0xFF6174FF), 4, Icons.block_rounded, lang.unfriend),
+                    // _menuItem(Colors.red, 6, Icons.delete_rounded, lang.delete),
                   ];
                 },
               )

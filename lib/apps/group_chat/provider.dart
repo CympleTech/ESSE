@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import 'package:esse/rpc.dart';
 import 'package:esse/apps/group_chat/models.dart';
+import 'package:esse/apps/chat/models.dart' show Message;
 
 class GroupChatProvider extends ChangeNotifier {
   List<GroupType> createSupported = [GroupType.Encrypted, GroupType.Common, GroupType.Open];
@@ -15,6 +16,7 @@ class GroupChatProvider extends ChangeNotifier {
   SplayTreeMap<int, GroupChat> requests = SplayTreeMap();
 
   int actived;
+  SplayTreeMap<int, Message> activedMessages = SplayTreeMap();
 
   GroupChat get activedGroup => this.groups[this.actived];
 
@@ -52,6 +54,11 @@ class GroupChatProvider extends ChangeNotifier {
 
   updateActivedGroup(int id) {
     this.actived = id;
+    // TODO load
+  }
+
+  clearActivedGroup() {
+    // TODO
   }
 
   check(String addr) {

@@ -7,6 +7,7 @@ import 'package:esse/l10n/localizations.dart';
 import 'package:esse/provider.dart';
 
 import 'package:esse/apps/group_chat/add.dart';
+import 'package:esse/apps/group_chat/detail.dart';
 import 'package:esse/apps/group_chat/models.dart';
 import 'package:esse/apps/group_chat/provider.dart';
 
@@ -59,16 +60,16 @@ class ListChat extends StatelessWidget {
       behavior: HitTestBehavior.opaque,
       onTap: () {
         context.read<GroupChatProvider>().updateActivedGroup(group.id);
-        // if (!isDesktop) {
-        //   Navigator.push(
-        //     context,
-        //     MaterialPageRoute(
-        //       builder: (_) => GroupChatPage(),
-        //     ),
-        //   );
-        // } else {
-        //   context.read<AccountProvider>().updateActivedApp(GroupChatDetail());
-        // }
+        if (!isDesktop) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => GroupChatPage(),
+            ),
+          );
+        } else {
+          context.read<AccountProvider>().updateActivedApp(GroupChatDetail());
+        }
       },
       child: Container(
         height: 55.0,
