@@ -1,8 +1,12 @@
-use tdn::types::{
-    group::GroupId,
-    message::RecvType,
-    primitive::{HandleResult, Result},
-    rpc::RpcHandler,
+use std::sync::Arc;
+use tdn::{
+    smol::lock::RwLock,
+    types::{
+        group::GroupId,
+        message::RecvType,
+        primitive::{HandleResult, Result},
+        rpc::RpcHandler,
+    },
 };
 
 use crate::layer::Layer;
@@ -25,13 +29,13 @@ pub(crate) fn app_rpc_inject(handler: &mut RpcHandler<RpcState>) {
 }
 
 pub(crate) async fn app_layer_handle(
-    layer: &mut Layer,
+    layer: &Arc<RwLock<Layer>>,
     fgid: GroupId,
     mgid: GroupId,
     msg: RecvType,
 ) -> Result<HandleResult> {
     match fgid {
-        group_chat::GROUP_ID => group_chat::layer_handle(mgid, msg),
+        group_chat::GROUP_ID => group_chat::layer_handle(layer, mgid, msg).await,
         _ => chat::layer_handle(layer, fgid, mgid, msg).await,
     }
 }

@@ -234,4 +234,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get groupChat => 'Group Chats';
   @override
   String get groupChatBio => 'Multiple group chats';
+  @override
+  String get groupCheckTypeAllow => 'You can create a new group chat';
+  @override
+  String get groupCheckTypeNone => 'Restricted, the allowed number is full';
+  @override
+  String get groupCheckTypeDeny => 'No permission to create here';
 }

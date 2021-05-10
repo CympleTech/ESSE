@@ -1,10 +1,22 @@
+import "dart:collection";
+
 import 'package:flutter/material.dart';
 
 import 'package:esse/rpc.dart';
 import 'package:esse/apps/group_chat/models.dart';
 
 class GroupChatProvider extends ChangeNotifier {
-  Map<int, int> groups = {};
+  List<GroupType> createSupported = [GroupType.Encrypted, GroupType.Common, GroupType.Open];
+  CheckType createCheckType = CheckType.Wait;
+
+  Map<int, GroupChat> groups = {};
+  List<int> createKeys = [];
+  List<int> orderKeys = [];
+  SplayTreeMap<int, GroupChat> requests = SplayTreeMap();
+
+  int actived;
+
+  GroupChat get activedGroup => this.groups[this.actived];
 
   GroupChatProvider() {
     // rpc.
@@ -13,6 +25,7 @@ class GroupChatProvider extends ChangeNotifier {
     // rpc.addListener('group-chat-offline', _online, false);
     rpc.addListener('group-chat-check', _check, false);
     rpc.addListener('group-chat-create', _create, false);
+    rpc.addListener('group-chat-result', _result, false);
     // rpc.addListener('group-chat-update', _update, false);
     // rpc.addListener('group-chat-join', _join, true);
     // rpc.addListener('group-chat-agree', _agree, true);
@@ -37,12 +50,20 @@ class GroupChatProvider extends ChangeNotifier {
     rpc.send('group-chat-list', []);
   }
 
+  updateActivedGroup(int id) {
+    this.actived = id;
+  }
+
   check(String addr) {
     rpc.send('group-chat-check', [addr]);
   }
 
-  create() {
-    rpc.send('group-chat-create', []);
+  create(String addr, String name, String bio, bool needAgree) {
+    rpc.send('group-chat-create', [addr, name, bio, needAgree]);
+  }
+
+  reSend(int id) {
+    //
   }
 
   _list(List params) {
@@ -56,10 +77,34 @@ class GroupChatProvider extends ChangeNotifier {
   }
 
   _check(List params) {
-    //
+    this.createSupported.clear();
+    this.createCheckType = CheckTypeExtension.fromInt(params[0]);
+    params[1].forEach((param) {
+        this.createSupported.add(GroupTypeExtension.fromInt(param));
+    });
+    notifyListeners();
   }
 
   _create(List params) {
-    //
+    final gc = GroupChat.fromList(params);
+    if (gc.isOk) {
+      this.orderKeys.add(gc.id);
+    } else {
+      this.createKeys.add(gc.id);
+    }
+    this.groups[gc.id] = gc;
+
+    notifyListeners();
+  }
+
+  _result(List params) {
+    final id = params[0];
+    this.groups[id].isOk = params[1];
+    this.groups[id].online = true;
+    if (params[1]) {
+      //this.createKeys.remove(id);
+      this.orderKeys.add(id);
+    }
+    notifyListeners();
   }
 }

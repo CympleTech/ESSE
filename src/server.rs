@@ -13,6 +13,7 @@ use tdn::{
 };
 
 use crate::account::Account;
+use crate::apps::app_layer_handle;
 use crate::group::Group;
 use crate::layer::Layer;
 use crate::migrate::main_migrate;
@@ -81,7 +82,12 @@ pub async fn start(db_path: String) -> Result<()> {
                 }
             }
             ReceiveMessage::Layer(fgid, tgid, l_msg) => {
-                if let Ok(handle_result) = layer.write().await.handle(fgid, tgid, l_msg).await {
+                // 1. check to account is online. if not online, nothing.
+                if !layer.read().await.runnings.contains_key(&tgid) {
+                    continue;
+                }
+
+                if let Ok(handle_result) = app_layer_handle(&layer, fgid, tgid, l_msg).await {
                     handle(handle_result, now_rpc_uid, true, &sender).await;
                 }
             }

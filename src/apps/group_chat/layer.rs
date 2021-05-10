@@ -1,14 +1,28 @@
-use tdn::types::{
-    group::GroupId,
-    message::RecvType,
-    primitive::{new_io_error, HandleResult, Result},
+use std::sync::Arc;
+use tdn::{
+    smol::lock::RwLock,
+    types::{
+        group::GroupId,
+        message::RecvType,
+        primitive::{new_io_error, HandleResult, Result},
+    },
 };
 
 use group_chat_types::GroupResult;
 //use group_chat_types::{Event, GroupConnect, GroupEvent, GroupInfo, GroupResult, GroupType};
 
-pub(crate) fn handle(_mgid: GroupId, msg: RecvType) -> Result<HandleResult> {
-    let results = HandleResult::new();
+use crate::layer::Layer;
+use crate::storage::group_chat_db;
+
+use super::models::GroupChat;
+use super::rpc;
+
+pub(crate) async fn handle(
+    layer: &Arc<RwLock<Layer>>,
+    mgid: GroupId,
+    msg: RecvType,
+) -> Result<HandleResult> {
+    let mut results = HandleResult::new();
 
     match msg {
         RecvType::Connect(_addr, _data) => {
@@ -21,8 +35,20 @@ pub(crate) fn handle(_mgid: GroupId, msg: RecvType) -> Result<HandleResult> {
             let res: GroupResult = postcard::from_bytes(&data)
                 .map_err(|_e| new_io_error("Deseralize result failure"))?;
             match res {
-                GroupResult::Check(is_ok, supported) => {
-                    println!("check: {}, supported: {:?}", is_ok, supported);
+                GroupResult::Check(ct, supported) => {
+                    println!("check: {:?}, supported: {:?}", ct, supported);
+                    results.rpcs.push(rpc::create_check(mgid, ct, supported))
+                }
+                GroupResult::Create(gcd, ok) => {
+                    println!("Create result: {}", ok);
+                    if ok {
+                        // TODO get gc by gcd.
+                        let db = group_chat_db(layer.read().await.base(), &mgid)?;
+                        if let Some(mut gc) = GroupChat::get(&db, &gcd)? {
+                            gc.ok(&db)?;
+                            results.rpcs.push(rpc::create_result(mgid, gc.id, ok))
+                        }
+                    }
                 }
                 _ => {
                     //

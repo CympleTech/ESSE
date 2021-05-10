@@ -1,9 +1,13 @@
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
-use tdn::types::{
-    group::{EventId, GroupId},
-    message::{RecvType, SendType},
-    primitive::{new_io_error, DeliveryType, HandleResult, PeerAddr, Result},
+use std::sync::Arc;
+use tdn::{
+    smol::lock::RwLock,
+    types::{
+        group::{EventId, GroupId},
+        message::{RecvType, SendType},
+        primitive::{new_io_error, DeliveryType, HandleResult, PeerAddr, Result},
+    },
 };
 use tdn_did::{user::User, Proof};
 
@@ -64,12 +68,14 @@ pub(crate) enum LayerEvent {
 }
 
 pub(crate) async fn handle(
-    layer: &mut Layer,
+    arc_layer: &Arc<RwLock<Layer>>,
     fgid: GroupId,
     mgid: GroupId,
     msg: RecvType,
 ) -> Result<HandleResult> {
     let mut results = HandleResult::new();
+    let mut layer = arc_layer.write().await;
+
     match msg {
         RecvType::Connect(addr, data) => {
             let request: LayerRequest = postcard::from_bytes(&data)
@@ -91,7 +97,7 @@ pub(crate) async fn handle(
                     // 4. online to UI.
                     results.rpcs.push(rpc::friend_online(mgid, fid, addr));
                     // 5. connected.
-                    let msg = conn_res_message(layer, &mgid, addr).await?;
+                    let msg = conn_res_message(&layer, &mgid, addr).await?;
                     results.layers.push((mgid, fgid, msg));
                     layer.group.write().await.status(
                         &mgid,
@@ -146,7 +152,7 @@ pub(crate) async fn handle(
                     friend.online = true;
                     results.rpcs.push(rpc::friend_info(mgid, &friend));
                     // 4. connected.
-                    let msg = conn_agree_message(layer, 0, &mgid, addr).await?;
+                    let msg = conn_agree_message(&mut layer, 0, &mgid, addr).await?;
                     results.layers.push((mgid, fgid, msg));
                     layer.group.write().await.status(
                         &mgid,
@@ -157,11 +163,13 @@ pub(crate) async fn handle(
             }
         }
         RecvType::Leave(addr) => {
+            let group_pin = layer.group.clone();
+            let mut group_lock = group_pin.write().await;
             for (mgid, running) in &mut layer.runnings {
                 let peers = running.peer_leave(&addr);
                 for (fgid, fid) in peers {
                     results.rpcs.push(rpc::friend_offline(*mgid, fid));
-                    layer.group.write().await.status(
+                    group_lock.status(
                         &mgid,
                         StatusEvent::SessionFriendOffline(fgid),
                         &mut results,
@@ -303,7 +311,7 @@ pub(crate) async fn handle(
                     // 5. online to UI.
                     results.rpcs.push(rpc::friend_online(mgid, fid, addr));
                     // 6. connected.
-                    let msg = conn_res_message(layer, &mgid, addr).await?;
+                    let msg = conn_res_message(&layer, &mgid, addr).await?;
                     results.layers.push((mgid, fgid, msg));
                     layer.group.write().await.status(
                         &mgid,
@@ -354,7 +362,7 @@ pub(crate) async fn handle(
                         drop(db);
                     }
 
-                    let msg = conn_res_message(layer, &mgid, addr).await?;
+                    let msg = conn_res_message(&layer, &mgid, addr).await?;
                     results.layers.push((mgid, fgid, msg));
                 }
                 LayerResponse::Reject => {
@@ -377,7 +385,7 @@ pub(crate) async fn handle(
             }
         }
         RecvType::Event(addr, bytes) => {
-            return LayerEvent::handle(fgid, mgid, layer, addr, bytes).await;
+            return LayerEvent::handle(fgid, mgid, &mut layer, addr, bytes).await;
         }
         RecvType::Stream(_uid, _stream, _bytes) => {
             // TODO stream

@@ -162,6 +162,9 @@ abstract class AppLocalizations {
   String get assistantBio;
   String get groupChat;
   String get groupChatBio;
+  String get groupCheckTypeAllow;
+  String get groupCheckTypeNone;
+  String get groupCheckTypeDeny;
 }
 
 class _AppLocalizationsDelegate

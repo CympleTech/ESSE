@@ -11,7 +11,6 @@ use tdn::{
 };
 use tdn_did::user::User;
 
-use crate::apps::app_layer_handle;
 use crate::apps::chat::conn_req_message;
 use crate::apps::chat::Friend;
 use crate::group::Group;
@@ -29,22 +28,6 @@ pub(crate) struct Layer {
     pub addr: PeerAddr,
     /// group info.
     pub group: Arc<RwLock<Group>>,
-}
-
-impl Layer {
-    pub async fn handle(
-        &mut self,
-        fgid: GroupId,
-        mgid: GroupId,
-        msg: RecvType,
-    ) -> Result<HandleResult> {
-        // 1. check to account is online. if not online, nothing.
-        if !self.runnings.contains_key(&mgid) {
-            return Err(new_io_error("running account not found."));
-        }
-
-        app_layer_handle(self, fgid, mgid, msg).await
-    }
 }
 
 impl Layer {

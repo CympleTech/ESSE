@@ -234,4 +234,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get groupChat => '群聊';
   @override
   String get groupChatBio => '各种各样的群聊';
+  @override
+  String get groupCheckTypeAllow => '可以创建新的群聊';
+  @override
+  String get groupCheckTypeNone => '创建被限制,允许数目已满';
+  @override
+  String get groupCheckTypeDeny => '没有权限在此创建群聊';
 }

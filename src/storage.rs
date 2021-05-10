@@ -11,7 +11,8 @@ use tdn::types::{
 use tdn_storage::local::DStorage;
 
 use crate::migrate::{
-    account_init_migrate, ACCOUNT_DB, ASSISTANT_DB, CONSENSUS_DB, FILE_DB, SERVICE_DB, SESSION_DB,
+    account_init_migrate, ACCOUNT_DB, ASSISTANT_DB, CONSENSUS_DB, FILE_DB, GROUP_CHAT_DB,
+    SERVICE_DB, SESSION_DB,
 };
 
 const FILES_DIR: &'static str = "files";
@@ -303,12 +304,14 @@ pub(crate) fn _write_emoji(base: &PathBuf, gid: &GroupId) -> Result<()> {
     Ok(())
 }
 
+#[inline]
 pub(crate) fn account_db(base: &PathBuf) -> Result<DStorage> {
     let mut db_path = base.clone();
     db_path.push(ACCOUNT_DB);
     DStorage::open(db_path)
 }
 
+#[inline]
 pub(crate) fn consensus_db(base: &PathBuf, gid: &GroupId) -> Result<DStorage> {
     let mut db_path = base.clone();
     db_path.push(gid.to_hex());
@@ -316,6 +319,7 @@ pub(crate) fn consensus_db(base: &PathBuf, gid: &GroupId) -> Result<DStorage> {
     DStorage::open(db_path)
 }
 
+#[inline]
 pub(crate) fn session_db(base: &PathBuf, gid: &GroupId) -> Result<DStorage> {
     let mut db_path = base.clone();
     db_path.push(gid.to_hex());
@@ -323,6 +327,7 @@ pub(crate) fn session_db(base: &PathBuf, gid: &GroupId) -> Result<DStorage> {
     DStorage::open(db_path)
 }
 
+#[inline]
 pub(crate) fn _file_db(base: &PathBuf, gid: &GroupId) -> Result<DStorage> {
     let mut db_path = base.clone();
     db_path.push(gid.to_hex());
@@ -330,6 +335,7 @@ pub(crate) fn _file_db(base: &PathBuf, gid: &GroupId) -> Result<DStorage> {
     DStorage::open(db_path)
 }
 
+#[inline]
 pub(crate) fn _service_db(base: &PathBuf, gid: &GroupId) -> Result<DStorage> {
     let mut db_path = base.clone();
     db_path.push(gid.to_hex());
@@ -337,10 +343,19 @@ pub(crate) fn _service_db(base: &PathBuf, gid: &GroupId) -> Result<DStorage> {
     DStorage::open(db_path)
 }
 
+#[inline]
 pub(crate) fn assistant_db(base: &PathBuf, gid: &GroupId) -> Result<DStorage> {
     let mut db_path = base.clone();
     db_path.push(gid.to_hex());
     db_path.push(ASSISTANT_DB);
+    DStorage::open(db_path)
+}
+
+#[inline]
+pub(crate) fn group_chat_db(base: &PathBuf, gid: &GroupId) -> Result<DStorage> {
+    let mut db_path = base.clone();
+    db_path.push(gid.to_hex());
+    db_path.push(GROUP_CHAT_DB);
     DStorage::open(db_path)
 }
 

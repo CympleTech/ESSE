@@ -18,6 +18,7 @@ import 'package:esse/provider.dart';
 
 import 'package:esse/apps/chat/models.dart';
 import 'package:esse/apps/chat/provider.dart';
+import 'package:esse/apps/group_chat/models.dart';
 import 'package:esse/apps/group_chat/provider.dart';
 
 class GroupAddPage extends StatefulWidget {
@@ -134,7 +135,15 @@ class _GroupAddPageState extends State<GroupAddPage> {
   }
 
   _create() {
-    //
+    final addr = _createAddrController.text.trim();
+    final name = _createNameController.text.trim();
+    final bio = _createBioController.text.trim();
+    context.read<GroupChatProvider>().create(addr, name, bio, _groupNeedAgree);
+    setState(() {
+        _createNameController.text = '';
+        _createBioController.text = '';
+        _groupNeedAgree = false;
+    });
   }
 
   @override
@@ -175,12 +184,14 @@ class _GroupAddPageState extends State<GroupAddPage> {
     final isDesktop = isDisplayDesktop(context);
     final color = Theme.of(context).colorScheme;
     final lang = AppLocalizations.of(context);
-    final provider = context.watch<ChatProvider>();
-    final requests = provider.requests;
+    final provider = context.watch<GroupChatProvider>();
+    final checks = provider.createCheckType.lang(lang);
+    final checkLang = checks[0];
+    final checkOk = checks[1];
+    provider.createSupported;
 
-    final account = context.read<AccountProvider>().activedAccount;
-
-    final requestKeys = requests.keys.toList().reversed.toList(); // it had sorted.
+    final groups = provider.groups;
+    final createKeys = provider.createKeys;
 
     return SafeArea(
       child: DefaultTabController(
@@ -269,18 +280,18 @@ class _GroupAddPageState extends State<GroupAddPage> {
                         const SizedBox(height: 20.0),
                         const Divider(height: 1.0, color: Color(0x40ADB0BB)),
                         const SizedBox(height: 10.0),
-                        if (requests.isNotEmpty)
-                        Container(
-                          width: 600.0,
-                          child: ListView.builder(
-                            itemCount: requestKeys.length,
-                            shrinkWrap: true,
-                            physics: ClampingScrollPhysics(),
-                            scrollDirection: Axis.vertical,
-                            itemBuilder: (BuildContext context, int index) =>
-                            _RequestItem(request: requests[requestKeys[index]]),
-                          ),
-                        )
+                        // if (requests.isNotEmpty)
+                        // Container(
+                        //   width: 600.0,
+                        //   child: ListView.builder(
+                        //     itemCount: requestKeys.length,
+                        //     shrinkWrap: true,
+                        //     physics: ClampingScrollPhysics(),
+                        //     scrollDirection: Axis.vertical,
+                        //     itemBuilder: (BuildContext context, int index) =>
+                        //     _RequestItem(request: requests[requestKeys[index]]),
+                        //   ),
+                        // )
                       ],
                     ),
                   ),
@@ -324,7 +335,7 @@ class _GroupAddPageState extends State<GroupAddPage> {
                                   }),
                                 ),
                               ),
-                              if (_addrOnline)
+                              if (checkOk)
                               Container(
                                 padding: const EdgeInsets.only(left: 8.0),
                                 child: Icon(Icons.cloud_done_rounded,
@@ -346,7 +357,8 @@ class _GroupAddPageState extends State<GroupAddPage> {
                               ))),
                         ])),
                         const SizedBox(height: 8.0),
-                        Text('Error Message here', style: TextStyle(fontSize: 14.0, color: Colors.red)),
+                        Text(checkLang, style: TextStyle(fontSize: 14.0,
+                            color: checkOk ? Colors.green : Colors.red)),
                         Container(
                           width: 600.0,
                           padding: const EdgeInsets.all(10.0),
@@ -438,16 +450,15 @@ class _GroupAddPageState extends State<GroupAddPage> {
                         const SizedBox(height: 20.0),
                         const Divider(height: 1.0, color: Color(0x40ADB0BB)),
                         const SizedBox(height: 10.0),
-                        if (requests.isNotEmpty)
                         Container(
                           width: 600.0,
                           child: ListView.builder(
-                            itemCount: requestKeys.length,
+                            itemCount: createKeys.length,
                             shrinkWrap: true,
                             physics: ClampingScrollPhysics(),
                             scrollDirection: Axis.vertical,
                             itemBuilder: (BuildContext context, int index) =>
-                            _RequestItem(request: requests[requestKeys[index]]),
+                            _CreateItem(group: groups[createKeys[index]]),
                           ),
                         )
                       ],
@@ -674,6 +685,73 @@ class _RequestItem extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _CreateItem extends StatelessWidget {
+  final GroupChat group;
+  const _CreateItem({Key key, this.group}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    final color = Theme.of(context).colorScheme;
+    final lang = AppLocalizations.of(context);
+
+    return SizedBox(
+      height: 55.0,
+      child: Row(
+        children: [
+          Container(
+            width: 45.0,
+            height: 45.0,
+            margin: const EdgeInsets.only(right: 15.0),
+            child: group.showAvatar(),
+          ),
+          Expanded(
+            child: Container(
+              height: 55.0,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(group.name, maxLines: 1, overflow: TextOverflow.ellipsis,
+                          style: TextStyle(fontSize: 16.0)),
+                        Text(group.bio, maxLines: 1, overflow: TextOverflow.ellipsis,
+                          style: TextStyle(color: Color(0xFFADB0BB),
+                            fontSize: 12.0)),
+                      ],
+                    ),
+                  ),
+                  SizedBox(width: 10.0),
+                  group.isOk
+                  ? Container(
+                    child: Text(
+                      lang.added,
+                      style: TextStyle(color: Color(0xFFADB0BB), fontSize: 14.0),
+                  ))
+                  : InkWell(
+                    onTap: () => context.read<GroupChatProvider>().reSend(group.id),
+                    hoverColor: Colors.transparent,
+                    child: Container(
+                      height: 35.0,
+                      padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: color.primary),
+                        borderRadius: BorderRadius.circular(10.0)),
+                      child: Center(child: Text(lang.send,
+                          style: TextStyle(fontSize: 14.0, color: color.primary))),
+                    )
+                  ),
+                ]
+              )
+            ),
+          ),
+        ],
       ),
     );
   }
