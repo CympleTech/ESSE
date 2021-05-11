@@ -3,6 +3,7 @@ import "dart:collection";
 import 'package:flutter/material.dart';
 
 import 'package:esse/rpc.dart';
+import 'package:esse/global.dart';
 
 import 'package:esse/apps/primitives.dart';
 import 'package:esse/apps/group_chat/models.dart';
@@ -21,6 +22,15 @@ class GroupChatProvider extends ChangeNotifier {
   SplayTreeMap<int, Member> activedMembers = SplayTreeMap();
 
   GroupChat get activedGroup => this.groups[this.actived];
+  bool get isActivedGroupOwner => this.activedGroup.owner == Global.gid;
+  bool get isActivedGroupManager {
+    this.activedMembers.values.forEach((m) {
+        if (m.mid == Global.gid) {
+          return m.isManager;
+        }
+    });
+    return false;
+  }
 
   GroupChatProvider() {
     // rpc.

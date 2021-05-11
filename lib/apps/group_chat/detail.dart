@@ -205,9 +205,8 @@ class _GroupChatDetailState extends State<GroupChatDetail> {
 
     final meName = context.read<AccountProvider>().activedAccount.name;
     this.group = provider.activedGroup;
-
-    final isGroupOwner = true;
-    final isGroupManager = true;
+    final isGroupOwner = provider.isActivedGroupOwner;
+    final isGroupManager = provider.isActivedGroupManager;
 
     if (this.group == null) {
       return Container(
