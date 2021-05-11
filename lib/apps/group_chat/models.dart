@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 import 'package:esse/l10n/localizations.dart';
 import 'package:esse/utils/relative_time.dart';
 import 'package:esse/widgets/avatar.dart';
@@ -122,6 +124,46 @@ class GroupChat {
   }
 }
 
+class Member {
+  int id;
+  int fid;
+  String mid;
+  String addr;
+  String name;
+  bool isManager;
+
+  // MOCK need deleted.
+  Member(String name, bool isManager) {
+    this.id = 0;
+    this.fid = 0;
+    this.mid = 'EH0000000000000000000000000000000000000000000000000000000000000000';
+    this.addr = '0x0000000000000000000000000000000000000000000000000000000000000000';
+    this.name = name;
+    this.isManager = isManager;
+  }
+
+  Member.fromList(List params) {
+    this.id = params[0];
+    this.fid = params[1];
+    this.mid = params[2];
+    this.addr = params[3];
+    this.name = params[4];
+    this.isManager = params[5];
+  }
+
+  Avatar showAvatar({double width = 45.0}) {
+    final avatar = Global.avatarPath + this.mid + '.png';
+    return Avatar(
+      width: width,
+      name: this.name,
+      avatarPath: avatar,
+      needOnline: false,
+      hasNew: this.isManager,
+      hasNewColor: Color(0xFF6174FF),
+    );
+  }
+}
+
 class Message extends BaseMessage {
   int height;
   int fid;
@@ -136,9 +178,9 @@ class Message extends BaseMessage {
   Message.fromList(List params) {
     this.id = params[0];
     this.height = params[1];
-    this.isMe = params[2];
-    this.fid = params[3];
-    this.mid = params[4];
+    this.fid = params[2];
+    this.mid = params[3];
+    this.isMe = params[4];
     this.type = MessageTypeExtension.fromInt(params[5]);
     this.content = params[6];
     this.isDelivery = params[7];

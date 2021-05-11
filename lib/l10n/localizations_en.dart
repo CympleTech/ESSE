@@ -80,6 +80,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get unknown => 'Unknown';
   @override
   String get create => 'Create';
+  @override
+  String get exit => 'Exit';
 
   // theme
   @override
@@ -240,4 +242,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get groupCheckTypeNone => 'Restricted, the allowed number is full';
   @override
   String get groupCheckTypeDeny => 'No permission to create here';
+  @override
+  String get members => 'Members';
 }

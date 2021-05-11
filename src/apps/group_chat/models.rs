@@ -49,7 +49,7 @@ impl GroupChatKey {
 }
 
 /// Group Chat Model.
-pub(super) struct GroupChat {
+pub(crate) struct GroupChat {
     /// db auto-increment id.
     pub id: i64,
     /// group chat owner.
@@ -81,9 +81,9 @@ pub(super) struct GroupChat {
     /// group chat lastest message readed.  (only ESSE used)
     last_readed: bool,
     /// group chat created time.
-    datetime: i64,
+    pub datetime: i64,
     /// group chat is online.
-    online: bool,
+    pub online: bool,
     /// is deleted.
     is_deleted: bool,
 }
@@ -203,6 +203,16 @@ impl GroupChat {
         }
     }
 
+    /// use in rpc when load account friends.
+    pub fn all(db: &DStorage) -> Result<Vec<GroupChat>> {
+        let matrix = db.query("SELECT id, owner, gcd, gtype, addr, name, bio, is_top, is_ok, is_need_agree, is_closed, key, last_datetime, last_content, last_readed, datetime FROM groups WHERE is_deleted = false ORDER BY last_datetime DESC")?;
+        let mut groups = vec![];
+        for values in matrix {
+            groups.push(GroupChat::from_values(values, false));
+        }
+        Ok(groups)
+    }
+
     pub fn get(db: &DStorage, gid: &GroupId) -> Result<Option<GroupChat>> {
         let sql = format!("SELECT id, owner, gcd, gtype, addr, name, bio, is_top, is_ok, is_need_agree, is_closed, key, last_datetime, last_content, last_readed, datetime FROM groups WHERE gcd = '{}' AND is_deleted = false", gid.to_hex());
         let mut matrix = db.query(&sql)?;
@@ -256,12 +266,88 @@ pub(super) struct Member {
     m_addr: PeerAddr,
     /// member's name.
     m_name: String,
-    /// member's remark.
-    m_remark: String,
     /// is group chat manager.
     is_manager: bool,
     /// member's joined time.
     datetime: i64,
+    /// member is leave or delete.
+    is_deleted: bool,
+}
+
+impl Member {
+    pub fn new(
+        fid: i64,
+        m_id: GroupId,
+        m_addr: PeerAddr,
+        m_name: String,
+        is_manager: bool,
+        datetime: i64,
+    ) -> Self {
+        Self {
+            fid,
+            m_id,
+            m_addr,
+            m_name,
+            is_manager,
+            datetime,
+            id: 0,
+            is_deleted: false,
+        }
+    }
+
+    pub fn to_rpc(&self) -> RpcParam {
+        json!([
+            self.id,
+            self.fid,
+            self.m_id.to_hex(),
+            self.m_addr.to_hex(),
+            self.m_name,
+            self.is_manager,
+        ])
+    }
+
+    fn from_values(mut v: Vec<DsValue>, contains_deleted: bool) -> Self {
+        let is_deleted = if contains_deleted {
+            v.pop().unwrap().as_bool()
+        } else {
+            false
+        };
+
+        Self {
+            is_deleted,
+            datetime: v.pop().unwrap().as_i64(),
+            is_manager: v.pop().unwrap().as_bool(),
+            m_name: v.pop().unwrap().as_string(),
+            m_addr: PeerAddr::from_hex(v.pop().unwrap().as_string()).unwrap_or(Default::default()),
+            m_id: GroupId::from_hex(v.pop().unwrap().as_string()).unwrap_or(Default::default()),
+            fid: v.pop().unwrap().as_i64(),
+            id: v.pop().unwrap().as_i64(),
+        }
+    }
+
+    pub fn all(db: &DStorage, fid: &i64) -> Result<Vec<Member>> {
+        let matrix = db.query(&format!(
+            "SELECT id, fid, mid, addr, name, is_manager, datetime FROM members WHERE is_deleted = false AND fid = {}", fid))?;
+        let mut groups = vec![];
+        for values in matrix {
+            groups.push(Member::from_values(values, false));
+        }
+        Ok(groups)
+    }
+
+    pub fn insert(&mut self, db: &DStorage) -> Result<()> {
+        let sql = format!("INSERT INTO members (fid, mid, addr, name, is_manager, datetime, is_deleted) VALUES ({}, '{}', '{}', '{}', {}, {}, false)",
+            self.fid,
+            self.m_id.to_hex(),
+            self.m_addr.to_hex(),
+            self.m_name,
+            if self.is_manager { 1 } else { 0 },
+            self.datetime,
+        );
+        let id = db.insert(&sql)?;
+        self.id = id;
+        Ok(())
+    }
 }
 
 /// Group Chat Message Model.
@@ -270,18 +356,67 @@ pub(super) struct Message {
     id: i64,
     /// group message consensus height.
     height: i64,
-    /// message is mine.
-    is_me: bool,
     /// group's db id.
     fid: i64,
     /// member's db id.
-    m_id: i64,
+    mid: i64,
+    /// message is mine.
+    is_me: bool,
     /// message type.
     m_type: MessageType,
     /// message content.
-    m_content: String,
+    content: String,
     /// message is delivery.
-    m_delivery: bool,
+    is_delivery: bool,
     /// message created time.
     datetime: i64,
+    /// message is deteled
+    is_deleted: bool,
+}
+
+impl Message {
+    /// here is zero-copy and unwrap is safe. checked.
+    fn from_values(mut v: Vec<DsValue>, contains_deleted: bool) -> Message {
+        let is_deleted = if contains_deleted {
+            v.pop().unwrap().as_bool()
+        } else {
+            false
+        };
+
+        Message {
+            is_deleted,
+            datetime: v.pop().unwrap().as_i64(),
+            is_delivery: v.pop().unwrap().as_bool(),
+            content: v.pop().unwrap().as_string(),
+            m_type: MessageType::from_int(v.pop().unwrap().as_i64()),
+            is_me: v.pop().unwrap().as_bool(),
+            mid: v.pop().unwrap().as_i64(),
+            fid: v.pop().unwrap().as_i64(),
+            height: v.pop().unwrap().as_i64(),
+            id: v.pop().unwrap().as_i64(),
+        }
+    }
+
+    pub fn to_rpc(&self) -> RpcParam {
+        json!([
+            self.id,
+            self.height,
+            self.fid,
+            self.mid,
+            self.is_me,
+            self.m_type.to_int(),
+            self.content,
+            self.is_delivery,
+            self.datetime,
+        ])
+    }
+
+    pub fn all(db: &DStorage, fid: &i64) -> Result<Vec<Message>> {
+        let matrix = db.query(&format!("SELECT id, height, fid, mid, is_me, m_type, content, is_delivery, datetime FROM messages WHERE is_deleted = false AND fid = {}", fid))?;
+        let mut groups = vec![];
+        for values in matrix {
+            groups.push(Message::from_values(values, false));
+        }
+        Ok(groups)
+    }
 }

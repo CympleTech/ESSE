@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:esse/utils/adaptive.dart';
+import 'package:esse/utils/better_print.dart';
 import 'package:esse/utils/toast.dart';
 import 'package:esse/utils/pick_image.dart';
 import 'package:esse/utils/pick_file.dart';
@@ -205,6 +206,9 @@ class _GroupChatDetailState extends State<GroupChatDetail> {
     final meName = context.read<AccountProvider>().activedAccount.name;
     this.group = provider.activedGroup;
 
+    final isGroupOwner = true;
+    final isGroupManager = true;
+
     if (this.group == null) {
       return Container(
         padding: EdgeInsets.only(left: 20.0, right: 20.0, top: 10.0, bottom: 10.0),
@@ -279,14 +283,31 @@ class _GroupChatDetailState extends State<GroupChatDetail> {
                     showShadowDialog(
                       context,
                       Icons.info,
-                      lang.friendInfo,
+                      lang.groupChat,
                       UserInfo(
-                        id: 'EH' + this.group.gid.toUpperCase(),
+                        id: 'EG' + this.group.gid.toUpperCase(),
                         name: this.group.name,
                         addr: '0x' + this.group.addr)
                     );
                   } else if (value == 3) {
-                    print('TODO remark');
+                    final memberWidgets = provider.activedMembers.values.map((m) {
+                        return MemberAvatar(
+                          member: m, title: lang.members,
+                          isGroupManager: isGroupManager, isGroupOwner: isGroupOwner,
+                        );
+                    }).toList();
+
+                    showShadowDialog(
+                      context,
+                      Icons.group_rounded,
+                      lang.members,
+                      Wrap(
+                        spacing: 10.0,
+                        runSpacing: 10.0,
+                        children: memberWidgets,
+                      ),
+                      10.0, //height
+                    );
                   } else if (value == 4) {
                     showDialog(
                       context: context,
@@ -322,7 +343,7 @@ class _GroupChatDetailState extends State<GroupChatDetail> {
                       context: context,
                       builder: (BuildContext context) {
                         return AlertDialog(
-                          title: Text(lang.delete),
+                          title: Text(lang.delete + ' ' + lang.groupChat),
                           content: Text(this.group.name,
                             style: TextStyle(color: Colors.red)),
                           actions: [
@@ -349,12 +370,14 @@ class _GroupChatDetailState extends State<GroupChatDetail> {
                 itemBuilder: (context) {
                   return <PopupMenuEntry<int>>[
                     _menuItem(Color(0xFF6174FF), 1, Icons.vertical_align_top_rounded, this.group.isTop ? lang.cancelTop : lang.setTop),
-                    // _menuItem(Color(0xFF6174FF), 2, Icons.qr_code_rounded, lang.friendInfo),
+                    _menuItem(Color(0xFF6174FF), 2, Icons.qr_code_rounded, lang.info),
+                    _menuItem(Color(0xFF6174FF), 3, Icons.group_rounded, lang.members),
                     // _menuItem(color.primary, 3, Icons.turned_in_rounded, lang.remark),
                     // this.group.isClosed
                     // ? _menuItem(Color(0xFF6174FF), 5, Icons.send_rounded, lang.addGroup)
                     // : _menuItem(Color(0xFF6174FF), 4, Icons.block_rounded, lang.unfriend),
-                    // _menuItem(Colors.red, 6, Icons.delete_rounded, lang.delete),
+                    _menuItem(Colors.orange, 6, Icons.block_rounded, lang.exit),
+                    _menuItem(Colors.red, 6, Icons.delete_rounded, lang.delete),
                   ];
                 },
               )
@@ -583,4 +606,149 @@ Widget _menuItem(Color color, int value, IconData icon, String text) {
       ]
     ),
   );
+}
+
+class MemberAvatar extends StatelessWidget {
+  final String title;
+  final Member member;
+  final bool isGroupManager;
+  final bool isGroupOwner;
+
+  const MemberAvatar({Key key, this.title, this.member, this.isGroupManager, this.isGroupOwner}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: () => showShadowDialog(
+        context,
+        Icons.group_rounded,
+        title,
+        MemberDetail(member: member, isGroupOwner: isGroupOwner, isGroupManager: isGroupManager),
+        10.0,
+      ),
+      hoverColor: Colors.transparent,
+      child: Column(
+        children: [
+          member.showAvatar(),
+          SizedBox(height: 4.0),
+          Container(
+            alignment: Alignment.center,
+            width: 60.0,
+            child: Text(
+              member.name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(fontSize: 14.0)),
+          )
+        ]
+      )
+    );
+  }
+}
+
+class MemberDetail extends StatefulWidget {
+  Member member;
+  bool isGroupManager;
+  bool isGroupOwner;
+
+  MemberDetail({Key key, this.member, this.isGroupManager, this.isGroupOwner}) : super(key: key);
+
+  @override
+  _MemberDetailState createState() => _MemberDetailState();
+}
+
+class _MemberDetailState extends State<MemberDetail> {
+  Widget _infoListTooltip(icon, color, text) {
+    return Container(
+      width: 300.0,
+      padding: const EdgeInsets.symmetric(vertical: 10.0),
+      child: Row(
+        children: [
+          Icon(icon, size: 20.0, color: color),
+          const SizedBox(width: 20.0),
+          Expanded(
+            child: Tooltip(
+              message: text,
+              child: Text(betterPrint(text)),
+            )
+          )
+        ]
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final color = Theme.of(context).colorScheme;
+    final lang = AppLocalizations.of(context);
+    final bool notFriend = false; // TODO
+
+    return Column(
+      mainAxisSize: MainAxisSize.max,
+      children: [
+        widget.member.showAvatar(width: 100.0),
+        const SizedBox(height: 10.0),
+        Text(widget.member.name),
+        const SizedBox(height: 10.0),
+        const Divider(height: 1.0, color: Color(0x40ADB0BB)),
+        const SizedBox(height: 10.0),
+        _infoListTooltip(Icons.person, color.primary, widget.member.mid),
+        _infoListTooltip(Icons.location_on, color.primary, widget.member.addr),
+        const SizedBox(height: 10.0),
+        if (widget.isGroupOwner)
+        InkWell(
+          onTap: () {
+            Navigator.pop(context);
+            // TODO delete.
+          },
+          hoverColor: Colors.transparent,
+          child: Container(
+            width: 300.0,
+            padding: const EdgeInsets.symmetric(vertical: 10.0),
+            decoration: BoxDecoration(
+              border: Border.all(),
+              borderRadius: BorderRadius.circular(10.0)),
+            child: Center(child: Text(widget.member.isManager ? 'Cancel Manager' : 'Set Manager',
+                style: TextStyle(fontSize: 14.0))),
+          )
+        ),
+        const SizedBox(height: 10.0),
+        if (notFriend)
+        InkWell(
+          onTap: () {
+            Navigator.pop(context);
+            // TODO delete.
+          },
+          hoverColor: Colors.transparent,
+          child: Container(
+            width: 300.0,
+            padding: const EdgeInsets.symmetric(vertical: 10.0),
+            decoration: BoxDecoration(
+              border: Border.all(color: Color(0xFF6174FF)),
+              borderRadius: BorderRadius.circular(10.0)),
+            child: Center(child: Text(lang.addFriend,
+                style: TextStyle(fontSize: 14.0, color: Color(0xFF6174FF)))),
+          )
+        ),
+        const SizedBox(height: 10.0),
+        if (widget.isGroupManager || widget.isGroupOwner)
+        InkWell(
+          onTap: () {
+            Navigator.pop(context);
+            // TODO delete.
+          },
+          hoverColor: Colors.transparent,
+          child: Container(
+            width: 300.0,
+            padding: const EdgeInsets.symmetric(vertical: 10.0),
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.red),
+              borderRadius: BorderRadius.circular(10.0)),
+            child: Center(child: Text(lang.delete,
+                style: TextStyle(fontSize: 14.0, color: Colors.red))),
+          )
+        ),
+      ]
+    );
+  }
 }

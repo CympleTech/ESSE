@@ -11,6 +11,7 @@ class Avatar extends StatelessWidget {
   final bool online;
   final bool needOnline;
   final bool hasNew;
+  final Color hasNewColor;
 
   const Avatar(
     {Key key,
@@ -20,7 +21,9 @@ class Avatar extends StatelessWidget {
       this.avatarPath,
       this.online = false,
       this.needOnline = true,
-      this.hasNew = false})
+      this.hasNew = false,
+      this.hasNewColor = Colors.red,
+  })
   : super(key: key);
 
   @override
@@ -60,8 +63,8 @@ class Avatar extends StatelessWidget {
             child: Container(
               width: 9.0,
               height: 9.0,
-              decoration: const BoxDecoration(
-                color: Colors.red,
+              decoration: BoxDecoration(
+                color: this.hasNewColor,
                 shape: BoxShape.circle,
               ),
             ),

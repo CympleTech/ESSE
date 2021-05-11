@@ -18,6 +18,7 @@ class GroupChatProvider extends ChangeNotifier {
 
   int actived;
   SplayTreeMap<int, Message> activedMessages = SplayTreeMap();
+  SplayTreeMap<int, Member> activedMembers = SplayTreeMap();
 
   GroupChat get activedGroup => this.groups[this.actived];
 
@@ -29,6 +30,7 @@ class GroupChatProvider extends ChangeNotifier {
     rpc.addListener('group-chat-check', _check, false);
     rpc.addListener('group-chat-create', _create, false);
     rpc.addListener('group-chat-result', _result, false);
+    rpc.addListener('group-chat-detail', _detail, true);
     // rpc.addListener('group-chat-update', _update, false);
     // rpc.addListener('group-chat-join', _join, true);
     // rpc.addListener('group-chat-agree', _agree, true);
@@ -44,6 +46,12 @@ class GroupChatProvider extends ChangeNotifier {
   }
 
   clear() {
+    this.groups.clear();
+    this.createKeys.clear();
+    this.orderKeys.clear();
+    this.requests.clear();
+    this.activedMessages.clear();
+    this.activedMembers.clear();
   }
 
   updateActived() {
@@ -55,11 +63,12 @@ class GroupChatProvider extends ChangeNotifier {
 
   updateActivedGroup(int id) {
     this.actived = id;
-    // TODO load
+    rpc.send('group-chat-detail', [id]);
   }
 
   clearActivedGroup() {
-    // TODO
+    this.activedMessages.clear();
+    this.activedMembers.clear();
   }
 
   check(String addr) {
@@ -77,9 +86,13 @@ class GroupChatProvider extends ChangeNotifier {
   _list(List params) {
     this.clear();
     params.forEach((params) {
-        // if (params.length == 6) {
-        //   this.devices[params[0]] = Device.fromList(params);
-        // }
+        final gc = GroupChat.fromList(params);
+        if (gc.isOk) {
+          this.orderKeys.add(gc.id);
+        } else {
+          this.createKeys.add(gc.id);
+        }
+        this.groups[gc.id] = gc;
     });
     notifyListeners();
   }
@@ -113,6 +126,17 @@ class GroupChatProvider extends ChangeNotifier {
       //this.createKeys.remove(id);
       this.orderKeys.add(id);
     }
+    notifyListeners();
+  }
+
+  _detail(List params) {
+    this.clearActivedGroup();
+    params[0].forEach((param) {
+        this.activedMembers[param[0]] = Member.fromList(param);
+    });
+    params[1].forEach((param) {
+        this.activedMessages[param[0]] = Message.fromList(param);
+    });
     notifyListeners();
   }
 }

@@ -7,13 +7,13 @@ use tdn::types::{
 };
 use tdn_did::Proof;
 
-use group_chat_types::{CheckType, GroupConnect, GroupInfo, GroupType};
+use group_chat_types::{CheckType, GroupConnect, GroupType};
 
 use crate::rpc::RpcState;
 use crate::storage::group_chat_db;
 
 use super::add_layer;
-use super::models::GroupChat;
+use super::models::{GroupChat, Member, Message};
 
 #[inline]
 pub(crate) fn create_check(mgid: GroupId, ct: CheckType, supported: Vec<GroupType>) -> RpcParam {
@@ -26,10 +26,54 @@ pub(crate) fn create_result(mgid: GroupId, gid: i64, ok: bool) -> RpcParam {
     rpc_response(0, "group-chat-result", json!([gid, ok]), mgid)
 }
 
+#[inline]
+fn group_list(groups: Vec<GroupChat>) -> RpcParam {
+    let mut results = vec![];
+    for group in groups {
+        results.push(group.to_rpc());
+    }
+
+    json!(results)
+}
+
+#[inline]
+fn detail_list(members: Vec<Member>, messages: Vec<Message>) -> RpcParam {
+    let mut member_results = vec![];
+    for m in members {
+        member_results.push(m.to_rpc());
+    }
+
+    let mut message_results = vec![];
+    for msg in messages {
+        message_results.push(msg.to_rpc());
+    }
+
+    json!([member_results, message_results])
+}
+
 pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
     handler.add_method("group-chat-echo", |_, params, _| async move {
         Ok(HandleResult::rpc(json!(params)))
     });
+
+    handler.add_method(
+        "group-chat-list",
+        |gid: GroupId, _params: Vec<RpcParam>, state: Arc<RpcState>| async move {
+            let groups = state.layer.read().await.all_groups_with_online(&gid)?;
+            Ok(HandleResult::rpc(group_list(groups)))
+        },
+    );
+
+    handler.add_method(
+        "group-chat-detail",
+        |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
+            let g_did = params[0].as_i64()?;
+            let db = group_chat_db(state.layer.read().await.base(), &gid)?;
+            let members = Member::all(&db, &g_did)?;
+            let messages = Message::all(&db, &g_did)?;
+            Ok(HandleResult::rpc(detail_list(members, messages)))
+        },
+    );
 
     handler.add_method(
         "group-chat-check",
@@ -62,7 +106,9 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             let _gcd = gc.g_id;
 
             // save db
+            let me = state.group.read().await.clone_user(&gid)?;
             gc.insert(&db)?;
+            Member::new(gc.id, gid, me.addr, me.name, true, gc.datetime).insert(&db)?;
 
             // TODO save avatar
 

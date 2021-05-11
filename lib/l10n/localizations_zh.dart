@@ -80,6 +80,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get unknown => '未知';
   @override
   String get create => '创建';
+  @override
+  String get exit => '退出';
 
   // theme
   @override
@@ -240,4 +242,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get groupCheckTypeNone => '创建被限制,允许数目已满';
   @override
   String get groupCheckTypeDeny => '没有权限在此创建群聊';
+  @override
+  String get members => '成员';
 }

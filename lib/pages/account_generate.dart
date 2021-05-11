@@ -23,6 +23,7 @@ import 'package:esse/provider.dart';
 
 import 'package:esse/apps/device/provider.dart';
 import 'package:esse/apps/chat/provider.dart';
+import 'package:esse/apps/group_chat/provider.dart';
 
 class AccountGeneratePage extends StatefulWidget {
   const AccountGeneratePage({Key key}) : super(key: key);
@@ -106,6 +107,7 @@ class _AccountGeneratePageState extends State<AccountGeneratePage> {
             Provider.of<AccountProvider>(context, listen: false).addAccount(account);
             Provider.of<DeviceProvider>(context, listen: false).updateActived();
             Provider.of<ChatProvider>(context, listen: false).updateActived();
+            Provider.of<GroupChatProvider>(context, listen: false).updateActived();
 
             Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => HomePage()));
           } else {

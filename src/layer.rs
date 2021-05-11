@@ -13,8 +13,9 @@ use tdn_did::user::User;
 
 use crate::apps::chat::conn_req_message;
 use crate::apps::chat::Friend;
+use crate::apps::group_chat::GroupChat;
 use crate::group::Group;
-use crate::storage::{session_db, write_avatar_sync};
+use crate::storage::{group_chat_db, session_db, write_avatar_sync};
 
 /// ESSE layers.
 pub(crate) struct Layer {
@@ -119,10 +120,32 @@ impl Layer {
             .collect();
 
         for fgid in self.running(gid)?.online_groups() {
-            friends[keys[fgid]].online = true; // safe vec index.
+            if keys.contains_key(fgid) {
+                friends[keys[fgid]].online = true; // safe vec index.
+            }
         }
 
         Ok(friends)
+    }
+
+    pub fn all_groups_with_online(&self, gid: &GroupId) -> Result<Vec<GroupChat>> {
+        let db = group_chat_db(&self.base, &gid)?;
+        let mut groups = GroupChat::all(&db)?;
+        drop(db);
+
+        let keys: HashMap<GroupId, usize> = groups
+            .iter()
+            .enumerate()
+            .map(|(i, g)| (g.g_id, i))
+            .collect();
+
+        for fgid in self.running(gid)?.online_groups() {
+            if keys.contains_key(fgid) {
+                groups[keys[fgid]].online = true;
+            }
+        }
+
+        Ok(groups)
     }
 
     pub fn update_friend(&self, gid: &GroupId, fid: i64, remote: User) -> Result<Friend> {

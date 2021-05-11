@@ -16,6 +16,7 @@ import 'package:esse/provider.dart';
 
 import 'package:esse/apps/device/provider.dart';
 import 'package:esse/apps/chat/provider.dart';
+import 'package:esse/apps/group_chat/provider.dart';
 
 class AccountRestorePage extends StatefulWidget {
   const AccountRestorePage({Key key}) : super(key: key);
@@ -380,6 +381,7 @@ class _AccountRestorePageState extends State<AccountRestorePage> {
             Provider.of<AccountProvider>(context, listen: false).addAccount(account);
             Provider.of<DeviceProvider>(context, listen: false).updateActived();
             Provider.of<ChatProvider>(context, listen: false).updateActived();
+            Provider.of<GroupChatProvider>(context, listen: false).updateActived();
 
             Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => HomePage()));
           } else {

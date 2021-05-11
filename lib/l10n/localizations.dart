@@ -78,6 +78,7 @@ abstract class AppLocalizations {
   String get open;
   String get unknown;
   String get create;
+  String get exit;
 
   // theme
   String get themeDark;
@@ -165,6 +166,7 @@ abstract class AppLocalizations {
   String get groupCheckTypeAllow;
   String get groupCheckTypeNone;
   String get groupCheckTypeDeny;
+  String get members;
 }
 
 class _AppLocalizationsDelegate
