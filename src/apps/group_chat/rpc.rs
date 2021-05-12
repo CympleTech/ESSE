@@ -59,7 +59,17 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
     handler.add_method(
         "group-chat-list",
         |gid: GroupId, _params: Vec<RpcParam>, state: Arc<RpcState>| async move {
-            let groups = state.layer.read().await.all_groups_with_online(&gid)?;
+            let layer_lock = state.layer.read().await;
+            let db = group_chat_db(&layer_lock.base, &gid)?;
+            let mut groups = GroupChat::all(&db)?;
+            drop(db);
+
+            let gids: Vec<&GroupId> = groups.iter().map(|g| &g.g_id).collect();
+            let onlines = layer_lock.merge_online(&gid, gids)?;
+            for (index, online) in onlines.iter().enumerate() {
+                groups[index].online = *online;
+            }
+
             Ok(HandleResult::rpc(group_list(groups)))
         },
     );

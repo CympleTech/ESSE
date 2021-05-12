@@ -6,11 +6,12 @@ use tdn::types::{group::GroupId, message::SendType, primitive::HandleResult};
 
 /// Group chat server to ESSE.
 #[inline]
-pub(super) fn add_layer(results: &mut HandleResult, gid: GroupId, msg: SendType) {
+pub(crate) fn add_layer(results: &mut HandleResult, gid: GroupId, msg: SendType) {
     results.layers.push((gid, GROUP_ID, msg));
 }
 
 pub(crate) use models::GroupChat;
 pub(crate) mod rpc;
+pub(crate) use layer::group_chat_conn;
 pub(crate) use layer::handle as layer_handle;
 pub(crate) use rpc::new_rpc_handler;

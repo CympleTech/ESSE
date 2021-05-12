@@ -50,19 +50,19 @@ pub(crate) enum LayerResponse {
     //Service,
 }
 
-/// Esse app's Event.
+/// ESSE chat layer Event.
 #[derive(Serialize, Deserialize)]
 pub(crate) enum LayerEvent {
+    /// receiver gid, sender gid. as BaseLayerEvent.
+    OnlinePing,
+    /// receiver gid, sender gid. as BaseLayerEvent.
+    OnlinePong,
+    /// receiver gid, sender gid. as BaseLayerEvent.
+    Offline,
     /// receiver gid, sender gid, message.
     Message(EventId, NetworkMessage),
     /// receiver gid, sender user.
     Info(User),
-    /// receiver gid, sender gid.
-    OnlinePing,
-    /// receiver gid, sender gid.
-    OnlinePong,
-    /// receiver gid, sender gid.
-    Offline,
     /// close friendship.
     Close,
 }
@@ -83,19 +83,27 @@ pub(crate) async fn handle(
 
             match request {
                 LayerRequest::Connect(proof) => {
-                    let fid = layer.get_remote_id(&mgid, &fgid)?;
+                    let friend = load_friend(&layer.base, &mgid, &fgid)?;
+                    if friend.is_none() {
+                        let data = postcard::to_allocvec(&LayerResponse::Reject).unwrap_or(vec![]);
+                        let msg = SendType::Result(0, addr, false, false, data);
+                        results.layers.push((mgid, fgid, msg));
+                        return Ok(results);
+                    }
+                    let f = friend.unwrap(); // safe.
+
                     // 1. check verify.
                     proof.verify(&fgid, &addr, &layer.addr)?;
                     // 2. online this group.
                     layer
                         .running_mut(&mgid)?
-                        .check_add_online(fgid, Online::Direct(addr))?;
+                        .check_add_online(fgid, Online::Direct(addr), f.id)?;
                     // 3. update remote addr. TODO
                     let db = session_db(&layer.base, &mgid)?;
-                    Friend::addr_update(&db, fid, &addr)?;
+                    Friend::addr_update(&db, f.id, &addr)?;
                     drop(db);
                     // 4. online to UI.
-                    results.rpcs.push(rpc::friend_online(mgid, fid, addr));
+                    results.rpcs.push(rpc::friend_online(mgid, f.id, addr));
                     // 5. connected.
                     let msg = conn_res_message(&layer, &mgid, addr).await?;
                     results.layers.push((mgid, fgid, msg));
@@ -106,8 +114,8 @@ pub(crate) async fn handle(
                     )?;
                 }
                 LayerRequest::Friend(remote, remark) => {
-                    let some_fid = layer.get_remote_id(&mgid, &fgid);
-                    if some_fid.is_err() {
+                    let some_friend = load_friend(&layer.base, &mgid, &fgid)?;
+                    if some_friend.is_none() {
                         // check if exist request.
                         let db = session_db(&layer.base, &mgid)?;
                         if let Some(req) = Request::get(&db, &remote.id)? {
@@ -139,15 +147,23 @@ pub(crate) async fn handle(
                         results.rpcs.push(rpc::request_create(mgid, &request));
                         return Ok(results);
                     }
-                    let fid = some_fid.unwrap(); // safe checked.
+                    let mut friend = some_friend.unwrap(); // safe checked.
 
                     // already friendship & update.
                     // 1. online this group.
-                    layer
-                        .running_mut(&mgid)?
-                        .check_add_online(fgid, Online::Direct(addr))?;
+                    layer.running_mut(&mgid)?.check_add_online(
+                        fgid,
+                        Online::Direct(addr),
+                        friend.id,
+                    )?;
                     // 2. update remote user.
-                    let mut friend = layer.update_friend(&mgid, fid, remote)?;
+                    friend.name = remote.name;
+                    friend.addr = remote.addr;
+                    let db = session_db(&layer.base, &mgid)?;
+                    friend.remote_update(&db)?;
+                    drop(db);
+                    write_avatar_sync(&layer.base, &mgid, &remote.id, remote.avatar)?;
+
                     // 3. online to UI.
                     friend.online = true;
                     results.rpcs.push(rpc::friend_info(mgid, &friend));
@@ -223,11 +239,16 @@ pub(crate) async fn handle(
                     // 1. check verify.
                     proof.verify(&fgid, &addr, &layer.addr)?;
                     // 2. check has this remove.
-                    let fid = layer.get_remote_id(&mgid, &fgid)?;
+                    let some_friend = load_friend(&layer.base, &mgid, &fgid)?;
+                    if some_friend.is_none() {
+                        return Ok(results);
+                    }
+                    let fid = some_friend.unwrap().id; // safe.
+
                     // 3. online this group.
                     layer
                         .running_mut(&mgid)?
-                        .check_add_online(fgid, Online::Direct(addr))?;
+                        .check_add_online(fgid, Online::Direct(addr), fid)?;
                     // 4. update remote addr.
                     let db = session_db(&layer.base, &mgid)?;
                     Friend::addr_update(&db, fid, &addr)?;
@@ -243,12 +264,14 @@ pub(crate) async fn handle(
                 LayerResponse::Agree(remote, proof) => {
                     // 1. check verify.
                     proof.verify(&fgid, &addr, &layer.addr)?;
-                    if let Ok(fid) = layer.get_remote_id(&mgid, &fgid) {
+                    if let Some(friend) = load_friend(&layer.base, &mgid, &fgid)? {
                         // already friendship.
-                        layer
-                            .running_mut(&mgid)?
-                            .check_add_online(fgid, Online::Direct(addr))?;
-                        results.rpcs.push(rpc::friend_online(mgid, fid, addr));
+                        layer.running_mut(&mgid)?.check_add_online(
+                            fgid,
+                            Online::Direct(addr),
+                            friend.id,
+                        )?;
+                        results.rpcs.push(rpc::friend_online(mgid, friend.id, addr));
                         layer.group.write().await.status(
                             &mgid,
                             StatusEvent::SessionFriendOnline(fgid),
@@ -275,7 +298,6 @@ pub(crate) async fn handle(
                             let request_id = request.id;
                             let friend = Friend::from_request(&db, request)?;
                             write_avatar_sync(&layer.base, &mgid, &remote.id, remote.avatar)?;
-                            layer.running_mut(&mgid)?.add_permissioned(fgid, friend.id);
                             results
                                 .rpcs
                                 .push(rpc::request_agree(mgid, request_id, &friend));
@@ -299,11 +321,16 @@ pub(crate) async fn handle(
                     // 1. check verify.
                     proof.verify(&fgid, &addr, &layer.addr)?;
                     // 2. check has this remove.
-                    let fid = layer.get_remote_id(&mgid, &fgid)?;
+                    let some_friend = load_friend(&layer.base, &mgid, &fgid)?;
+                    if some_friend.is_none() {
+                        return Ok(results);
+                    }
+                    let fid = some_friend.unwrap().id; // safe.
+
                     // 3. online this group.
                     layer
                         .running_mut(&mgid)?
-                        .check_add_online(fgid, Online::Direct(addr))?;
+                        .check_add_online(fgid, Online::Direct(addr), fid)?;
                     // 4. update remote addr.
                     let db = session_db(&layer.base, &mgid)?;
                     Friend::addr_update(&db, fid, &addr)?;
@@ -322,12 +349,14 @@ pub(crate) async fn handle(
                 LayerResponse::Agree(remote, proof) => {
                     // 1. check verify.
                     proof.verify(&fgid, &addr, &layer.addr)?;
-                    if let Ok(fid) = layer.get_remote_id(&mgid, &fgid) {
+                    if let Some(friend) = load_friend(&layer.base, &mgid, &fgid)? {
                         // already friendship.
-                        layer
-                            .running_mut(&mgid)?
-                            .check_add_online(fgid, Online::Direct(addr))?;
-                        results.rpcs.push(rpc::friend_online(mgid, fid, addr));
+                        layer.running_mut(&mgid)?.check_add_online(
+                            fgid,
+                            Online::Direct(addr),
+                            friend.id,
+                        )?;
+                        results.rpcs.push(rpc::friend_online(mgid, friend.id, addr));
                         layer.group.write().await.status(
                             &mgid,
                             StatusEvent::SessionFriendOnline(fgid),
@@ -354,7 +383,6 @@ pub(crate) async fn handle(
                             let request_id = request.id;
                             let friend = Friend::from_request(&db, request)?;
                             write_avatar_sync(&layer.base, &mgid, &remote.id, remote.avatar)?;
-                            layer.running_mut(&mgid)?.add_permissioned(fgid, friend.id);
                             results
                                 .rpcs
                                 .push(rpc::request_agree(mgid, request_id, &friend));
@@ -432,7 +460,7 @@ impl LayerEvent {
     ) -> Result<HandleResult> {
         let event: LayerEvent =
             postcard::from_bytes(&bytes).map_err(|_| new_io_error("serialize event error."))?;
-        let fid = layer.get_remote_id(&mgid, &fgid)?;
+        let fid = layer.get_running_remote_id(&mgid, &fgid)?;
 
         let mut results = HandleResult::new();
 
@@ -453,7 +481,14 @@ impl LayerEvent {
             }
             LayerEvent::Info(remote) => {
                 let avatar = remote.avatar.clone();
-                let f = layer.update_friend(&mgid, fid, remote)?;
+                let db = session_db(&layer.base, &mgid)?;
+                let mut f = Friend::get_id(&db, fid)?.ok_or(new_io_error(""))?;
+                f.name = remote.name;
+                f.addr = remote.addr;
+                f.remote_update(&db)?;
+                drop(db);
+                write_avatar_sync(&layer.base, &mgid, &remote.id, remote.avatar)?;
+
                 layer.group.write().await.broadcast(
                     &mgid,
                     InnerEvent::SessionFriendInfo(f.gid, f.addr, f.name.clone(), avatar),
@@ -471,7 +506,7 @@ impl LayerEvent {
                 )?;
                 layer
                     .running_mut(&mgid)?
-                    .check_add_online(fgid, Online::Direct(addr))?;
+                    .check_add_online(fgid, Online::Direct(addr), fid)?;
                 results.rpcs.push(rpc::friend_online(mgid, fid, addr));
                 let data = postcard::to_allocvec(&LayerEvent::OnlinePong).unwrap_or(vec![]);
                 let msg = SendType::Event(0, addr, data);
@@ -485,7 +520,7 @@ impl LayerEvent {
                 )?;
                 layer
                     .running_mut(&mgid)?
-                    .check_add_online(fgid, Online::Direct(addr))?;
+                    .check_add_online(fgid, Online::Direct(addr), fid)?;
                 results.rpcs.push(rpc::friend_online(mgid, fid, addr));
             }
             LayerEvent::Offline => {
@@ -505,7 +540,7 @@ impl LayerEvent {
                     fid,
                     &mut results,
                 )?;
-                layer.remove_friend(&mgid, &fgid);
+                layer.remove_online(&mgid, &fgid);
                 let db = session_db(&layer.base, &mgid)?;
                 Friend::id_close(&db, fid)?;
                 drop(db);
@@ -593,6 +628,12 @@ impl LayerEvent {
     }
 }
 
+#[inline]
+fn load_friend(base: &PathBuf, mgid: &GroupId, fgid: &GroupId) -> Result<Option<Friend>> {
+    let db = session_db(base, mgid)?;
+    Friend::get(&db, fgid)
+}
+
 pub(super) fn req_message(layer: &mut Layer, me: User, request: Request) -> SendType {
     // update delivery.
     let uid = layer.delivery.len() as u64 + 1;
@@ -627,14 +668,9 @@ pub(super) fn event_message(
     SendType::Event(uid, addr, data)
 }
 
-pub(crate) async fn conn_req_message(
-    layer: &Layer,
-    mgid: &GroupId,
-    addr: PeerAddr,
-) -> Result<SendType> {
-    let proof = layer.group.read().await.prove_addr(mgid, &addr)?;
+pub(crate) fn chat_conn(proof: Proof, addr: PeerAddr) -> SendType {
     let data = postcard::to_allocvec(&LayerRequest::Connect(proof)).unwrap_or(vec![]);
-    Ok(SendType::Connect(0, addr, None, None, data))
+    SendType::Connect(0, addr, None, None, data)
 }
 
 async fn conn_res_message(layer: &Layer, mgid: &GroupId, addr: PeerAddr) -> Result<SendType> {
@@ -674,6 +710,6 @@ pub(super) fn rpc_agree_message(
 }
 
 // maybe need if gid or addr in blocklist.
-fn _res_reject() -> Vec<u8> {
+fn res_reject() -> Vec<u8> {
     postcard::to_allocvec(&LayerResponse::Reject).unwrap_or(vec![])
 }

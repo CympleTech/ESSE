@@ -59,7 +59,7 @@ pub(crate) struct GroupChat {
     /// group chat type.
     g_type: GroupType,
     /// group chat server addresse.
-    g_addr: PeerAddr,
+    pub g_addr: PeerAddr,
     /// group chat name.
     g_name: String,
     /// group chat simple intro.
@@ -213,6 +213,16 @@ impl GroupChat {
         Ok(groups)
     }
 
+    /// use in rpc when load account groups.
+    pub fn all_ok(db: &DStorage) -> Result<Vec<GroupChat>> {
+        let matrix = db.query("SELECT id, owner, gcd, gtype, addr, name, bio, is_top, is_ok, is_need_agree, is_closed, key, last_datetime, last_content, last_readed, datetime FROM groups WHERE is_closed = false ORDER BY last_datetime DESC")?;
+        let mut groups = vec![];
+        for values in matrix {
+            groups.push(GroupChat::from_values(values, false));
+        }
+        Ok(groups)
+    }
+
     pub fn get(db: &DStorage, gid: &GroupId) -> Result<Option<GroupChat>> {
         let sql = format!("SELECT id, owner, gcd, gtype, addr, name, bio, is_top, is_ok, is_need_agree, is_closed, key, last_datetime, last_content, last_readed, datetime FROM groups WHERE gcd = '{}' AND is_deleted = false", gid.to_hex());
         let mut matrix = db.query(&sql)?;
@@ -221,6 +231,11 @@ impl GroupChat {
             return Ok(Some(GroupChat::from_values(values, false)));
         }
         Ok(None)
+    }
+
+    pub fn get_height(&self, db: &DStorage) -> Result<i64> {
+        // TODO
+        Ok(0)
     }
 
     pub fn insert(&mut self, db: &DStorage) -> Result<()> {

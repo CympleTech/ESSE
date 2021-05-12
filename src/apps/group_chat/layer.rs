@@ -3,12 +3,13 @@ use tdn::{
     smol::lock::RwLock,
     types::{
         group::GroupId,
-        message::RecvType,
-        primitive::{new_io_error, HandleResult, Result},
+        message::{RecvType, SendType},
+        primitive::{new_io_error, HandleResult, PeerAddr, Result},
     },
 };
 
-use group_chat_types::GroupResult;
+use group_chat_types::{GroupConnect, GroupResult, JoinProof};
+use tdn_did::Proof;
 //use group_chat_types::{Event, GroupConnect, GroupEvent, GroupInfo, GroupResult, GroupType};
 
 use crate::layer::Layer;
@@ -71,4 +72,10 @@ pub(crate) async fn handle(
     }
 
     Ok(results)
+}
+
+pub(crate) fn group_chat_conn(proof: Proof, addr: PeerAddr, gid: GroupId, height: u64) -> SendType {
+    let data = postcard::to_allocvec(&GroupConnect::Join(gid, JoinProof::Had(proof), height))
+        .unwrap_or(vec![]);
+    SendType::Connect(0, addr, None, None, data)
 }

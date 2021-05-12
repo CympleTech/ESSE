@@ -1,3 +1,4 @@
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -5,17 +6,28 @@ use tdn::{
     smol::lock::RwLock,
     types::{
         group::GroupId,
-        message::{RecvType, SendType},
-        primitive::{new_io_error, HandleResult, PeerAddr, Result},
+        message::SendType,
+        primitive::{new_io_error, PeerAddr, Result},
     },
 };
 use tdn_did::user::User;
 
-use crate::apps::chat::conn_req_message;
-use crate::apps::chat::Friend;
-use crate::apps::group_chat::GroupChat;
+use crate::apps::chat::{chat_conn, Friend};
+use crate::apps::group_chat::{group_chat_conn, GroupChat, GROUP_ID};
 use crate::group::Group;
 use crate::storage::{group_chat_db, session_db, write_avatar_sync};
+
+/// ESSE app's BaseLayerEvent.
+/// EVERY LAYER APP MUST EQUAL THE FIRST THREE FIELDS.
+#[derive(Serialize, Deserialize)]
+pub(crate) enum LayerEvent {
+    /// receiver gid, sender gid.
+    OnlinePing,
+    /// receiver gid, sender gid.
+    OnlinePong,
+    /// receiver gid, sender gid.
+    Offline,
+}
 
 /// ESSE layers.
 pub(crate) struct Layer {
@@ -56,8 +68,7 @@ impl Layer {
 
     pub fn add_running(&mut self, gid: &GroupId) -> Result<()> {
         if !self.runnings.contains_key(gid) {
-            self.runnings
-                .insert(*gid, RunningAccount::init(&self.base, gid)?);
+            self.runnings.insert(*gid, RunningAccount::init());
         }
 
         Ok(())
@@ -97,90 +108,47 @@ impl Layer {
         addrs
     }
 
-    pub fn get_remote_id(&self, mgid: &GroupId, fgid: &GroupId) -> Result<i64> {
-        self.running(mgid)?.get_permissioned(fgid)
+    pub fn get_running_remote_id(&self, mgid: &GroupId, fgid: &GroupId) -> Result<i64> {
+        self.running(mgid)?.get_online_id(fgid)
     }
 
-    pub fn all_friends(&self, gid: &GroupId) -> Result<Vec<Friend>> {
-        let db = session_db(&self.base, &gid)?;
-        let friends = Friend::all_ok(&db)?;
-        drop(db);
-        Ok(friends)
+    pub fn merge_online(&self, mgid: &GroupId, gids: Vec<&GroupId>) -> Result<Vec<bool>> {
+        let runnings = self.running(mgid)?;
+        Ok(gids.iter().map(|g| runnings.is_online(g)).collect())
     }
 
-    pub fn all_friends_with_online(&self, gid: &GroupId) -> Result<Vec<Friend>> {
-        let db = session_db(&self.base, &gid)?;
-        let mut friends = Friend::all(&db)?;
-        drop(db);
-
-        let keys: HashMap<GroupId, usize> = friends
-            .iter()
-            .enumerate()
-            .map(|(i, f)| (f.gid, i))
-            .collect();
-
-        for fgid in self.running(gid)?.online_groups() {
-            if keys.contains_key(fgid) {
-                friends[keys[fgid]].online = true; // safe vec index.
-            }
-        }
-
-        Ok(friends)
+    pub fn remove_online(&mut self, gid: &GroupId, fgid: &GroupId) -> Option<PeerAddr> {
+        self.running_mut(gid).ok()?.remove_online(fgid)
     }
 
-    pub fn all_groups_with_online(&self, gid: &GroupId) -> Result<Vec<GroupChat>> {
-        let db = group_chat_db(&self.base, &gid)?;
-        let mut groups = GroupChat::all(&db)?;
-        drop(db);
-
-        let keys: HashMap<GroupId, usize> = groups
-            .iter()
-            .enumerate()
-            .map(|(i, g)| (g.g_id, i))
-            .collect();
-
-        for fgid in self.running(gid)?.online_groups() {
-            if keys.contains_key(fgid) {
-                groups[keys[fgid]].online = true;
-            }
-        }
-
-        Ok(groups)
-    }
-
-    pub fn update_friend(&self, gid: &GroupId, fid: i64, remote: User) -> Result<Friend> {
-        let db = session_db(&self.base, &gid)?;
-        if let Some(mut friend) = Friend::get_id(&db, fid)? {
-            friend.name = remote.name;
-            friend.addr = remote.addr;
-            friend.remote_update(&db)?;
-            drop(db);
-            write_avatar_sync(&self.base, gid, &remote.id, remote.avatar)?;
-            Ok(friend)
-        } else {
-            drop(db);
-            Err(new_io_error("missing friend id"))
-        }
-    }
-
-    pub fn remove_friend(&mut self, gid: &GroupId, fgid: &GroupId) -> Option<PeerAddr> {
-        self.running_mut(gid).ok()?.remove_permissioned(fgid)
-    }
-
-    pub async fn all_friend_conns(&self) -> HashMap<GroupId, Vec<(GroupId, SendType)>> {
+    pub async fn all_layer_conns(&self) -> Result<HashMap<GroupId, Vec<(GroupId, SendType)>>> {
         let mut conns = HashMap::new();
+        let group_lock = self.group.read().await;
         for mgid in self.runnings.keys() {
-            if let Ok(friends) = self.all_friends(mgid) {
-                let mut vecs = vec![];
-                for friend in friends {
-                    if let Ok(msg) = conn_req_message(self, &friend.gid, friend.addr).await {
-                        vecs.push((friend.gid, msg));
-                    }
-                }
-                conns.insert(*mgid, vecs);
+            let mut vecs = vec![];
+
+            // load friend chat.
+            let db = session_db(&self.base, mgid)?;
+            for friend in Friend::all_ok(&db)? {
+                let proof = group_lock.prove_addr(mgid, &friend.addr).unwrap();
+                vecs.push((friend.gid, chat_conn(proof, friend.addr)));
             }
+            drop(db);
+
+            // load group chat.
+            let db = group_chat_db(&self.base, mgid)?;
+            let groups = GroupChat::all_ok(&db)?;
+            for g in groups {
+                let height = g.get_height(&db)? as u64;
+                let proof = group_lock.prove_addr(mgid, &g.g_addr)?;
+                vecs.push((GROUP_ID, group_chat_conn(proof, g.g_addr, g.g_id, height)));
+            }
+            drop(db);
+
+            conns.insert(*mgid, vecs);
         }
-        conns
+
+        Ok(conns)
     }
 
     pub fn is_online(&self, faddr: &PeerAddr) -> bool {
@@ -208,46 +176,39 @@ impl Online {
 }
 
 pub(crate) struct RunningAccount {
-    permissioned: HashMap<GroupId, i64>,
-    /// online group (friends/services) => group's address.
-    onlines: HashMap<GroupId, Online>,
+    /// online group (friends/services) => (group's address, group's db id)
+    onlines: HashMap<GroupId, (Online, i64)>,
 }
 
 impl RunningAccount {
-    pub fn init(base: &PathBuf, gid: &GroupId) -> Result<Self> {
-        let mut permissioned = HashMap::new();
-
-        // load friends to cache.
-        let db = session_db(base, gid)?;
-        let friends = Friend::all_id(&db)?;
-        for (fgid, db_id) in friends {
-            permissioned.insert(fgid, db_id);
-        }
-
-        // TODO load services to cache.
-
-        // TODO load permissioned
-        Ok(RunningAccount {
-            permissioned,
+    pub fn init() -> Self {
+        RunningAccount {
             onlines: HashMap::new(),
-        })
+        }
+    }
+
+    pub fn get_online_id(&self, gid: &GroupId) -> Result<i64> {
+        self.onlines
+            .get(gid)
+            .map(|(_, id)| *id)
+            .ok_or(new_io_error("remote not online"))
     }
 
     /// get all onlines's groupid
-    pub fn online_groups(&self) -> Vec<&GroupId> {
-        self.onlines.keys().map(|k| k).collect()
+    pub fn is_online(&self, gid: &GroupId) -> bool {
+        self.onlines.contains_key(gid)
     }
 
     /// get online peer's addr.
     pub fn online(&self, gid: &GroupId) -> Result<PeerAddr> {
         self.onlines
             .get(gid)
-            .map(|online| *online.addr())
+            .map(|(online, _)| *online.addr())
             .ok_or(new_io_error("remote not online"))
     }
 
     pub fn online_direct(&self, gid: &GroupId) -> Result<PeerAddr> {
-        if let Some(online) = self.onlines.get(gid) {
+        if let Some((online, _)) = self.onlines.get(gid) {
             match online {
                 Online::Direct(addr) => return Ok(*addr),
                 _ => {}
@@ -260,29 +221,29 @@ impl RunningAccount {
     pub fn onlines(&self) -> Vec<(&GroupId, &PeerAddr)> {
         self.onlines
             .iter()
-            .map(|(fgid, online)| (fgid, online.addr()))
+            .map(|(fgid, (online, _))| (fgid, online.addr()))
             .collect()
     }
 
     /// check add online.
-    pub fn check_add_online(&mut self, gid: GroupId, online: Online) -> Result<()> {
-        if let Some(o) = self.onlines.get(&gid) {
+    pub fn check_add_online(&mut self, gid: GroupId, online: Online, id: i64) -> Result<()> {
+        if let Some((o, _)) = self.onlines.get(&gid) {
             match (o, &online) {
                 (Online::Relay(..), Online::Direct(..)) => {
-                    self.onlines.insert(gid, online);
+                    self.onlines.insert(gid, (online, id));
                     Ok(())
                 }
                 _ => Err(new_io_error("remote had online")),
             }
         } else {
-            self.onlines.insert(gid, online);
+            self.onlines.insert(gid, (online, id));
             Ok(())
         }
     }
 
     /// check offline, and return is direct.
     pub fn check_offline(&mut self, gid: &GroupId, addr: &PeerAddr) -> bool {
-        if let Some(online) = self.onlines.remove(gid) {
+        if let Some((online, _)) = self.onlines.remove(gid) {
             if online.addr() != addr {
                 return false;
             }
@@ -297,10 +258,14 @@ impl RunningAccount {
         false
     }
 
+    pub fn remove_online(&mut self, gid: &GroupId) -> Option<PeerAddr> {
+        self.onlines.remove(gid).map(|(online, _)| *online.addr())
+    }
+
     /// remove all onlines peer.
     pub fn remove_onlines(self) -> Vec<(PeerAddr, GroupId)> {
         let mut peers = vec![];
-        for (fgid, online) in self.onlines {
+        for (fgid, (online, _)) in self.onlines {
             match online {
                 Online::Direct(addr) => peers.push((addr, fgid)),
                 _ => {}
@@ -311,7 +276,7 @@ impl RunningAccount {
 
     /// check if addr is online.
     pub fn check_addr_online(&self, addr: &PeerAddr) -> bool {
-        for (_, online) in &self.onlines {
+        for (_, (online, _)) in &self.onlines {
             if online.addr() == addr {
                 return true;
             }
@@ -322,11 +287,9 @@ impl RunningAccount {
     /// peer leave, remove online peer.
     pub fn peer_leave(&mut self, addr: &PeerAddr) -> Vec<(GroupId, i64)> {
         let mut peers = vec![];
-        for (fgid, online) in &self.onlines {
+        for (fgid, (online, id)) in &self.onlines {
             if online.addr() == addr {
-                if let Some(i) = self.permissioned.get(fgid) {
-                    peers.push((*fgid, *i))
-                }
+                peers.push((*fgid, *id))
             }
         }
 
@@ -336,30 +299,11 @@ impl RunningAccount {
         peers
     }
 
-    /// add the permissioned group.
-    pub fn add_permissioned(&mut self, gid: GroupId, id: i64) {
-        self.permissioned.insert(gid, id);
-    }
-
-    /// remove the permissioned group.
-    pub fn remove_permissioned(&mut self, gid: &GroupId) -> Option<PeerAddr> {
-        self.permissioned.remove(gid);
-        self.onlines.remove(gid).and_then(|o| match o {
-            Online::Direct(addr) => Some(addr),
-            _ => None,
-        })
-    }
-
-    /// check the group is permissioned.
-    pub fn get_permissioned(&self, gid: &GroupId) -> Result<i64> {
-        self.permissioned
-            .get(gid)
-            .cloned()
-            .ok_or(new_io_error("remote missing"))
-    }
-
     /// list all onlines groups.
     pub fn _list_onlines(&self) -> Vec<(&GroupId, &PeerAddr)> {
-        self.onlines.iter().map(|(k, v)| (k, v.addr())).collect()
+        self.onlines
+            .iter()
+            .map(|(k, (v, _))| (k, v.addr()))
+            .collect()
     }
 }

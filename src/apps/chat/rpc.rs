@@ -122,7 +122,17 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
     handler.add_method(
         "chat-friend-list",
         |gid: GroupId, _params: Vec<RpcParam>, state: Arc<RpcState>| async move {
-            let friends = state.layer.read().await.all_friends_with_online(&gid)?;
+            let layer_lock = state.layer.read().await;
+            let db = session_db(&layer_lock.base, &gid)?;
+            let mut friends = Friend::all(&db)?;
+            drop(db);
+
+            let gids: Vec<&GroupId> = friends.iter().map(|f| &f.gid).collect();
+            let onlines = layer_lock.merge_online(&gid, gids)?;
+            for (index, online) in onlines.iter().enumerate() {
+                friends[index].online = *online;
+            }
+
             Ok(HandleResult::rpc(friend_list(friends)))
         },
     );
@@ -182,7 +192,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             friend.close(&db)?;
             drop(db);
 
-            let online = layer_lock.remove_friend(&gid, &friend.gid);
+            let online = layer_lock.remove_online(&gid, &friend.gid);
             drop(layer_lock);
 
             if let Some(faddr) = online {
@@ -222,7 +232,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             friend.delete(&db)?;
             drop(db);
 
-            let online = layer_lock.remove_friend(&gid, &friend.gid);
+            let online = layer_lock.remove_online(&gid, &friend.gid);
             delete_avatar(layer_lock.base(), &gid, &friend.gid).await?;
             drop(layer_lock);
 
@@ -346,7 +356,6 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
                 request.update(&db)?;
 
                 let f = Friend::from_request(&db, request)?;
-                layer_lock.running_mut(&gid)?.add_permissioned(f.gid, f.id);
                 results.rpcs.push(json!([id, f.to_rpc()]));
 
                 let proof = group_lock.prove_addr(&gid, &f.addr)?;

@@ -13,10 +13,12 @@ use tdn::{
 };
 
 use crate::apps::app_rpc_inject;
-use crate::apps::chat::{conn_req_message, LayerEvent};
+use crate::apps::chat::{chat_conn, Friend};
+use crate::apps::group_chat::{add_layer, group_chat_conn, GroupChat};
 use crate::event::InnerEvent;
 use crate::group::Group;
-use crate::layer::Layer;
+use crate::layer::{Layer, LayerEvent};
+use crate::storage::{group_chat_db, session_db};
 
 pub(crate) fn init_rpc(
     addr: PeerAddr,
@@ -360,13 +362,28 @@ fn new_rpc_handler(
 
             let mut results = HandleResult::new();
 
-            let layer_lock = state.layer.read().await;
-            let friends = layer_lock.all_friends(&gid)?;
-            for friend in friends {
-                let msg = conn_req_message(&layer_lock, &gid, friend.addr).await?;
-                results.layers.push((gid, friend.gid, msg));
+            let group_lock = state.group.read().await;
+            let db = session_db(group_lock.base(), &gid)?;
+            let friends = Friend::all_ok(&db)?;
+            drop(db);
+            for f in friends {
+                let proof = group_lock.prove_addr(&gid, &f.addr)?;
+                results.layers.push((gid, f.gid, chat_conn(proof, f.addr)));
             }
-            drop(layer_lock);
+
+            let db = group_chat_db(group_lock.base(), &gid)?;
+            let groups = GroupChat::all_ok(&db)?;
+            for g in groups {
+                let height = g.get_height(&db)? as u64;
+                let proof = group_lock.prove_addr(&gid, &g.g_addr)?;
+                add_layer(
+                    &mut results,
+                    gid,
+                    group_chat_conn(proof, g.g_addr, g.g_id, height),
+                );
+            }
+            drop(db);
+            drop(group_lock);
 
             let devices = state.group.read().await.distribute_conns(&gid);
             for device in devices {

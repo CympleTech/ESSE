@@ -116,7 +116,12 @@ pub async fn start(db_path: String) -> Result<()> {
                     .expect("TDN channel closed");
                 let t_sender = sender.clone();
                 let g_conns = group.read().await.all_distribute_conns();
-                let l_conns = layer.read().await.all_friend_conns().await;
+                let l_conns = layer
+                    .read()
+                    .await
+                    .all_layer_conns()
+                    .await
+                    .unwrap_or(HashMap::new());
                 tdn::smol::spawn(sleep_waiting_reboot(t_sender, g_conns, l_conns)).detach();
             }
         }

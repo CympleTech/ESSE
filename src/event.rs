@@ -285,15 +285,6 @@ impl InnerEvent {
                             write_avatar_sync(group.base(), &gid, &request.gid, avatar)?;
                         }
                         let friend = Friend::from_request(&db, request)?;
-                        let layer_lock = layer.clone();
-                        let rfid = friend.id;
-                        let ggid = gid.clone();
-                        tdn::smol::spawn(async move {
-                            if let Ok(running) = layer_lock.write().await.running_mut(&ggid) {
-                                running.add_permissioned(rgid, rfid);
-                            }
-                        })
-                        .detach();
                         results
                             .rpcs
                             .push(chat_rpc::request_agree(gid, rid, &friend));
@@ -400,7 +391,7 @@ impl InnerEvent {
                     let ggid = gid.clone();
                     let sender = group.sender();
                     tdn::smol::spawn(async move {
-                        let online = layer_lock.write().await.remove_friend(&ggid, &f.gid);
+                        let online = layer_lock.write().await.remove_online(&ggid, &f.gid);
                         if let Some(faddr) = online {
                             let mut addrs: HashMap<PeerAddr, GroupId> = HashMap::new();
                             addrs.insert(faddr, f.gid);
@@ -430,7 +421,7 @@ impl InnerEvent {
                     let ggid = gid.clone();
                     let sender = group.sender();
                     tdn::smol::spawn(async move {
-                        let online = layer_lock.write().await.remove_friend(&ggid, &f.gid);
+                        let online = layer_lock.write().await.remove_online(&ggid, &f.gid);
                         if let Some(faddr) = online {
                             let mut addrs: HashMap<PeerAddr, GroupId> = HashMap::new();
                             addrs.insert(faddr, f.gid);
@@ -503,10 +494,11 @@ impl StatusEvent {
                         .push(chat_rpc::friend_online(gid, f.id, f.addr));
                     let layer_lock = layer.clone();
                     let rgid = f.gid;
+                    let fid = f.id;
                     let ggid = gid.clone();
                     tdn::smol::spawn(async move {
                         if let Ok(running) = layer_lock.write().await.running_mut(&ggid) {
-                            let _ = running.check_add_online(rgid, Online::Relay(addr));
+                            let _ = running.check_add_online(rgid, Online::Relay(addr), fid);
                         }
                     })
                     .detach();
@@ -795,15 +787,6 @@ impl SyncEvent {
                             write_avatar_sync(&base, &gid, &request.gid, avatar)?;
                         }
                         let friend = Friend::from_request(&session_db, request)?;
-                        let layer_lock = layer.clone();
-                        let rfid = friend.id;
-                        let ggid = gid.clone();
-                        tdn::smol::spawn(async move {
-                            if let Ok(running) = layer_lock.write().await.running_mut(&ggid) {
-                                running.add_permissioned(rgid, rfid);
-                            }
-                        })
-                        .detach();
                         results
                             .rpcs
                             .push(chat_rpc::request_agree(gid, rid, &friend));
@@ -854,7 +837,7 @@ impl SyncEvent {
                             let fgid = friend.gid;
                             let sender = group.sender();
                             tdn::smol::spawn(async move {
-                                let online = layer_lock.write().await.remove_friend(&ggid, &fgid);
+                                let online = layer_lock.write().await.remove_online(&ggid, &fgid);
                                 if let Some(faddr) = online {
                                     let mut addrs: HashMap<PeerAddr, GroupId> = HashMap::new();
                                     addrs.insert(faddr, fgid);
