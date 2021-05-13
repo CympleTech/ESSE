@@ -186,7 +186,13 @@ pub(crate) async fn handle(
             for (mgid, running) in &mut layer.runnings {
                 let peers = running.peer_leave(&addr);
                 for (fgid, fid) in peers {
-                    results.rpcs.push(rpc::friend_offline(*mgid, fid));
+                    results.rpcs.push(rpc::friend_offline(*mgid, fid, &fgid));
+                    results
+                        .rpcs
+                        .push(crate::apps::group_chat::rpc::group_offline(
+                            *mgid, fid, &fgid,
+                        ));
+
                     group_lock.status(
                         &mgid,
                         StatusEvent::SessionFriendOffline(fgid),

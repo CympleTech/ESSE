@@ -1,5 +1,5 @@
-use group_chat_types::{GroupInfo, GroupType};
 use rand::Rng;
+use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
 use tdn::types::{
     group::GroupId,
@@ -8,7 +8,12 @@ use tdn::types::{
 };
 use tdn_storage::local::{DStorage, DsValue};
 
+use group_chat_types::{GroupInfo, GroupType, NetworkMessage};
+
 use crate::apps::chat::MessageType;
+use crate::storage::{
+    group_chat_db, write_avatar_sync, write_file_sync, write_image_sync, write_record_sync,
+};
 
 pub(super) struct GroupChatKey(Vec<u8>);
 
@@ -268,12 +273,19 @@ impl GroupChat {
         db.update(&sql)
     }
 
-    pub fn addr_update(db: &DStorage, id: i64, addr: &PeerAddr) -> Result<usize> {
+    pub fn update_last_message(db: &DStorage, id: i64, msg: &Message, read: bool) -> Result<usize> {
         let sql = format!(
-            "UPDATE groups SET addr='{}' WHERE id = {}",
-            addr.to_hex(),
+            "UPDATE groups SET last_datetime={}, last_content='{}', last_readed={} WHERE id = {}",
+            msg.datetime,
+            msg.content,
+            if read { 1 } else { 0 },
             id,
         );
+        db.update(&sql)
+    }
+
+    pub fn readed(db: &DStorage, id: i64) -> Result<usize> {
+        let sql = format!("UPDATE groups SET last_readed=1 WHERE id = {}", id);
         db.update(&sql)
     }
 }
@@ -372,10 +384,23 @@ impl Member {
         self.id = id;
         Ok(())
     }
+
+    pub fn get_id(db: &DStorage, fid: &i64, mid: &GroupId) -> Result<i64> {
+        let mut matrix = db.query(&format!(
+            "SELECT id FROM members WHERE fid = {} AND mid = '{}'",
+            fid,
+            mid.to_hex()
+        ))?;
+        if matrix.len() > 0 {
+            Ok(matrix.pop().unwrap().pop().unwrap().as_i64()) // safe unwrap.
+        } else {
+            Err(new_io_error("missing member"))
+        }
+    }
 }
 
 /// Group Chat Message Model.
-pub(super) struct Message {
+pub(crate) struct Message {
     /// db auto-increment id.
     id: i64,
     /// group message consensus height.
@@ -399,6 +424,33 @@ pub(super) struct Message {
 }
 
 impl Message {
+    pub(crate) fn new(
+        height: i64,
+        fid: i64,
+        mid: i64,
+        is_me: bool,
+        m_type: MessageType,
+        content: String,
+    ) -> Message {
+        let start = SystemTime::now();
+        let datetime = start
+            .duration_since(UNIX_EPOCH)
+            .map(|s| s.as_secs())
+            .unwrap_or(0) as i64; // safe for all life.
+
+        Self {
+            fid,
+            mid,
+            m_type,
+            content,
+            datetime,
+            height,
+            is_me,
+            is_deleted: false,
+            is_delivery: true,
+            id: 0,
+        }
+    }
     /// here is zero-copy and unwrap is safe. checked.
     fn from_values(mut v: Vec<DsValue>, contains_deleted: bool) -> Message {
         let is_deleted = if contains_deleted {
@@ -443,4 +495,83 @@ impl Message {
         }
         Ok(groups)
     }
+
+    pub fn insert(&mut self, db: &DStorage) -> Result<()> {
+        let sql = format!("INSERT INTO messages (height, fid, mid, is_me, m_type, content, is_delivery, datetime, is_deleted) VALUES ({}, {}, {}, {}, {}, '{}', {}, {}, false)",
+            self.height,
+            self.fid,
+            self.mid,
+            if self.is_me { 1 } else { 0 },
+            self.m_type.to_int(),
+            self.content,
+            if self.is_delivery { 1 } else { 0 },
+            self.datetime,
+        );
+        let id = db.insert(&sql)?;
+        self.id = id;
+        Ok(())
+    }
+}
+
+pub(super) fn from_network_message(
+    height: i64,
+    gdid: i64,
+    mid: GroupId,
+    mgid: GroupId,
+    msg: NetworkMessage,
+    base: PathBuf,
+) -> Result<Message> {
+    let db = group_chat_db(&base, &mgid)?;
+    let mdid = Member::get_id(&db, &gdid, &mid)?;
+    let is_me = mid == mgid;
+
+    // handle event.
+    let (m_type, raw) = match msg {
+        NetworkMessage::String(content) => (MessageType::String, content),
+        NetworkMessage::Image(bytes) => {
+            let image_name = write_image_sync(&base, &mgid, bytes)?;
+            (MessageType::Image, image_name)
+        }
+        NetworkMessage::File(old_name, bytes) => {
+            let filename = write_file_sync(&base, &mgid, &old_name, bytes)?;
+            (MessageType::File, filename)
+        }
+        NetworkMessage::Contact(name, rgid, addr, avatar_bytes) => {
+            write_avatar_sync(&base, &mgid, &rgid, avatar_bytes)?;
+            let tmp_name = name.replace(";", "-;");
+            let contact_values = format!("{};;{};;{}", tmp_name, rgid.to_hex(), addr.to_hex());
+            (MessageType::Contact, contact_values)
+        }
+        NetworkMessage::Emoji => {
+            // TODO
+            (MessageType::Emoji, "".to_owned())
+        }
+        NetworkMessage::Record(bytes, time) => {
+            let record_name = write_record_sync(&base, &mgid, gdid, time, bytes)?;
+            (MessageType::Record, record_name)
+        }
+        NetworkMessage::Phone => {
+            // TODO
+            (MessageType::Phone, "".to_owned())
+        }
+        NetworkMessage::Video => {
+            // TODO
+            (MessageType::Video, "".to_owned())
+        }
+        NetworkMessage::None => {
+            return Ok(Message::new(
+                height,
+                gdid,
+                mdid,
+                is_me,
+                MessageType::String,
+                "".to_owned(),
+            ));
+        }
+    };
+
+    let mut msg = Message::new(height, gdid, mdid, is_me, m_type, raw);
+    msg.insert(&db)?;
+    GroupChat::update_last_message(&db, gdid, &msg, false)?;
+    Ok(msg)
 }

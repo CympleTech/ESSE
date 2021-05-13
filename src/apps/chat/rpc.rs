@@ -22,8 +22,8 @@ pub(crate) fn friend_online(mgid: GroupId, fid: i64, addr: PeerAddr) -> RpcParam
 }
 
 #[inline]
-pub(crate) fn friend_offline(mgid: GroupId, fid: i64) -> RpcParam {
-    rpc_response(0, "chat-friend-offline", json!([fid]), mgid)
+pub(crate) fn friend_offline(mgid: GroupId, fid: i64, gid: &GroupId) -> RpcParam {
+    rpc_response(0, "chat-friend-offline", json!([fid, gid.to_hex()]), mgid)
 }
 
 #[inline]

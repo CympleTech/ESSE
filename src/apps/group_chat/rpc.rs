@@ -7,8 +7,9 @@ use tdn::types::{
 };
 use tdn_did::Proof;
 
-use group_chat_types::{CheckType, GroupConnect, GroupType};
+use group_chat_types::{CheckType, Event, GroupConnect, GroupType, LayerEvent, NetworkMessage};
 
+use crate::apps::chat::MessageType;
 use crate::rpc::RpcState;
 use crate::storage::group_chat_db;
 
@@ -32,8 +33,8 @@ pub(crate) fn group_online(mgid: GroupId, gid: i64) -> RpcParam {
 }
 
 #[inline]
-pub(crate) fn group_offline(mgid: GroupId, gid: i64) -> RpcParam {
-    rpc_response(0, "group-chat-offline", json!([gid]), mgid)
+pub(crate) fn group_offline(mgid: GroupId, fid: i64, gid: &GroupId) -> RpcParam {
+    rpc_response(0, "group-chat-offline", json!([fid, gid.to_hex()]), mgid)
 }
 
 #[inline]
@@ -54,6 +55,11 @@ pub(crate) fn member_offline(mgid: GroupId, gid: i64, mid: GroupId, maddr: PeerA
         json!([gid, mid.to_hex(), maddr.to_hex()]),
         mgid,
     )
+}
+
+#[inline]
+pub(crate) fn message_create(mgid: GroupId, msg: Message) -> RpcParam {
+    rpc_response(0, "group-chat-message-create", json!(msg.to_rpc()), mgid)
 }
 
 #[inline]
@@ -164,6 +170,37 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             let s = SendType::Connect(0, addr, None, None, data);
             add_layer(&mut results, gid, s);
             Ok(results)
+        },
+    );
+
+    handler.add_method(
+        "group-chat-message-create",
+        |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
+            let gcd = GroupId::from_hex(params[0].as_str()?)?;
+            let m_type = MessageType::from_int(params[1].as_i64()?);
+            let m_content = params[2].as_str()?;
+
+            let addr = state.layer.read().await.running(&gid)?.online(&gcd)?;
+
+            let mut results = HandleResult::new();
+            let event = Event::Message(gid, NetworkMessage::String(m_content.to_owned()));
+            let data = postcard::to_allocvec(&LayerEvent::Sync(gcd, 0, event)).unwrap_or(vec![]);
+            let msg = SendType::Event(0, addr, data);
+            add_layer(&mut results, gid, msg);
+            Ok(results)
+        },
+    );
+
+    handler.add_method(
+        "group-chat-readed",
+        |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
+            let fid = params[0].as_i64()?;
+
+            let db = group_chat_db(state.layer.read().await.base(), &gid)?;
+            GroupChat::readed(&db, fid)?;
+            drop(db);
+
+            Ok(HandleResult::new())
         },
     );
 }

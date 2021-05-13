@@ -48,9 +48,9 @@ class GroupChatProvider extends ChangeNotifier {
     // rpc.addListener('group-chat-member-join', _memberJoin, false);
     // rpc.addListener('group-chat-member-info', _memberInfo, false);
     // rpc.addListener('group-chat-member-leave', _memberLeave, false);
-    // rpc.addListener('group-chat-member-online', _memberOnline, false);
-    // rpc.addListener('group-chat-member-offline', _memberOffline, false);
-    // rpc.addListener('group-chat-message-create', _messageCreate, true);
+    rpc.addListener('group-chat-member-online', _memberOnline, false);
+    rpc.addListener('group-chat-member-offline', _memberOffline, false);
+    rpc.addListener('group-chat-message-create', _messageCreate, true);
     // rpc.addListener('group-chat-message-delete', _messageDelete, false);
     // rpc.addListener('group-chat-message-delivery', _messageDelivery, false);
   }
@@ -91,6 +91,11 @@ class GroupChatProvider extends ChangeNotifier {
 
   reSend(int id) {
     //
+  }
+
+  messageCreate(MessageType mtype, String content) {
+    final gid = this.activedGroup.gid;
+    rpc.send('group-chat-message-create', [gid, mtype.toInt(), content]);
   }
 
   _list(List params) {
@@ -161,8 +166,36 @@ class GroupChatProvider extends ChangeNotifier {
   _offline(List params) {
     final id = params[0];
     if (this.groups.containsKey(id)) {
-      this.groups[id].online = false;
-      notifyListeners();
+      if (this.groups[id].gid == params[1]) {
+        this.groups[id].online = false;
+        notifyListeners();
+      }
     }
+  }
+
+  _memberOnline(List params) {
+    //
+  }
+
+  _memberOffline(List params) {
+    //
+  }
+
+  _messageCreate(List params) {
+    final msg = Message.fromList(params);
+    if (msg.fid == this.actived) {
+      if (!msg.isDelivery) {
+        msg.isDelivery = null; // When message create, set is is none;
+      }
+      this.groups[msg.fid].updateLastMessage(msg, true);
+      this.activedMessages[msg.id] = msg;
+      rpc.send('group-chat-readed', [this.actived]);
+    } else {
+      if (this.groups.containsKey(msg.fid)) {
+        this.groups[msg.fid].updateLastMessage(msg, false);
+      }
+    }
+    //orderGroups(msg.fid);
+    notifyListeners();
   }
 }

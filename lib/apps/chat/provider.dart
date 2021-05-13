@@ -215,8 +215,10 @@ class ChatProvider extends ChangeNotifier {
   _friendOffline(List params) {
     final id = params[0];
     if (this.friends.containsKey(id)) {
-      this.friends[id].online = false;
-      notifyListeners();
+      if (this.friends[id].gid == params[1]) {
+        this.friends[id].online = false;
+        notifyListeners();
+      }
     }
   }
 

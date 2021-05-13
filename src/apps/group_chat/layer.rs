@@ -9,13 +9,13 @@ use tdn::{
     },
 };
 
-use group_chat_types::{Event, GroupConnect, GroupResult, JoinProof, LayerEvent};
+use group_chat_types::{Event, GroupConnect, GroupResult, JoinProof, LayerEvent, NetworkMessage};
 use tdn_did::Proof;
 
 use crate::layer::{Layer, Online};
 use crate::storage::group_chat_db;
 
-use super::models::GroupChat;
+use super::models::{from_network_message, GroupChat};
 use super::{add_layer, rpc};
 
 pub(crate) async fn handle(
@@ -144,10 +144,12 @@ async fn handle_event(
         LayerEvent::OnlinePong(_) => {
             results.rpcs.push(rpc::group_online(mgid, gid));
         }
-        LayerEvent::Sync(_gcd, _, event) => {
+        LayerEvent::Sync(_, height, event) => {
             match event {
-                Event::Message => {
-                    //
+                Event::Message(mid, nmsg) => {
+                    let base = layer.read().await.base.clone();
+                    let msg = from_network_message(height as i64, gid, mid, mgid, nmsg, base)?;
+                    results.rpcs.push(rpc::message_create(mgid, msg));
                 }
                 Event::GroupUpdate => {
                     //

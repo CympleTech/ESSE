@@ -122,6 +122,12 @@ class GroupChat {
       hasNew: !this.lastReaded,
     );
   }
+
+  updateLastMessage(Message msg, bool isReaded) {
+    this.lastTime = msg.time;
+    this.lastContent = msg.shortShow();
+    this.lastReaded = isReaded;
+  }
 }
 
 class Member {

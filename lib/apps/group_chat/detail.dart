@@ -76,7 +76,7 @@ class _GroupChatDetailState extends State<GroupChatDetail> {
       return;
     }
 
-    //context.read<GroupChatProvider>().messageCreate(Message(group.id, MessageType.String, textController.text));
+    context.read<GroupChatProvider>().messageCreate(MessageType.String, textController.text);
     setState(() {
         textController.text = '';
         textFocus.requestFocus();
