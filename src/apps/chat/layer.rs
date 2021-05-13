@@ -54,11 +54,11 @@ pub(crate) enum LayerResponse {
 #[derive(Serialize, Deserialize)]
 pub(crate) enum LayerEvent {
     /// receiver gid, sender gid. as BaseLayerEvent.
+    Offline(GroupId),
+    /// receiver gid, sender gid. as BaseLayerEvent.
     OnlinePing,
     /// receiver gid, sender gid. as BaseLayerEvent.
     OnlinePong,
-    /// receiver gid, sender gid. as BaseLayerEvent.
-    Offline,
     /// receiver gid, sender gid, message.
     Message(EventId, NetworkMessage),
     /// receiver gid, sender user.
@@ -525,7 +525,7 @@ impl LayerEvent {
                     .check_add_online(fgid, Online::Direct(addr), fid)?;
                 results.rpcs.push(rpc::friend_online(mgid, fid, addr));
             }
-            LayerEvent::Offline => {
+            LayerEvent::Offline(_) => {
                 layer.group.write().await.status(
                     &mgid,
                     StatusEvent::SessionFriendOffline(fgid),

@@ -21,12 +21,8 @@ use crate::storage::{group_chat_db, session_db, write_avatar_sync};
 /// EVERY LAYER APP MUST EQUAL THE FIRST THREE FIELDS.
 #[derive(Serialize, Deserialize)]
 pub(crate) enum LayerEvent {
-    /// receiver gid, sender gid.
-    OnlinePing,
-    /// receiver gid, sender gid.
-    OnlinePong,
-    /// receiver gid, sender gid.
-    Offline,
+    /// offline, remote_gid.
+    Offline(GroupId),
 }
 
 /// ESSE layers.

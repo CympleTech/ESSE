@@ -9,9 +9,8 @@ use tdn::{
     },
 };
 
-use group_chat_types::{GroupConnect, GroupResult, JoinProof};
+use group_chat_types::{Event, GroupConnect, GroupResult, JoinProof, LayerEvent};
 use tdn_did::Proof;
-//use group_chat_types::{Event, GroupConnect, GroupEvent, GroupInfo, GroupResult, GroupType};
 
 use crate::layer::{Layer, Online};
 use crate::storage::group_chat_db;
@@ -27,9 +26,7 @@ pub(crate) async fn handle(
     let mut results = HandleResult::new();
 
     match msg {
-        RecvType::Connect(_addr, _data) => {
-            // Never to here.
-        }
+        RecvType::Connect(..) => {} // Never to here.
         RecvType::Leave(_addr) => {
             //
         }
@@ -101,8 +98,10 @@ pub(crate) async fn handle(
             let _res: GroupResult = postcard::from_bytes(&data)
                 .map_err(|_e| new_io_error("Deseralize result failure"))?;
         }
-        RecvType::Event(_addr, _bytes) => {
-            //
+        RecvType::Event(addr, bytes) => {
+            let event: LayerEvent =
+                postcard::from_bytes(&bytes).map_err(|_| new_io_error("serialize event error."))?;
+            handle_event(mgid, addr, event, layer, &mut results).await?;
         }
         RecvType::Stream(_uid, _stream, _bytes) => {
             // TODO stream
@@ -113,6 +112,70 @@ pub(crate) async fn handle(
     }
 
     Ok(results)
+}
+
+async fn handle_event(
+    mgid: GroupId,
+    addr: PeerAddr,
+    event: LayerEvent,
+    layer: &Arc<RwLock<Layer>>,
+    results: &mut HandleResult,
+) -> Result<()> {
+    let gid = match event {
+        LayerEvent::Offline(gcd)
+        | LayerEvent::OnlinePing(gcd)
+        | LayerEvent::OnlinePong(gcd)
+        | LayerEvent::MemberOnline(gcd, ..)
+        | LayerEvent::MemberOffline(gcd, ..)
+        | LayerEvent::Sync(gcd, ..) => layer.read().await.get_running_remote_id(&mgid, &gcd)?,
+    };
+
+    match event {
+        LayerEvent::Offline(_) => {
+            results.rpcs.push(rpc::group_offline(mgid, gid));
+        }
+        LayerEvent::OnlinePing(gcd) => {
+            results.rpcs.push(rpc::group_online(mgid, gid));
+            let data = postcard::to_allocvec(&LayerEvent::OnlinePong(gcd)).unwrap_or(vec![]);
+            let msg = SendType::Event(0, addr, data);
+            add_layer(results, mgid, msg);
+        }
+
+        LayerEvent::OnlinePong(_) => {
+            results.rpcs.push(rpc::group_online(mgid, gid));
+        }
+        LayerEvent::Sync(_gcd, _, event) => {
+            match event {
+                Event::Message => {
+                    //
+                }
+                Event::GroupUpdate => {
+                    //
+                }
+                Event::GroupTransfer => {
+                    //
+                }
+                Event::UserInfo => {
+                    //
+                }
+                Event::Close => {
+                    //
+                }
+            }
+
+            // save event.
+
+            // update to UI.
+        }
+        LayerEvent::MemberOnline(_, mid, maddr) => {
+            results.rpcs.push(rpc::member_online(mgid, gid, mid, maddr));
+        }
+        LayerEvent::MemberOffline(_, mid, ma) => {
+            results.rpcs.push(rpc::member_offline(mgid, gid, mid, ma));
+        }
+    }
+
+    Ok(())
 }
 
 #[inline]

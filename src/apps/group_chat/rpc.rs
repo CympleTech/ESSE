@@ -37,6 +37,26 @@ pub(crate) fn group_offline(mgid: GroupId, gid: i64) -> RpcParam {
 }
 
 #[inline]
+pub(crate) fn member_online(mgid: GroupId, gid: i64, mid: GroupId, maddr: PeerAddr) -> RpcParam {
+    rpc_response(
+        0,
+        "group-chat-member-online",
+        json!([gid, mid.to_hex(), maddr.to_hex()]),
+        mgid,
+    )
+}
+
+#[inline]
+pub(crate) fn member_offline(mgid: GroupId, gid: i64, mid: GroupId, maddr: PeerAddr) -> RpcParam {
+    rpc_response(
+        0,
+        "group-chat-member-offline",
+        json!([gid, mid.to_hex(), maddr.to_hex()]),
+        mgid,
+    )
+}
+
+#[inline]
 fn group_list(groups: Vec<GroupChat>) -> RpcParam {
     let mut results = vec![];
     for group in groups {

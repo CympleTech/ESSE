@@ -329,7 +329,7 @@ fn new_rpc_handler(
             for gid in keys {
                 for (fgid, addr) in layer_lock.running(&gid)?.onlines() {
                     // send a event that is offline.
-                    let data = postcard::to_allocvec(&LayerEvent::Offline).unwrap_or(vec![]);
+                    let data = postcard::to_allocvec(&LayerEvent::Offline(*fgid)).unwrap_or(vec![]);
                     let msg = SendType::Event(0, *addr, data);
                     results.layers.push((gid, *fgid, msg));
                 }
@@ -400,7 +400,7 @@ fn new_rpc_handler(
             let layer_lock = state.layer.read().await;
             for (fgid, addr) in layer_lock.running(&gid)?.onlines() {
                 // send a event that is offline.
-                let data = postcard::to_allocvec(&LayerEvent::Offline).unwrap_or(vec![]);
+                let data = postcard::to_allocvec(&LayerEvent::Offline(*fgid)).unwrap_or(vec![]);
                 let msg = SendType::Event(0, *addr, data);
                 results.layers.push((gid, *fgid, msg));
             }
