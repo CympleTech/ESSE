@@ -139,9 +139,8 @@ impl Layer {
             let db = group_chat_db(&self.base, mgid)?;
             let groups = GroupChat::all_ok(&db)?;
             for g in groups {
-                let height = g.get_height(&db)? as u64;
                 let proof = group_lock.prove_addr(mgid, &g.g_addr)?;
-                vecs.push((GROUP_ID, group_chat_conn(proof, g.g_addr, g.g_id, height)));
+                vecs.push((GROUP_ID, group_chat_conn(proof, g.g_addr, g.g_id)));
             }
             drop(db);
 

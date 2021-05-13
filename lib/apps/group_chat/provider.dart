@@ -35,8 +35,8 @@ class GroupChatProvider extends ChangeNotifier {
   GroupChatProvider() {
     // rpc.
     rpc.addListener('group-chat-list', _list, false);
-    // rpc.addListener('group-chat-online', _online, false);
-    // rpc.addListener('group-chat-offline', _online, false);
+    rpc.addListener('group-chat-online', _online, false);
+    rpc.addListener('group-chat-offline', _offline, false);
     rpc.addListener('group-chat-check', _check, false);
     rpc.addListener('group-chat-create', _create, false);
     rpc.addListener('group-chat-result', _result, false);
@@ -148,5 +148,21 @@ class GroupChatProvider extends ChangeNotifier {
         this.activedMessages[param[0]] = Message.fromList(param);
     });
     notifyListeners();
+  }
+
+  _online(List params) {
+    final id = params[0];
+    if (this.groups.containsKey(id)) {
+      this.groups[id].online = true;
+      notifyListeners();
+    }
+  }
+
+  _offline(List params) {
+    final id = params[0];
+    if (this.groups.containsKey(id)) {
+      this.groups[id].online = false;
+      notifyListeners();
+    }
   }
 }

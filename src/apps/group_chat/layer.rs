@@ -1,3 +1,4 @@
+use std::path::PathBuf;
 use std::sync::Arc;
 use tdn::{
     smol::lock::RwLock,
@@ -12,11 +13,11 @@ use group_chat_types::{GroupConnect, GroupResult, JoinProof};
 use tdn_did::Proof;
 //use group_chat_types::{Event, GroupConnect, GroupEvent, GroupInfo, GroupResult, GroupType};
 
-use crate::layer::Layer;
+use crate::layer::{Layer, Online};
 use crate::storage::group_chat_db;
 
 use super::models::GroupChat;
-use super::rpc;
+use super::{add_layer, rpc};
 
 pub(crate) async fn handle(
     layer: &Arc<RwLock<Layer>>,
@@ -27,12 +28,12 @@ pub(crate) async fn handle(
 
     match msg {
         RecvType::Connect(_addr, _data) => {
-            // None.
+            // Never to here.
         }
         RecvType::Leave(_addr) => {
             //
         }
-        RecvType::Result(_addr, _is_ok, data) => {
+        RecvType::Result(addr, _is_ok, data) => {
             let res: GroupResult = postcard::from_bytes(&data)
                 .map_err(|_e| new_io_error("Deseralize result failure"))?;
             match res {
@@ -51,8 +52,48 @@ pub(crate) async fn handle(
                         }
                     }
                 }
-                _ => {
-                    //
+                GroupResult::Join(gcd, ok, height) => {
+                    println!("Got join result: {}", ok);
+                    if ok {
+                        let base = layer.read().await.base.clone();
+                        if let Some(group) = load_group(&base, &mgid, &gcd)? {
+                            let mut layer_lock = layer.write().await;
+                            // 1. check address.
+                            if group.g_addr != addr {
+                                return Ok(results);
+                            }
+                            // 2. online this group.
+                            layer_lock.running_mut(&mgid)?.check_add_online(
+                                gcd,
+                                Online::Direct(addr),
+                                group.id,
+                            )?;
+                            // 3. online to UI.
+                            results.rpcs.push(rpc::group_online(mgid, group.id));
+
+                            // 5. sync group height.
+                            let db = group_chat_db(&base, &mgid)?;
+                            let my_height = GroupChat::get_height(&db, &group.id)?;
+                            drop(db);
+
+                            if my_height < height {
+                                // TOOD
+                            }
+                        } else {
+                            let msg = SendType::Result(0, addr, false, false, vec![]);
+                            add_layer(&mut results, mgid, msg);
+                            return Ok(results);
+                        }
+                    }
+                }
+                GroupResult::Waiting(_gcd) => {
+                    // TODO waiting
+                }
+                GroupResult::Agree(_gcd, _group_info, _height) => {
+                    // TOOD
+                }
+                GroupResult::Reject(_gcd) => {
+                    // TOOD
                 }
             }
         }
@@ -74,8 +115,14 @@ pub(crate) async fn handle(
     Ok(results)
 }
 
-pub(crate) fn group_chat_conn(proof: Proof, addr: PeerAddr, gid: GroupId, height: u64) -> SendType {
-    let data = postcard::to_allocvec(&GroupConnect::Join(gid, JoinProof::Had(proof), height))
-        .unwrap_or(vec![]);
+#[inline]
+fn load_group(base: &PathBuf, mgid: &GroupId, gcd: &GroupId) -> Result<Option<GroupChat>> {
+    let db = group_chat_db(base, mgid)?;
+    GroupChat::get(&db, gcd)
+}
+
+pub(crate) fn group_chat_conn(proof: Proof, addr: PeerAddr, gid: GroupId) -> SendType {
+    let data =
+        postcard::to_allocvec(&GroupConnect::Join(gid, JoinProof::Had(proof))).unwrap_or(vec![]);
     SendType::Connect(0, addr, None, None, data)
 }

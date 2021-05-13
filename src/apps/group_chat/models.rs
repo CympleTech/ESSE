@@ -233,7 +233,7 @@ impl GroupChat {
         Ok(None)
     }
 
-    pub fn get_height(&self, db: &DStorage) -> Result<i64> {
+    pub fn get_height(db: &DStorage, id: &i64) -> Result<u64> {
         // TODO
         Ok(0)
     }
@@ -265,6 +265,15 @@ impl GroupChat {
     pub fn ok(&mut self, db: &DStorage) -> Result<usize> {
         self.is_ok = true;
         let sql = format!("UPDATE groups SET is_ok=1 WHERE id = {}", self.id);
+        db.update(&sql)
+    }
+
+    pub fn addr_update(db: &DStorage, id: i64, addr: &PeerAddr) -> Result<usize> {
+        let sql = format!(
+            "UPDATE groups SET addr='{}' WHERE id = {}",
+            addr.to_hex(),
+            id,
+        );
         db.update(&sql)
     }
 }

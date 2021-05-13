@@ -99,9 +99,11 @@ pub(crate) async fn handle(
                         .running_mut(&mgid)?
                         .check_add_online(fgid, Online::Direct(addr), f.id)?;
                     // 3. update remote addr. TODO
-                    let db = session_db(&layer.base, &mgid)?;
-                    Friend::addr_update(&db, f.id, &addr)?;
-                    drop(db);
+                    if f.addr != addr {
+                        let db = session_db(&layer.base, &mgid)?;
+                        let _ = Friend::addr_update(&db, f.id, &addr);
+                        drop(db);
+                    }
                     // 4. online to UI.
                     results.rpcs.push(rpc::friend_online(mgid, f.id, addr));
                     // 5. connected.

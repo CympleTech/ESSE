@@ -27,6 +27,16 @@ pub(crate) fn create_result(mgid: GroupId, gid: i64, ok: bool) -> RpcParam {
 }
 
 #[inline]
+pub(crate) fn group_online(mgid: GroupId, gid: i64) -> RpcParam {
+    rpc_response(0, "group-chat-online", json!([gid]), mgid)
+}
+
+#[inline]
+pub(crate) fn group_offline(mgid: GroupId, gid: i64) -> RpcParam {
+    rpc_response(0, "group-chat-offline", json!([gid]), mgid)
+}
+
+#[inline]
 fn group_list(groups: Vec<GroupChat>) -> RpcParam {
     let mut results = vec![];
     for group in groups {

@@ -374,13 +374,8 @@ fn new_rpc_handler(
             let db = group_chat_db(group_lock.base(), &gid)?;
             let groups = GroupChat::all_ok(&db)?;
             for g in groups {
-                let height = g.get_height(&db)? as u64;
                 let proof = group_lock.prove_addr(&gid, &g.g_addr)?;
-                add_layer(
-                    &mut results,
-                    gid,
-                    group_chat_conn(proof, g.g_addr, g.g_id, height),
-                );
+                add_layer(&mut results, gid, group_chat_conn(proof, g.g_addr, g.g_id));
             }
             drop(db);
             drop(group_lock);
