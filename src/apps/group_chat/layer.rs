@@ -131,8 +131,8 @@ async fn handle_event(
     };
 
     match event {
-        LayerEvent::Offline(_) => {
-            results.rpcs.push(rpc::group_offline(mgid, gid));
+        LayerEvent::Offline(gcd) => {
+            results.rpcs.push(rpc::group_offline(mgid, gid, &gcd));
         }
         LayerEvent::OnlinePing(gcd) => {
             results.rpcs.push(rpc::group_online(mgid, gid));

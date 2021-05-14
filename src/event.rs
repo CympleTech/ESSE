@@ -517,7 +517,7 @@ impl StatusEvent {
                             if running.check_offline(&rgid, &addr) {
                                 let msg = SendMessage::Rpc(
                                     uid,
-                                    chat_rpc::friend_offline(ggid, rid),
+                                    chat_rpc::friend_offline(ggid, rid, &rgid),
                                     true,
                                 );
                                 let _ = sender.send(msg).await;

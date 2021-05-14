@@ -538,7 +538,7 @@ impl LayerEvent {
                     &mut results,
                 )?;
                 layer.running_mut(&mgid)?.check_offline(&fgid, &addr);
-                results.rpcs.push(rpc::friend_offline(mgid, fid));
+                results.rpcs.push(rpc::friend_offline(mgid, fid, &fgid));
             }
             LayerEvent::Close => {
                 layer.group.write().await.broadcast(
