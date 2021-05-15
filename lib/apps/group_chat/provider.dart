@@ -85,8 +85,8 @@ class GroupChatProvider extends ChangeNotifier {
     rpc.send('group-chat-check', [addr]);
   }
 
-  create(String addr, String name, String bio, bool needAgree) {
-    rpc.send('group-chat-create', [addr, name, bio, needAgree]);
+  create(String myName, String addr, String name, String bio, bool needAgree) {
+    rpc.send('group-chat-create', [myName, addr, name, bio, needAgree]);
   }
 
   reSend(int id) {

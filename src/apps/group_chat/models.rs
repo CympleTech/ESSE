@@ -134,10 +134,11 @@ impl GroupChat {
         }
     }
 
-    pub fn to_group_info(self, avatar: Vec<u8>) -> GroupInfo {
+    pub fn to_group_info(self, name: String, avatar: Vec<u8>) -> GroupInfo {
         match self.g_type {
             GroupType::Common | GroupType::Open => GroupInfo::Common(
                 self.owner,
+                name,
                 self.g_id,
                 self.g_type,
                 self.is_need_agree,
@@ -148,6 +149,7 @@ impl GroupChat {
             GroupType::Encrypted => GroupInfo::Common(
                 // TODO encrypted
                 self.owner,
+                name,
                 self.g_id,
                 self.g_type,
                 self.is_need_agree,

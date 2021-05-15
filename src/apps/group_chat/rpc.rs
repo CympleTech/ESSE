@@ -139,13 +139,13 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
     handler.add_method(
         "group-chat-create",
         |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
-            let addr = PeerAddr::from_hex(params[0].as_str()?)
+            let my_name = params[0].as_str()?.to_owned();
+            let addr = PeerAddr::from_hex(params[1].as_str()?)
                 .map_err(|_e| new_io_error("PeerAddr invalid!"))?;
-            let name = params[1].as_str()?.to_owned();
-            let bio = params[2].as_str()?.to_owned();
-            let need_agree = params[3].as_bool()?;
+            let name = params[2].as_str()?.to_owned();
+            let bio = params[3].as_str()?.to_owned();
+            let need_agree = params[4].as_bool()?;
             let avatar = vec![];
-            println!("Create: {}, {}, {}", name, bio, need_agree);
 
             let db = group_chat_db(state.layer.read().await.base(), &gid)?;
             let mut gc = GroupChat::new(gid, GroupType::Common, addr, name, bio, need_agree);
@@ -161,7 +161,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             let mut results = HandleResult::new();
             // TODO add to rpcs.
             results.rpcs.push(json!(gc.to_rpc()));
-            let info = gc.to_group_info(avatar);
+            let info = gc.to_group_info(my_name, avatar);
 
             // TODO create proof.
             let proof: Proof = Default::default();

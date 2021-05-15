@@ -134,10 +134,11 @@ class _GroupAddPageState extends State<GroupAddPage> {
   }
 
   _create() {
+    final myName = context.read<AccountProvider>().activedAccount.name;
     final addr = _createAddrController.text.trim();
     final name = _createNameController.text.trim();
     final bio = _createBioController.text.trim();
-    context.read<GroupChatProvider>().create(addr, name, bio, _groupNeedAgree);
+    context.read<GroupChatProvider>().create(myName, addr, name, bio, _groupNeedAgree);
     setState(() {
         _createNameController.text = '';
         _createBioController.text = '';

@@ -41,11 +41,18 @@ pub(crate) async fn handle(
                 GroupResult::Create(gcd, ok) => {
                     println!("Create result: {}", ok);
                     if ok {
-                        // TODO get gc by gcd.
+                        // get gc by gcd.
                         let db = group_chat_db(layer.read().await.base(), &mgid)?;
                         if let Some(mut gc) = GroupChat::get(&db, &gcd)? {
                             gc.ok(&db)?;
-                            results.rpcs.push(rpc::create_result(mgid, gc.id, ok))
+                            results.rpcs.push(rpc::create_result(mgid, gc.id, ok));
+
+                            // online this group.
+                            layer.write().await.running_mut(&mgid)?.check_add_online(
+                                gcd,
+                                Online::Direct(addr),
+                                gc.id,
+                            )?;
                         }
                     }
                 }
