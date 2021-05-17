@@ -9,13 +9,13 @@ use tdn::{
     },
 };
 
-use group_chat_types::{Event, GroupConnect, GroupResult, JoinProof, LayerEvent, NetworkMessage};
+use group_chat_types::{Event, GroupConnect, GroupResult, JoinProof, LayerEvent};
 use tdn_did::Proof;
 
 use crate::layer::{Layer, Online};
 use crate::storage::group_chat_db;
 
-use super::models::{from_network_message, GroupChat};
+use super::models::{from_network_message, GroupChat, Member};
 use super::{add_layer, rpc};
 
 pub(crate) async fn handle(
@@ -27,9 +27,7 @@ pub(crate) async fn handle(
 
     match msg {
         RecvType::Connect(..) => {} // Never to here.
-        RecvType::Leave(_addr) => {
-            //
-        }
+        RecvType::Leave(..) => {}   // Never to here. handled in chat.
         RecvType::Result(addr, _is_ok, data) => {
             let res: GroupResult = postcard::from_bytes(&data)
                 .map_err(|_e| new_io_error("Deseralize result failure"))?;
@@ -76,11 +74,7 @@ pub(crate) async fn handle(
                             results.rpcs.push(rpc::group_online(mgid, group.id));
 
                             // 5. sync group height.
-                            let db = group_chat_db(&base, &mgid)?;
-                            let my_height = GroupChat::get_height(&db, &group.id)?;
-                            drop(db);
-
-                            if my_height < height {
+                            if group.height < height {
                                 // TOOD
                             }
                         } else {
@@ -153,22 +147,24 @@ async fn handle_event(
         }
         LayerEvent::Sync(_, height, event) => {
             match event {
-                Event::Message(mid, nmsg) => {
+                Event::GroupInfo => {}
+                Event::GroupTransfer => {}
+                Event::GroupManagerAdd => {}
+                Event::GroupManagerDel => {}
+                Event::GroupClose => {}
+                Event::MemberInfo(mid, maddr, mname, mavatar) => {}
+                Event::MemberJoin(mid, maddr, mname, mavatar, mtime) => {
+                    let db = group_chat_db(layer.read().await.base(), &mgid)?;
+                    let mut member = Member::new(gid, mid, maddr, mname, false, mtime);
+                    member.insert(&db)?;
+                    results.rpcs.push(rpc::member_join(mgid, member));
+                }
+                Event::MemberLeave(mid) => {}
+                Event::MessageCreate(mid, nmsg, mtime) => {
                     let base = layer.read().await.base.clone();
-                    let msg = from_network_message(height as i64, gid, mid, mgid, nmsg, base)?;
+                    let msg =
+                        from_network_message(height as i64, gid, mid, mgid, nmsg, mtime, base)?;
                     results.rpcs.push(rpc::message_create(mgid, msg));
-                }
-                Event::GroupUpdate => {
-                    //
-                }
-                Event::GroupTransfer => {
-                    //
-                }
-                Event::UserInfo => {
-                    //
-                }
-                Event::Close => {
-                    //
                 }
             }
 

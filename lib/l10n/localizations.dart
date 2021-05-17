@@ -165,6 +165,7 @@ abstract class AppLocalizations {
   String get groupChatBio;
   String get groupCheckTypeAllow;
   String get groupCheckTypeNone;
+  String get groupCheckTypeSuspend;
   String get groupCheckTypeDeny;
   String get members;
 }

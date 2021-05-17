@@ -241,6 +241,8 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String get groupCheckTypeNone => '创建被限制,允许数目已满';
   @override
+  String get groupCheckTypeSuspend => '账户被暂停使用';
+  @override
   String get groupCheckTypeDeny => '没有权限在此创建群聊';
   @override
   String get members => '成员';

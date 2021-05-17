@@ -241,6 +241,8 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get groupCheckTypeNone => 'Restricted, the allowed number is full';
   @override
+  String get groupCheckTypeSuspend => 'Account is suspended';
+  @override
   String get groupCheckTypeDeny => 'No permission to create here';
   @override
   String get members => 'Members';

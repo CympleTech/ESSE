@@ -16,6 +16,7 @@ enum GroupType {
 enum CheckType {
   Allow,
   None,
+  Suspend,
   Deny,
   Wait,
 }
@@ -55,6 +56,8 @@ extension CheckTypeExtension on CheckType {
         return [lang.groupCheckTypeAllow, true];
       case CheckType.None:
         return [lang.groupCheckTypeNone, false];
+      case CheckType.Suspend:
+        return [lang.groupCheckTypeSuspend, false];
       case CheckType.Deny:
         return [lang.groupCheckTypeDeny, false];
       default:
@@ -69,6 +72,8 @@ extension CheckTypeExtension on CheckType {
       case 1:
         return CheckType.None;
       case 2:
+        return CheckType.Suspend;
+      case 3:
         return CheckType.Deny;
       default:
         return CheckType.Deny;

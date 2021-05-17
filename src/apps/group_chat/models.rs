@@ -57,6 +57,8 @@ impl GroupChatKey {
 pub(crate) struct GroupChat {
     /// db auto-increment id.
     pub id: i64,
+    /// consensus height.
+    pub height: i64,
     /// group chat owner.
     pub owner: GroupId,
     /// group chat id.
@@ -123,6 +125,7 @@ impl GroupChat {
             key,
             datetime,
             id: 0,
+            height: 0,
             is_top: true,
             is_ok: false,
             is_closed: false,
@@ -206,13 +209,14 @@ impl GroupChat {
             g_type: GroupType::from_u32(v.pop().unwrap().as_i64() as u32),
             g_id: GroupId::from_hex(v.pop().unwrap().as_string()).unwrap_or(Default::default()),
             owner: GroupId::from_hex(v.pop().unwrap().as_string()).unwrap_or(Default::default()),
+            height: v.pop().unwrap().as_i64(),
             id: v.pop().unwrap().as_i64(),
         }
     }
 
     /// use in rpc when load account friends.
     pub fn all(db: &DStorage) -> Result<Vec<GroupChat>> {
-        let matrix = db.query("SELECT id, owner, gcd, gtype, addr, name, bio, is_top, is_ok, is_need_agree, is_closed, key, last_datetime, last_content, last_readed, datetime FROM groups WHERE is_deleted = false ORDER BY last_datetime DESC")?;
+        let matrix = db.query("SELECT id, height, owner, gcd, gtype, addr, name, bio, is_top, is_ok, is_need_agree, is_closed, key, last_datetime, last_content, last_readed, datetime FROM groups WHERE is_deleted = false ORDER BY last_datetime DESC")?;
         let mut groups = vec![];
         for values in matrix {
             groups.push(GroupChat::from_values(values, false));
@@ -222,7 +226,7 @@ impl GroupChat {
 
     /// use in rpc when load account groups.
     pub fn all_ok(db: &DStorage) -> Result<Vec<GroupChat>> {
-        let matrix = db.query("SELECT id, owner, gcd, gtype, addr, name, bio, is_top, is_ok, is_need_agree, is_closed, key, last_datetime, last_content, last_readed, datetime FROM groups WHERE is_closed = false ORDER BY last_datetime DESC")?;
+        let matrix = db.query("SELECT id, height, owner, gcd, gtype, addr, name, bio, is_top, is_ok, is_need_agree, is_closed, key, last_datetime, last_content, last_readed, datetime FROM groups WHERE is_closed = false ORDER BY last_datetime DESC")?;
         let mut groups = vec![];
         for values in matrix {
             groups.push(GroupChat::from_values(values, false));
@@ -231,7 +235,7 @@ impl GroupChat {
     }
 
     pub fn get(db: &DStorage, gid: &GroupId) -> Result<Option<GroupChat>> {
-        let sql = format!("SELECT id, owner, gcd, gtype, addr, name, bio, is_top, is_ok, is_need_agree, is_closed, key, last_datetime, last_content, last_readed, datetime FROM groups WHERE gcd = '{}' AND is_deleted = false", gid.to_hex());
+        let sql = format!("SELECT id, height, owner, gcd, gtype, addr, name, bio, is_top, is_ok, is_need_agree, is_closed, key, last_datetime, last_content, last_readed, datetime FROM groups WHERE gcd = '{}' AND is_deleted = false", gid.to_hex());
         let mut matrix = db.query(&sql)?;
         if matrix.len() > 0 {
             let values = matrix.pop().unwrap(); // safe unwrap()
@@ -240,13 +244,9 @@ impl GroupChat {
         Ok(None)
     }
 
-    pub fn get_height(db: &DStorage, id: &i64) -> Result<u64> {
-        // TODO
-        Ok(0)
-    }
-
     pub fn insert(&mut self, db: &DStorage) -> Result<()> {
-        let sql = format!("INSERT INTO groups (owner, gcd, gtype, addr, name, bio, is_top, is_ok, is_need_agree, is_closed, key, last_datetime, last_content, last_readed, datetime, is_deleted) VALUES ('{}', '{}', {}, '{}', '{}', '{}', {}, {}, {}, {}, '{}', {}, '{}', {}, {}, false)",
+        let sql = format!("INSERT INTO groups (height, owner, gcd, gtype, addr, name, bio, is_top, is_ok, is_need_agree, is_closed, key, last_datetime, last_content, last_readed, datetime, is_deleted) VALUES ({}, '{}', '{}', {}, '{}', '{}', '{}', {}, {}, {}, {}, '{}', {}, '{}', {}, {}, false)",
+            self.height,
             self.owner.to_hex(),
             self.g_id.to_hex(),
             self.g_type.to_u32(),
@@ -263,7 +263,6 @@ impl GroupChat {
             if self.last_readed { 1 } else { 0 },
             self.datetime,
         );
-        println!("{}", sql);
         let id = db.insert(&sql)?;
         self.id = id;
         Ok(())
@@ -293,7 +292,7 @@ impl GroupChat {
 }
 
 /// Group Member Model.
-pub(super) struct Member {
+pub(crate) struct Member {
     /// db auto-increment id.
     id: i64,
     /// group's db id.
@@ -426,6 +425,28 @@ pub(crate) struct Message {
 }
 
 impl Message {
+    pub(crate) fn new_with_time(
+        height: i64,
+        fid: i64,
+        mid: i64,
+        is_me: bool,
+        m_type: MessageType,
+        content: String,
+        datetime: i64,
+    ) -> Message {
+        Self {
+            fid,
+            mid,
+            m_type,
+            content,
+            datetime,
+            height,
+            is_me,
+            is_deleted: false,
+            is_delivery: true,
+            id: 0,
+        }
+    }
     pub(crate) fn new(
         height: i64,
         fid: i64,
@@ -440,18 +461,7 @@ impl Message {
             .map(|s| s.as_secs())
             .unwrap_or(0) as i64; // safe for all life.
 
-        Self {
-            fid,
-            mid,
-            m_type,
-            content,
-            datetime,
-            height,
-            is_me,
-            is_deleted: false,
-            is_delivery: true,
-            id: 0,
-        }
+        Self::new_with_time(height, fid, mid, is_me, m_type, content, datetime)
     }
     /// here is zero-copy and unwrap is safe. checked.
     fn from_values(mut v: Vec<DsValue>, contains_deleted: bool) -> Message {
@@ -515,12 +525,26 @@ impl Message {
     }
 }
 
+pub(super) fn to_network_message(
+    mtype: MessageType,
+    content: &str,
+) -> Result<(NetworkMessage, i64)> {
+    let start = SystemTime::now();
+    let datetime = start
+        .duration_since(UNIX_EPOCH)
+        .map(|s| s.as_secs())
+        .unwrap_or(0) as i64; // safe for all life.
+
+    Ok((NetworkMessage::String(content.to_owned()), datetime))
+}
+
 pub(super) fn from_network_message(
     height: i64,
     gdid: i64,
     mid: GroupId,
     mgid: GroupId,
     msg: NetworkMessage,
+    datetime: i64,
     base: PathBuf,
 ) -> Result<Message> {
     let db = group_chat_db(&base, &mgid)?;
@@ -572,7 +596,7 @@ pub(super) fn from_network_message(
         }
     };
 
-    let mut msg = Message::new(height, gdid, mdid, is_me, m_type, raw);
+    let mut msg = Message::new_with_time(height, gdid, mdid, is_me, m_type, raw, datetime);
     msg.insert(&db)?;
     GroupChat::update_last_message(&db, gdid, &msg, false)?;
     Ok(msg)

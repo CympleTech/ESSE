@@ -45,7 +45,7 @@ class GroupChatProvider extends ChangeNotifier {
     // rpc.addListener('group-chat-join', _join, true);
     // rpc.addListener('group-chat-agree', _agree, true);
     // rpc.addListener('group-chat-reject', _reject, false);
-    // rpc.addListener('group-chat-member-join', _memberJoin, false);
+    rpc.addListener('group-chat-member-join', _memberJoin, false);
     // rpc.addListener('group-chat-member-info', _memberInfo, false);
     // rpc.addListener('group-chat-member-leave', _memberLeave, false);
     rpc.addListener('group-chat-member-online', _memberOnline, false);
@@ -171,6 +171,10 @@ class GroupChatProvider extends ChangeNotifier {
         notifyListeners();
       }
     }
+  }
+
+  _memberJoin(List params) {
+    //
   }
 
   _memberOnline(List params) {

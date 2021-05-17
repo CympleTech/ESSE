@@ -2,6 +2,7 @@
 pub(super) const GROUP_CHAT_VERSIONS: [&str; 4] = [
   "CREATE TABLE IF NOT EXISTS groups(
     id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+    height INTEGER NOT NULL,
     owner TEXT NOT NULL,
     gcd TEXT NOT NULL,
     gtype INTEGER NOT NULL,

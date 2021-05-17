@@ -14,7 +14,7 @@ use crate::rpc::RpcState;
 use crate::storage::group_chat_db;
 
 use super::add_layer;
-use super::models::{GroupChat, Member, Message};
+use super::models::{to_network_message, GroupChat, Member, Message};
 
 #[inline]
 pub(crate) fn create_check(mgid: GroupId, ct: CheckType, supported: Vec<GroupType>) -> RpcParam {
@@ -35,6 +35,11 @@ pub(crate) fn group_online(mgid: GroupId, gid: i64) -> RpcParam {
 #[inline]
 pub(crate) fn group_offline(mgid: GroupId, fid: i64, gid: &GroupId) -> RpcParam {
     rpc_response(0, "group-chat-offline", json!([fid, gid.to_hex()]), mgid)
+}
+
+#[inline]
+pub(crate) fn member_join(mgid: GroupId, member: Member) -> RpcParam {
+    rpc_response(0, "group-chat-member-join", json!(member.to_rpc()), mgid)
 }
 
 #[inline]
@@ -183,7 +188,8 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             let addr = state.layer.read().await.running(&gid)?.online(&gcd)?;
 
             let mut results = HandleResult::new();
-            let event = Event::Message(gid, NetworkMessage::String(m_content.to_owned()));
+            let (nmsg, datetime) = to_network_message(m_type, m_content)?;
+            let event = Event::MessageCreate(gid, nmsg, datetime);
             let data = postcard::to_allocvec(&LayerEvent::Sync(gcd, 0, event)).unwrap_or(vec![]);
             let msg = SendType::Event(0, addr, data);
             add_layer(&mut results, gid, msg);
