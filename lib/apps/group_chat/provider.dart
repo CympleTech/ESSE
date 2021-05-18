@@ -94,8 +94,8 @@ class GroupChatProvider extends ChangeNotifier {
     //
   }
 
-  join(String gid, String gaddr, String name, String remark) {
-    rpc.send('group-chat-join', [gid, gaddr, name, remark]);
+  join(String gid, String gaddr, String name, String remark, [String key = '']) {
+    rpc.send('group-chat-join', [gid, gaddr, name, remark, key]);
   }
 
   messageCreate(MessageType mtype, String content) {

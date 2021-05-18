@@ -15,7 +15,7 @@ use tdn_did::Proof;
 use crate::layer::{Layer, Online};
 use crate::storage::{group_chat_db, write_avatar_sync};
 
-use super::models::{from_network_message, GroupChat, Member};
+use super::models::{from_network_message, GroupChat, Member, Request};
 use super::{add_layer, rpc};
 
 pub(crate) async fn handle(
@@ -73,9 +73,11 @@ pub(crate) async fn handle(
                             // 3. online to UI.
                             results.rpcs.push(rpc::group_online(mgid, group.id));
 
-                            // 5. sync group height.
+                            // 4. TODO online ping.
+
+                            // 5. TODO sync group height.
                             if group.height < height {
-                                // TOOD
+                                //
                             }
                         } else {
                             let msg = SendType::Result(0, addr, false, false, vec![]);
@@ -87,11 +89,26 @@ pub(crate) async fn handle(
                 GroupResult::Waiting(_gcd) => {
                     // TODO waiting
                 }
-                GroupResult::Agree(_gcd, _group_info, _height) => {
-                    // TOOD
+                GroupResult::Agree(gcd, info, height) => {
+                    let base = layer.read().await.base.clone();
+                    let db = group_chat_db(&base, &mgid)?;
+                    let (rid, key) = Request::over(&db, &gcd, true)?;
+
+                    // 1. add group chat.
+                    let mut group = GroupChat::from_info(key, info, height, addr, base, &mgid)?;
+                    group.insert(&db)?;
+
+                    // 2. update UI.
+                    results.rpcs.push(rpc::group_agree(mgid, rid, group));
+
+                    // 3. online ping.
+
+                    // 4. sync group height.
                 }
-                GroupResult::Reject(_gcd) => {
-                    // TOOD
+                GroupResult::Reject(gcd) => {
+                    let db = group_chat_db(layer.read().await.base(), &mgid)?;
+                    let (rid, _key) = Request::over(&db, &gcd, true)?;
+                    results.rpcs.push(rpc::group_reject(mgid, rid));
                 }
             }
         }

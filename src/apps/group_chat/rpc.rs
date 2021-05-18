@@ -14,7 +14,7 @@ use crate::rpc::RpcState;
 use crate::storage::group_chat_db;
 
 use super::add_layer;
-use super::models::{to_network_message, GroupChat, Member, Message, Request};
+use super::models::{to_network_message, GroupChat, GroupChatKey, Member, Message, Request};
 
 #[inline]
 pub(crate) fn create_check(mgid: GroupId, ct: CheckType, supported: Vec<GroupType>) -> RpcParam {
@@ -35,6 +35,16 @@ pub(crate) fn group_online(mgid: GroupId, gid: i64) -> RpcParam {
 #[inline]
 pub(crate) fn group_offline(mgid: GroupId, fid: i64, gid: &GroupId) -> RpcParam {
     rpc_response(0, "group-chat-offline", json!([fid, gid.to_hex()]), mgid)
+}
+
+#[inline]
+pub(crate) fn group_agree(mgid: GroupId, rid: i64, group: GroupChat) -> RpcParam {
+    rpc_response(0, "group-chat-agree", json!([rid, group.to_rpc()]), mgid)
+}
+
+#[inline]
+pub(crate) fn group_reject(mgid: GroupId, rid: i64) -> RpcParam {
+    rpc_response(0, "group-chat-reject", json!([rid]), mgid)
 }
 
 #[inline]
@@ -192,8 +202,10 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             let gaddr = PeerAddr::from_hex(params[1].as_str()?)?;
             let gname = params[2].as_str()?.to_owned();
             let gremark = params[3].as_str()?.to_owned();
+            let gkey = params[4].as_str()?;
+            let key = GroupChatKey::from_hex(gkey).unwrap_or(GroupChatKey::new(vec![]));
 
-            let mut request = Request::new_by_me(gcd, gaddr, gname, gremark);
+            let mut request = Request::new_by_me(gcd, gaddr, gname, gremark, key);
             let db = group_chat_db(state.layer.read().await.base(), &gid)?;
             request.insert(&db)?;
             drop(db);

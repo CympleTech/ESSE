@@ -15,7 +15,7 @@ use crate::storage::{
     group_chat_db, write_avatar_sync, write_file_sync, write_image_sync, write_record_sync,
 };
 
-pub(super) struct GroupChatKey(Vec<u8>);
+pub(crate) struct GroupChatKey(Vec<u8>);
 
 impl GroupChatKey {
     pub fn new(value: Vec<u8>) -> Self {
@@ -134,6 +134,77 @@ impl GroupChat {
             last_readed: true,
             online: false,
             is_deleted: false,
+        }
+    }
+
+    fn new_from(
+        g_id: GroupId,
+        height: i64,
+        owner: GroupId,
+        g_type: GroupType,
+        g_addr: PeerAddr,
+        g_name: String,
+        g_bio: String,
+        is_need_agree: bool,
+        key: GroupChatKey,
+    ) -> Self {
+        let start = SystemTime::now();
+        let datetime = start
+            .duration_since(UNIX_EPOCH)
+            .map(|s| s.as_secs())
+            .unwrap_or(0) as i64; // safe for all life.
+
+        Self {
+            owner,
+            g_id,
+            g_type,
+            g_addr,
+            g_name,
+            g_bio,
+            is_need_agree,
+            key,
+            datetime,
+            id: 0,
+            height,
+            is_top: true,
+            is_ok: true,
+            is_closed: false,
+            last_datetime: datetime,
+            last_content: Default::default(),
+            last_readed: true,
+            online: false,
+            is_deleted: false,
+        }
+    }
+
+    pub fn from_info(
+        key: GroupChatKey,
+        info: GroupInfo,
+        height: i64,
+        addr: PeerAddr,
+        base: PathBuf,
+        mgid: &GroupId,
+    ) -> Result<Self> {
+        match info {
+            GroupInfo::Common(owner, _, g_id, g_type, agree, name, g_bio, avatar) => {
+                write_avatar_sync(&base, &mgid, &g_id, avatar)?;
+                Ok(Self::new_from(
+                    g_id, height, owner, g_type, addr, name, g_bio, agree, key,
+                ))
+            }
+            GroupInfo::Encrypted(owner, _, g_id, agree, _hash, _name, _bio, avatar) => {
+                // TODO decrypted.
+
+                let g_type = GroupType::Encrypted;
+                let name = "".to_owned();
+                let bio = "".to_owned();
+
+                write_avatar_sync(&base, &mgid, &g_id, avatar)?;
+
+                Ok(Self::new_from(
+                    g_id, height, owner, g_type, addr, name, bio, agree, key,
+                ))
+            }
         }
     }
 
@@ -304,6 +375,7 @@ pub(crate) struct Request {
     pub gid: GroupId,
     pub addr: PeerAddr,
     pub name: String,
+    key: GroupChatKey,
     remark: String,
     is_ok: bool,
     is_over: bool,
@@ -326,13 +398,20 @@ impl Request {
             name,
             remark,
             datetime,
+            key: GroupChatKey(vec![]),
             is_ok: false,
             is_over: false,
             id: 0,
         }
     }
 
-    pub fn new_by_me(gid: GroupId, addr: PeerAddr, name: String, remark: String) -> Self {
+    pub fn new_by_me(
+        gid: GroupId,
+        addr: PeerAddr,
+        name: String,
+        remark: String,
+        key: GroupChatKey,
+    ) -> Self {
         let start = SystemTime::now();
         let datetime = start
             .duration_since(UNIX_EPOCH)
@@ -345,6 +424,7 @@ impl Request {
             name,
             remark,
             datetime,
+            key,
             is_ok: false,
             is_over: false,
             fid: 0,
@@ -367,12 +447,13 @@ impl Request {
     }
 
     pub fn insert(&mut self, db: &DStorage) -> Result<()> {
-        let sql = format!("INSERT INTO requests (fid, gid, addr, name, remark, is_ok, is_over, datetime, is_deleted) VALUES ({}, '{}', '{}', '{}', '{}', {}, {}, {}, false)",
+        let sql = format!("INSERT INTO requests (fid, gid, addr, name, remark, key, is_ok, is_over, datetime, is_deleted) VALUES ({}, '{}', '{}', '{}', '{}', '{}', {}, {}, {}, false)",
             self.fid,
             self.gid.to_hex(),
             self.addr.to_hex(),
             self.name,
             self.remark,
+            self.key.to_hex(),
             if self.is_ok { 1 } else { 0 },
             if self.is_over { 1 } else { 0 },
             self.datetime,
@@ -381,6 +462,33 @@ impl Request {
         let id = db.insert(&sql)?;
         self.id = id;
         Ok(())
+    }
+
+    pub fn over(db: &DStorage, gcd: &GroupId, is_ok: bool) -> Result<(i64, GroupChatKey)> {
+        let matrix = db.query(&format!(
+            "SELECT id, key from requests WHERE gid = '{}' AND is_over = 0 ORDER BY id",
+            gcd.to_hex()
+        ))?;
+        let mut requests = vec![];
+        for mut values in matrix {
+            let id = values.pop().unwrap().as_i64();
+            let key = GroupChatKey::from_hex(values.pop().unwrap().as_string())
+                .unwrap_or(GroupChatKey::new(vec![]));
+            requests.push((id, key));
+        }
+
+        let sql = format!(
+            "UPDATE requests SET is_ok={}, is_over=1 WHERE gid = '{}' AND is_over = 0",
+            if is_ok { 1 } else { 0 },
+            gcd.to_hex(),
+        );
+        db.update(&sql)?;
+
+        if requests.len() > 0 {
+            Ok(requests.pop().unwrap()) // safe.
+        } else {
+            Err(new_io_error("no requests"))
+        }
     }
 }
 
@@ -629,7 +737,7 @@ impl Message {
 }
 
 pub(super) fn to_network_message(
-    mtype: MessageType,
+    _mtype: MessageType,
     content: &str,
 ) -> Result<(NetworkMessage, i64)> {
     let start = SystemTime::now();
