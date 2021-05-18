@@ -274,6 +274,11 @@ impl GroupChat {
         db.update(&sql)
     }
 
+    pub fn add_height(db: &DStorage, id: i64, height: i64) -> Result<usize> {
+        let sql = format!("UPDATE groups SET height={} WHERE id = {}", height, id,);
+        db.update(&sql)
+    }
+
     pub fn update_last_message(db: &DStorage, id: i64, msg: &Message, read: bool) -> Result<usize> {
         let sql = format!(
             "UPDATE groups SET last_datetime={}, last_content='{}', last_readed={} WHERE id = {}",
@@ -288,6 +293,94 @@ impl GroupChat {
     pub fn readed(db: &DStorage, id: i64) -> Result<usize> {
         let sql = format!("UPDATE groups SET last_readed=1 WHERE id = {}", id);
         db.update(&sql)
+    }
+}
+
+/// Group Join Request model. include my requests and other requests.
+/// When fid is 0, it's my requests.
+pub(crate) struct Request {
+    id: i64,
+    fid: i64,
+    pub gid: GroupId,
+    pub addr: PeerAddr,
+    pub name: String,
+    remark: String,
+    is_ok: bool,
+    is_over: bool,
+    datetime: i64,
+}
+
+impl Request {
+    pub fn new_by_remote(
+        fid: i64,
+        gid: GroupId,
+        addr: PeerAddr,
+        name: String,
+        remark: String,
+        datetime: i64,
+    ) -> Self {
+        Self {
+            fid,
+            gid,
+            addr,
+            name,
+            remark,
+            datetime,
+            is_ok: false,
+            is_over: false,
+            id: 0,
+        }
+    }
+
+    pub fn new_by_me(gid: GroupId, addr: PeerAddr, name: String, remark: String) -> Self {
+        let start = SystemTime::now();
+        let datetime = start
+            .duration_since(UNIX_EPOCH)
+            .map(|s| s.as_secs())
+            .unwrap_or(0) as i64; // safe for all life.
+
+        Self {
+            gid,
+            addr,
+            name,
+            remark,
+            datetime,
+            is_ok: false,
+            is_over: false,
+            fid: 0,
+            id: 0,
+        }
+    }
+
+    pub fn to_rpc(&self) -> RpcParam {
+        json!([
+            self.id,
+            self.fid,
+            self.gid.to_hex(),
+            self.addr.to_hex(),
+            self.name,
+            self.remark,
+            self.is_ok,
+            self.is_over,
+            self.datetime,
+        ])
+    }
+
+    pub fn insert(&mut self, db: &DStorage) -> Result<()> {
+        let sql = format!("INSERT INTO requests (fid, gid, addr, name, remark, is_ok, is_over, datetime, is_deleted) VALUES ({}, '{}', '{}', '{}', '{}', {}, {}, {}, false)",
+            self.fid,
+            self.gid.to_hex(),
+            self.addr.to_hex(),
+            self.name,
+            self.remark,
+            if self.is_ok { 1 } else { 0 },
+            if self.is_over { 1 } else { 0 },
+            self.datetime,
+        );
+        println!("{}", sql);
+        let id = db.insert(&sql)?;
+        self.id = id;
+        Ok(())
     }
 }
 
@@ -397,6 +490,16 @@ impl Member {
         } else {
             Err(new_io_error("missing member"))
         }
+    }
+
+    pub fn update(db: &DStorage, id: &i64, addr: &PeerAddr, name: &str) -> Result<usize> {
+        let sql = format!(
+            "UPDATE members SET addr='{}', name='{}' WHERE id = {}",
+            addr.to_hex(),
+            name,
+            id,
+        );
+        db.update(&sql)
     }
 }
 

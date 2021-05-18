@@ -22,7 +22,7 @@ pub(super) const GROUP_CHAT_VERSIONS: [&str; 4] = [
   "CREATE TABLE IF NOT EXISTS requests(
     id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
     fid INTEGER NOT NULL,
-    mid TEXT NOT NULL,
+    gid TEXT NOT NULL,
     addr TEXT NOT NULL,
     name TEXT NOT NULL,
     remark TEXT,

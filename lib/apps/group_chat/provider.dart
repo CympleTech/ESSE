@@ -15,7 +15,7 @@ class GroupChatProvider extends ChangeNotifier {
   Map<int, GroupChat> groups = {};
   List<int> createKeys = [];
   List<int> orderKeys = [];
-  SplayTreeMap<int, GroupChat> requests = SplayTreeMap();
+  SplayTreeMap<int, Request> requests = SplayTreeMap();
 
   int actived;
   SplayTreeMap<int, Message> activedMessages = SplayTreeMap();
@@ -42,11 +42,11 @@ class GroupChatProvider extends ChangeNotifier {
     rpc.addListener('group-chat-result', _result, false);
     rpc.addListener('group-chat-detail', _detail, true);
     // rpc.addListener('group-chat-update', _update, false);
-    // rpc.addListener('group-chat-join', _join, true);
+    rpc.addListener('group-chat-join', _join, true);
     // rpc.addListener('group-chat-agree', _agree, true);
     // rpc.addListener('group-chat-reject', _reject, false);
     rpc.addListener('group-chat-member-join', _memberJoin, false);
-    // rpc.addListener('group-chat-member-info', _memberInfo, false);
+    rpc.addListener('group-chat-member-info', _memberInfo, false);
     // rpc.addListener('group-chat-member-leave', _memberLeave, false);
     rpc.addListener('group-chat-member-online', _memberOnline, false);
     rpc.addListener('group-chat-member-offline', _memberOffline, false);
@@ -86,11 +86,16 @@ class GroupChatProvider extends ChangeNotifier {
   }
 
   create(String myName, String addr, String name, String bio, bool needAgree) {
+    print(addr);
     rpc.send('group-chat-create', [myName, addr, name, bio, needAgree]);
   }
 
   reSend(int id) {
     //
+  }
+
+  join(String gid, String gaddr, String name, String remark) {
+    rpc.send('group-chat-join', [gid, gaddr, name, remark]);
   }
 
   messageCreate(MessageType mtype, String content) {
@@ -173,8 +178,27 @@ class GroupChatProvider extends ChangeNotifier {
     }
   }
 
+  _join(List params) {
+    this.requests[params[0]] = Request.fromList(params);
+    notifyListeners();
+  }
+
   _memberJoin(List params) {
-    //
+    final member = Member.fromList(params);
+    if (this.actived == member.fid) {
+      this.activedMembers[member.id] = member;
+      // TODO Better add UI member joined.
+      notifyListeners();
+    }
+  }
+
+  _memberInfo(List params) {
+    final id = params[0];
+    if (this.activedMembers.containsKey(id)) {
+      this.activedMembers[id].addr = params[1];
+      this.activedMembers[id].name = params[2];
+      notifyListeners();
+    }
   }
 
   _memberOnline(List params) {

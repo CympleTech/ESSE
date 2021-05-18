@@ -13,7 +13,7 @@ use group_chat_types::{Event, GroupConnect, GroupResult, JoinProof, LayerEvent};
 use tdn_did::Proof;
 
 use crate::layer::{Layer, Online};
-use crate::storage::group_chat_db;
+use crate::storage::{group_chat_db, write_avatar_sync};
 
 use super::models::{from_network_message, GroupChat, Member};
 use super::{add_layer, rpc};
@@ -146,20 +146,32 @@ async fn handle_event(
             results.rpcs.push(rpc::group_online(mgid, gid));
         }
         LayerEvent::Sync(_, height, event) => {
+            let base = layer.read().await.base().clone();
+            let db = group_chat_db(&base, &mgid)?;
+
             match event {
                 Event::GroupInfo => {}
                 Event::GroupTransfer => {}
                 Event::GroupManagerAdd => {}
                 Event::GroupManagerDel => {}
                 Event::GroupClose => {}
-                Event::MemberInfo(mid, maddr, mname, mavatar) => {}
+                Event::MemberInfo(mid, maddr, mname, mavatar) => {
+                    let id = Member::get_id(&db, &gid, &mid)?;
+                    Member::update(&db, &id, &maddr, &mname)?;
+                    if mavatar.len() > 0 {
+                        write_avatar_sync(&base, &mgid, &mid, mavatar)?;
+                    }
+                    results.rpcs.push(rpc::member_info(mgid, id, maddr, mname));
+                }
                 Event::MemberJoin(mid, maddr, mname, mavatar, mtime) => {
-                    let db = group_chat_db(layer.read().await.base(), &mgid)?;
                     let mut member = Member::new(gid, mid, maddr, mname, false, mtime);
                     member.insert(&db)?;
+                    if mavatar.len() > 0 {
+                        write_avatar_sync(&base, &mgid, &mid, mavatar)?;
+                    }
                     results.rpcs.push(rpc::member_join(mgid, member));
                 }
-                Event::MemberLeave(mid) => {}
+                Event::MemberLeave(_mid) => {}
                 Event::MessageCreate(mid, nmsg, mtime) => {
                     let base = layer.read().await.base.clone();
                     let msg =
@@ -169,8 +181,7 @@ async fn handle_event(
             }
 
             // save event.
-
-            // update to UI.
+            GroupChat::add_height(&db, gid, height)?;
         }
         LayerEvent::MemberOnline(_, mid, maddr) => {
             results.rpcs.push(rpc::member_online(mgid, gid, mid, maddr));

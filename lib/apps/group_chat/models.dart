@@ -135,6 +135,42 @@ class GroupChat {
   }
 }
 
+class Request {
+  int id;
+  int fid;
+  String gid;
+  String addr;
+  String name;
+  String remark;
+  bool ok;
+  bool over;
+  RelativeTime time;
+
+  bool get isMe => this.fid == 0;
+
+  Avatar showAvatar([double width = 45.0]) {
+    final avatar = Global.avatarPath + this.gid + '.png';
+    return Avatar(
+      width: width,
+      name: this.name,
+      avatarPath: avatar,
+      needOnline: false,
+    );
+  }
+
+  Request.fromList(List params) {
+    this.id = params[0];
+    this.fid = params[1];
+    this.gid = params[2];
+    this.addr = params[3];
+    this.name = params[4];
+    this.remark = params[5];
+    this.ok = params[6];
+    this.over = params[7];
+    this.time = RelativeTime.fromInt(params[8]);
+  }
+}
+
 class Member {
   int id;
   int fid;

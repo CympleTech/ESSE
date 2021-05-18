@@ -16,7 +16,6 @@ import 'package:esse/widgets/qr_scan.dart';
 import 'package:esse/global.dart';
 import 'package:esse/provider.dart';
 
-import 'package:esse/apps/chat/models.dart' show Request; // TODO delete.
 import 'package:esse/apps/group_chat/models.dart';
 import 'package:esse/apps/group_chat/provider.dart';
 
@@ -112,7 +111,7 @@ class _GroupAddPageState extends State<GroupAddPage> {
       return;
     }
 
-    if (id.substring(0, 2) == 'EH') {
+    if (id.substring(0, 2) == 'EG') {
       id = id.substring(2);
     }
 
@@ -123,8 +122,7 @@ class _GroupAddPageState extends State<GroupAddPage> {
     }
     var name = _joinNameController.text;
     var remark = _joinRemarkController.text;
-
-    //context.read<GroupChatProvider>().requestCreate(Request(id, addr, name, remark));
+    context.read<GroupChatProvider>().join(id, addr, name, remark);
     setState(() {
         _joinIdController.text = '';
         _joinAddrController.text = '';
@@ -135,7 +133,11 @@ class _GroupAddPageState extends State<GroupAddPage> {
 
   _create() {
     final myName = context.read<AccountProvider>().activedAccount.name;
-    final addr = _createAddrController.text.trim();
+    var addr = _createAddrController.text.trim();
+    // if has 0x, need remove
+    if (addr.substring(0, 2) == '0x') {
+      addr = addr.substring(2);
+    }
     final name = _createNameController.text.trim();
     final bio = _createBioController.text.trim();
     context.read<GroupChatProvider>().create(myName, addr, name, bio, _groupNeedAgree);
@@ -520,7 +522,8 @@ class _RequestItem extends StatelessWidget {
         const SizedBox(height: 10.0),
         const Divider(height: 1.0, color: Color(0x40ADB0BB)),
         const SizedBox(height: 10.0),
-        _infoListTooltip(Icons.person, color.primary, 'EH' + request.gid.toUpperCase()),
+        _infoListTooltip(Icons.person, color.primary,
+          (request.isMe ? 'EG' : 'EH') + request.gid.toUpperCase()),
         _infoListTooltip(Icons.location_on, color.primary, "0x" + request.addr),
         _infoList(Icons.turned_in, color.primary, request.remark),
         _infoList(Icons.access_time_rounded, color.primary, request.time.toString()),

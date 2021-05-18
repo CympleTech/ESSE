@@ -7,14 +7,14 @@ use tdn::types::{
 };
 use tdn_did::Proof;
 
-use group_chat_types::{CheckType, Event, GroupConnect, GroupType, LayerEvent, NetworkMessage};
+use group_chat_types::{CheckType, Event, GroupConnect, GroupType, JoinProof, LayerEvent};
 
 use crate::apps::chat::MessageType;
 use crate::rpc::RpcState;
 use crate::storage::group_chat_db;
 
 use super::add_layer;
-use super::models::{to_network_message, GroupChat, Member, Message};
+use super::models::{to_network_message, GroupChat, Member, Message, Request};
 
 #[inline]
 pub(crate) fn create_check(mgid: GroupId, ct: CheckType, supported: Vec<GroupType>) -> RpcParam {
@@ -40,6 +40,16 @@ pub(crate) fn group_offline(mgid: GroupId, fid: i64, gid: &GroupId) -> RpcParam 
 #[inline]
 pub(crate) fn member_join(mgid: GroupId, member: Member) -> RpcParam {
     rpc_response(0, "group-chat-member-join", json!(member.to_rpc()), mgid)
+}
+
+#[inline]
+pub(crate) fn member_info(mgid: GroupId, id: i64, addr: PeerAddr, name: String) -> RpcParam {
+    rpc_response(
+        0,
+        "group-chat-member-info",
+        json!([id, addr.to_hex(), name]),
+        mgid,
+    )
 }
 
 #[inline]
@@ -129,9 +139,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
     handler.add_method(
         "group-chat-check",
         |gid: GroupId, params: Vec<RpcParam>, _state: Arc<RpcState>| async move {
-            let addr = PeerAddr::from_hex(params[0].as_str()?)
-                .map_err(|_e| new_io_error("PeerAddr invalid!"))?;
-            println!("addr: {}", addr.to_hex());
+            let addr = PeerAddr::from_hex(params[0].as_str()?)?;
 
             let mut results = HandleResult::new();
             let data = postcard::to_allocvec(&GroupConnect::Check).unwrap_or(vec![]);
@@ -145,8 +153,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
         "group-chat-create",
         |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
             let my_name = params[0].as_str()?.to_owned();
-            let addr = PeerAddr::from_hex(params[1].as_str()?)
-                .map_err(|_e| new_io_error("PeerAddr invalid!"))?;
+            let addr = PeerAddr::from_hex(params[1].as_str()?)?;
             let name = params[2].as_str()?.to_owned();
             let bio = params[3].as_str()?.to_owned();
             let need_agree = params[4].as_bool()?;
@@ -173,6 +180,30 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
 
             let data = postcard::to_allocvec(&GroupConnect::Create(info, proof)).unwrap_or(vec![]);
             let s = SendType::Connect(0, addr, None, None, data);
+            add_layer(&mut results, gid, s);
+            Ok(results)
+        },
+    );
+
+    handler.add_method(
+        "group-chat-join",
+        |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
+            let gcd = GroupId::from_hex(params[0].as_str()?)?;
+            let gaddr = PeerAddr::from_hex(params[1].as_str()?)?;
+            let gname = params[2].as_str()?.to_owned();
+            let gremark = params[3].as_str()?.to_owned();
+
+            let mut request = Request::new_by_me(gcd, gaddr, gname, gremark);
+            let db = group_chat_db(state.layer.read().await.base(), &gid)?;
+            request.insert(&db)?;
+            drop(db);
+
+            let mut results = HandleResult::rpc(request.to_rpc());
+            let me = state.group.read().await.clone_user(&gid)?;
+            let join_proof = JoinProof::Open(me.name, me.avatar);
+            let data = postcard::to_allocvec(&GroupConnect::Join(request.gid, join_proof))
+                .unwrap_or(vec![]);
+            let s = SendType::Connect(0, request.addr, None, None, data);
             add_layer(&mut results, gid, s);
             Ok(results)
         },
