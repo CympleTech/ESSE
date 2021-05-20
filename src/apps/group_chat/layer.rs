@@ -11,6 +11,7 @@ use tdn::{
 
 use group_chat_types::{Event, GroupConnect, GroupResult, JoinProof, LayerEvent, PackedEvent};
 use tdn_did::Proof;
+use tdn_storage::local::DStorage;
 
 use crate::layer::{Layer, Online};
 use crate::storage::{group_chat_db, write_avatar_sync};
@@ -75,6 +76,8 @@ pub(crate) async fn handle(
 
                             // 4. online ping.
                             add_layer(&mut results, mgid, ping(gcd, addr));
+
+                            println!("will sync remote: {}, my: {}", height, group.height);
 
                             // 5. sync group height.
                             if group.height < height {
@@ -144,6 +147,7 @@ async fn handle_event(
     layer: &Arc<RwLock<Layer>>,
     results: &mut HandleResult,
 ) -> Result<()> {
+    println!("Got event.......");
     let gid = match event {
         LayerEvent::Offline(gcd)
         | LayerEvent::OnlinePing(gcd)
@@ -152,9 +156,7 @@ async fn handle_event(
         | LayerEvent::MemberOffline(gcd, ..)
         | LayerEvent::Sync(gcd, ..)
         | LayerEvent::SyncReq(gcd, ..)
-        | LayerEvent::PackedSync(gcd, ..) => {
-            layer.read().await.get_running_remote_id(&mgid, &gcd)?
-        }
+        | LayerEvent::Packed(gcd, ..) => layer.read().await.get_running_remote_id(&mgid, &gcd)?,
     };
 
     match event {
@@ -178,6 +180,7 @@ async fn handle_event(
             results.rpcs.push(rpc::member_offline(mgid, gid, mid, ma));
         }
         LayerEvent::Sync(_, height, event) => {
+            println!("Sync: height: {}", height);
             let base = layer.read().await.base().clone();
             let db = group_chat_db(&base, &mgid)?;
 
@@ -205,18 +208,23 @@ async fn handle_event(
                 }
                 Event::MemberLeave(_mid) => {}
                 Event::MessageCreate(mid, nmsg, mtime) => {
+                    println!("Sync: create message start");
                     let base = layer.read().await.base.clone();
-                    let msg =
-                        from_network_message(height as i64, gid, mid, mgid, nmsg, mtime, base)?;
+                    let msg = from_network_message(height, gid, mid, &mgid, nmsg, mtime, &base)?;
                     results.rpcs.push(rpc::message_create(mgid, msg));
+                    println!("Sync: create message ok");
                 }
             }
 
             // save event.
             GroupChat::add_height(&db, gid, height)?;
         }
-        LayerEvent::PackedSync(gcd, height, from, to, events) => {
-            handle_sync(mgid, gcd, addr, height, from, to, events, results);
+        LayerEvent::Packed(gcd, height, from, to, events) => {
+            println!("Start handle sync packed... {}, {}, {}", height, from, to);
+            let base = layer.read().await.base().clone();
+            handle_sync(
+                mgid, gid, gcd, addr, height, from, to, events, base, results,
+            )?;
         }
         LayerEvent::SyncReq(..) => {} // Never here.
     }
@@ -242,22 +250,27 @@ fn ping(gcd: GroupId, addr: PeerAddr) -> SendType {
 }
 
 fn sync(gcd: GroupId, addr: PeerAddr, height: i64) -> SendType {
+    println!("Send sync request...");
     let data = postcard::to_allocvec(&LayerEvent::SyncReq(gcd, height + 1)).unwrap_or(vec![]);
     SendType::Event(0, addr, data)
 }
 
 fn handle_sync(
     mgid: GroupId,
+    fid: i64,
     gcd: GroupId,
     addr: PeerAddr,
     height: i64,
     mut from: i64,
     to: i64,
     events: Vec<PackedEvent>,
+    base: PathBuf,
     results: &mut HandleResult,
-) {
+) -> Result<()> {
+    let db = group_chat_db(&base, &mgid)?;
+
     for event in events {
-        handle_sync_event(from, event);
+        let _ = handle_sync_event(&mgid, &fid, from, event, &base, &db, results);
         from += 1;
     }
 
@@ -266,8 +279,56 @@ fn handle_sync(
     }
 
     // update group chat height.
+    GroupChat::add_height(&db, fid, to)?;
+
+    Ok(())
 }
 
-fn handle_sync_event(height: i64, event: PackedEvent) {
-    //
+fn handle_sync_event(
+    mgid: &GroupId,
+    fid: &i64,
+    height: i64,
+    event: PackedEvent,
+    base: &PathBuf,
+    db: &DStorage,
+    results: &mut HandleResult,
+) -> Result<()> {
+    match event {
+        PackedEvent::GroupInfo => {
+            // TODO
+        }
+        PackedEvent::GroupTransfer => {
+            // TODO
+        }
+        PackedEvent::GroupManagerAdd => {
+            // TODO
+        }
+        PackedEvent::GroupManagerDel => {
+            // TODO
+        }
+        PackedEvent::GroupClose => {
+            // TOOD
+        }
+        PackedEvent::MemberInfo(mid, maddr, mname, mavatar) => {
+            // TODO
+        }
+        PackedEvent::MemberJoin(mid, maddr, mname, mavatar, mtime) => {
+            if mavatar.len() > 0 {
+                write_avatar_sync(&base, &mgid, &mid, mavatar)?;
+            }
+            let mut member = Member::new(*fid, mid, maddr, mname, false, mtime);
+            member.insert(&db)?;
+            results.rpcs.push(rpc::member_join(*mgid, member));
+        }
+        PackedEvent::MemberLeave(mid) => {
+            // TODO
+        }
+        PackedEvent::MessageCreate(mid, nmsg, time) => {
+            let msg = from_network_message(height, *fid, mid, mgid, nmsg, time, base)?;
+            results.rpcs.push(rpc::message_create(*mgid, msg));
+        }
+        PackedEvent::None => {}
+    }
+
+    Ok(())
 }

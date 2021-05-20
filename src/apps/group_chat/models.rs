@@ -763,28 +763,28 @@ pub(super) fn from_network_message(
     height: i64,
     gdid: i64,
     mid: GroupId,
-    mgid: GroupId,
+    mgid: &GroupId,
     msg: NetworkMessage,
     datetime: i64,
-    base: PathBuf,
+    base: &PathBuf,
 ) -> Result<Message> {
-    let db = group_chat_db(&base, &mgid)?;
+    let db = group_chat_db(base, mgid)?;
     let mdid = Member::get_id(&db, &gdid, &mid)?;
-    let is_me = mid == mgid;
+    let is_me = &mid == mgid;
 
     // handle event.
     let (m_type, raw) = match msg {
         NetworkMessage::String(content) => (MessageType::String, content),
         NetworkMessage::Image(bytes) => {
-            let image_name = write_image_sync(&base, &mgid, bytes)?;
+            let image_name = write_image_sync(base, mgid, bytes)?;
             (MessageType::Image, image_name)
         }
         NetworkMessage::File(old_name, bytes) => {
-            let filename = write_file_sync(&base, &mgid, &old_name, bytes)?;
+            let filename = write_file_sync(base, mgid, &old_name, bytes)?;
             (MessageType::File, filename)
         }
         NetworkMessage::Contact(name, rgid, addr, avatar_bytes) => {
-            write_avatar_sync(&base, &mgid, &rgid, avatar_bytes)?;
+            write_avatar_sync(base, mgid, &rgid, avatar_bytes)?;
             let tmp_name = name.replace(";", "-;");
             let contact_values = format!("{};;{};;{}", tmp_name, rgid.to_hex(), addr.to_hex());
             (MessageType::Contact, contact_values)
@@ -794,7 +794,7 @@ pub(super) fn from_network_message(
             (MessageType::Emoji, "".to_owned())
         }
         NetworkMessage::Record(bytes, time) => {
-            let record_name = write_record_sync(&base, &mgid, gdid, time, bytes)?;
+            let record_name = write_record_sync(base, mgid, gdid, time, bytes)?;
             (MessageType::Record, record_name)
         }
         NetworkMessage::Phone => {
