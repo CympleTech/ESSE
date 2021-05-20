@@ -9,7 +9,7 @@ use tdn::{
     },
 };
 
-use group_chat_types::{Event, GroupConnect, GroupResult, JoinProof, LayerEvent};
+use group_chat_types::{Event, GroupConnect, GroupResult, JoinProof, LayerEvent, PackedEvent};
 use tdn_did::Proof;
 
 use crate::layer::{Layer, Online};
@@ -73,11 +73,12 @@ pub(crate) async fn handle(
                             // 3. online to UI.
                             results.rpcs.push(rpc::group_online(mgid, group.id));
 
-                            // 4. TODO online ping.
+                            // 4. online ping.
+                            add_layer(&mut results, mgid, ping(gcd, addr));
 
-                            // 5. TODO sync group height.
+                            // 5. sync group height.
                             if group.height < height {
-                                //
+                                add_layer(&mut results, mgid, sync(gcd, addr, group.height));
                             }
                         } else {
                             let msg = SendType::Result(0, addr, false, false, vec![]);
@@ -90,6 +91,7 @@ pub(crate) async fn handle(
                     // TODO waiting
                 }
                 GroupResult::Agree(gcd, info, height) => {
+                    println!("Agree..........");
                     let base = layer.read().await.base.clone();
                     let db = group_chat_db(&base, &mgid)?;
                     let (rid, key) = Request::over(&db, &gcd, true)?;
@@ -102,10 +104,13 @@ pub(crate) async fn handle(
                     results.rpcs.push(rpc::group_agree(mgid, rid, group));
 
                     // 3. online ping.
+                    add_layer(&mut results, mgid, ping(gcd, addr));
 
                     // 4. sync group height.
+                    add_layer(&mut results, mgid, sync(gcd, addr, 0));
                 }
                 GroupResult::Reject(gcd) => {
+                    println!("Reject..........");
                     let db = group_chat_db(layer.read().await.base(), &mgid)?;
                     let (rid, _key) = Request::over(&db, &gcd, true)?;
                     results.rpcs.push(rpc::group_reject(mgid, rid));
@@ -145,7 +150,11 @@ async fn handle_event(
         | LayerEvent::OnlinePong(gcd)
         | LayerEvent::MemberOnline(gcd, ..)
         | LayerEvent::MemberOffline(gcd, ..)
-        | LayerEvent::Sync(gcd, ..) => layer.read().await.get_running_remote_id(&mgid, &gcd)?,
+        | LayerEvent::Sync(gcd, ..)
+        | LayerEvent::SyncReq(gcd, ..)
+        | LayerEvent::PackedSync(gcd, ..) => {
+            layer.read().await.get_running_remote_id(&mgid, &gcd)?
+        }
     };
 
     match event {
@@ -161,6 +170,12 @@ async fn handle_event(
 
         LayerEvent::OnlinePong(_) => {
             results.rpcs.push(rpc::group_online(mgid, gid));
+        }
+        LayerEvent::MemberOnline(_, mid, maddr) => {
+            results.rpcs.push(rpc::member_online(mgid, gid, mid, maddr));
+        }
+        LayerEvent::MemberOffline(_, mid, ma) => {
+            results.rpcs.push(rpc::member_offline(mgid, gid, mid, ma));
         }
         LayerEvent::Sync(_, height, event) => {
             let base = layer.read().await.base().clone();
@@ -200,12 +215,10 @@ async fn handle_event(
             // save event.
             GroupChat::add_height(&db, gid, height)?;
         }
-        LayerEvent::MemberOnline(_, mid, maddr) => {
-            results.rpcs.push(rpc::member_online(mgid, gid, mid, maddr));
+        LayerEvent::PackedSync(gcd, height, from, to, events) => {
+            handle_sync(mgid, gcd, addr, height, from, to, events, results);
         }
-        LayerEvent::MemberOffline(_, mid, ma) => {
-            results.rpcs.push(rpc::member_offline(mgid, gid, mid, ma));
-        }
+        LayerEvent::SyncReq(..) => {} // Never here.
     }
 
     Ok(())
@@ -221,4 +234,40 @@ pub(crate) fn group_chat_conn(proof: Proof, addr: PeerAddr, gid: GroupId) -> Sen
     let data =
         postcard::to_allocvec(&GroupConnect::Join(gid, JoinProof::Had(proof))).unwrap_or(vec![]);
     SendType::Connect(0, addr, None, None, data)
+}
+
+fn ping(gcd: GroupId, addr: PeerAddr) -> SendType {
+    let data = postcard::to_allocvec(&LayerEvent::OnlinePing(gcd)).unwrap_or(vec![]);
+    SendType::Event(0, addr, data)
+}
+
+fn sync(gcd: GroupId, addr: PeerAddr, height: i64) -> SendType {
+    let data = postcard::to_allocvec(&LayerEvent::SyncReq(gcd, height + 1)).unwrap_or(vec![]);
+    SendType::Event(0, addr, data)
+}
+
+fn handle_sync(
+    mgid: GroupId,
+    gcd: GroupId,
+    addr: PeerAddr,
+    height: i64,
+    mut from: i64,
+    to: i64,
+    events: Vec<PackedEvent>,
+    results: &mut HandleResult,
+) {
+    for event in events {
+        handle_sync_event(from, event);
+        from += 1;
+    }
+
+    if to < height {
+        add_layer(results, mgid, sync(gcd, addr, to + 1));
+    }
+
+    // update group chat height.
+}
+
+fn handle_sync_event(height: i64, event: PackedEvent) {
+    //
 }

@@ -162,15 +162,16 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
     handler.add_method(
         "group-chat-create",
         |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
-            let my_name = params[0].as_str()?.to_owned();
-            let addr = PeerAddr::from_hex(params[1].as_str()?)?;
-            let name = params[2].as_str()?.to_owned();
-            let bio = params[3].as_str()?.to_owned();
-            let need_agree = params[4].as_bool()?;
+            let gtype = GroupType::from_u32(params[0].as_i64()? as u32);
+            let my_name = params[1].as_str()?.to_owned();
+            let addr = PeerAddr::from_hex(params[2].as_str()?)?;
+            let name = params[3].as_str()?.to_owned();
+            let bio = params[4].as_str()?.to_owned();
+            let need_agree = params[5].as_bool()?;
             let avatar = vec![];
 
             let db = group_chat_db(state.layer.read().await.base(), &gid)?;
-            let mut gc = GroupChat::new(gid, GroupType::Common, addr, name, bio, need_agree);
+            let mut gc = GroupChat::new(gid, gtype, addr, name, bio, need_agree);
             let _gcd = gc.g_id;
 
             // save db
@@ -190,6 +191,32 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
 
             let data = postcard::to_allocvec(&GroupConnect::Create(info, proof)).unwrap_or(vec![]);
             let s = SendType::Connect(0, addr, None, None, data);
+            add_layer(&mut results, gid, s);
+            Ok(results)
+        },
+    );
+
+    handler.add_method(
+        "group-chat-resend",
+        |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
+            let id = params[0].as_i64()?;
+            let mname = params[1].as_str()?.to_owned();
+
+            let db = group_chat_db(state.layer.read().await.base(), &gid)?;
+            let gc = GroupChat::get_id(&db, &id)??;
+            drop(db);
+
+            // TODO load avatar
+            let avatar = vec![];
+            let addr = gc.g_addr;
+            let info = gc.to_group_info(mname, avatar);
+
+            // TODO create proof.
+            let proof: Proof = Default::default();
+
+            let data = postcard::to_allocvec(&GroupConnect::Create(info, proof)).unwrap_or(vec![]);
+            let s = SendType::Connect(0, addr, None, None, data);
+            let mut results = HandleResult::new();
             add_layer(&mut results, gid, s);
             Ok(results)
         },

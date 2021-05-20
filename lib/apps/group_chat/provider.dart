@@ -43,8 +43,8 @@ class GroupChatProvider extends ChangeNotifier {
     rpc.addListener('group-chat-detail', _detail, true);
     // rpc.addListener('group-chat-update', _update, false);
     rpc.addListener('group-chat-join', _join, true);
-    // rpc.addListener('group-chat-agree', _agree, true);
-    // rpc.addListener('group-chat-reject', _reject, false);
+    rpc.addListener('group-chat-agree', _agree, true);
+    rpc.addListener('group-chat-reject', _reject, false);
     rpc.addListener('group-chat-member-join', _memberJoin, false);
     rpc.addListener('group-chat-member-info', _memberInfo, false);
     // rpc.addListener('group-chat-member-leave', _memberLeave, false);
@@ -85,13 +85,12 @@ class GroupChatProvider extends ChangeNotifier {
     rpc.send('group-chat-check', [addr]);
   }
 
-  create(String myName, String addr, String name, String bio, bool needAgree) {
-    print(addr);
-    rpc.send('group-chat-create', [myName, addr, name, bio, needAgree]);
+  create(int gtype, String myName, String addr, String name, String bio, bool needAgree) {
+    rpc.send('group-chat-create', [gtype, myName, addr, name, bio, needAgree]);
   }
 
-  reSend(int id) {
-    //
+  reSend(int id, String myName) {
+    rpc.send('group-chat-resend', [id, myName]);
   }
 
   join(String gid, String gaddr, String name, String remark, [String key = '']) {
@@ -181,6 +180,26 @@ class GroupChatProvider extends ChangeNotifier {
   _join(List params) {
     this.requests[params[0]] = Request.fromList(params);
     notifyListeners();
+  }
+
+  _agree(List params) {
+    final id = params[0];
+    if (this.requests.containsKey(id)) {
+      this.requests[id].overIt(false);
+    }
+
+    final gc = GroupChat.fromList(params[1]);
+    this.orderKeys.add(gc.id);
+    this.groups[gc.id] = gc;
+    notifyListeners();
+  }
+
+  _reject(List params) {
+    final id = params[0];
+    if (this.requests.containsKey(id)) {
+      this.requests[id].overIt(false);
+      notifyListeners();
+    }
   }
 
   _memberJoin(List params) {

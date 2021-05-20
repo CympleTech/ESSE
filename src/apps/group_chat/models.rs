@@ -315,6 +315,16 @@ impl GroupChat {
         Ok(None)
     }
 
+    pub fn get_id(db: &DStorage, id: &i64) -> Result<Option<GroupChat>> {
+        let sql = format!("SELECT id, height, owner, gcd, gtype, addr, name, bio, is_top, is_ok, is_need_agree, is_closed, key, last_datetime, last_content, last_readed, datetime FROM groups WHERE id = {} AND is_deleted = false", id);
+        let mut matrix = db.query(&sql)?;
+        if matrix.len() > 0 {
+            let values = matrix.pop().unwrap(); // safe unwrap()
+            return Ok(Some(GroupChat::from_values(values, false)));
+        }
+        Ok(None)
+    }
+
     pub fn insert(&mut self, db: &DStorage) -> Result<()> {
         let sql = format!("INSERT INTO groups (height, owner, gcd, gtype, addr, name, bio, is_top, is_ok, is_need_agree, is_closed, key, last_datetime, last_content, last_readed, datetime, is_deleted) VALUES ({}, '{}', '{}', {}, '{}', '{}', '{}', {}, {}, {}, {}, '{}', {}, '{}', {}, {}, false)",
             self.height,

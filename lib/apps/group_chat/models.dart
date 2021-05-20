@@ -148,6 +148,11 @@ class Request {
 
   bool get isMe => this.fid == 0;
 
+  overIt(bool ok) {
+    this.ok = ok;
+    this.over = true;
+  }
+
   Avatar showAvatar([double width = 45.0]) {
     final avatar = Global.avatarPath + this.gid + '.png';
     return Avatar(

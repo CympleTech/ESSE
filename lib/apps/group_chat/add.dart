@@ -53,6 +53,7 @@ class _GroupAddPageState extends State<GroupAddPage> {
   bool _groupHasNeedAgree = true;
   bool _addrOnline = false;
   bool _addrChecked = false;
+  String _myName = '';
 
   // 0 => encrypted, 1 => common, 2 => open.
   Widget _groupTypeWidget(String text, int value, ColorScheme color) {
@@ -132,7 +133,6 @@ class _GroupAddPageState extends State<GroupAddPage> {
   }
 
   _create() {
-    final myName = context.read<AccountProvider>().activedAccount.name;
     var addr = _createAddrController.text.trim();
     // if has 0x, need remove
     if (addr.substring(0, 2) == '0x') {
@@ -140,7 +140,7 @@ class _GroupAddPageState extends State<GroupAddPage> {
     }
     final name = _createNameController.text.trim();
     final bio = _createBioController.text.trim();
-    context.read<GroupChatProvider>().create(myName, addr, name, bio, _groupNeedAgree);
+    context.read<GroupChatProvider>().create(_groupType, _myName, addr, name, bio, _groupNeedAgree);
     setState(() {
         _createNameController.text = '';
         _createBioController.text = '';
@@ -151,6 +151,8 @@ class _GroupAddPageState extends State<GroupAddPage> {
   @override
   void initState() {
     super.initState();
+    _addrChecked = false;
+
     _joinIdController.text = widget.id;
     _joinAddrController.text = widget.addr;
     _joinNameController.text = widget.name;
@@ -178,6 +180,7 @@ class _GroupAddPageState extends State<GroupAddPage> {
     });
     new Future.delayed(Duration.zero, () {
         //context.read<ChatProvider>().requestList();
+        _myName = context.read<AccountProvider>().activedAccount.name;
     });
   }
 
@@ -460,7 +463,7 @@ class _GroupAddPageState extends State<GroupAddPage> {
                             physics: ClampingScrollPhysics(),
                             scrollDirection: Axis.vertical,
                             itemBuilder: (BuildContext context, int index) =>
-                            _CreateItem(group: groups[createKeys[index]]),
+                            _CreateItem(group: groups[createKeys[index]], name: _myName),
                           ),
                         )
                       ],
@@ -695,7 +698,8 @@ class _RequestItem extends StatelessWidget {
 
 class _CreateItem extends StatelessWidget {
   final GroupChat group;
-  const _CreateItem({Key key, this.group}) : super(key: key);
+  final String name;
+  const _CreateItem({Key key, this.group, this.name}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -738,7 +742,7 @@ class _CreateItem extends StatelessWidget {
                       style: TextStyle(color: Color(0xFFADB0BB), fontSize: 14.0),
                   ))
                   : InkWell(
-                    onTap: () => context.read<GroupChatProvider>().reSend(group.id),
+                    onTap: () => context.read<GroupChatProvider>().reSend(group.id, name),
                     hoverColor: Colors.transparent,
                     child: Container(
                       height: 35.0,
