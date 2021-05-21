@@ -360,9 +360,16 @@ impl GroupChat {
         db.update(&sql)
     }
 
-    pub fn update_last_message(db: &DStorage, id: i64, msg: &Message, read: bool) -> Result<usize> {
+    pub fn update_last_message(
+        db: &DStorage,
+        id: i64,
+        msg: &Message,
+        read: bool,
+        height: i64,
+    ) -> Result<usize> {
         let sql = format!(
-            "UPDATE groups SET last_datetime={}, last_content='{}', last_readed={} WHERE id = {}",
+            "UPDATE groups SET height={}, last_datetime={}, last_content='{}', last_readed={} WHERE id = {}",
+            height,
             msg.datetime,
             msg.content,
             if read { 1 } else { 0 },
@@ -819,6 +826,6 @@ pub(super) fn from_network_message(
 
     let mut msg = Message::new_with_time(height, gdid, mdid, is_me, m_type, raw, datetime);
     msg.insert(&db)?;
-    GroupChat::update_last_message(&db, gdid, &msg, false)?;
+    GroupChat::update_last_message(&db, gdid, &msg, false, height)?;
     Ok(msg)
 }
