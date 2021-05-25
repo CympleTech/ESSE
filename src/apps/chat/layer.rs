@@ -14,8 +14,11 @@ use tdn_did::{user::User, Proof};
 use crate::event::{InnerEvent, StatusEvent};
 use crate::layer::{Layer, Online};
 use crate::migrate::consensus::{FRIEND_TABLE_PATH, MESSAGE_TABLE_PATH, REQUEST_TABLE_PATH};
+use crate::rpc::{session_create, session_last};
+use crate::session::{Session, SessionType};
 use crate::storage::{
-    chat_db, read_avatar, read_file, read_record, write_avatar_sync, write_file, write_image,
+    chat_db, read_avatar, read_file, read_record, session_db, write_avatar_sync, write_file,
+    write_image,
 };
 
 use super::models::{Friend, Message, MessageType, NetworkMessage, Request};
@@ -311,6 +314,19 @@ pub(crate) async fn handle(
                             results
                                 .rpcs
                                 .push(rpc::request_agree(mgid, request_id, &friend));
+
+                            // ADD NEW SESSION.
+                            let s_db = session_db(&layer.base, &mgid)?;
+                            let mut session = Session::new(
+                                friend.id,
+                                friend.gid,
+                                friend.addr,
+                                SessionType::Chat,
+                                friend.name,
+                                friend.datetime,
+                            );
+                            session.insert(&s_db)?;
+                            results.rpcs.push(session_create(mgid, &session));
                         }
                         drop(db);
                     }
@@ -396,6 +412,19 @@ pub(crate) async fn handle(
                             results
                                 .rpcs
                                 .push(rpc::request_agree(mgid, request_id, &friend));
+
+                            // ADD NEW SESSION.
+                            let s_db = session_db(&layer.base, &mgid)?;
+                            let mut session = Session::new(
+                                friend.id,
+                                friend.gid,
+                                friend.addr,
+                                SessionType::Chat,
+                                friend.name,
+                                friend.datetime,
+                            );
+                            session.insert(&s_db)?;
+                            results.rpcs.push(session_create(mgid, &session));
                         }
                         drop(db);
                     }
@@ -487,6 +516,40 @@ impl LayerEvent {
                         &mut results,
                     )?;
                     results.rpcs.push(rpc::message_create(mgid, &msg));
+
+                    // UPDATE SESSION.
+                    let s_db = session_db(&layer.base, &mgid)?;
+                    if let Ok(id) = Session::last(
+                        &s_db,
+                        &fid,
+                        &SessionType::Chat,
+                        &msg.datetime,
+                        &msg.content,
+                        true,
+                    ) {
+                        results.rpcs.push(session_last(
+                            mgid,
+                            &id,
+                            &msg.datetime,
+                            &msg.content,
+                            true,
+                        ));
+                    } else {
+                        let c_db = chat_db(&layer.base, &mgid)?;
+                        if let Some(f) = Friend::get_id(&c_db, fid)? {
+                            let mut session = Session::new(
+                                f.id,
+                                f.gid,
+                                f.addr,
+                                SessionType::Chat,
+                                f.name,
+                                f.datetime,
+                            );
+                            session.last_content = msg.content;
+                            session.insert(&s_db)?;
+                            results.rpcs.push(session_create(mgid, &session));
+                        }
+                    }
                 }
             }
             LayerEvent::Info(remote) => {

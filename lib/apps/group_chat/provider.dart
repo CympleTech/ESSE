@@ -124,14 +124,14 @@ class GroupChatProvider extends ChangeNotifier {
 
   _online(List params) {
     if (this.actived == params[0]) {
-      this.online = true;
+      this.activedOnline = true;
       notifyListeners();
     }
   }
 
   _offline(List params) {
     if (this.actived == params[0]) {
-      this.online = false;
+      this.activedOnline = false;
       notifyListeners();
     }
   }

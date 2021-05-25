@@ -10,8 +10,9 @@ use tdn_did::user::User;
 
 use crate::event::InnerEvent;
 use crate::migrate::consensus::{FRIEND_TABLE_PATH, MESSAGE_TABLE_PATH, REQUEST_TABLE_PATH};
-use crate::rpc::{sleep_waiting_close_stable, RpcState};
-use crate::storage::{chat_db, delete_avatar};
+use crate::rpc::{session_create, session_last, sleep_waiting_close_stable, RpcState};
+use crate::session::{Session, SessionType};
+use crate::storage::{chat_db, delete_avatar, session_db};
 
 use super::layer::LayerEvent;
 use super::{Friend, Message, MessageType, Request};
@@ -124,10 +125,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
         |gid: GroupId, _params: Vec<RpcParam>, state: Arc<RpcState>| async move {
             let layer_lock = state.layer.read().await;
             let db = chat_db(&layer_lock.base, &gid)?;
-            let mut friends = Friend::all(&db)?;
-            drop(db);
-
-            Ok(HandleResult::rpc(friend_list(friends)))
+            Ok(HandleResult::rpc(friend_list(Friend::all(&db)?)))
         },
     );
 
@@ -337,6 +335,13 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
                 let f = Friend::from_request(&db, request)?;
                 results.rpcs.push(json!([id, f.to_rpc()]));
 
+                // ADD NEW SESSION.
+                let s_db = session_db(layer_lock.base(), &gid)?;
+                let mut session =
+                    Session::new(f.id, f.gid, f.addr, SessionType::Chat, f.name, f.datetime);
+                session.insert(&s_db)?;
+                results.rpcs.push(session_create(gid, &session));
+
                 let proof = group_lock.prove_addr(&gid, &f.addr)?;
                 let msg =
                     super::layer::rpc_agree_message(&mut layer_lock, id, proof, me, &gid, f.addr)?;
@@ -440,6 +445,31 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
 
             let mut results = HandleResult::rpc(json!(msg.to_rpc()));
             results.layers.push((gid, fgid, s));
+
+            // UPDATE SESSION.
+            let layer_lock = state.layer.read().await;
+            let s_db = session_db(&layer_lock.base, &gid)?;
+            if let Ok(id) = Session::last(
+                &s_db,
+                &fid,
+                &SessionType::Chat,
+                &msg.datetime,
+                &msg.content,
+                true,
+            ) {
+                results
+                    .rpcs
+                    .push(session_last(gid, &id, &msg.datetime, &msg.content, true));
+            } else {
+                let c_db = chat_db(&layer_lock.base, &gid)?;
+                let f = Friend::get_id(&c_db, fid)??;
+                let mut session =
+                    Session::new(f.id, f.gid, f.addr, SessionType::Chat, f.name, f.datetime);
+                session.last_content = msg.content;
+                session.insert(&s_db)?;
+                results.rpcs.push(session_create(gid, &session));
+            }
+            drop(layer_lock);
 
             match event {
                 LayerEvent::Message(hash, nw) => {

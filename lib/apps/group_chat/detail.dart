@@ -214,7 +214,7 @@ class _GroupChatDetailState extends State<GroupChatDetail> {
         child: Text('Waiting...')
       );
     }
-    final isOnline = provider.online;
+    final isOnline = provider.activedOnline;
 
     return Column(
       children: [

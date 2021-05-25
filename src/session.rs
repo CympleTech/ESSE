@@ -50,9 +50,9 @@ pub(crate) struct Session {
     pub s_type: SessionType,
     name: String,
     is_top: bool,
-    last_datetime: i64,
-    last_content: String,
-    last_readed: bool,
+    pub last_datetime: i64,
+    pub last_content: String,
+    pub last_readed: bool,
     pub online: bool,
 }
 
@@ -154,12 +154,26 @@ impl Session {
 
     pub fn last(
         db: &DStorage,
-        id: &i64,
+        fid: &i64,
+        s_type: &SessionType,
         datetime: &i64,
         content: &str,
         readed: bool,
-    ) -> Result<usize> {
-        db.update(&format!("UPDATE sessions SET last_datetime = {}, last_content = '{}', last_readed = {} WHERE id = {}", datetime, content, if readed { 1 } else { 0 }, id))
+    ) -> Result<i64> {
+        let sql = format!(
+            "SELECT id from sessions WHERE fid = {} AND s_type = {}",
+            fid,
+            s_type.to_int()
+        );
+        let mut matrix = db.query(&sql)?;
+
+        if let Some(mut values) = matrix.pop() {
+            let id = values.pop().unwrap().as_i64();
+            db.update(&format!("UPDATE sessions SET last_datetime = {}, last_content = '{}', last_readed = {} WHERE id = {}", datetime, content, if readed { 1 } else { 0 }, id))?;
+            Ok(id)
+        } else {
+            Err(new_io_error("session missing"))
+        }
     }
 
     pub fn read(db: &DStorage, id: &i64) -> Result<usize> {
