@@ -156,9 +156,6 @@ class _HomeListState extends State<HomeList> with SingleTickerProviderStateMixin
     final color = Theme.of(context).colorScheme;
     final lang = AppLocalizations.of(context);
     final provider = context.watch<AccountProvider>();
-    final chatProvider = context.watch<ChatProvider>();
-    final chatTops = chatProvider.topKeys;
-    final friends = chatProvider.friends;
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 10.0),
@@ -377,34 +374,54 @@ class DrawerWidget extends StatelessWidget {
                           child: Text(
                             "${me.name}",
                             style: TextStyle(
-                                fontWeight: FontWeight.bold, fontSize: 16.0),
+                              fontWeight: FontWeight.bold, fontSize: 16.0),
                           )),
                       children: accountsWidget,
                     ),
                   ),
                   const SizedBox(height: 5.0),
                   const Divider(height: 1.0, color: Color(0x40ADB0BB)),
-                  const SizedBox(height: 10.0),
                   ListTile(
-                      leading: Icon(Icons.person, color: color.primary),
-                      title: Text(lang.profile,
-                          textAlign: TextAlign.left,
-                          style: TextStyle(fontSize: 16.0)),
-                      onTap: () {
-                        Navigator.pop(context);
-                        showShadowDialog(context, Icons.person, lang.profile,
-                            ProfileDetail());
-                      }),
+                    leading: Icon(Icons.people_rounded, color: color.primary),
+                    title: Text(lang.contact, textAlign: TextAlign.left,
+                      style: TextStyle(fontSize: 16.0)),
+                    onTap: () {
+                      Navigator.pop(context);
+                      Provider.of<AccountProvider>(context, listen: false).updateActivedApp(
+                        null, lang.contact, ChatList()
+                      );
+                  }),
                   ListTile(
-                      leading: Icon(Icons.devices_other_rounded,
-                          color: color.primary),
-                      title: Text(lang.devices,
-                          textAlign: TextAlign.left,
-                          style: TextStyle(fontSize: 16.0)),
-                      onTap: () {
-                        Navigator.pop(context);
-                        _showDevices(context, isDesktop);
-                      }),
+                    leading: Icon(Icons.grid_view_rounded, color: color.primary),
+                    title: Text(lang.groups, textAlign: TextAlign.left,
+                      style: TextStyle(fontSize: 16.0)),
+                    onTap: () {
+                      Navigator.pop(context);
+                      Provider.of<AccountProvider>(context, listen: false).updateActivedApp(
+                        null, lang.groups, ServiceList()
+                      );
+                  }),
+                  const Divider(height: 1.0, color: Color(0x40ADB0BB)),
+                  ListTile(
+                    leading: Icon(Icons.person, color: color.primary),
+                    title: Text(lang.profile,
+                      textAlign: TextAlign.left,
+                      style: TextStyle(fontSize: 16.0)),
+                    onTap: () {
+                      Navigator.pop(context);
+                      showShadowDialog(context, Icons.person, lang.profile,
+                        ProfileDetail());
+                  }),
+                  ListTile(
+                    leading: Icon(Icons.devices_other_rounded,
+                      color: color.primary),
+                    title: Text(lang.devices,
+                      textAlign: TextAlign.left,
+                      style: TextStyle(fontSize: 16.0)),
+                    onTap: () {
+                      Navigator.pop(context);
+                      _showDevices(context, isDesktop);
+                  }),
                   ListTile(
                       leading: Icon(Icons.language, color: color.primary),
                       title: Text(lang.preference,

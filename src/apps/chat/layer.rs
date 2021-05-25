@@ -15,7 +15,7 @@ use crate::event::{InnerEvent, StatusEvent};
 use crate::layer::{Layer, Online};
 use crate::migrate::consensus::{FRIEND_TABLE_PATH, MESSAGE_TABLE_PATH, REQUEST_TABLE_PATH};
 use crate::storage::{
-    read_avatar, read_file, read_record, session_db, write_avatar_sync, write_file, write_image,
+    chat_db, read_avatar, read_file, read_record, write_avatar_sync, write_file, write_image,
 };
 
 use super::models::{Friend, Message, MessageType, NetworkMessage, Request};
@@ -100,7 +100,7 @@ pub(crate) async fn handle(
                         .check_add_online(fgid, Online::Direct(addr), f.id)?;
                     // 3. update remote addr. TODO
                     if f.addr != addr {
-                        let db = session_db(&layer.base, &mgid)?;
+                        let db = chat_db(&layer.base, &mgid)?;
                         let _ = Friend::addr_update(&db, f.id, &addr);
                         drop(db);
                     }
@@ -119,7 +119,7 @@ pub(crate) async fn handle(
                     let some_friend = load_friend(&layer.base, &mgid, &fgid)?;
                     if some_friend.is_none() {
                         // check if exist request.
-                        let db = session_db(&layer.base, &mgid)?;
+                        let db = chat_db(&layer.base, &mgid)?;
                         if let Some(req) = Request::get(&db, &remote.id)? {
                             req.delete(&db)?; // delete the old request.
                             results.rpcs.push(rpc::request_delete(mgid, req.id));
@@ -161,13 +161,15 @@ pub(crate) async fn handle(
                     // 2. update remote user.
                     friend.name = remote.name;
                     friend.addr = remote.addr;
-                    let db = session_db(&layer.base, &mgid)?;
+                    let db = chat_db(&layer.base, &mgid)?;
                     friend.remote_update(&db)?;
                     drop(db);
                     write_avatar_sync(&layer.base, &mgid, &remote.id, remote.avatar)?;
 
                     // 3. online to UI.
-                    friend.online = true;
+
+                    // TODO UPDATE SESSION
+
                     results.rpcs.push(rpc::friend_info(mgid, &friend));
                     // 4. connected.
                     let msg = conn_agree_message(&mut layer, 0, &mgid, addr).await?;
@@ -204,7 +206,7 @@ pub(crate) async fn handle(
         RecvType::Result(addr, is_ok, data) => {
             // check to close.
             if !is_ok {
-                let db = session_db(&layer.base, &mgid)?;
+                let db = chat_db(&layer.base, &mgid)?;
                 if let Some(friend) = Friend::get_it(&db, &fgid)? {
                     if friend.contains_addr(&addr) {
                         results.rpcs.push(rpc::friend_close(mgid, friend.id));
@@ -217,7 +219,7 @@ pub(crate) async fn handle(
                     .map_err(|_e| new_io_error("Deseralize result failure"))?;
                 match response {
                     LayerResponse::Reject => {
-                        let db = session_db(&layer.base, &mgid)?;
+                        let db = chat_db(&layer.base, &mgid)?;
                         if let Some(mut request) = Request::get(&db, &fgid)? {
                             layer.group.write().await.broadcast(
                                 &mgid,
@@ -258,7 +260,7 @@ pub(crate) async fn handle(
                         .running_mut(&mgid)?
                         .check_add_online(fgid, Online::Direct(addr), fid)?;
                     // 4. update remote addr.
-                    let db = session_db(&layer.base, &mgid)?;
+                    let db = chat_db(&layer.base, &mgid)?;
                     Friend::addr_update(&db, fid, &addr)?;
                     drop(db);
                     // 5. online to UI.
@@ -287,7 +289,7 @@ pub(crate) async fn handle(
                         )?;
                     } else {
                         // agree request for friend.
-                        let db = session_db(&layer.base, &mgid)?;
+                        let db = chat_db(&layer.base, &mgid)?;
                         if let Some(mut request) = Request::get(&db, &remote.id)? {
                             layer.group.write().await.broadcast(
                                 &mgid,
@@ -340,7 +342,7 @@ pub(crate) async fn handle(
                         .running_mut(&mgid)?
                         .check_add_online(fgid, Online::Direct(addr), fid)?;
                     // 4. update remote addr.
-                    let db = session_db(&layer.base, &mgid)?;
+                    let db = chat_db(&layer.base, &mgid)?;
                     Friend::addr_update(&db, fid, &addr)?;
                     drop(db);
                     // 5. online to UI.
@@ -372,7 +374,7 @@ pub(crate) async fn handle(
                         )?;
                     } else {
                         // agree request for friend.
-                        let db = session_db(&layer.base, &mgid)?;
+                        let db = chat_db(&layer.base, &mgid)?;
                         if let Some(mut request) = Request::get(&db, &remote.id)? {
                             layer.group.write().await.broadcast(
                                 &mgid,
@@ -402,7 +404,7 @@ pub(crate) async fn handle(
                     results.layers.push((mgid, fgid, msg));
                 }
                 LayerResponse::Reject => {
-                    let db = session_db(&layer.base, &mgid)?;
+                    let db = chat_db(&layer.base, &mgid)?;
                     if let Some(mut request) = Request::get(&db, &fgid)? {
                         layer.group.write().await.broadcast(
                             &mgid,
@@ -431,7 +433,7 @@ pub(crate) async fn handle(
             // TODO maybe send failure need handle.
             if is_ok {
                 if let Some((gid, db_id)) = layer.delivery.remove(&tid) {
-                    let db = session_db(&layer.base, &mgid)?;
+                    let db = chat_db(&layer.base, &mgid)?;
                     let resp = match t {
                         DeliveryType::Event => {
                             Message::delivery(&db, db_id, true)?;
@@ -474,7 +476,7 @@ impl LayerEvent {
 
         match event {
             LayerEvent::Message(hash, m) => {
-                let db = session_db(&layer.base, &mgid)?;
+                let db = chat_db(&layer.base, &mgid)?;
                 if !Message::exist(&db, &hash)? {
                     let msg = m.clone().handle(false, mgid, &layer.base, &db, fid, hash)?;
                     layer.group.write().await.broadcast(
@@ -489,7 +491,7 @@ impl LayerEvent {
             }
             LayerEvent::Info(remote) => {
                 let avatar = remote.avatar.clone();
-                let db = session_db(&layer.base, &mgid)?;
+                let db = chat_db(&layer.base, &mgid)?;
                 let mut f = Friend::get_id(&db, fid)?.ok_or(new_io_error(""))?;
                 f.name = remote.name;
                 f.addr = remote.addr;
@@ -549,7 +551,7 @@ impl LayerEvent {
                     &mut results,
                 )?;
                 layer.remove_online(&mgid, &fgid);
-                let db = session_db(&layer.base, &mgid)?;
+                let db = chat_db(&layer.base, &mgid)?;
                 Friend::id_close(&db, fid)?;
                 drop(db);
                 results.rpcs.push(rpc::friend_close(mgid, fid));
@@ -571,7 +573,7 @@ impl LayerEvent {
         m_type: MessageType,
         content: String,
     ) -> std::result::Result<(Message, NetworkMessage), tdn::types::rpc::RpcError> {
-        let db = session_db(&base, &mgid)?;
+        let db = chat_db(&base, &mgid)?;
 
         // handle message's type.
         let (nm_type, raw) = match m_type {
@@ -630,7 +632,9 @@ impl LayerEvent {
 
         let mut msg = Message::new(&mgid, fid, true, m_type, raw, false);
         msg.insert(&db)?;
-        Friend::update_last_message(&db, fid, &msg, true)?;
+
+        // TODO UPDATE SESSION
+
         drop(db);
         Ok((msg, nm_type))
     }
@@ -638,7 +642,7 @@ impl LayerEvent {
 
 #[inline]
 fn load_friend(base: &PathBuf, mgid: &GroupId, fgid: &GroupId) -> Result<Option<Friend>> {
-    let db = session_db(base, mgid)?;
+    let db = chat_db(base, mgid)?;
     Friend::get(&db, fgid)
 }
 

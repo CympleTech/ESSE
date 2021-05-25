@@ -272,10 +272,7 @@ class _ChatDetailState extends State<ChatDetail> {
                 color: const Color(0xFFEDEDED),
                 child: Icon(Icons.more_vert_rounded, color: color.primary),
                 onSelected: (int value) {
-                  if (value == 1) {
-                    Provider.of<ChatProvider>(context, listen: false).friendUpdate(
-                      this.friend.id, isTop: !this.friend.isTop);
-                  } else if (value == 2) {
+                  if (value == 2) {
                     showShadowDialog(
                       context,
                       Icons.info,
@@ -350,7 +347,6 @@ class _ChatDetailState extends State<ChatDetail> {
                 },
                 itemBuilder: (context) {
                   return <PopupMenuEntry<int>>[
-                    _menuItem(Color(0xFF6174FF), 1, Icons.vertical_align_top_rounded, this.friend.isTop ? lang.cancelTop : lang.setTop),
                     _menuItem(Color(0xFF6174FF), 2, Icons.qr_code_rounded, lang.friendInfo),
                     //_menuItem(color.primary, 3, Icons.turned_in_rounded, lang.remark),
                     this.friend.isClosed

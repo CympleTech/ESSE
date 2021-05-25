@@ -10,50 +10,23 @@ class Friend {
   String name;
   String addr;
   String remark;
-  bool isTop;
   bool isClosed;
-  RelativeTime lastMessageTime;
-  String lastMessageContent;
-  bool lastMessageReaded;
+  RelativeTime time;
   bool online = false;
 
   // new friend from network
   Friend(this.gid, this.name, this.addr) {
-    this.isTop = false;
     this.isClosed = false;
-    this.lastMessageTime = RelativeTime();
-    this.lastMessageContent = '';
-    this.lastMessageReaded = true;
   }
 
-  Avatar showAvatar({double width = 45.0, bool needOnline = true}) {
+  Avatar showAvatar({double width = 45.0}) {
     final avatar = Global.avatarPath + this.gid + '.png';
     return Avatar(
       width: width,
       name: this.name,
       avatarPath: avatar,
-      online: this.online,
-      needOnline: needOnline,
-      hasNew: !this.lastMessageReaded,
+      needOnline: false,
     );
-  }
-
-  updateLastMessage(Message msg, bool isReaded) {
-    this.lastMessageTime = msg.time;
-    this.lastMessageContent = msg.shortShow();
-    this.lastMessageReaded = isReaded;
-  }
-
-  static String betterPrint(String info) {
-    if (info == null) {
-      return '';
-    }
-    final len = info.length;
-    if (len > 8) {
-      return info.substring(0, 8) + '...' + info.substring(len - 6, len);
-    } else {
-      return info;
-    }
   }
 
   Friend.fromList(List params) {
@@ -62,12 +35,8 @@ class Friend {
     this.addr = params[2];
     this.name = params[3];
     this.remark = params[4];
-    this.isTop = params[5] == "1";
-    this.isClosed = params[6] == "1";
-    this.lastMessageTime = RelativeTime.fromInt(params[7]);
-    this.lastMessageContent = params[8];
-    this.lastMessageReaded = params[9];
-    this.online = params[10] == "1";
+    this.isClosed = params[5];
+    this.time = RelativeTime.fromInt(params[6]);
   }
 }
 

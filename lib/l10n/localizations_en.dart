@@ -21,7 +21,7 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get info => 'Info';
   @override
-  String get contact => 'Contact';
+  String get contact => 'Contacts';
   @override
   String get friend => 'Friend';
   @override
@@ -126,8 +126,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get addFriend => 'Add Friend';
   @override
   String get addGroup => 'Add Service';
-  @override
-  String get chats => 'Sessions';
   @override
   String get groups => 'Services';
   @override

@@ -18,8 +18,6 @@ class ChatProvider extends ChangeNotifier {
 
   List<int> orderKeys = []; // ordered chat friends with last message.
 
-  Map<int, RelativeTime> topKeys = {}; // Set toped friends.
-
   /// all requests. request have order.
   SplayTreeMap<int, Request> requests = SplayTreeMap();
 
@@ -59,7 +57,6 @@ class ChatProvider extends ChangeNotifier {
     this.orderKeys.clear();
     this.requests.clear();
     this.activedMessages.clear();
-    this.topKeys.clear();
   }
 
   updateActived() {
@@ -73,7 +70,6 @@ class ChatProvider extends ChangeNotifier {
   updateActivedFriend(int id) {
     this.activedFriendId = id;
     this.activedMessages.clear();
-    this.friends[id].lastMessageReaded = true;
 
     rpc.send('chat-message-list', [this.activedFriendId]);
     notifyListeners();
@@ -85,22 +81,9 @@ class ChatProvider extends ChangeNotifier {
   }
 
   /// delete a friend.
-  friendUpdate(int id, {String remark, bool isTop}) {
-    if (remark != null) {
-      this.friends[id].remark = remark;
-    }
-
-    if (isTop != null) {
-      this.friends[id].isTop = isTop;
-      if (isTop) {
-        this.topKeys[id] = this.friends[id].lastMessageTime;
-      } else {
-        this.topKeys.remove(id);
-      }
-    }
-
-    final friend = this.friends[id];
-    rpc.send('chat-friend-update', [id, friend.remark, friend.isTop]);
+  friendUpdate(int id, String remark) {
+    this.friends[id].remark = remark;
+    rpc.send('chat-friend-update', [id, remark]);
     notifyListeners();
   }
 
@@ -122,7 +105,6 @@ class ChatProvider extends ChangeNotifier {
 
     this.friends.remove(id);
     this.orderKeys.remove(id);
-    this.topKeys.remove(id);
 
     rpc.send('chat-friend-delete', [id]);
     notifyListeners();
@@ -196,9 +178,6 @@ class ChatProvider extends ChangeNotifier {
         final id = params[0];
         this.friends[id] = Friend.fromList(params);
         this.orderKeys.add(id);
-        if (this.friends[id].isTop) {
-          this.topKeys[id] = this.friends[id].lastMessageTime;
-        }
     });
     notifyListeners();
   }
@@ -225,21 +204,13 @@ class ChatProvider extends ChangeNotifier {
   _friendInfo(List params) {
     final id = params[0];
     this.friends[id] = Friend.fromList(params);
-    if (this.friends[id].isTop) {
-      this.topKeys[id] = this.friends[id].lastMessageTime;
-    }
     notifyListeners();
   }
 
   _friendUpdate(List params) {
     final id = params[0];
     if (this.friends.containsKey(id)) {
-      this.friends[id].isTop = params[1];
       this.friends[id].remark = params[2];
-
-      if (params[1]) {
-        this.topKeys[id] = this.friends[id].lastMessageTime;
-      }
       notifyListeners();
     }
   }
@@ -287,9 +258,6 @@ class ChatProvider extends ChangeNotifier {
       this.requests[id].overIt(true);
     }
     var friend = Friend.fromList(params[1]);
-    if (friend.isTop) {
-      this.topKeys[friend.id] = friend.lastMessageTime;
-    }
     this.friends[friend.id] = friend;
     orderFriends(friend.id);
     notifyListeners();
@@ -326,13 +294,8 @@ class ChatProvider extends ChangeNotifier {
       if (!msg.isDelivery) {
         msg.isDelivery = null; // When message create, set is is none;
       }
-      this.friends[msg.fid].updateLastMessage(msg, true);
       this.activedMessages[msg.id] = msg;
       rpc.send('chat-friend-readed', [this.activedFriendId]);
-    } else {
-      if (this.friends.containsKey(msg.fid)) {
-        this.friends[msg.fid].updateLastMessage(msg, false);
-      }
     }
     orderFriends(msg.fid);
     notifyListeners();

@@ -9,7 +9,7 @@ use tdn::types::{
 use tdn_storage::local::{DStorage, DsValue};
 
 use crate::apps::chat::Friend;
-use crate::storage::{read_file, session_db, write_file, write_image};
+use crate::storage::{chat_db, read_file, write_file, write_image};
 
 #[derive(Eq, PartialEq, Clone)]
 pub(crate) enum MessageType {
@@ -69,7 +69,7 @@ impl MessageType {
             }
             MessageType::Contact => {
                 let cid: i64 = content.parse().map_err(|_e| new_io_error("id error"))?;
-                let db = session_db(base, mgid)?;
+                let db = chat_db(base, mgid)?;
                 let contact = Friend::get_id(&db, cid)??;
                 db.close()?;
                 let tmp_name = contact.name.replace(";", "-;");

@@ -14,6 +14,7 @@ mod migrate;
 mod primitives;
 mod rpc;
 mod server;
+mod session;
 mod storage;
 mod utils;
 

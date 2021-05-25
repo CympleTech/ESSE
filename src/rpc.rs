@@ -13,12 +13,13 @@ use tdn::{
 };
 
 use crate::apps::app_rpc_inject;
-use crate::apps::chat::{chat_conn, Friend};
-use crate::apps::group_chat::{add_layer, group_chat_conn, GroupChat};
+use crate::apps::chat::chat_conn;
+use crate::apps::group_chat::{add_layer, group_chat_conn};
 use crate::event::InnerEvent;
 use crate::group::Group;
 use crate::layer::{Layer, LayerEvent};
-use crate::storage::{group_chat_db, session_db};
+use crate::session::{Session, SessionType};
+use crate::storage::session_db;
 
 pub(crate) fn init_rpc(
     addr: PeerAddr,
@@ -71,6 +72,48 @@ pub(crate) fn account_update(mgid: GroupId, name: &str, avatar: String) -> RpcPa
         json!([mgid.to_hex(), name, avatar]),
         mgid,
     )
+}
+
+#[inline]
+pub(crate) fn session_create(mgid: GroupId, session: &Session) -> RpcParam {
+    rpc_response(0, "session-create", session.to_rpc(), mgid)
+}
+
+#[inline]
+pub(crate) fn session_last(
+    mgid: GroupId,
+    id: &i64,
+    time: &i64,
+    content: &str,
+    readed: bool,
+) -> RpcParam {
+    rpc_response(0, "session-last", json!([id, time, content, readed]), mgid)
+}
+
+#[inline]
+pub(crate) fn session_update(
+    mgid: GroupId,
+    id: &i64,
+    addr: &PeerAddr,
+    name: &str,
+    is_top: bool,
+    online: bool,
+) -> RpcParam {
+    rpc_response(
+        0,
+        "session-update",
+        json!([id, addr.to_hex(), name, is_top, online]),
+        mgid,
+    )
+}
+
+#[inline]
+fn session_list(sessions: Vec<Session>) -> RpcParam {
+    let mut results = vec![];
+    for session in sessions {
+        results.push(session.to_rpc());
+    }
+    json!(results)
 }
 
 #[inline]
@@ -364,27 +407,29 @@ fn new_rpc_handler(
 
             let group_lock = state.group.read().await;
             let db = session_db(group_lock.base(), &gid)?;
-            let friends = Friend::all_ok(&db)?;
+            let sessions = Session::list(&db)?;
             drop(db);
-            for f in friends {
-                let proof = group_lock.prove_addr(&gid, &f.addr)?;
-                results.layers.push((gid, f.gid, chat_conn(proof, f.addr)));
+
+            for s in sessions {
+                match s.s_type {
+                    SessionType::Chat => {
+                        let proof = group_lock.prove_addr(&gid, &s.addr)?;
+                        results.layers.push((gid, s.gid, chat_conn(proof, s.addr)));
+                    }
+                    SessionType::Group => {
+                        let proof = group_lock.prove_addr(&gid, &s.addr)?;
+                        add_layer(&mut results, gid, group_chat_conn(proof, s.addr, s.gid));
+                    }
+                    _ => {}
+                }
             }
 
-            let db = group_chat_db(group_lock.base(), &gid)?;
-            let groups = GroupChat::all_ok(&db)?;
-            for g in groups {
-                let proof = group_lock.prove_addr(&gid, &g.g_addr)?;
-                add_layer(&mut results, gid, group_chat_conn(proof, g.g_addr, g.g_id));
-            }
-            drop(db);
-            drop(group_lock);
-
-            let devices = state.group.read().await.distribute_conns(&gid);
+            let devices = group_lock.distribute_conns(&gid);
             for device in devices {
                 results.groups.push((gid, device));
             }
 
+            drop(group_lock);
             debug!("Account Online: {}.", gid.to_hex());
 
             Ok(results)
@@ -418,6 +463,24 @@ fn new_rpc_handler(
             results.networks.push(NetworkType::DelGroup(gid));
 
             Ok(results)
+        },
+    );
+
+    handler.add_method(
+        "session-list",
+        |gid: GroupId, _params: Vec<RpcParam>, state: Arc<RpcState>| async move {
+            let layer_lock = state.layer.read().await;
+            let db = session_db(layer_lock.base(), &gid)?;
+            let mut sessions = Session::list(&db)?;
+            drop(db);
+
+            let gids: Vec<&GroupId> = sessions.iter().map(|s| &s.gid).collect();
+            let onlines = layer_lock.merge_online(&gid, gids)?;
+            for (index, online) in onlines.iter().enumerate() {
+                sessions[index].online = *online;
+            }
+
+            Ok(HandleResult::rpc(session_list(sessions)))
         },
     );
 

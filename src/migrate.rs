@@ -4,12 +4,14 @@ use tdn_storage::local::DStorage;
 pub mod consensus;
 
 mod account;
+mod chat;
 mod file;
 mod group_chat;
 mod service;
 mod session;
 
 use account::ACCOUNT_VERSIONS;
+use chat::CHAT_VERSIONS;
 use consensus::CONSENSUS_VERSIONS;
 use file::FILE_VERSIONS;
 use group_chat::GROUP_CHAT_VERSIONS;
@@ -26,6 +28,9 @@ pub(crate) const CONSENSUS_DB: &'static str = "consensus.db";
 
 /// Account's session database name
 pub(crate) const SESSION_DB: &'static str = "session.db";
+
+/// Account's chat database name
+pub(crate) const CHAT_DB: &'static str = "chat.db";
 
 /// Account's consensus database name
 pub(crate) const FILE_DB: &'static str = "file.db";
@@ -105,6 +110,7 @@ pub(crate) fn main_migrate(path: &PathBuf) -> std::io::Result<()> {
                 SERVICE_DB => SERVICE_VERSIONS.as_ref(),
                 ASSISTANT_DB => ASSISTANT_VERSIONS.as_ref(),
                 GROUP_CHAT_DB => GROUP_CHAT_VERSIONS.as_ref(),
+                CHAT_DB => CHAT_VERSIONS.as_ref(),
                 _ => {
                     continue;
                 }
@@ -182,6 +188,12 @@ pub(crate) fn main_migrate(path: &PathBuf) -> std::io::Result<()> {
             GROUP_CHAT_DB,
         ))?;
 
+        db.update(&format!(
+            "UPDATE migrates SET version = {} where db_name = '{}'",
+            CHAT_VERSIONS.len(),
+            CHAT_DB,
+        ))?;
+
         db.close()?;
     }
 
@@ -233,6 +245,14 @@ pub(crate) fn account_init_migrate(path: &PathBuf) -> std::io::Result<()> {
     db_path.push(GROUP_CHAT_DB);
     let db = DStorage::open(db_path)?;
     for i in &GROUP_CHAT_VERSIONS {
+        db.execute(i)?;
+    }
+    db.close()?;
+
+    let mut db_path = path.clone();
+    db_path.push(CHAT_DB);
+    let db = DStorage::open(db_path)?;
+    for i in &CHAT_VERSIONS {
         db.execute(i)?;
     }
     db.close()

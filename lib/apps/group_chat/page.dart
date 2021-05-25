@@ -97,22 +97,6 @@ class ListChat extends StatelessWidget {
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(fontSize: 16.0))
                         ),
-                        Container(
-                          margin: const EdgeInsets.only(left: 15.0, right: 20.0),
-                          child: Text(group.lastTime.toString(),
-                            style: const TextStyle(color: Color(0xFFADB0BB), fontSize: 12.0),
-                          ),
-                        )
-                    ]),
-                    const SizedBox(height: 4.0),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(group.lastContent,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(color: Color(0xFFADB0BB), fontSize: 12.0)),
-                        ),
                         if (group.isClosed)
                         Container(
                           margin: const EdgeInsets.only(left: 15.0, right: 20.0),

@@ -2,6 +2,7 @@ use async_fs as fs;
 use image::{load_from_memory, DynamicImage, GenericImageView};
 use rand::{distributions::Alphanumeric, thread_rng, Rng};
 use std::path::PathBuf;
+use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use tdn::types::{
@@ -11,7 +12,7 @@ use tdn::types::{
 use tdn_storage::local::DStorage;
 
 use crate::migrate::{
-    account_init_migrate, ACCOUNT_DB, ASSISTANT_DB, CONSENSUS_DB, FILE_DB, GROUP_CHAT_DB,
+    account_init_migrate, ACCOUNT_DB, ASSISTANT_DB, CHAT_DB, CONSENSUS_DB, FILE_DB, GROUP_CHAT_DB,
     SERVICE_DB, SESSION_DB,
 };
 
@@ -324,6 +325,14 @@ pub(crate) fn session_db(base: &PathBuf, gid: &GroupId) -> Result<DStorage> {
     let mut db_path = base.clone();
     db_path.push(gid.to_hex());
     db_path.push(SESSION_DB);
+    DStorage::open(db_path)
+}
+
+#[inline]
+pub(crate) fn chat_db(base: &PathBuf, gid: &GroupId) -> Result<DStorage> {
+    let mut db_path = base.clone();
+    db_path.push(gid.to_hex());
+    db_path.push(CHAT_DB);
     DStorage::open(db_path)
 }
 

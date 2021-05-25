@@ -55,6 +55,8 @@ class _GroupAddPageState extends State<GroupAddPage> {
   bool _addrChecked = false;
   String _myName = '';
 
+  bool _requestsLoadMore = true;
+
   // 0 => encrypted, 1 => common, 2 => open.
   Widget _groupTypeWidget(String text, int value, ColorScheme color) {
     return Row(
@@ -179,7 +181,7 @@ class _GroupAddPageState extends State<GroupAddPage> {
         setState(() {});
     });
     new Future.delayed(Duration.zero, () {
-        //context.read<ChatProvider>().requestList();
+        context.read<GroupChatProvider>().requestList(false);
         _myName = context.read<AccountProvider>().activedAccount.name;
     });
   }
@@ -197,6 +199,9 @@ class _GroupAddPageState extends State<GroupAddPage> {
 
     final groups = provider.groups;
     final createKeys = provider.createKeys;
+
+    final requests = provider.requests;
+    final requestKeys = requests.keys.toList().reversed.toList();
 
     return SafeArea(
       child: DefaultTabController(
@@ -263,7 +268,7 @@ class _GroupAddPageState extends State<GroupAddPage> {
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: <Widget>[
                         InputText(
-                          icon: Icons.person,
+                          icon: Icons.groups,
                           text: 'Group ID',
                           controller: _joinIdController,
                           focus: _joinIdFocus),
@@ -285,18 +290,28 @@ class _GroupAddPageState extends State<GroupAddPage> {
                         const SizedBox(height: 20.0),
                         const Divider(height: 1.0, color: Color(0x40ADB0BB)),
                         const SizedBox(height: 10.0),
-                        // if (requests.isNotEmpty)
-                        // Container(
-                        //   width: 600.0,
-                        //   child: ListView.builder(
-                        //     itemCount: requestKeys.length,
-                        //     shrinkWrap: true,
-                        //     physics: ClampingScrollPhysics(),
-                        //     scrollDirection: Axis.vertical,
-                        //     itemBuilder: (BuildContext context, int index) =>
-                        //     _RequestItem(request: requests[requestKeys[index]]),
-                        //   ),
-                        // )
+                        if (requests.isNotEmpty)
+                        Container(
+                          width: 600.0,
+                          child: ListView.builder(
+                            itemCount: requestKeys.length,
+                            shrinkWrap: true,
+                            physics: ClampingScrollPhysics(),
+                            scrollDirection: Axis.vertical,
+                            itemBuilder: (BuildContext context, int index) =>
+                            _RequestItem(request: requests[requestKeys[index]]),
+                          ),
+                        ),
+                        if (_requestsLoadMore)
+                        TextButton(
+                          onPressed: () {
+                            provider.requestList(true);
+                            setState(() {
+                                _requestsLoadMore = false;
+                            });
+                          },
+                          child: Text('load more...', style: TextStyle(fontSize: 14.0)),
+                        ),
                       ],
                     ),
                   ),
@@ -410,7 +425,7 @@ class _GroupAddPageState extends State<GroupAddPage> {
                         Container(
                           padding: EdgeInsets.symmetric(vertical: 10.0),
                           child: InputText(
-                            icon: Icons.person,
+                            icon: Icons.account_box,
                             text: 'Group Name',
                             controller: _createNameController,
                             focus: _createNameFocus),
@@ -418,7 +433,7 @@ class _GroupAddPageState extends State<GroupAddPage> {
                         Container(
                           padding: EdgeInsets.symmetric(vertical: 10.0),
                           child: InputText(
-                            icon: Icons.location_on,
+                            icon: Icons.campaign,
                             text: 'Group Bio',
                             controller: _createBioController,
                             focus: _createBioFocus),
@@ -427,7 +442,7 @@ class _GroupAddPageState extends State<GroupAddPage> {
                         Container(
                           padding: EdgeInsets.symmetric(vertical: 10.0),
                           child: InputText(
-                            icon: Icons.turned_in,
+                            icon: Icons.enhanced_encryption,
                             text: 'Encrypted Key',
                             controller: _createKeyController,
                             focus: _createKeyFocus),

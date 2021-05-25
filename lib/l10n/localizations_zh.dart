@@ -127,8 +127,6 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String get addGroup => '添加服务';
   @override
-  String get chats => '聊天列表';
-  @override
   String get groups => '服务列表';
   @override
   String get devices => '关联设备';

@@ -214,7 +214,7 @@ class _GroupChatDetailState extends State<GroupChatDetail> {
         child: Text('Waiting...')
       );
     }
-    final isOnline = this.group.online;
+    final isOnline = provider.online;
 
     return Column(
       children: [
@@ -276,9 +276,7 @@ class _GroupChatDetailState extends State<GroupChatDetail> {
                 color: const Color(0xFFEDEDED),
                 child: Icon(Icons.more_vert_rounded, color: color.primary),
                 onSelected: (int value) {
-                  if (value == 1) {
-                    //Provider.of<GroupChatProvider>(context, listen: false).groupUpdate(this.group.id, isTop: !this.group.isTop);
-                  } else if (value == 2) {
+                  if (value == 2) {
                     showShadowDialog(
                       context,
                       Icons.info,
@@ -368,7 +366,6 @@ class _GroupChatDetailState extends State<GroupChatDetail> {
                 },
                 itemBuilder: (context) {
                   return <PopupMenuEntry<int>>[
-                    _menuItem(Color(0xFF6174FF), 1, Icons.vertical_align_top_rounded, this.group.isTop ? lang.cancelTop : lang.setTop),
                     _menuItem(Color(0xFF6174FF), 2, Icons.qr_code_rounded, lang.info),
                     _menuItem(Color(0xFF6174FF), 3, Icons.group_rounded, lang.members),
                     // _menuItem(color.primary, 3, Icons.turned_in_rounded, lang.remark),

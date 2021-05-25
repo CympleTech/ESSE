@@ -2,7 +2,7 @@ use std::sync::Arc;
 use tdn::types::{
     group::GroupId,
     message::SendType,
-    primitive::{new_io_error, HandleResult, PeerAddr},
+    primitive::{HandleResult, PeerAddr},
     rpc::{json, rpc_response, RpcHandler, RpcParam},
 };
 use tdn_did::Proof;
@@ -98,6 +98,16 @@ fn group_list(groups: Vec<GroupChat>) -> RpcParam {
 }
 
 #[inline]
+fn request_list(requests: Vec<Request>) -> RpcParam {
+    let mut results = vec![];
+    for request in requests {
+        results.push(request.to_rpc());
+    }
+
+    json!(results)
+}
+
+#[inline]
 fn detail_list(members: Vec<Member>, messages: Vec<Message>) -> RpcParam {
     let mut member_results = vec![];
     for m in members {
@@ -122,16 +132,17 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
         |gid: GroupId, _params: Vec<RpcParam>, state: Arc<RpcState>| async move {
             let layer_lock = state.layer.read().await;
             let db = group_chat_db(&layer_lock.base, &gid)?;
-            let mut groups = GroupChat::all(&db)?;
-            drop(db);
+            Ok(HandleResult::rpc(group_list(GroupChat::all(&db)?)))
+        },
+    );
 
-            let gids: Vec<&GroupId> = groups.iter().map(|g| &g.g_id).collect();
-            let onlines = layer_lock.merge_online(&gid, gids)?;
-            for (index, online) in onlines.iter().enumerate() {
-                groups[index].online = *online;
-            }
-
-            Ok(HandleResult::rpc(group_list(groups)))
+    handler.add_method(
+        "group-chat-request-list",
+        |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
+            let is_all = params[0].as_bool()?;
+            let layer_lock = state.layer.read().await;
+            let db = group_chat_db(&layer_lock.base, &gid)?;
+            Ok(HandleResult::rpc(request_list(Request::list(&db, is_all)?)))
         },
     );
 
@@ -264,19 +275,6 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             let msg = SendType::Event(0, addr, data);
             add_layer(&mut results, gid, msg);
             Ok(results)
-        },
-    );
-
-    handler.add_method(
-        "group-chat-readed",
-        |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
-            let fid = params[0].as_i64()?;
-
-            let db = group_chat_db(state.layer.read().await.base(), &gid)?;
-            GroupChat::readed(&db, fid)?;
-            drop(db);
-
-            Ok(HandleResult::new())
         },
     );
 }

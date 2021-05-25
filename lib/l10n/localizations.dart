@@ -105,7 +105,6 @@ abstract class AppLocalizations {
   // homeage
   String get addFriend;
   String get addGroup;
-  String get chats;
   String get groups;
   String get devices;
   String get nightly;

@@ -71,8 +71,6 @@ pub(crate) struct GroupChat {
     g_name: String,
     /// group chat simple intro.
     g_bio: String,
-    /// group chat is set top sessions.
-    is_top: bool,
     /// group chat is created ok.
     is_ok: bool,
     /// group chat is closed.
@@ -81,16 +79,8 @@ pub(crate) struct GroupChat {
     is_need_agree: bool,
     /// group chat encrypted-key.
     key: GroupChatKey,
-    /// group chat lastest message time. (only ESSE used)
-    last_datetime: i64,
-    /// group chat lastest message content.  (only ESSE used)
-    last_content: String,
-    /// group chat lastest message readed.  (only ESSE used)
-    last_readed: bool,
     /// group chat created time.
     pub datetime: i64,
-    /// group chat is online.
-    pub online: bool,
     /// is deleted.
     is_deleted: bool,
 }
@@ -126,13 +116,8 @@ impl GroupChat {
             datetime,
             id: 0,
             height: 0,
-            is_top: true,
             is_ok: false,
             is_closed: false,
-            last_datetime: datetime,
-            last_content: Default::default(),
-            last_readed: true,
-            online: false,
             is_deleted: false,
         }
     }
@@ -166,13 +151,8 @@ impl GroupChat {
             datetime,
             id: 0,
             height,
-            is_top: true,
             is_ok: true,
             is_closed: false,
-            last_datetime: datetime,
-            last_content: Default::default(),
-            last_readed: true,
-            online: false,
             is_deleted: false,
         }
     }
@@ -243,14 +223,9 @@ impl GroupChat {
             self.g_addr.to_hex(),
             self.g_name,
             self.g_bio,
-            if self.is_top { "1" } else { "0" },
-            if self.is_ok { "1" } else { "0" },
-            if self.is_closed { "1" } else { "0" },
-            if self.is_need_agree { "1" } else { "0" },
-            self.last_datetime,
-            self.last_content,
-            if self.last_readed { "1" } else { "0" },
-            if self.online { "1" } else { "0" },
+            self.is_ok,
+            self.is_closed,
+            self.is_need_agree,
         ])
     }
 
@@ -263,17 +238,12 @@ impl GroupChat {
 
         Self {
             is_deleted,
-            online: false,
             datetime: v.pop().unwrap().as_i64(),
-            last_readed: v.pop().unwrap().as_bool(),
-            last_content: v.pop().unwrap().as_string(),
-            last_datetime: v.pop().unwrap().as_i64(),
             key: GroupChatKey::from_hex(v.pop().unwrap().as_string())
                 .unwrap_or(GroupChatKey::new(vec![])),
             is_closed: v.pop().unwrap().as_bool(),
             is_need_agree: v.pop().unwrap().as_bool(),
             is_ok: v.pop().unwrap().as_bool(),
-            is_top: v.pop().unwrap().as_bool(),
             g_bio: v.pop().unwrap().as_string(),
             g_name: v.pop().unwrap().as_string(),
             g_addr: PeerAddr::from_hex(v.pop().unwrap().as_string()).unwrap_or(Default::default()),
@@ -287,7 +257,7 @@ impl GroupChat {
 
     /// use in rpc when load account friends.
     pub fn all(db: &DStorage) -> Result<Vec<GroupChat>> {
-        let matrix = db.query("SELECT id, height, owner, gcd, gtype, addr, name, bio, is_top, is_ok, is_need_agree, is_closed, key, last_datetime, last_content, last_readed, datetime FROM groups WHERE is_deleted = false ORDER BY last_datetime DESC")?;
+        let matrix = db.query("SELECT id, height, owner, gcd, gtype, addr, name, bio, is_ok, is_need_agree, is_closed, key, datetime FROM groups WHERE is_deleted = false")?;
         let mut groups = vec![];
         for values in matrix {
             groups.push(GroupChat::from_values(values, false));
@@ -297,7 +267,7 @@ impl GroupChat {
 
     /// use in rpc when load account groups.
     pub fn all_ok(db: &DStorage) -> Result<Vec<GroupChat>> {
-        let matrix = db.query("SELECT id, height, owner, gcd, gtype, addr, name, bio, is_top, is_ok, is_need_agree, is_closed, key, last_datetime, last_content, last_readed, datetime FROM groups WHERE is_closed = false ORDER BY last_datetime DESC")?;
+        let matrix = db.query("SELECT id, height, owner, gcd, gtype, addr, name, bio, is_ok, is_need_agree, is_closed, key, datetime FROM groups WHERE is_closed = false")?;
         let mut groups = vec![];
         for values in matrix {
             groups.push(GroupChat::from_values(values, false));
@@ -306,7 +276,7 @@ impl GroupChat {
     }
 
     pub fn get(db: &DStorage, gid: &GroupId) -> Result<Option<GroupChat>> {
-        let sql = format!("SELECT id, height, owner, gcd, gtype, addr, name, bio, is_top, is_ok, is_need_agree, is_closed, key, last_datetime, last_content, last_readed, datetime FROM groups WHERE gcd = '{}' AND is_deleted = false", gid.to_hex());
+        let sql = format!("SELECT id, height, owner, gcd, gtype, addr, name, bio, is_ok, is_need_agree, is_closed, key, datetime FROM groups WHERE gcd = '{}' AND is_deleted = false", gid.to_hex());
         let mut matrix = db.query(&sql)?;
         if matrix.len() > 0 {
             let values = matrix.pop().unwrap(); // safe unwrap()
@@ -316,7 +286,7 @@ impl GroupChat {
     }
 
     pub fn get_id(db: &DStorage, id: &i64) -> Result<Option<GroupChat>> {
-        let sql = format!("SELECT id, height, owner, gcd, gtype, addr, name, bio, is_top, is_ok, is_need_agree, is_closed, key, last_datetime, last_content, last_readed, datetime FROM groups WHERE id = {} AND is_deleted = false", id);
+        let sql = format!("SELECT id, height, owner, gcd, gtype, addr, name, bio, is_ok, is_need_agree, is_closed, key, datetime FROM groups WHERE id = {} AND is_deleted = false", id);
         let mut matrix = db.query(&sql)?;
         if matrix.len() > 0 {
             let values = matrix.pop().unwrap(); // safe unwrap()
@@ -326,7 +296,7 @@ impl GroupChat {
     }
 
     pub fn insert(&mut self, db: &DStorage) -> Result<()> {
-        let sql = format!("INSERT INTO groups (height, owner, gcd, gtype, addr, name, bio, is_top, is_ok, is_need_agree, is_closed, key, last_datetime, last_content, last_readed, datetime, is_deleted) VALUES ({}, '{}', '{}', {}, '{}', '{}', '{}', {}, {}, {}, {}, '{}', {}, '{}', {}, {}, false)",
+        let sql = format!("INSERT INTO groups (height, owner, gcd, gtype, addr, name, bio, is_ok, is_need_agree, is_closed, key, datetime, is_deleted) VALUES ({}, '{}', '{}', {}, '{}', '{}', '{}', {}, {}, {}, '{}', {}, false)",
             self.height,
             self.owner.to_hex(),
             self.g_id.to_hex(),
@@ -334,14 +304,10 @@ impl GroupChat {
             self.g_addr.to_hex(),
             self.g_name,
             self.g_bio,
-            if self.is_top { 1 } else { 0 },
             if self.is_ok { 1 } else { 0 },
             if self.is_need_agree { 1 } else { 0 },
             if self.is_closed { 1 } else { 0 },
             self.key.to_hex(),
-            self.last_datetime,
-            self.last_content,
-            if self.last_readed { 1 } else { 0 },
             self.datetime,
         );
         let id = db.insert(&sql)?;
@@ -359,29 +325,6 @@ impl GroupChat {
         let sql = format!("UPDATE groups SET height={} WHERE id = {}", height, id,);
         db.update(&sql)
     }
-
-    pub fn update_last_message(
-        db: &DStorage,
-        id: i64,
-        msg: &Message,
-        read: bool,
-        height: i64,
-    ) -> Result<usize> {
-        let sql = format!(
-            "UPDATE groups SET height={}, last_datetime={}, last_content='{}', last_readed={} WHERE id = {}",
-            height,
-            msg.datetime,
-            msg.content,
-            if read { 1 } else { 0 },
-            id,
-        );
-        db.update(&sql)
-    }
-
-    pub fn readed(db: &DStorage, id: i64) -> Result<usize> {
-        let sql = format!("UPDATE groups SET last_readed=1 WHERE id = {}", id);
-        db.update(&sql)
-    }
 }
 
 /// Group Join Request model. include my requests and other requests.
@@ -397,6 +340,7 @@ pub(crate) struct Request {
     is_ok: bool,
     is_over: bool,
     datetime: i64,
+    is_deleted: bool,
 }
 
 impl Request {
@@ -418,6 +362,7 @@ impl Request {
             key: GroupChatKey(vec![]),
             is_ok: false,
             is_over: false,
+            is_deleted: false,
             id: 0,
         }
     }
@@ -444,6 +389,7 @@ impl Request {
             key,
             is_ok: false,
             is_over: false,
+            is_deleted: false,
             fid: 0,
             id: 0,
         }
@@ -461,6 +407,42 @@ impl Request {
             self.is_over,
             self.datetime,
         ])
+    }
+
+    fn from_values(mut v: Vec<DsValue>, contains_deleted: bool) -> Self {
+        let is_deleted = if contains_deleted {
+            v.pop().unwrap().as_bool()
+        } else {
+            false
+        };
+
+        Self {
+            is_deleted,
+            key: GroupChatKey(vec![]),
+            datetime: v.pop().unwrap().as_i64(),
+            is_over: v.pop().unwrap().as_bool(),
+            is_ok: v.pop().unwrap().as_bool(),
+            remark: v.pop().unwrap().as_string(),
+            name: v.pop().unwrap().as_string(),
+            addr: PeerAddr::from_hex(v.pop().unwrap().as_string()).unwrap_or(Default::default()),
+            gid: GroupId::from_hex(v.pop().unwrap().as_string()).unwrap_or(Default::default()),
+            fid: v.pop().unwrap().as_i64(),
+            id: v.pop().unwrap().as_i64(),
+        }
+    }
+
+    pub fn list(db: &DStorage, is_all: bool) -> Result<Vec<Request>> {
+        let sql = if is_all {
+            format!("SELECT id, fid, gid, addr, name, remark, is_ok, is_over, datetime FROM requests WHERE is_deleted = false")
+        } else {
+            format!("SELECT id, fid, gid, addr, name, remark, is_ok, is_over, datetime FROM requests WHERE is_deleted = false AND is_over = 0")
+        };
+        let matrix = db.query(&sql)?;
+        let mut requests = vec![];
+        for values in matrix {
+            requests.push(Request::from_values(values, false));
+        }
+        Ok(requests)
     }
 
     pub fn insert(&mut self, db: &DStorage) -> Result<()> {
@@ -826,6 +808,8 @@ pub(super) fn from_network_message(
 
     let mut msg = Message::new_with_time(height, gdid, mdid, is_me, m_type, raw, datetime);
     msg.insert(&db)?;
-    GroupChat::update_last_message(&db, gdid, &msg, false, height)?;
+
+    // TODO SESSION UPDATE.
+
     Ok(msg)
 }

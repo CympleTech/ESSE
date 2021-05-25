@@ -10,12 +10,12 @@ use tdn::{
         primitive::{new_io_error, PeerAddr, Result},
     },
 };
-use tdn_did::user::User;
 
-use crate::apps::chat::{chat_conn, Friend};
-use crate::apps::group_chat::{group_chat_conn, GroupChat, GROUP_ID};
+use crate::apps::chat::chat_conn;
+use crate::apps::group_chat::{group_chat_conn, GROUP_ID};
 use crate::group::Group;
-use crate::storage::{group_chat_db, session_db, write_avatar_sync};
+use crate::session::{Session, SessionType};
+use crate::storage::session_db;
 
 /// ESSE app's BaseLayerEvent.
 /// EVERY LAYER APP MUST EQUAL THE FIRST THREE FIELDS.
@@ -123,22 +123,23 @@ impl Layer {
         for mgid in self.runnings.keys() {
             let mut vecs = vec![];
 
-            // load friend chat.
-            let db = session_db(&self.base, mgid)?;
-            for friend in Friend::all_ok(&db)? {
-                let proof = group_lock.prove_addr(mgid, &friend.addr).unwrap();
-                vecs.push((friend.gid, chat_conn(proof, friend.addr)));
-            }
+            let db = session_db(&self.base, &mgid)?;
+            let sessions = Session::list(&db)?;
             drop(db);
 
-            // load group chat.
-            let db = group_chat_db(&self.base, mgid)?;
-            let groups = GroupChat::all_ok(&db)?;
-            for g in groups {
-                let proof = group_lock.prove_addr(mgid, &g.g_addr)?;
-                vecs.push((GROUP_ID, group_chat_conn(proof, g.g_addr, g.g_id)));
+            for s in sessions {
+                match s.s_type {
+                    SessionType::Chat => {
+                        let proof = group_lock.prove_addr(mgid, &s.addr)?;
+                        vecs.push((s.gid, chat_conn(proof, s.addr)));
+                    }
+                    SessionType::Group => {
+                        let proof = group_lock.prove_addr(mgid, &s.addr)?;
+                        vecs.push((GROUP_ID, group_chat_conn(proof, s.addr, s.gid)));
+                    }
+                    _ => {}
+                }
             }
-            drop(db);
 
             conns.insert(*mgid, vecs);
         }

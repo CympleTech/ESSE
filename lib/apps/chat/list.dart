@@ -90,29 +90,12 @@ class ListChat extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Expanded(
                           child: Text(friend.name,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: TextStyle(fontSize: 16.0))
-                        ),
-                        Container(
-                          margin: const EdgeInsets.only(left: 15.0, right: 20.0),
-                          child: Text(friend.lastMessageTime.toString(),
-                            style: const TextStyle(color: Color(0xFFADB0BB), fontSize: 12.0),
-                          ),
-                        )
-                    ]),
-                    const SizedBox(height: 4.0),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(friend.lastMessageContent,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(color: Color(0xFFADB0BB), fontSize: 12.0)),
+                            style: const TextStyle(fontSize: 16.0)),
                         ),
                         if (this.friend.isClosed)
                         Container(

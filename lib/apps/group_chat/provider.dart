@@ -18,6 +18,7 @@ class GroupChatProvider extends ChangeNotifier {
   SplayTreeMap<int, Request> requests = SplayTreeMap();
 
   int actived;
+  bool activedOnline;
   SplayTreeMap<int, Message> activedMessages = SplayTreeMap();
   SplayTreeMap<int, Member> activedMembers = SplayTreeMap();
 
@@ -45,6 +46,7 @@ class GroupChatProvider extends ChangeNotifier {
     rpc.addListener('group-chat-join', _join, true);
     rpc.addListener('group-chat-agree', _agree, true);
     rpc.addListener('group-chat-reject', _reject, false);
+    rpc.addListener('group-chat-request-list', _requestList, false);
     rpc.addListener('group-chat-member-join', _memberJoin, false);
     rpc.addListener('group-chat-member-info', _memberInfo, false);
     // rpc.addListener('group-chat-member-leave', _memberLeave, false);
@@ -102,6 +104,10 @@ class GroupChatProvider extends ChangeNotifier {
     rpc.send('group-chat-message-create', [gid, mtype.toInt(), content]);
   }
 
+  requestList(bool all) {
+    rpc.send('group-chat-request-list', [all]);
+  }
+
   _list(List params) {
     this.clear();
     params.forEach((params) {
@@ -114,6 +120,20 @@ class GroupChatProvider extends ChangeNotifier {
         this.groups[gc.id] = gc;
     });
     notifyListeners();
+  }
+
+  _online(List params) {
+    if (this.actived == params[0]) {
+      this.online = true;
+      notifyListeners();
+    }
+  }
+
+  _offline(List params) {
+    if (this.actived == params[0]) {
+      this.online = false;
+      notifyListeners();
+    }
   }
 
   _check(List params) {
@@ -140,7 +160,6 @@ class GroupChatProvider extends ChangeNotifier {
   _result(List params) {
     final id = params[0];
     this.groups[id].isOk = params[1];
-    this.groups[id].online = true;
     if (params[1]) {
       //this.createKeys.remove(id);
       this.orderKeys.add(id);
@@ -157,24 +176,6 @@ class GroupChatProvider extends ChangeNotifier {
         this.activedMessages[param[0]] = Message.fromList(param);
     });
     notifyListeners();
-  }
-
-  _online(List params) {
-    final id = params[0];
-    if (this.groups.containsKey(id)) {
-      this.groups[id].online = true;
-      notifyListeners();
-    }
-  }
-
-  _offline(List params) {
-    final id = params[0];
-    if (this.groups.containsKey(id)) {
-      if (this.groups[id].gid == params[1]) {
-        this.groups[id].online = false;
-        notifyListeners();
-      }
-    }
   }
 
   _join(List params) {
@@ -200,6 +201,14 @@ class GroupChatProvider extends ChangeNotifier {
       this.requests[id].overIt(false);
       notifyListeners();
     }
+  }
+
+  _requestList(List params) {
+    this.requests.clear();
+    params.forEach((param) {
+        this.requests[param[0]] = Request.fromList(param);
+    });
+    notifyListeners();
   }
 
   _memberJoin(List params) {
@@ -234,15 +243,8 @@ class GroupChatProvider extends ChangeNotifier {
       if (!msg.isDelivery) {
         msg.isDelivery = null; // When message create, set is is none;
       }
-      this.groups[msg.fid].updateLastMessage(msg, true);
       this.activedMessages[msg.id] = msg;
-      rpc.send('group-chat-readed', [this.actived]);
-    } else {
-      if (this.groups.containsKey(msg.fid)) {
-        this.groups[msg.fid].updateLastMessage(msg, false);
-      }
+      notifyListeners();
     }
-    //orderGroups(msg.fid);
-    notifyListeners();
   }
 }

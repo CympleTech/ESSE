@@ -89,14 +89,9 @@ class GroupChat {
   String addr;
   String name;
   String bio;
-  bool isTop;
   bool isOk;
   bool isClosed;
   bool isNeedAgree;
-  RelativeTime lastTime;
-  String lastContent;
-  bool lastReaded;
-  bool online = false;
 
   GroupChat.fromList(List params) {
     this.id = params[0];
@@ -106,32 +101,19 @@ class GroupChat {
     this.addr = params[4];
     this.name = params[5];
     this.bio = params[6];
-    this.isTop = params[7] == "1";
-    this.isOk = params[8] == "1";
-    this.isClosed = params[9] == "1";
-    this.isNeedAgree = params[10] == "1";
-    this.lastTime = RelativeTime.fromInt(params[11]);
-    this.lastContent = params[12];
-    this.lastReaded = params[13] == "1";
-    this.online = params[14] == "1";
+    this.isOk = params[7];
+    this.isClosed = params[8];
+    this.isNeedAgree = params[9];
   }
 
-  Avatar showAvatar({double width = 45.0, bool needOnline = true}) {
+  Avatar showAvatar({double width = 45.0}) {
     final avatar = Global.avatarPath + this.gid + '.png';
     return Avatar(
       width: width,
       name: this.name,
       avatarPath: avatar,
-      online: this.online,
-      needOnline: needOnline,
-      hasNew: !this.lastReaded,
+      needOnline: false,
     );
-  }
-
-  updateLastMessage(Message msg, bool isReaded) {
-    this.lastTime = msg.time;
-    this.lastContent = msg.shortShow();
-    this.lastReaded = isReaded;
   }
 }
 

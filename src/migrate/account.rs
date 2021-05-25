@@ -1,5 +1,5 @@
 #[rustfmt::skip]
-pub(super) const ACCOUNT_VERSIONS: [&str; 8] = [
+pub(super) const ACCOUNT_VERSIONS: [&str; 9] = [
   "CREATE TABLE IF NOT EXISTS accounts(
     id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
     gid TEXT NOT NULL,
@@ -14,10 +14,11 @@ pub(super) const ACCOUNT_VERSIONS: [&str; 8] = [
   "CREATE TABLE IF NOT EXISTS migrates(
     db_name TEXT NOT NULL,
     version INTEGER NOT NULL);",
-  "INSERT INTO migrates (db_name, version) values ('account.db', 1)",
-  "INSERT INTO migrates (db_name, version) values ('consensus.db', 9)",
-  "INSERT INTO migrates (db_name, version) values ('session.db', 3)",
-  "INSERT INTO migrates (db_name, version) values ('file.db', 1)",
+  "INSERT INTO migrates (db_name, version) values ('account.db', 0)",
+  "INSERT INTO migrates (db_name, version) values ('consensus.db', 0)",
+  "INSERT INTO migrates (db_name, version) values ('session.db', 0)",
+  "INSERT INTO migrates (db_name, version) values ('file.db', 0)",
   "INSERT INTO migrates (db_name, version) values ('assistant.db', 0)",
   "INSERT INTO migrates (db_name, version) values ('group_chat.db', 0)",
+  "INSERT INTO migrates (db_name, version) values ('chat.db', 0)",
 ];

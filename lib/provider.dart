@@ -10,6 +10,7 @@ import 'package:esse/widgets/default_core_show.dart';
 import 'package:esse/widgets/default_home_show.dart';
 import 'package:esse/global.dart';
 import 'package:esse/rpc.dart';
+import 'package:esse/session.dart';
 
 const DEFAULT_ONLINE_INIT = 8;
 const DEFAULT_ONLINE_DELAY = 5;
@@ -19,7 +20,10 @@ class AccountProvider extends ChangeNotifier {
   String activedAccountId; // actived account gid.
   Account get activedAccount => this.accounts[activedAccountId];
 
-  Set<int> topKeys = Set();
+  /// home sessions. sorded by last_time.
+  Map<int, Session> sessions = {};
+  List<int> topKeys = [];
+  List<int> orderKeys = [];
 
   /// current user's did.
   String get id => this.activedAccount.id;
@@ -32,6 +36,13 @@ class AccountProvider extends ChangeNotifier {
 
   Widget get homeShowWidget => this.currentListShow ?? this.defaultListShow;
 
+  void orderSessions(int id) {
+    if (this.orderKeys.length == 0 || this.orderKeys[0] != id) {
+      this.orderKeys.remove(id);
+      this.orderKeys.insert(0, id);
+    }
+  }
+
   AccountProvider() {
     // rpc notice when account not actived.
     rpc.addNotice(_accountNotice, _newRequestNotice);
@@ -41,11 +52,13 @@ class AccountProvider extends ChangeNotifier {
     rpc.addListener('account-update', _accountUpdate, false);
     rpc.addListener('account-login', _accountLogin, false);
 
-    systemInfo();
-  }
+    rpc.addListener('session-list', _sessionList, false);
+    rpc.addListener('session-last', _sessionLast, true);
+    rpc.addListener('session-create', _sessionCreate, true);
+    rpc.addListener('session-update', _sessionUpdate, false);
+    rpc.addListener('session-delete', _sessionDelete, false);
 
-  handleTops() {
-    //
+    systemInfo();
   }
 
   /// when security load accounts from rpc.
@@ -62,6 +75,8 @@ class AccountProvider extends ChangeNotifier {
 
     this.activedAccount.online = true;
     rpc.send('account-login', [gid, this.activedAccount.lock]);
+    rpc.send('session-list', []);
+
     new Future.delayed(Duration(seconds: DEFAULT_ONLINE_INIT),
       () => rpc.send('account-online', [gid]));
 
@@ -81,6 +96,8 @@ class AccountProvider extends ChangeNotifier {
     this.accounts[account.gid] = account;
 
     rpc.send('account-login', [account.gid, account.lock]);
+    rpc.send('session-list', []);
+
     new Future.delayed(Duration(seconds: DEFAULT_ONLINE_DELAY),
         () => rpc.send('account-online', [account.gid]));
     updateLogined(account);
@@ -93,6 +110,11 @@ class AccountProvider extends ChangeNotifier {
     this.activedAccount.hasNew = false;
     this.coreShowWidget = DefaultCoreShow();
     this.currentListShow = null;
+
+    // load sessions.
+    this.sessions.clear();
+    this.orderKeys.clear();
+    rpc.send('session-list', []);
 
     if (!this.activedAccount.online) {
       this.activedAccount.online = true;
@@ -109,6 +131,10 @@ class AccountProvider extends ChangeNotifier {
     this.accounts.clear();
     this.clearActivedAccount();
     this.currentListShow = null;
+    this.sessions.clear();
+    this.orderKeys.clear();
+    this.topKeys.clear();
+
     rpc.send('account-logout', []);
     clearLogined();
   }
@@ -211,6 +237,60 @@ class AccountProvider extends ChangeNotifier {
     if (params[2].length > 1) {
       this.accounts[gid].updateAvatar(params[2]);
     }
+    notifyListeners();
+  }
+
+  _sessionList(List params) {
+    this.sessions.clear();
+    this.orderKeys.clear();
+    this.topKeys.clear();
+
+    params.forEach((params) {
+        final id = params[0];
+        this.sessions[id] = Session.fromList(params);
+
+        if (this.sessions[id].isTop) {
+          this.topKeys.add(id);
+        } else {
+          this.orderKeys.add(id);
+        }
+
+    });
+    notifyListeners();
+  }
+
+  _sessionCreate(List params) {
+    final id = params[0];
+    this.sessions[id] = Session.fromList(params);
+    orderSessions(id);
+    notifyListeners();
+  }
+
+  _sessionLast(List params) {
+    final id = params[0];
+    this.sessions[id].last(params);
+    orderSessions(id);
+    notifyListeners();
+  }
+
+  _sessionUpdate(List params) {
+    final id = params[0];
+    this.sessions[id].update(params);
+    if (this.sessions[id].isTop) {
+      this.topKeys.add(id);
+      this.orderKeys.remove(id);
+    } else {
+      orderSessions(id);
+      this.topKeys.remove(id);
+    }
+    notifyListeners();
+  }
+
+  _sessionDelete(List params) {
+    final id = params[1];
+    this.sessions.remove(id);
+    this.orderKeys.remove(id);
+    this.topKeys.remove(id);
     notifyListeners();
   }
 }

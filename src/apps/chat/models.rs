@@ -19,13 +19,9 @@ pub(crate) struct Friend {
     pub addr: PeerAddr,
     pub name: String,
     pub remark: String,
-    pub is_top: bool,
     pub is_closed: bool,
-    pub last_message_datetime: i64,
-    pub last_message_content: String,
-    pub last_message_readed: bool,
-    pub online: bool,
     pub is_deleted: bool,
+    pub datetime: i64,
 }
 
 #[derive(Clone)]
@@ -114,7 +110,9 @@ impl NetworkMessage {
 
         let mut msg = Message::new_with_id(hash, fid, is_me, m_type, raw, true);
         msg.insert(db)?;
-        Friend::update_last_message(db, fid, &msg, false)?;
+
+        // TODO UPDATE SESSION
+
         Ok(msg)
     }
 
@@ -221,15 +219,11 @@ impl Friend {
 
         Friend {
             id: 0,
-            last_message_datetime: datetime,
-            last_message_content: "".to_owned(),
-            last_message_readed: true,
             gid,
             addr,
             name,
             remark,
-            online: false,
-            is_top: false,
+            datetime,
             is_closed: false,
             is_deleted: false,
         }
@@ -249,17 +243,13 @@ impl Friend {
 
         Friend {
             is_deleted,
-            last_message_readed: v.pop().unwrap().as_bool(),
-            last_message_content: v.pop().unwrap().as_string(),
-            last_message_datetime: v.pop().unwrap().as_i64(),
+            datetime: v.pop().unwrap().as_i64(),
             is_closed: v.pop().unwrap().as_bool(),
-            is_top: v.pop().unwrap().as_bool(),
             remark: v.pop().unwrap().as_string(),
             name: v.pop().unwrap().as_string(),
             addr: PeerAddr::from_hex(v.pop().unwrap().as_str()).unwrap_or(PeerAddr::default()),
             gid: GroupId::from_hex(v.pop().unwrap().as_str()).unwrap_or(GroupId::default()),
             id: v.pop().unwrap().as_i64(),
-            online: false,
         }
     }
 
@@ -284,17 +274,13 @@ impl Friend {
             self.addr.to_hex(),
             self.name,
             self.remark,
-            if self.is_top { "1" } else { "0" },
-            if self.is_closed { "1" } else { "0" },
-            self.last_message_datetime,
-            self.last_message_content,
-            self.last_message_readed,
-            if self.online { "1" } else { "0" },
+            self.is_closed,
+            self.datetime
         ])
     }
 
     pub fn get(db: &DStorage, gid: &GroupId) -> Result<Option<Friend>> {
-        let sql = format!("SELECT id, gid, addr, name, remark, is_top, is_closed, last_message_datetime, last_message_content, last_message_readed FROM friends WHERE gid = '{}' and is_deleted = false", gid.to_hex());
+        let sql = format!("SELECT id, gid, addr, name, remark, is_closed, datetime FROM friends WHERE gid = '{}' and is_deleted = false", gid.to_hex());
         let mut matrix = db.query(&sql)?;
         if matrix.len() > 0 {
             return Ok(Some(Friend::from_values(matrix.pop().unwrap(), false))); // safe unwrap()
@@ -303,7 +289,7 @@ impl Friend {
     }
 
     pub fn get_it(db: &DStorage, gid: &GroupId) -> Result<Option<Friend>> {
-        let sql = format!("SELECT id, gid, addr, name, remark, is_top, is_closed, last_message_datetime, last_message_content, last_message_readed, is_deleted FROM friends WHERE gid = '{}'", gid.to_hex());
+        let sql = format!("SELECT id, gid, addr, name, remark, is_closed, datetime, is_deleted FROM friends WHERE gid = '{}'", gid.to_hex());
         let mut matrix = db.query(&sql)?;
         if matrix.len() > 0 {
             return Ok(Some(Friend::from_values(matrix.pop().unwrap(), true))); // safe unwrap()
@@ -312,7 +298,7 @@ impl Friend {
     }
 
     pub fn get_id(db: &DStorage, id: i64) -> Result<Option<Friend>> {
-        let sql = format!("SELECT id, gid, addr, name, remark, is_top, is_closed, last_message_datetime, last_message_content, last_message_readed, is_deleted FROM friends WHERE id = {}", id);
+        let sql = format!("SELECT id, gid, addr, name, remark, is_closed, datetime, is_deleted FROM friends WHERE id = {}", id);
         let mut matrix = db.query(&sql)?;
         if matrix.len() > 0 {
             return Ok(Some(Friend::from_values(matrix.pop().unwrap(), true))); // safe unwrap()
@@ -322,7 +308,7 @@ impl Friend {
 
     /// use in rpc when load account friends.
     pub fn all(db: &DStorage) -> Result<Vec<Friend>> {
-        let matrix = db.query("SELECT id, gid, addr, name, remark, is_top, is_closed, last_message_datetime, last_message_content, last_message_readed FROM friends where is_deleted = false ORDER BY last_message_datetime DESC")?;
+        let matrix = db.query("SELECT id, gid, addr, name, remark, is_closed, datetime FROM friends where is_deleted = false")?;
         let mut friends = vec![];
         for values in matrix {
             friends.push(Friend::from_values(values, false));
@@ -332,7 +318,7 @@ impl Friend {
 
     /// use in rpc when load account friends.
     pub fn all_ok(db: &DStorage) -> Result<Vec<Friend>> {
-        let matrix = db.query("SELECT id, gid, addr, name, remark, is_top, is_closed, last_message_datetime, last_message_content, last_message_readed FROM friends where is_closed = false ORDER BY last_message_datetime DESC")?;
+        let matrix = db.query("SELECT id, gid, addr, name, remark, is_closed, datetime FROM friends where is_closed = false")?;
         let mut friends = vec![];
         for values in matrix {
             friends.push(Friend::from_values(values, false));
@@ -355,16 +341,13 @@ impl Friend {
     }
 
     pub fn insert(&mut self, db: &DStorage) -> Result<()> {
-        let sql = format!("INSERT INTO friends (gid, addr, name, remark, is_top, is_closed, last_message_datetime, last_message_content, last_message_readed, is_deleted) VALUES ('{}', '{}', '{}', '{}', {}, {}, {}, '{}', {}, false)",
+        let sql = format!("INSERT INTO friends (gid, addr, name, remark, is_closed, datetime, is_deleted) VALUES ('{}', '{}', '{}', '{}', {}, {}, false)",
             self.gid.to_hex(),
             self.addr.to_hex(),
             self.name,
             self.remark,
-            if self.is_top { 1 } else { 0 },
             if self.is_closed { 1 } else { 0 },
-            self.last_message_datetime,
-            self.last_message_content,
-            if self.last_message_readed { 1 } else { 0 }
+            self.datetime,
         );
         let id = db.insert(&sql)?;
         self.id = id;
@@ -372,15 +355,11 @@ impl Friend {
     }
 
     pub fn update(&self, db: &DStorage) -> Result<usize> {
-        let sql = format!("UPDATE friends SET addr = '{}', name = '{}', remark = '{}', is_top = {}, is_closed = {}, last_message_datetime = {}, last_message_content = '{}', last_message_readed = {}, is_deleted = {} WHERE id = {}",
+        let sql = format!("UPDATE friends SET addr = '{}', name = '{}', remark = '{}', is_closed = {}, is_deleted = {} WHERE id = {}",
             self.addr.to_hex(),
             self.name,
             self.remark,
-            if self.is_top { 1 } else { 0 },
             if self.is_closed { 1 } else { 0 },
-            self.last_message_datetime,
-            self.last_message_content,
-            if self.last_message_readed { 1 } else { 0 },
             if self.is_deleted { 1 } else { 0 },
             self.id
         );
@@ -389,8 +368,8 @@ impl Friend {
 
     pub fn me_update(&mut self, db: &DStorage) -> Result<usize> {
         let sql = format!(
-            "UPDATE friends SET remark='{}', is_top={} WHERE id = {}",
-            self.remark, self.is_top, self.id,
+            "UPDATE friends SET remark='{}' WHERE id = {}",
+            self.remark, self.id,
         );
         db.update(&sql)
     }
@@ -411,21 +390,6 @@ impl Friend {
             self.name,
             self.id,
         );
-        db.update(&sql)
-    }
-
-    pub fn update_last_message(db: &DStorage, id: i64, msg: &Message, read: bool) -> Result<usize> {
-        let sql = format!("UPDATE friends SET last_message_datetime={}, last_message_content='{}', last_message_readed={} WHERE id = {}",
-            msg.datetime,
-            msg.content,
-            if read { 1 } else { 0 },
-            id,
-        );
-        db.update(&sql)
-    }
-
-    pub fn readed(db: &DStorage, id: i64) -> Result<usize> {
-        let sql = format!("UPDATE friends SET last_message_readed=1 WHERE id = {}", id);
         db.update(&sql)
     }
 
@@ -492,7 +456,9 @@ impl Request {
 
     pub fn to_friend(self) -> Friend {
         let mut friend = Friend::new(self.gid, self.addr, self.name, self.remark);
-        friend.is_top = true; // default set to top page.
+
+        // TODO add new session.
+
         friend
     }
 
