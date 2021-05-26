@@ -97,14 +97,28 @@ pub(crate) fn session_update(
     addr: &PeerAddr,
     name: &str,
     is_top: bool,
-    online: bool,
 ) -> RpcParam {
     rpc_response(
         0,
         "session-update",
-        json!([id, addr.to_hex(), name, is_top, online]),
+        json!([id, addr.to_hex(), name, is_top]),
         mgid,
     )
+}
+
+#[inline]
+pub(crate) fn session_connect(mgid: GroupId, id: &i64, addr: &PeerAddr) -> RpcParam {
+    rpc_response(0, "session-connect", json!([id, addr.to_hex()]), mgid)
+}
+
+#[inline]
+pub(crate) fn session_suspend(mgid: GroupId, id: &i64) -> RpcParam {
+    rpc_response(0, "session-suspend", json!([id]), mgid)
+}
+
+#[inline]
+pub(crate) fn session_lost(mgid: GroupId, id: &i64) -> RpcParam {
+    rpc_response(0, "session-lost", json!([id]), mgid)
 }
 
 #[inline]
@@ -406,24 +420,6 @@ fn new_rpc_handler(
             let mut results = HandleResult::new();
 
             let group_lock = state.group.read().await;
-            let db = session_db(group_lock.base(), &gid)?;
-            let sessions = Session::list(&db)?;
-            drop(db);
-
-            for s in sessions {
-                match s.s_type {
-                    SessionType::Chat => {
-                        let proof = group_lock.prove_addr(&gid, &s.addr)?;
-                        results.layers.push((gid, s.gid, chat_conn(proof, s.addr)));
-                    }
-                    SessionType::Group => {
-                        let proof = group_lock.prove_addr(&gid, &s.addr)?;
-                        add_layer(&mut results, gid, group_chat_conn(proof, s.addr, s.gid));
-                    }
-                    _ => {}
-                }
-            }
-
             let devices = group_lock.distribute_conns(&gid);
             for device in devices {
                 results.groups.push((gid, device));
@@ -469,18 +465,78 @@ fn new_rpc_handler(
     handler.add_method(
         "session-list",
         |gid: GroupId, _params: Vec<RpcParam>, state: Arc<RpcState>| async move {
-            let layer_lock = state.layer.read().await;
-            let db = session_db(layer_lock.base(), &gid)?;
-            let mut sessions = Session::list(&db)?;
-            drop(db);
+            let db = session_db(state.layer.read().await.base(), &gid)?;
+            Ok(HandleResult::rpc(session_list(Session::list(&db)?)))
+        },
+    );
 
-            let gids: Vec<&GroupId> = sessions.iter().map(|s| &s.gid).collect();
-            let onlines = layer_lock.merge_online(&gid, gids)?;
-            for (index, online) in onlines.iter().enumerate() {
-                sessions[index].online = *online;
+    handler.add_method(
+        "session-connect",
+        |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
+            let id = params[0].as_i64()?;
+            let remote = GroupId::from_hex(params[1].as_str()?)?;
+
+            let mut layer_lock = state.layer.write().await;
+            let online = layer_lock.running_mut(&gid)?.active(&remote, true);
+            drop(layer_lock);
+            if let Some(addr) = online {
+                return Ok(HandleResult::rpc(json!([id, addr.to_hex()])));
             }
 
-            Ok(HandleResult::rpc(session_list(sessions)))
+            let group_lock = state.group.read().await;
+            let db = session_db(group_lock.base(), &gid)?;
+            let s = Session::get(&db, &id)?;
+            drop(db);
+
+            let mut results = HandleResult::new();
+            match s.s_type {
+                SessionType::Chat => {
+                    let proof = group_lock.prove_addr(&gid, &s.addr)?;
+                    results.layers.push((gid, s.gid, chat_conn(proof, s.addr)));
+                }
+                SessionType::Group => {
+                    let proof = group_lock.prove_addr(&gid, &s.addr)?;
+                    add_layer(&mut results, gid, group_chat_conn(proof, s.addr, s.gid));
+                }
+                _ => {}
+            }
+            Ok(results)
+        },
+    );
+
+    handler.add_method(
+        "session-suspend",
+        |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
+            let id = params[0].as_i64()?;
+            let remote = GroupId::from_hex(params[1].as_str()?)?;
+
+            let mut layer_lock = state.layer.write().await;
+            let suspend = layer_lock.running_mut(&gid)?.suspend(&remote, true)?;
+            drop(layer_lock);
+
+            let mut results = HandleResult::new();
+            if suspend {
+                results.rpcs.push(json!([id]))
+            }
+
+            // let group_lock = state.group.read().await;
+            // let db = session_db(group_lock.base(), &gid)?;
+            // let s = Session::get(&db, &id)?;
+            // drop(db);
+
+            // match s.s_type {
+            //     SessionType::Chat => {
+            //         let proof = group_lock.prove_addr(&gid, &s.addr)?;
+            //         results.layers.push((gid, s.gid, chat_conn(proof, s.addr)));
+            //     }
+            //     SessionType::Group => {
+            //         let proof = group_lock.prove_addr(&gid, &s.addr)?;
+            //         add_layer(&mut results, gid, group_chat_conn(proof, s.addr, s.gid));
+            //     }
+            //     _ => {}
+            // }
+
+            Ok(results)
         },
     );
 

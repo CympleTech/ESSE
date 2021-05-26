@@ -46,17 +46,17 @@ extension InnerServiceExtension on InnerService {
           listHome = GroupChatList();
           break;
       }
-      Provider.of<AccountProvider>(context, listen: false).updateActivedApp(coreWidget, listTitle, listHome);
+      Provider.of<AccountProvider>(context, listen: false).updateActivedSession(0, coreWidget, listTitle, listHome);
     } else {
       switch (this) {
         case InnerService.Files:
-          Provider.of<AccountProvider>(context, listen: false).updateActivedApp(null, lang.files, FolderList());
+          Provider.of<AccountProvider>(context, listen: false).updateActivedSession(0, null, lang.files, FolderList());
           break;
         case InnerService.Assistant:
           Navigator.push(context, MaterialPageRoute(builder: (_) => AssistantPage()));
           break;
         case InnerService.GroupChat:
-          Provider.of<AccountProvider>(context, listen: false).updateActivedApp(null, lang.groupChat, GroupChatList());
+          Provider.of<AccountProvider>(context, listen: false).updateActivedSession(0, null, lang.groupChat, GroupChatList());
           break;
       }
     }

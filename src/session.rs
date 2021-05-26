@@ -50,10 +50,10 @@ pub(crate) struct Session {
     pub s_type: SessionType,
     name: String,
     is_top: bool,
+    is_close: bool,
     pub last_datetime: i64,
     pub last_content: String,
     pub last_readed: bool,
-    pub online: bool,
 }
 
 impl Session {
@@ -73,10 +73,10 @@ impl Session {
             name,
             id: 0,
             is_top: false,
+            is_close: false,
             last_datetime: datetime,
             last_content: "".to_owned(),
             last_readed: true,
-            online: false,
         }
     }
 
@@ -89,10 +89,10 @@ impl Session {
             self.s_type.to_int(),
             self.name,
             self.is_top,
+            self.is_close,
             self.last_datetime,
             self.last_content,
             self.last_readed,
-            self.online
         ])
     }
 
@@ -101,6 +101,7 @@ impl Session {
             last_readed: v.pop().unwrap().as_bool(),
             last_content: v.pop().unwrap().as_string(),
             last_datetime: v.pop().unwrap().as_i64(),
+            is_close: v.pop().unwrap().as_bool(),
             is_top: v.pop().unwrap().as_bool(),
             name: v.pop().unwrap().as_string(),
             s_type: SessionType::from_int(v.pop().unwrap().as_i64()),
@@ -108,18 +109,18 @@ impl Session {
             gid: GroupId::from_hex(v.pop().unwrap().as_str()).unwrap_or(GroupId::default()),
             fid: v.pop().unwrap().as_i64(),
             id: v.pop().unwrap().as_i64(),
-            online: false,
         }
     }
 
     pub fn insert(&mut self, db: &DStorage) -> Result<()> {
-        let sql = format!("INSERT INTO sessions (fid, gid, addr, s_type, name, is_top, last_datetime, last_content, last_readed) VALUES ({}, '{}', '{}', {}, '{}', {}, {}, '{}', {})",
+        let sql = format!("INSERT INTO sessions (fid, gid, addr, s_type, name, is_top, is_close, last_datetime, last_content, last_readed) VALUES ({}, '{}', '{}', {}, '{}', {}, {}, {}, '{}', {})",
             self.fid,
             self.gid.to_hex(),
             self.addr.to_hex(),
             self.s_type.to_int(),
             self.name,
             if self.is_top { 1 } else { 0 },
+            if self.is_close { 1 } else { 0 },
             self.last_datetime,
             self.last_content,
             if self.last_readed { 1 } else { 0 },
@@ -129,8 +130,8 @@ impl Session {
         Ok(())
     }
 
-    pub fn get(db: &DStorage, id: i64) -> Result<Session> {
-        let sql = format!("SELECT id, fid, gid, addr, s_type, name, is_top, last_datetime, last_content, last_readed FROM sessions WHERE id = {}", id);
+    pub fn get(db: &DStorage, id: &i64) -> Result<Session> {
+        let sql = format!("SELECT id, fid, gid, addr, s_type, name, is_top, is_close, last_datetime, last_content, last_readed FROM sessions WHERE id = {}", id);
         let mut matrix = db.query(&sql)?;
         if matrix.len() > 0 {
             Ok(Session::from_values(matrix.pop().unwrap())) // safe unwrap()
@@ -140,7 +141,7 @@ impl Session {
     }
 
     pub fn list(db: &DStorage) -> Result<Vec<Session>> {
-        let matrix = db.query("SELECT id, fid, gid, addr, s_type, name, is_top, last_datetime, last_content, last_readed FROM sessions ORDER BY last_datetime DESC")?;
+        let matrix = db.query("SELECT id, fid, gid, addr, s_type, name, is_top, is_close, last_datetime, last_content, last_readed FROM sessions ORDER BY last_datetime DESC")?;
         let mut sessions = vec![];
         for values in matrix {
             sessions.push(Session::from_values(values));
@@ -169,7 +170,7 @@ impl Session {
 
         if let Some(mut values) = matrix.pop() {
             let id = values.pop().unwrap().as_i64();
-            db.update(&format!("UPDATE sessions SET last_datetime = {}, last_content = '{}', last_readed = {} WHERE id = {}", datetime, content, if readed { 1 } else { 0 }, id))?;
+            db.update(&format!("UPDATE sessions SET is_close = 0, last_datetime = {}, last_content = '{}', last_readed = {} WHERE id = {}", datetime, content, if readed { 1 } else { 0 }, id))?;
             Ok(id)
         } else {
             Err(new_io_error("session missing"))

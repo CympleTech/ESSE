@@ -8,9 +8,10 @@ pub(super) const SESSION_VERSIONS: [&str; 3] = [
     s_type INTEGER NOT NULL,
     name TEXT NOT NULL,
     is_top INTEGER NOT NULL,
+    is_close INTEGER NOT NULL,
     last_datetime INTEGER,
     last_content TEXT,
     last_readed INTEGER);",
-  "INSERT INTO sessions (fid, gid, addr, s_type, name, is_top, last_datetime, last_content, last_readed) VALUES (0, '', '', 4, '', 0, 0, '', 1);", // Assistant.
-  "INSERT INTO sessions (fid, gid, addr, s_type, name, is_top, last_datetime, last_content, last_readed) VALUES (0, '', '', 2, '', 0, 0, '', 1);", // File.
+  "INSERT INTO sessions (fid, gid, addr, s_type, name, is_top, is_close, last_datetime, last_content, last_readed) VALUES (0, '', '', 4, '', 0, 0, 0, '', 1);", // Assistant.
+  "INSERT INTO sessions (fid, gid, addr, s_type, name, is_top, is_close, last_datetime, last_content, last_readed) VALUES (0, '', '', 2, '', 0, 0, 0, '', 1);", // File.
 ];

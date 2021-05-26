@@ -135,7 +135,7 @@ class _HomeListState extends State<HomeList> with SingleTickerProviderStateMixin
               .systemAppFriendAddNew = false;
               if (isDesktop) {
                 Provider.of<AccountProvider>(context, listen: false)
-                .updateActivedApp(widget);
+                .updateActivedSession(0, widget);
               } else {
                 Navigator.push(
                   context, MaterialPageRoute(builder: (_) => widget));
@@ -199,7 +199,7 @@ class _HomeListState extends State<HomeList> with SingleTickerProviderStateMixin
                           } else if (value == 1) {
                             final widget = ChatAddPage();
                             if (isDesktop) {
-                              provider.updateActivedApp(widget);
+                              provider.updateActivedSession(0, widget);
                             } else {
                               provider.systemAppFriendAddNew = false;
                               setState(() {});
@@ -319,7 +319,7 @@ class DrawerWidget extends StatelessWidget {
     final widget = DevicesPage();
     if (isDesktop) {
       Provider.of<AccountProvider>(context, listen: false)
-          .updateActivedApp(widget);
+          .updateActivedSession(0, widget);
     } else {
       Navigator.push(context, MaterialPageRoute(builder: (_) => widget));
     }
@@ -387,7 +387,7 @@ class DrawerWidget extends StatelessWidget {
                       style: TextStyle(fontSize: 16.0)),
                     onTap: () {
                       Navigator.pop(context);
-                      Provider.of<AccountProvider>(context, listen: false).updateActivedApp(
+                      Provider.of<AccountProvider>(context, listen: false).updateActivedSession(0,
                         null, lang.contact, ChatList()
                       );
                   }),
@@ -397,7 +397,7 @@ class DrawerWidget extends StatelessWidget {
                       style: TextStyle(fontSize: 16.0)),
                     onTap: () {
                       Navigator.pop(context);
-                      Provider.of<AccountProvider>(context, listen: false).updateActivedApp(
+                      Provider.of<AccountProvider>(context, listen: false).updateActivedSession(0,
                         null, lang.groups, ServiceList()
                       );
                   }),

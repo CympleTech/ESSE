@@ -40,6 +40,13 @@ extension SessionTypeExtension on SessionType {
   }
 }
 
+enum OnlineType {
+  Waiting,
+  Active,
+  Suspend,
+  Lost,
+}
+
 class Session {
   int id;
   int fid;
@@ -48,10 +55,11 @@ class Session {
   SessionType type;
   String name;
   bool isTop;
+  bool isClose;
   RelativeTime lastTime;
   String lastContent;
   bool lastReaded;
-  bool online = false;
+  OnlineType online;
 
   static List innerService(InnerService service, AppLocalizations lang) {
     final params = service.params(lang);
@@ -87,13 +95,14 @@ class Session {
       width: width,
       name: this.name,
       avatarPath: avatar,
-      online: this.online,
+      online: true,
       needOnline: needOnline,
       hasNew: !this.lastReaded,
     );
   }
 
   last(List params) {
+    this.isClose = false;
     this.lastTime = RelativeTime.fromInt(params[1]);
     this.lastContent = params[2];
     this.lastReaded = params[3];
@@ -103,7 +112,6 @@ class Session {
     this.addr = params[1];
     this.name = params[2];
     this.isTop = params[3];
-    this.online = params[4];
   }
 
   Session.fromList(List params) {
@@ -114,9 +122,10 @@ class Session {
     this.type = SessionTypeExtension.fromInt(params[4]);
     this.name = params[5];
     this.isTop = params[6];
-    this.lastTime = RelativeTime.fromInt(params[7]);
-    this.lastContent = params[8];
-    this.lastReaded = params[9];
-    this.online = params[10];
+    this.isClose = params[7];
+    this.lastTime = RelativeTime.fromInt(params[8]);
+    this.lastContent = params[9];
+    this.lastReaded = params[10];
+    this.online = OnlineType.Lost;
   }
 }

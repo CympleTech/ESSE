@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:esse/utils/adaptive.dart';
 import 'package:esse/l10n/localizations.dart';
 import 'package:esse/provider.dart';
+import 'package:esse/session.dart';
 
 import 'package:esse/apps/chat/provider.dart';
 import 'package:esse/apps/chat/models.dart';
@@ -34,7 +35,7 @@ class _ChatListState extends State<ChatList> {
         onPressed: () {
           final widget = ChatAddPage();
           if (isDesktop) {
-            Provider.of<AccountProvider>(context, listen: false).updateActivedApp(widget);
+            Provider.of<AccountProvider>(context, listen: false).updateActivedSession(0, widget);
           } else {
             Navigator.push(context, MaterialPageRoute(builder: (_) => widget));
           }
@@ -60,7 +61,6 @@ class ListChat extends StatelessWidget {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () {
-        context.read<ChatProvider>().updateActivedFriend(friend.id);
         if (!isDesktop) {
           Navigator.push(
             context,
@@ -69,7 +69,9 @@ class ListChat extends StatelessWidget {
             ),
           );
         } else {
-          context.read<AccountProvider>().updateActivedApp(ChatDetail());
+          context.read<AccountProvider>().updateActivedSessionFromList(
+            friend.id, SessionType.Chat, ChatDetail()
+          );
         }
       },
       child: Container(

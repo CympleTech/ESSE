@@ -490,16 +490,6 @@ impl StatusEvent {
                     results
                         .rpcs
                         .push(chat_rpc::friend_online(gid, f.id, f.addr));
-                    let layer_lock = layer.clone();
-                    let rgid = f.gid;
-                    let fid = f.id;
-                    let ggid = gid.clone();
-                    tdn::smol::spawn(async move {
-                        if let Ok(running) = layer_lock.write().await.running_mut(&ggid) {
-                            let _ = running.check_add_online(rgid, Online::Relay(addr), fid);
-                        }
-                    })
-                    .detach();
                 }
             }
             StatusEvent::SessionFriendOffline(rgid) => {

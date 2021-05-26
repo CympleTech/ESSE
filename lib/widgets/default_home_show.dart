@@ -8,6 +8,9 @@ import 'package:esse/options.dart';
 import 'package:esse/provider.dart';
 import 'package:esse/session.dart';
 
+import 'package:esse/apps/chat/detail.dart';
+import 'package:esse/apps/assistant/page.dart';
+
 class DefaultHomeShow extends StatelessWidget {
   const DefaultHomeShow({Key key}): super(key: key);
 
@@ -28,7 +31,7 @@ class DefaultHomeShow extends StatelessWidget {
       //   onPressed: () {
       //     final widget = Text('');
       //     if (isDesktop) {
-      //       Provider.of<AccountProvider>(context, listen: false).updateActivedApp(widget);
+      //       Provider.of<AccountProvider>(context, listen: false).updateActivedSession(0, widget);
       //     } else {
       //       Navigator.push(context, MaterialPageRoute(builder: (_) => widget));
       //     }
@@ -54,21 +57,41 @@ class _SessionWidget extends StatelessWidget {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () {
+        String listTitle = "";
+        Widget listWidget = null;
+        Widget coreWidget = null;
 
-        // TODO
+        switch (session.type) {
+          case SessionType.Chat:
+            if (!isDesktop) {
+              coreWidget = ChatPage();
+            } else {
+              coreWidget = ChatDetail();
+            }
+            break;
+          case SessionType.Group:
+            break;
+          case SessionType.Assistant:
+            if (!isDesktop) {
+              coreWidget = AssistantPage();
+            } else {
+              coreWidget = AssistantDetail();
+            }
+            break;
+        }
 
-        // context.read<ChatProvider>().updateActivedFriend(friend.id);
-
-        // if (!isDesktop) {
-        //   Navigator.push(
-        //     context,
-        //     MaterialPageRoute(
-        //       builder: (_) => ChatPage(),
-        //     ),
-        //   );
-        // } else {
-        //   context.read<AccountProvider>().updateActivedApp(ChatDetail());
-        // }
+        if (!isDesktop) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => coreWidget,
+            ),
+          );
+        } else {
+          context.read<AccountProvider>().updateActivedSession(
+            session.id, coreWidget, listTitle, listWidget
+          );
+        }
       },
       child: Container(
         height: 55.0,

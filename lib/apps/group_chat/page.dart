@@ -5,6 +5,7 @@ import 'package:esse/utils/adaptive.dart';
 import 'package:esse/utils/file_image.dart';
 import 'package:esse/l10n/localizations.dart';
 import 'package:esse/provider.dart';
+import 'package:esse/session.dart';
 
 import 'package:esse/apps/group_chat/add.dart';
 import 'package:esse/apps/group_chat/detail.dart';
@@ -34,7 +35,7 @@ class _GroupChatListState extends State<GroupChatList> {
         onPressed: () {
           final widget = GroupAddPage();
           if (isDesktop) {
-            Provider.of<AccountProvider>(context, listen: false).updateActivedApp(widget);
+            Provider.of<AccountProvider>(context, listen: false).updateActivedSession(0, widget);
           } else {
             Navigator.push(context, MaterialPageRoute(builder: (_) => widget));
           }
@@ -68,7 +69,9 @@ class ListChat extends StatelessWidget {
             ),
           );
         } else {
-          context.read<AccountProvider>().updateActivedApp(GroupChatDetail());
+          context.read<AccountProvider>().updateActivedSessionFromList(
+            group.id, SessionType.Group, GroupChatDetail()
+          );
         }
       },
       child: Container(

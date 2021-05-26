@@ -20,21 +20,29 @@ class AccountProvider extends ChangeNotifier {
   String activedAccountId; // actived account gid.
   Account get activedAccount => this.accounts[activedAccountId];
 
+  /// current user's did.
+  String get id => this.activedAccount.id;
+
+  bool systemAppFriendAddNew = false;
+
+
   /// home sessions. sorded by last_time.
   Map<int, Session> sessions = {};
   List<int> topKeys = [];
   List<int> orderKeys = [];
 
-  /// current user's did.
-  String get id => this.activedAccount.id;
+  /// actived session.
+  int actived = 0;
+  Session get activedSession => this.sessions[actived];
 
+  /// left home list sessions widget.
   String homeShowTitle = '';
   Widget defaultListShow = DefaultHomeShow();
   Widget currentListShow = null;
-  Widget coreShowWidget = DefaultCoreShow();
-  bool systemAppFriendAddNew = false;
-
   Widget get homeShowWidget => this.currentListShow ?? this.defaultListShow;
+
+  /// right main screen show session details.
+  Widget coreShowWidget = DefaultCoreShow();
 
   void orderSessions(int id) {
     if (this.orderKeys.length == 0 || this.orderKeys[0] != id) {
@@ -56,7 +64,10 @@ class AccountProvider extends ChangeNotifier {
     rpc.addListener('session-last', _sessionLast, true);
     rpc.addListener('session-create', _sessionCreate, true);
     rpc.addListener('session-update', _sessionUpdate, false);
-    rpc.addListener('session-delete', _sessionDelete, false);
+    rpc.addListener('session-close', _sessionClose, false);
+    rpc.addListener('session-connect', _sessionConnect, false);
+    rpc.addListener('session-suspend', _sessionSuspend, false);
+    rpc.addListener('session-lost', _sessionLost, false);
 
     systemInfo();
   }
@@ -162,24 +173,6 @@ class AccountProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  updateToHome() {
-    this.homeShowTitle = '';
-    this.currentListShow = null;
-    notifyListeners();
-  }
-
-  updateActivedApp([Widget coreWidget, String title, Widget homeWidget]) {
-    if (homeWidget != null && title != null) {
-      this.homeShowTitle = title;
-      this.currentListShow = homeWidget;
-    }
-    if (coreWidget != null) {
-      this.coreShowWidget = coreWidget;
-    }
-    this.systemAppFriendAddNew = false;
-    notifyListeners();
-  }
-
   clearActivedAccount() {
     this.topKeys.clear();
   }
@@ -206,6 +199,58 @@ class AccountProvider extends ChangeNotifier {
 
   systemInfo() {
     rpc.send('account-system-info', []);
+  }
+
+  updateToHome() {
+    this.homeShowTitle = '';
+    this.currentListShow = null;
+    notifyListeners();
+  }
+
+  updateActivedSessionFromList(int fid, SessionType type, Widget coreWidget) {
+    int id = 0;
+
+    for (int k in this.sessions.keys) {
+      final v = this.sessions[k];
+      if (v.type == type && v.fid == fid) {
+        id = k;
+        break;
+      }
+    }
+
+    if (id > 0) {
+      if (this.actived > 0) {
+        rpc.send('session-suspend', [this.actived, this.activedSession.gid]);
+      }
+      this.actived = id;
+      if (this.activedSession.online == OnlineType.Lost) {
+        rpc.send('session-connect', [id, this.activedSession.gid]);
+      }
+    }
+  }
+
+  updateActivedSession(int id, [Widget coreWidget, String title, Widget homeWidget]) {
+    if (id > 0) {
+      if (this.actived > 0) {
+        rpc.send('session-suspend', [this.actived, this.activedSession.gid]);
+      }
+      this.actived = id;
+      if (this.activedSession.online == OnlineType.Lost) {
+        rpc.send('session-connect', [id, this.activedSession.gid]);
+      }
+    }
+
+    if (homeWidget != null && title != null) {
+      this.homeShowTitle = title;
+      this.currentListShow = homeWidget;
+    }
+
+    if (coreWidget != null) {
+      this.coreShowWidget = coreWidget;
+    }
+
+    this.systemAppFriendAddNew = false;
+    notifyListeners();
   }
 
   // -- callback when receive rpc info. -- //
@@ -248,13 +293,13 @@ class AccountProvider extends ChangeNotifier {
     params.forEach((params) {
         final id = params[0];
         this.sessions[id] = Session.fromList(params);
-
-        if (this.sessions[id].isTop) {
-          this.topKeys.add(id);
-        } else {
-          this.orderKeys.add(id);
+        if (!this.sessions[id].isClose) {
+          if (this.sessions[id].isTop) {
+            this.topKeys.add(id);
+          } else {
+            this.orderKeys.add(id);
+          }
         }
-
     });
     notifyListeners();
   }
@@ -286,11 +331,31 @@ class AccountProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  _sessionDelete(List params) {
-    final id = params[1];
-    this.sessions.remove(id);
+  _sessionClose(List params) {
+    final id = params[0];
+    this.sessions[id].isClose = true;
     this.orderKeys.remove(id);
     this.topKeys.remove(id);
+    notifyListeners();
+  }
+
+  _sessionConnect(List params) {
+    final id = params[0];
+    final addr = params[1];
+    this.sessions[id].addr = addr;
+    this.sessions[id].online = OnlineType.Active;
+    notifyListeners();
+  }
+
+  _sessionSuspend(List params) {
+    final id = params[0];
+    this.sessions[id].online = OnlineType.Suspend;
+    notifyListeners();
+  }
+
+  _sessionLost(List params) {
+    final id = params[0];
+    this.sessions[id].online = OnlineType.Lost;
     notifyListeners();
   }
 }

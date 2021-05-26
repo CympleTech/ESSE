@@ -13,6 +13,7 @@ import 'package:esse/widgets/user_info.dart';
 import 'package:esse/widgets/chat_message.dart';
 import 'package:esse/global.dart';
 import 'package:esse/provider.dart';
+import 'package:esse/session.dart';
 
 import 'package:esse/apps/primitives.dart';
 import 'package:esse/apps/chat/models.dart';
@@ -46,7 +47,9 @@ class _ChatDetailState extends State<ChatDetail> {
   bool recordShow = false;
   String _recordName;
 
-  Friend friend;
+  int _actived;
+  Friend _friend;
+  String _meName;
 
   @override
   initState() {
@@ -60,12 +63,21 @@ class _ChatDetailState extends State<ChatDetail> {
           });
         }
     });
+    new Future.delayed(Duration.zero, () {
+        final accountProvider = context.read<AccountProvider>();
+        final chatProvider = context.read<ChatProvider>();
+        this._actived = accountProvider.activedSession.fid;
+        this._meName = accountProvider.activedAccount.name;
+        this._friend = chatProvider.friends[this._actived];
+        chatProvider.updateActivedFriend(this._actived);
+        setState(() {});
+    });
   }
 
   _generateRecordPath() {
     this._recordName = DateTime.now().millisecondsSinceEpoch.toString() +
     '_' +
-    this.friend.id.toString() +
+    this._actived.toString() +
     '.m4a';
   }
 
@@ -74,7 +86,7 @@ class _ChatDetailState extends State<ChatDetail> {
       return;
     }
 
-    context.read<ChatProvider>().messageCreate(Message(friend.id, MessageType.String, textController.text));
+    context.read<ChatProvider>().messageCreate(Message(_actived, MessageType.String, textController.text));
     setState(() {
         textController.text = '';
         textFocus.requestFocus();
@@ -93,7 +105,7 @@ class _ChatDetailState extends State<ChatDetail> {
   void _sendImage() async {
     final image = await pickImage();
     if (image != null) {
-      context.read<ChatProvider>().messageCreate(Message(friend.id, MessageType.Image, image));
+      context.read<ChatProvider>().messageCreate(Message(_actived, MessageType.Image, image));
     }
     setState(() {
         textFocus.requestFocus();
@@ -107,7 +119,7 @@ class _ChatDetailState extends State<ChatDetail> {
   void _sendFile() async {
     final file = await pickFile();
     if (file != null) {
-      context.read<ChatProvider>().messageCreate(Message(friend.id, MessageType.File, file));
+      context.read<ChatProvider>().messageCreate(Message(_actived, MessageType.File, file));
     }
     setState(() {
         textFocus.requestFocus();
@@ -120,7 +132,7 @@ class _ChatDetailState extends State<ChatDetail> {
 
   void _sendRecord(int time) async {
     final raw = BaseMessage.rawRecordName(time, _recordName);
-    context.read<ChatProvider>().messageCreate(Message(friend.id, MessageType.Record, raw));
+    context.read<ChatProvider>().messageCreate(Message(_actived, MessageType.Record, raw));
 
     setState(() {
         textFocus.requestFocus();
@@ -165,7 +177,7 @@ class _ChatDetailState extends State<ChatDetail> {
                 return GestureDetector(
                   behavior: HitTestBehavior.opaque,
                   onTap: () async {
-                    context.read<ChatProvider>().messageCreate(Message(friend.id, MessageType.Contact, "${contact.id}"));
+                    context.read<ChatProvider>().messageCreate(Message(_actived, MessageType.Contact, "${contact.id}"));
                     Navigator.of(context).pop();
                     setState(() {
                         textFocus.requestFocus();
@@ -201,16 +213,16 @@ class _ChatDetailState extends State<ChatDetail> {
     final recentMessages = provider.activedMessages;
     final recentMessageKeys = recentMessages.keys.toList().reversed.toList();
 
-    final meName = context.read<AccountProvider>().activedAccount.name;
-    this.friend = provider.activedFriend;
+    final session = context.watch<AccountProvider>().activedSession;
 
-    if (this.friend == null) {
+    if (this._friend == null) {
       return Container(
         padding: EdgeInsets.only(left: 20.0, right: 20.0, top: 10.0, bottom: 10.0),
         child: Text('Waiting...')
       );
     }
-    final isOnline = this.friend.online;
+
+    final isOnline = session.online == OnlineType.Active;
 
     return Column(
       children: [
@@ -235,11 +247,11 @@ class _ChatDetailState extends State<ChatDetail> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      this.friend.name,
+                      this._friend.name,
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
                     SizedBox(height: 6.0),
-                    Text(this.friend.isClosed
+                    Text(this._friend.isClosed
                       ? lang.unfriended
                       : (isOnline ? lang.online : lang.offline),
                       style: TextStyle(
@@ -278,9 +290,9 @@ class _ChatDetailState extends State<ChatDetail> {
                       Icons.info,
                       lang.friendInfo,
                       UserInfo(
-                        id: 'EH' + this.friend.gid.toUpperCase(),
-                        name: this.friend.name,
-                        addr: '0x' + this.friend.addr)
+                        id: 'EH' + this._friend.gid.toUpperCase(),
+                        name: this._friend.name,
+                        addr: '0x' + this._friend.addr)
                     );
                   } else if (value == 3) {
                     print('TODO remark');
@@ -290,7 +302,7 @@ class _ChatDetailState extends State<ChatDetail> {
                       builder: (BuildContext context) {
                         return AlertDialog(
                           title: Text(lang.unfriend),
-                          content: Text(this.friend.name,
+                          content: Text(this._friend.name,
                             style: TextStyle(color: color.primary)),
                           actions: [
                             TextButton(
@@ -302,7 +314,7 @@ class _ChatDetailState extends State<ChatDetail> {
                               onPressed:  () {
                                 Navigator.pop(context);
                                 Provider.of<ChatProvider>(
-                                  context, listen: false).friendClose(this.friend.id);
+                                  context, listen: false).friendClose(this._friend.id);
                                 if (!isDesktop) {
                                   Navigator.pop(context);
                                 }
@@ -314,14 +326,14 @@ class _ChatDetailState extends State<ChatDetail> {
                     );
                   } else if (value == 5) {
                     Provider.of<ChatProvider>(context, listen: false).requestCreate(
-                      Request(this.friend.gid, this.friend.addr, this.friend.name, lang.fromContactCard(meName)));
+                      Request(this._friend.gid, this._friend.addr, this._friend.name, lang.fromContactCard(this._meName)));
                   } else if (value == 6) {
                     showDialog(
                       context: context,
                       builder: (BuildContext context) {
                         return AlertDialog(
                           title: Text(lang.delete + " " + lang.friend),
-                          content: Text(this.friend.name,
+                          content: Text(this._friend.name,
                             style: TextStyle(color: Colors.red)),
                           actions: [
                             TextButton(
@@ -333,7 +345,7 @@ class _ChatDetailState extends State<ChatDetail> {
                               onPressed:  () {
                                 Navigator.pop(context);
                                 Provider.of<ChatProvider>(
-                                  context, listen: false).friendDelete(this.friend.id);
+                                  context, listen: false).friendDelete(this._friend.id);
                                 if (!isDesktop) {
                                   Navigator.pop(context);
                                 }
@@ -349,7 +361,7 @@ class _ChatDetailState extends State<ChatDetail> {
                   return <PopupMenuEntry<int>>[
                     _menuItem(Color(0xFF6174FF), 2, Icons.qr_code_rounded, lang.friendInfo),
                     //_menuItem(color.primary, 3, Icons.turned_in_rounded, lang.remark),
-                    this.friend.isClosed
+                    this._friend.isClosed
                     ? _menuItem(Color(0xFF6174FF), 5, Icons.send_rounded, lang.addFriend)
                     : _menuItem(Color(0xFF6174FF), 4, Icons.block_rounded, lang.unfriend),
                     _menuItem(Colors.red, 6, Icons.delete_rounded, lang.delete),
@@ -366,11 +378,11 @@ class _ChatDetailState extends State<ChatDetail> {
             itemCount: recentMessageKeys.length,
             reverse: true,
             itemBuilder: (BuildContext context, index) => ChatMessage(
-              name: this.friend.name,
+              name: this._friend.name,
               message: recentMessages[recentMessageKeys[index]],
             )
         )),
-        if (!this.friend.isClosed)
+        if (!this._friend.isClosed)
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
           child: Row(

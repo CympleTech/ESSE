@@ -14,6 +14,7 @@ use tdn_did::Proof;
 use tdn_storage::local::DStorage;
 
 use crate::layer::{Layer, Online};
+use crate::rpc::{session_connect, session_lost, session_suspend};
 use crate::storage::{group_chat_db, write_avatar_sync};
 
 use super::models::{from_network_message, GroupChat, Member, Request};
@@ -46,10 +47,14 @@ pub(crate) async fn handle(
                             gc.ok(&db)?;
                             results.rpcs.push(rpc::create_result(mgid, gc.id, ok));
 
+                            // 0. get session. TODO
+                            let sid = 0;
+
                             // online this group.
                             layer.write().await.running_mut(&mgid)?.check_add_online(
                                 gcd,
                                 Online::Direct(addr),
+                                sid,
                                 gc.id,
                             )?;
                         }
@@ -65,10 +70,15 @@ pub(crate) async fn handle(
                             if group.g_addr != addr {
                                 return Ok(results);
                             }
+
+                            // 2. get group session.
+                            let sid = 0; // TODO
+
                             // 2. online this group.
                             layer_lock.running_mut(&mgid)?.check_add_online(
                                 gcd,
                                 Online::Direct(addr),
+                                sid,
                                 group.id,
                             )?;
                             // 3. online to UI.
@@ -148,8 +158,10 @@ async fn handle_event(
     results: &mut HandleResult,
 ) -> Result<()> {
     println!("Got event.......");
-    let gid = match event {
+    let (sid, gid) = match event {
         LayerEvent::Offline(gcd)
+        | LayerEvent::Suspend(gcd)
+        | LayerEvent::Actived(gcd)
         | LayerEvent::OnlinePing(gcd)
         | LayerEvent::OnlinePong(gcd)
         | LayerEvent::MemberOnline(gcd, ..)
@@ -161,7 +173,23 @@ async fn handle_event(
 
     match event {
         LayerEvent::Offline(gcd) => {
-            results.rpcs.push(rpc::group_offline(mgid, gid, &gcd));
+            let mut layer_lock = layer.write().await;
+            layer_lock.running_mut(&mgid)?.check_offline(&gcd, &addr);
+            drop(layer_lock);
+            results.rpcs.push(session_lost(mgid, &sid));
+        }
+        LayerEvent::Suspend(gcd) => {
+            let mut layer_lock = layer.write().await;
+            if layer_lock.running_mut(&mgid)?.suspend(&gcd, false)? {
+                results.rpcs.push(session_suspend(mgid, &sid));
+            }
+            drop(layer_lock);
+        }
+        LayerEvent::Actived(gcd) => {
+            let mut layer_lock = layer.write().await;
+            let _ = layer_lock.running_mut(&mgid)?.active(&gcd, false);
+            drop(layer_lock);
+            results.rpcs.push(session_connect(mgid, &sid, &addr));
         }
         LayerEvent::OnlinePing(gcd) => {
             results.rpcs.push(rpc::group_online(mgid, gid));

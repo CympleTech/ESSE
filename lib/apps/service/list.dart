@@ -73,10 +73,10 @@ class ListInnerService extends StatelessWidget {
         final widgets = this.callback();
         if (widgets != null) {
           if (this.isDesktop) {
-            Provider.of<AccountProvider>(context, listen: false).updateActivedApp(widgets[0], widgets[1], widgets[2]);
+            Provider.of<AccountProvider>(context, listen: false).updateActivedSession(0, widgets[0], widgets[1], widgets[2]);
           } else {
             if (widgets[2] != null) {
-              Provider.of<AccountProvider>(context, listen: false).updateActivedApp(null, widgets[1], widgets[2]);
+              Provider.of<AccountProvider>(context, listen: false).updateActivedSession(0, null, widgets[1], widgets[2]);
             } else {
               Navigator.push(context, MaterialPageRoute(builder: (_) => widgets[0]));
             }
