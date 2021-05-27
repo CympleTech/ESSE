@@ -7,7 +7,7 @@ use tdn::{
     types::{
         group::GroupId,
         message::SendType,
-        primitive::{new_io_error, HandleResult, PeerAddr, Result},
+        primitive::{new_io_error, PeerAddr, Result},
     },
 };
 
@@ -351,17 +351,19 @@ impl RunningAccount {
     }
 
     /// peer leave, remove online peer.
-    pub fn peer_leave(&mut self, addr: &PeerAddr) -> Vec<(GroupId, i64)> {
+    pub fn peer_leave(&mut self, addr: &PeerAddr) -> Vec<i64> {
         let mut peers = vec![];
+        let mut deletes = vec![];
         for (fgid, online) in &self.sessions {
             if online.online.addr() == addr {
-                peers.push((*fgid, online.db_id))
+                peers.push(online.db_id);
+                deletes.push(*fgid);
             }
         }
-
-        for i in &peers {
-            self.sessions.remove(&i.0);
+        for i in &deletes {
+            self.sessions.remove(&i);
         }
+
         peers
     }
 

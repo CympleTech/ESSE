@@ -1,9 +1,12 @@
+use std::path::PathBuf;
 use tdn::types::{
     group::GroupId,
     primitive::{new_io_error, PeerAddr, Result},
     rpc::{json, RpcParam},
 };
 use tdn_storage::local::{DStorage, DsValue};
+
+use crate::storage::session_db;
 
 pub(crate) enum SessionType {
     Chat,
@@ -43,7 +46,7 @@ impl SessionType {
 }
 
 pub(crate) struct Session {
-    id: i64,
+    pub id: i64,
     fid: i64,
     pub gid: GroupId,
     pub addr: PeerAddr,
@@ -182,5 +185,33 @@ impl Session {
             "UPDATE sessions SET last_readed = 1 WHERE id = {}",
             id
         ))
+    }
+}
+
+#[inline]
+pub(crate) fn connect_session(
+    base: &PathBuf,
+    mgid: &GroupId,
+    s_type: &SessionType,
+    fid: &i64,
+    addr: &PeerAddr,
+) -> Result<Option<Session>> {
+    let db = session_db(base, mgid)?;
+
+    let sql = format!("SELECT id, fid, gid, addr, s_type, name, is_top, is_close, last_datetime, last_content, last_readed FROM sessions WHERE s_type = {} AND fid = {}", s_type.to_int(), fid);
+
+    let mut matrix = db.query(&sql)?;
+    if matrix.len() > 0 {
+        let session = Session::from_values(matrix.pop().unwrap()); // safe unwrap()
+
+        let _ = db.update(&format!(
+            "UPDATE sessions SET addr = '{}' WHERE id = {}",
+            addr.to_hex(),
+            session.id,
+        ));
+
+        Ok(Some(session))
+    } else {
+        Ok(None)
     }
 }

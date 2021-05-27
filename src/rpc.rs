@@ -91,7 +91,7 @@ pub(crate) fn session_last(
 }
 
 #[inline]
-pub(crate) fn session_update(
+pub(crate) fn _session_update(
     mgid: GroupId,
     id: &i64,
     addr: &PeerAddr,
