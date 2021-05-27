@@ -27,9 +27,13 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get logout => 'Logout';
   @override
-  String get online => 'Online';
+  String get onlineWaiting => 'Waiting...';
   @override
-  String get offline => 'Offline';
+  String get onlineActive => 'Active';
+  @override
+  String get onlineSuspend => 'Suspend';
+  @override
+  String get onlineLost => 'Offline';
   @override
   String get nickname => 'Name';
   @override

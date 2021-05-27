@@ -12,7 +12,6 @@ class Friend {
   String remark;
   bool isClosed;
   RelativeTime time;
-  bool online = false;
 
   // new friend from network
   Friend(this.gid, this.name, this.addr) {
@@ -21,12 +20,7 @@ class Friend {
 
   Avatar showAvatar({double width = 45.0}) {
     final avatar = Global.avatarPath + this.gid + '.png';
-    return Avatar(
-      width: width,
-      name: this.name,
-      avatarPath: avatar,
-      needOnline: false,
-    );
+    return Avatar(width: width, name: this.name, avatarPath: avatar);
   }
 
   Friend.fromList(List params) {
@@ -65,8 +59,7 @@ class Request {
 
   Avatar showAvatar([double width = 45.0]) {
     final avatar = Global.avatarPath + this.gid + '.png';
-    return Avatar(
-        width: width, name: this.name, avatarPath: avatar, needOnline: false);
+    return Avatar(width: width, name: this.name, avatarPath: avatar);
   }
 
   Request.fromList(List params) {

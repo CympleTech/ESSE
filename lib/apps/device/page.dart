@@ -152,7 +152,7 @@ class _DevicesPageState extends State<DevicesPage> {
                   Provider.of<DeviceProvider>(context, listen: false).updateActivedDevice(device.id);
                   final widget = DeviceListenPage();
                   if (isDesktop) {
-                    Provider.of<AccountProvider>(context, listen: false).updateActivedSession(0, widget);
+                    Provider.of<AccountProvider>(context, listen: false).updateActivedWidget(widget);
                   } else {
                     Navigator.push(context, MaterialPageRoute(builder: (_) => widget));
                   }
@@ -355,7 +355,7 @@ class _DeviceListenPageState extends State<DeviceListenPage> {
                     onTap: () {
                       Provider.of<DeviceProvider>(context, listen: false).clear();
                       if (isDesktop) {
-                        Provider.of<AccountProvider>(context, listen: false).updateActivedSession(0, DevicesPage());
+                        Provider.of<AccountProvider>(context, listen: false).updateActivedWidget(DevicesPage());
                       } else {
                         Navigator.pop(context);
                       }

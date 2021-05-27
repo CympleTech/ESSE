@@ -108,12 +108,7 @@ class GroupChat {
 
   Avatar showAvatar({double width = 45.0}) {
     final avatar = Global.avatarPath + this.gid + '.png';
-    return Avatar(
-      width: width,
-      name: this.name,
-      avatarPath: avatar,
-      needOnline: false,
-    );
+    return Avatar(width: width, name: this.name, avatarPath: avatar);
   }
 }
 
@@ -137,12 +132,7 @@ class Request {
 
   Avatar showAvatar([double width = 45.0]) {
     final avatar = Global.avatarPath + this.gid + '.png';
-    return Avatar(
-      width: width,
-      name: this.name,
-      avatarPath: avatar,
-      needOnline: false,
-    );
+    return Avatar(width: width, name: this.name, avatarPath: avatar);
   }
 
   Request.fromList(List params) {
@@ -191,7 +181,7 @@ class Member {
       width: width,
       name: this.name,
       avatarPath: avatar,
-      needOnline: false,
+      online: false,
       hasNew: this.isManager,
       hasNewColor: Color(0xFF6174FF),
     );

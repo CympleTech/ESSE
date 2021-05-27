@@ -117,8 +117,8 @@ pub(crate) async fn handle(
                         let _ = Friend::addr_update(&db, f.id, &addr);
                         drop(db);
                     }
-                    // 4. online to UI.
-                    results.rpcs.push(rpc::friend_online(mgid, f.id, addr));
+                    // 4. online to UI. TODO
+
                     // 5. connected.
                     let msg = conn_res_message(&layer, &mgid, addr).await?;
                     results.layers.push((mgid, fgid, msg));
@@ -206,7 +206,6 @@ pub(crate) async fn handle(
             for (mgid, running) in &mut layer.runnings {
                 let peers = running.peer_leave(&addr);
                 for (fgid, fid) in peers {
-                    results.rpcs.push(rpc::friend_offline(*mgid, fid, &fgid));
                     results
                         .rpcs
                         .push(crate::apps::group_chat::rpc::group_offline(
@@ -288,8 +287,9 @@ pub(crate) async fn handle(
                     let db = chat_db(&layer.base, &mgid)?;
                     Friend::addr_update(&db, fid, &addr)?;
                     drop(db);
+
                     // 5. online to UI.
-                    results.rpcs.push(rpc::friend_online(mgid, fid, addr));
+
                     layer.group.write().await.status(
                         &mgid,
                         StatusEvent::SessionFriendOnline(fgid),
@@ -310,7 +310,7 @@ pub(crate) async fn handle(
                             sid,
                             friend.id,
                         )?;
-                        results.rpcs.push(rpc::friend_online(mgid, friend.id, addr));
+
                         layer.group.write().await.status(
                             &mgid,
                             StatusEvent::SessionFriendOnline(fgid),
@@ -393,8 +393,8 @@ pub(crate) async fn handle(
                     let db = chat_db(&layer.base, &mgid)?;
                     Friend::addr_update(&db, fid, &addr)?;
                     drop(db);
-                    // 5. online to UI.
-                    results.rpcs.push(rpc::friend_online(mgid, fid, addr));
+                    // 5. online to UI. TODO
+
                     // 6. connected.
                     let msg = conn_res_message(&layer, &mgid, addr).await?;
                     results.layers.push((mgid, fgid, msg));
@@ -418,7 +418,6 @@ pub(crate) async fn handle(
                             sid,
                             friend.id,
                         )?;
-                        results.rpcs.push(rpc::friend_online(mgid, friend.id, addr));
                         layer.group.write().await.status(
                             &mgid,
                             StatusEvent::SessionFriendOnline(fgid),
@@ -629,7 +628,7 @@ impl LayerEvent {
                 layer
                     .running_mut(&mgid)?
                     .check_add_online(fgid, Online::Direct(addr), sid, fid)?;
-                results.rpcs.push(rpc::friend_online(mgid, fid, addr));
+
                 let data = postcard::to_allocvec(&LayerEvent::OnlinePong).unwrap_or(vec![]);
                 let msg = SendType::Event(0, addr, data);
                 results.layers.push((mgid, fgid, msg));
@@ -643,7 +642,6 @@ impl LayerEvent {
                 layer
                     .running_mut(&mgid)?
                     .check_add_online(fgid, Online::Direct(addr), sid, fid)?;
-                results.rpcs.push(rpc::friend_online(mgid, fid, addr));
             }
             LayerEvent::Close => {
                 layer.group.write().await.broadcast(

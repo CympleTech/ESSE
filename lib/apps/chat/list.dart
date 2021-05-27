@@ -35,7 +35,7 @@ class _ChatListState extends State<ChatList> {
         onPressed: () {
           final widget = ChatAddPage();
           if (isDesktop) {
-            Provider.of<AccountProvider>(context, listen: false).updateActivedSession(0, widget);
+            Provider.of<AccountProvider>(context, listen: false).updateActivedWidget(widget);
           } else {
             Navigator.push(context, MaterialPageRoute(builder: (_) => widget));
           }
@@ -61,6 +61,8 @@ class ListChat extends StatelessWidget {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () {
+        context.read<AccountProvider>().updateActivedSession(0, SessionType.Chat, friend.id);
+        context.read<ChatProvider>().updateActivedFriend(friend.id);
         if (!isDesktop) {
           Navigator.push(
             context,
@@ -69,9 +71,7 @@ class ListChat extends StatelessWidget {
             ),
           );
         } else {
-          context.read<AccountProvider>().updateActivedSessionFromList(
-            friend.id, SessionType.Chat, ChatDetail()
-          );
+          context.read<AccountProvider>().updateActivedWidget(ChatDetail());
         }
       },
       child: Container(

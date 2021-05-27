@@ -9,7 +9,9 @@ import 'package:esse/provider.dart';
 import 'package:esse/session.dart';
 
 import 'package:esse/apps/chat/detail.dart';
+import 'package:esse/apps/chat/provider.dart';
 import 'package:esse/apps/assistant/page.dart';
+import 'package:esse/apps/file/page.dart';
 
 class DefaultHomeShow extends StatelessWidget {
   const DefaultHomeShow({Key key}): super(key: key);
@@ -63,6 +65,7 @@ class _SessionWidget extends StatelessWidget {
 
         switch (session.type) {
           case SessionType.Chat:
+            context.read<ChatProvider>().updateActivedFriend(session.fid);
             if (!isDesktop) {
               coreWidget = ChatPage();
             } else {
@@ -78,7 +81,13 @@ class _SessionWidget extends StatelessWidget {
               coreWidget = AssistantDetail();
             }
             break;
+          case SessionType.Files:
+            listTitle = lang.files;
+            listWidget = FolderList();
+            break;
         }
+
+        context.read<AccountProvider>().updateActivedSession(session.id);
 
         if (!isDesktop) {
           Navigator.push(
@@ -88,8 +97,8 @@ class _SessionWidget extends StatelessWidget {
             ),
           );
         } else {
-          context.read<AccountProvider>().updateActivedSession(
-            session.id, coreWidget, listTitle, listWidget
+          context.read<AccountProvider>().updateActivedWidget(
+            coreWidget, listTitle, listWidget
           );
         }
       },

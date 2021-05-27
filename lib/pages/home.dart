@@ -96,30 +96,7 @@ class HomeList extends StatefulWidget {
   _HomeListState createState() => _HomeListState();
 }
 
-class _HomeListState extends State<HomeList> with SingleTickerProviderStateMixin {
-  bool isProcess = true;
-  AnimationController controller;
-
-  @override
-  void initState() {
-    controller = AnimationController(
-      vsync: this, duration: const Duration(seconds: 8)
-    )..addListener(() {
-        if (controller.value == 1.0) {
-          isProcess = false;
-        }
-        setState(() {});
-    });
-    controller.forward();
-    super.initState();
-  }
-
-  @override
-  void dispose() {
-    controller.dispose();
-    super.dispose();
-  }
-
+class _HomeListState extends State<HomeList> {
   _scanQr(bool isDesktop) {
     Navigator.push(
       context,
@@ -135,7 +112,7 @@ class _HomeListState extends State<HomeList> with SingleTickerProviderStateMixin
               .systemAppFriendAddNew = false;
               if (isDesktop) {
                 Provider.of<AccountProvider>(context, listen: false)
-                .updateActivedSession(0, widget);
+                .updateActivedWidget(widget);
               } else {
                 Navigator.push(
                   context, MaterialPageRoute(builder: (_) => widget));
@@ -199,7 +176,7 @@ class _HomeListState extends State<HomeList> with SingleTickerProviderStateMixin
                           } else if (value == 1) {
                             final widget = ChatAddPage();
                             if (isDesktop) {
-                              provider.updateActivedSession(0, widget);
+                              provider.updateActivedWidget(widget);
                             } else {
                               provider.systemAppFriendAddNew = false;
                               setState(() {});
@@ -245,13 +222,7 @@ class _HomeListState extends State<HomeList> with SingleTickerProviderStateMixin
             ),
           ),
           const SizedBox(height: 10.0),
-          isProcess
-          ? LinearProgressIndicator(
-            backgroundColor: Color(0x40ADB0BB),
-            valueColor: AlwaysStoppedAnimation(color.primary),
-            value: controller.value,
-          )
-          : const Divider(height: 1.0, color: Color(0x40ADB0BB)),
+          const Divider(height: 1.0, color: Color(0x40ADB0BB)),
           const SizedBox(height: 5.0),
           Expanded(
             child: provider.homeShowWidget,
@@ -319,7 +290,7 @@ class DrawerWidget extends StatelessWidget {
     final widget = DevicesPage();
     if (isDesktop) {
       Provider.of<AccountProvider>(context, listen: false)
-          .updateActivedSession(0, widget);
+          .updateActivedWidget(widget);
     } else {
       Navigator.push(context, MaterialPageRoute(builder: (_) => widget));
     }
@@ -387,7 +358,7 @@ class DrawerWidget extends StatelessWidget {
                       style: TextStyle(fontSize: 16.0)),
                     onTap: () {
                       Navigator.pop(context);
-                      Provider.of<AccountProvider>(context, listen: false).updateActivedSession(0,
+                      Provider.of<AccountProvider>(context, listen: false).updateActivedWidget(
                         null, lang.contact, ChatList()
                       );
                   }),
@@ -397,7 +368,7 @@ class DrawerWidget extends StatelessWidget {
                       style: TextStyle(fontSize: 16.0)),
                     onTap: () {
                       Navigator.pop(context);
-                      Provider.of<AccountProvider>(context, listen: false).updateActivedSession(0,
+                      Provider.of<AccountProvider>(context, listen: false).updateActivedWidget(
                         null, lang.groups, ServiceList()
                       );
                   }),

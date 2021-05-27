@@ -48,11 +48,10 @@ class _ChatDetailState extends State<ChatDetail> {
   String _recordName;
 
   int _actived;
-  Friend _friend;
-  String _meName;
 
   @override
   initState() {
+    print("Chat detail initState...");
     super.initState();
     textFocus.addListener(() {
         if (textFocus.hasFocus) {
@@ -62,15 +61,6 @@ class _ChatDetailState extends State<ChatDetail> {
               recordShow = false;
           });
         }
-    });
-    new Future.delayed(Duration.zero, () {
-        final accountProvider = context.read<AccountProvider>();
-        final chatProvider = context.read<ChatProvider>();
-        this._actived = accountProvider.activedSession.fid;
-        this._meName = accountProvider.activedAccount.name;
-        this._friend = chatProvider.friends[this._actived];
-        chatProvider.updateActivedFriend(this._actived);
-        setState(() {});
     });
   }
 
@@ -212,17 +202,20 @@ class _ChatDetailState extends State<ChatDetail> {
     final provider = context.watch<ChatProvider>();
     final recentMessages = provider.activedMessages;
     final recentMessageKeys = recentMessages.keys.toList().reversed.toList();
+    final friend = provider.activedFriend;
+    this._actived = friend.id;
 
-    final session = context.watch<AccountProvider>().activedSession;
+    final accountProvider = context.watch<AccountProvider>();
+    final session = accountProvider.activedSession;
+    final meName = accountProvider.activedAccount.name;
+    final isOnline = session.isActive();
 
-    if (this._friend == null) {
+    if (friend == null) {
       return Container(
         padding: EdgeInsets.only(left: 20.0, right: 20.0, top: 10.0, bottom: 10.0),
         child: Text('Waiting...')
       );
     }
-
-    final isOnline = session.online == OnlineType.Active;
 
     return Column(
       children: [
@@ -247,13 +240,13 @@ class _ChatDetailState extends State<ChatDetail> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      this._friend.name,
+                      friend.name,
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
                     SizedBox(height: 6.0),
-                    Text(this._friend.isClosed
+                    Text(friend.isClosed
                       ? lang.unfriended
-                      : (isOnline ? lang.online : lang.offline),
+                      : session.onlineLang(lang),
                       style: TextStyle(
                         color: color.onPrimary.withOpacity(0.5),
                         fontSize: 14.0))
@@ -290,9 +283,9 @@ class _ChatDetailState extends State<ChatDetail> {
                       Icons.info,
                       lang.friendInfo,
                       UserInfo(
-                        id: 'EH' + this._friend.gid.toUpperCase(),
-                        name: this._friend.name,
-                        addr: '0x' + this._friend.addr)
+                        id: 'EH' + friend.gid.toUpperCase(),
+                        name: friend.name,
+                        addr: '0x' + friend.addr)
                     );
                   } else if (value == 3) {
                     print('TODO remark');
@@ -302,7 +295,7 @@ class _ChatDetailState extends State<ChatDetail> {
                       builder: (BuildContext context) {
                         return AlertDialog(
                           title: Text(lang.unfriend),
-                          content: Text(this._friend.name,
+                          content: Text(friend.name,
                             style: TextStyle(color: color.primary)),
                           actions: [
                             TextButton(
@@ -314,7 +307,7 @@ class _ChatDetailState extends State<ChatDetail> {
                               onPressed:  () {
                                 Navigator.pop(context);
                                 Provider.of<ChatProvider>(
-                                  context, listen: false).friendClose(this._friend.id);
+                                  context, listen: false).friendClose(friend.id);
                                 if (!isDesktop) {
                                   Navigator.pop(context);
                                 }
@@ -326,14 +319,14 @@ class _ChatDetailState extends State<ChatDetail> {
                     );
                   } else if (value == 5) {
                     Provider.of<ChatProvider>(context, listen: false).requestCreate(
-                      Request(this._friend.gid, this._friend.addr, this._friend.name, lang.fromContactCard(this._meName)));
+                      Request(friend.gid, friend.addr, friend.name, lang.fromContactCard(meName)));
                   } else if (value == 6) {
                     showDialog(
                       context: context,
                       builder: (BuildContext context) {
                         return AlertDialog(
                           title: Text(lang.delete + " " + lang.friend),
-                          content: Text(this._friend.name,
+                          content: Text(friend.name,
                             style: TextStyle(color: Colors.red)),
                           actions: [
                             TextButton(
@@ -345,7 +338,7 @@ class _ChatDetailState extends State<ChatDetail> {
                               onPressed:  () {
                                 Navigator.pop(context);
                                 Provider.of<ChatProvider>(
-                                  context, listen: false).friendDelete(this._friend.id);
+                                  context, listen: false).friendDelete(friend.id);
                                 if (!isDesktop) {
                                   Navigator.pop(context);
                                 }
@@ -361,7 +354,7 @@ class _ChatDetailState extends State<ChatDetail> {
                   return <PopupMenuEntry<int>>[
                     _menuItem(Color(0xFF6174FF), 2, Icons.qr_code_rounded, lang.friendInfo),
                     //_menuItem(color.primary, 3, Icons.turned_in_rounded, lang.remark),
-                    this._friend.isClosed
+                    friend.isClosed
                     ? _menuItem(Color(0xFF6174FF), 5, Icons.send_rounded, lang.addFriend)
                     : _menuItem(Color(0xFF6174FF), 4, Icons.block_rounded, lang.unfriend),
                     _menuItem(Colors.red, 6, Icons.delete_rounded, lang.delete),
@@ -378,11 +371,27 @@ class _ChatDetailState extends State<ChatDetail> {
             itemCount: recentMessageKeys.length,
             reverse: true,
             itemBuilder: (BuildContext context, index) => ChatMessage(
-              name: this._friend.name,
+              name: friend.name,
               message: recentMessages[recentMessageKeys[index]],
             )
         )),
-        if (!this._friend.isClosed)
+        if (session.online == OnlineType.Lost)
+        InkWell(
+          onTap: () {
+            context.read<AccountProvider>().updateActivedSession(session.id);
+          },
+          hoverColor: Colors.transparent,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
+            margin: const EdgeInsets.all(10.0),
+            decoration: BoxDecoration(
+              border: Border.all(color: color.primary),
+              borderRadius: BorderRadius.circular(10.0)
+            ),
+            child: Center(child: Text(lang.reconnect, style: TextStyle(color: color.primary))),
+          )
+        ),
+        if (!friend.isClosed && session.online != OnlineType.Lost)
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
           child: Row(

@@ -34,8 +34,6 @@ class ChatProvider extends ChangeNotifier {
   ChatProvider() {
     // rpc
     rpc.addListener('chat-friend-list', _friendList, false);
-    rpc.addListener('chat-friend-online', _friendOnline, false);
-    rpc.addListener('chat-friend-offline', _friendOffline, false);
     rpc.addListener('chat-friend-info', _friendInfo, false);
     rpc.addListener('chat-friend-update', _friendUpdate, false);
     rpc.addListener('chat-friend-close', _friendClose, false);
@@ -90,7 +88,6 @@ class ChatProvider extends ChangeNotifier {
   /// delete a friend.
   friendClose(int id) {
     this.friends[id].isClosed = true;
-    this.friends[id].online = false;
 
     rpc.send('chat-friend-close', [id]);
     notifyListeners();
@@ -182,25 +179,6 @@ class ChatProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  _friendOnline(List params) {
-    final id = params[0];
-    if (this.friends.containsKey(id)) {
-      this.friends[id].online = true;
-      this.friends[id].addr = params[1];
-      notifyListeners();
-    }
-  }
-
-  _friendOffline(List params) {
-    final id = params[0];
-    if (this.friends.containsKey(id)) {
-      if (this.friends[id].gid == params[1]) {
-        this.friends[id].online = false;
-        notifyListeners();
-      }
-    }
-  }
-
   _friendInfo(List params) {
     final id = params[0];
     this.friends[id] = Friend.fromList(params);
@@ -219,7 +197,6 @@ class ChatProvider extends ChangeNotifier {
     final id = params[0];
     if (this.friends.containsKey(id)) {
       this.friends[id].isClosed = true;
-      this.friends[id].online = false;
       notifyListeners();
     }
   }
@@ -295,7 +272,6 @@ class ChatProvider extends ChangeNotifier {
         msg.isDelivery = null; // When message create, set is is none;
       }
       this.activedMessages[msg.id] = msg;
-      rpc.send('chat-friend-readed', [this.activedFriendId]);
     }
     orderFriends(msg.fid);
     notifyListeners();

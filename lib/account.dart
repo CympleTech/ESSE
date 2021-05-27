@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 import 'dart:convert';
 import 'dart:typed_data';
 
@@ -63,8 +65,8 @@ class Account {
       width: width,
       name: this.name,
       avatar: this.avatar,
-      online: online,
-      needOnline: needOnline,
+      online: true,
+      onlineColor: this.online ? const Color(0xFF0EE50A) : const Color(0xFFEDEDED),
       hasNew: this.hasNew,
     );
   }

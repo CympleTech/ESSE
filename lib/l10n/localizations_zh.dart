@@ -27,9 +27,13 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String get logout => '退出';
   @override
-  String get online => '在线';
+  String get onlineWaiting => '连接中...';
   @override
-  String get offline => '离线';
+  String get onlineActive => '在线';
+  @override
+  String get onlineSuspend => '挂起';
+  @override
+  String get onlineLost => '离线';
   @override
   String get nickname => '昵称';
   @override

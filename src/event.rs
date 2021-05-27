@@ -487,9 +487,7 @@ impl StatusEvent {
             StatusEvent::SessionFriendOnline(rgid) => {
                 let db = chat_db(group.base(), &gid)?;
                 if let Some(f) = Friend::get_it(&db, &rgid)? {
-                    results
-                        .rpcs
-                        .push(chat_rpc::friend_online(gid, f.id, f.addr));
+                    // TODO
                 }
             }
             StatusEvent::SessionFriendOffline(rgid) => {
@@ -503,12 +501,7 @@ impl StatusEvent {
                     tdn::smol::spawn(async move {
                         if let Ok(running) = layer_lock.write().await.running_mut(&ggid) {
                             if running.check_offline(&rgid, &addr) {
-                                let msg = SendMessage::Rpc(
-                                    uid,
-                                    chat_rpc::friend_offline(ggid, rid, &rgid),
-                                    true,
-                                );
-                                let _ = sender.send(msg).await;
+                                // TODO
                             }
                         }
                     })

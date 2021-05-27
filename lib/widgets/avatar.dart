@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart' show CupertinoActivityIndicator;
 
 class Avatar extends StatelessWidget {
   final double width;
@@ -9,9 +10,10 @@ class Avatar extends StatelessWidget {
   final Uint8List avatar;
   final String avatarPath;
   final bool online;
-  final bool needOnline;
+  final Color onlineColor;
   final bool hasNew;
   final Color hasNewColor;
+  final bool loading;
 
   const Avatar(
     {Key key,
@@ -20,9 +22,10 @@ class Avatar extends StatelessWidget {
       this.avatar,
       this.avatarPath,
       this.online = false,
-      this.needOnline = true,
+      this.onlineColor = Colors.grey,
       this.hasNew = false,
       this.hasNewColor = Colors.red,
+      this.loading = false,
   })
   : super(key: key);
 
@@ -40,52 +43,31 @@ class Avatar extends StatelessWidget {
     }
 
     return Container(
-      width: width,
-      height: width,
+      width: this.width,
+      height: this.width,
       decoration: showAvatar != null
-      ? BoxDecoration(
-        image: DecorationImage(
-          image: showAvatar,
-          fit: BoxFit.cover,
-        ),
-        borderRadius: BorderRadius.circular(15.0))
-      : BoxDecoration(
-        color: color.surface, borderRadius: BorderRadius.circular(15.0)),
+      ? BoxDecoration(image: DecorationImage(image: showAvatar, fit: BoxFit.cover), borderRadius: BorderRadius.circular(15.0))
+      : BoxDecoration(color: color.surface, borderRadius: BorderRadius.circular(15.0)),
       child: Stack(
         alignment: Alignment.center,
         children: <Widget>[
           if (showAvatar == null)
           Text(this.name.length > 0 ? this.name[0].toUpperCase() : "A"),
           if (this.hasNew)
-          Positioned(
-            top: 0.0,
-            right: 0.0,
-            child: Container(
-              width: 9.0,
-              height: 9.0,
-              decoration: BoxDecoration(
-                color: this.hasNewColor,
-                shape: BoxShape.circle,
-              ),
+          Positioned(top: 0.0, right: 0.0,
+            child: Container(width: 9.0, height: 9.0,
+              decoration: BoxDecoration(color: this.hasNewColor, shape: BoxShape.circle),
             ),
           ),
-          if (this.needOnline)
-          Positioned(
-            bottom: 0.0,
-            right: 0.0,
+          if (this.online)
+          Positioned(bottom: 0.0, right: 0.0,
             child: Container(
               padding: const EdgeInsets.all(2.0),
-              decoration: const ShapeDecoration(
-                color: Colors.white,
-                shape: CircleBorder(),
-              ),
-              child: Container(
-                width: 9.0,
-                height: 9.0,
-                decoration: BoxDecoration(
-                  color: online ? const Color(0xFF0EE50A) : const Color(0xFFEDEDED),
-                  shape: BoxShape.circle,
-                ),
+              decoration: ShapeDecoration(color: color.background, shape: CircleBorder()),
+              child: this.loading
+              ? CupertinoActivityIndicator(radius: 5.0, animating: true)
+              : Container(width: 9.0, height: 9.0,
+                decoration: BoxDecoration(color: this.onlineColor, shape: BoxShape.circle),
               ),
             ),
           ),

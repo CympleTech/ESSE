@@ -39,7 +39,7 @@ class _FolderListState extends State<FolderList> {
   loadFolder(bool isDesktop, int index) async {
     final widget = FilePage(title: FILE_DIRECTORY[index][0]);
     if (isDesktop) {
-      Provider.of<AccountProvider>(context, listen: false).updateActivedSession(0, widget);
+      Provider.of<AccountProvider>(context, listen: false).updateActivedWidget(widget);
     } else {
       Navigator.push(context, MaterialPageRoute(builder: (_) => widget));
     }

@@ -51,8 +51,10 @@ abstract class AppLocalizations {
   String get contact;
   String get friend;
   String get logout;
-  String get online;
-  String get offline;
+  String get onlineWaiting;
+  String get onlineActive;
+  String get onlineSuspend;
+  String get onlineLost;
   String get nickname;
   String get id;
   String get address;

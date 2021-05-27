@@ -207,39 +207,42 @@ class AccountProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  updateActivedSessionFromList(int fid, SessionType type, Widget coreWidget) {
-    int id = 0;
-
-    for (int k in this.sessions.keys) {
-      final v = this.sessions[k];
-      if (v.type == type && v.fid == fid) {
-        id = k;
-        break;
+  updateActivedSession(int id, [SessionType type, int fid]) {
+    if (fid != null && fid > 0) {
+      for (int k in this.sessions.keys) {
+        final v = this.sessions[k];
+        if (v.type == type && v.fid == fid) {
+          id = k;
+          break;
+        }
       }
     }
+    print("New session: ${id}");
 
     if (id > 0) {
-      if (this.actived > 0) {
+      if (this.actived != id && this.actived > 0) {
         rpc.send('session-suspend', [this.actived, this.activedSession.gid]);
       }
       this.actived = id;
-      if (this.activedSession.online == OnlineType.Lost) {
+      final online = this.activedSession.online;
+      if (online == OnlineType.Lost || online == OnlineType.Suspend) {
+        if (online == OnlineType.Lost) {
+          this.activedSession.online = OnlineType.Waiting;
+          Timer(Duration(seconds: 10), () {
+              if (this.sessions[id].online == OnlineType.Waiting) {
+                this.sessions[id].online = OnlineType.Lost;
+                notifyListeners();
+              }
+          });
+        }
         rpc.send('session-connect', [id, this.activedSession.gid]);
+        notifyListeners();
       }
     }
   }
 
-  updateActivedSession(int id, [Widget coreWidget, String title, Widget homeWidget]) {
-    if (id > 0) {
-      if (this.actived > 0) {
-        rpc.send('session-suspend', [this.actived, this.activedSession.gid]);
-      }
-      this.actived = id;
-      if (this.activedSession.online == OnlineType.Lost) {
-        rpc.send('session-connect', [id, this.activedSession.gid]);
-      }
-    }
-
+  updateActivedWidget([Widget coreWidget, String title, Widget homeWidget]) {
+    print("update actived widget");
     if (homeWidget != null && title != null) {
       this.homeShowTitle = title;
       this.currentListShow = homeWidget;

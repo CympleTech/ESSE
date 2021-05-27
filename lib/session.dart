@@ -76,6 +76,23 @@ class Session {
     return [avatar, name, bio];
   }
 
+  String onlineLang(AppLocalizations lang) {
+    switch (this.online) {
+      case OnlineType.Waiting:
+        return lang.onlineWaiting;
+      case OnlineType.Active:
+        return lang.onlineActive;
+      case OnlineType.Suspend:
+        return lang.onlineSuspend;
+      case OnlineType.Lost:
+        return lang.onlineLost;
+    }
+  }
+
+  bool isActive()  {
+    return this.online == OnlineType.Active || this.online == OnlineType.Suspend;
+  }
+
   List parse(AppLocalizations lang) {
     switch (this.type) {
       case SessionType.Chat:
@@ -89,15 +106,27 @@ class Session {
     }
   }
 
-  Avatar showAvatar({double width = 45.0, bool needOnline = true}) {
+  Avatar showAvatar({double width = 45.0}) {
     final avatar = Global.avatarPath + this.gid + '.png';
+
+    Color color;
+    switch (this.online) {
+      case OnlineType.Active:
+        color = Color(0xFF0EE50A);
+        break;
+      case OnlineType.Suspend:
+        color = Colors.blue;
+        break;
+    }
+
     return Avatar(
       width: width,
       name: this.name,
       avatarPath: avatar,
-      online: true,
-      needOnline: needOnline,
+      online: this.online != OnlineType.Lost,
+      onlineColor: color,
       hasNew: !this.lastReaded,
+      loading: this.online == OnlineType.Waiting,
     );
   }
 

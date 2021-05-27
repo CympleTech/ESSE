@@ -18,16 +18,6 @@ use super::layer::LayerEvent;
 use super::{Friend, Message, MessageType, Request};
 
 #[inline]
-pub(crate) fn friend_online(mgid: GroupId, fid: i64, addr: PeerAddr) -> RpcParam {
-    rpc_response(0, "chat-friend-online", json!([fid, addr.to_hex()]), mgid)
-}
-
-#[inline]
-pub(crate) fn friend_offline(mgid: GroupId, fid: i64, gid: &GroupId) -> RpcParam {
-    rpc_response(0, "chat-friend-offline", json!([fid, gid.to_hex()]), mgid)
-}
-
-#[inline]
 pub(crate) fn friend_info(mgid: GroupId, friend: &Friend) -> RpcParam {
     rpc_response(0, "chat-friend-info", json!(friend.to_rpc()), mgid)
 }

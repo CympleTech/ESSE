@@ -35,7 +35,7 @@ class _GroupChatListState extends State<GroupChatList> {
         onPressed: () {
           final widget = GroupAddPage();
           if (isDesktop) {
-            Provider.of<AccountProvider>(context, listen: false).updateActivedSession(0, widget);
+            Provider.of<AccountProvider>(context, listen: false).updateActivedWidget(widget);
           } else {
             Navigator.push(context, MaterialPageRoute(builder: (_) => widget));
           }
@@ -61,6 +61,9 @@ class ListChat extends StatelessWidget {
       behavior: HitTestBehavior.opaque,
       onTap: () {
         context.read<GroupChatProvider>().updateActivedGroup(group.id);
+
+        context.read<AccountProvider>().updateActivedSession(0, SessionType.Group, group.id);
+
         if (!isDesktop) {
           Navigator.push(
             context,
@@ -69,9 +72,7 @@ class ListChat extends StatelessWidget {
             ),
           );
         } else {
-          context.read<AccountProvider>().updateActivedSessionFromList(
-            group.id, SessionType.Group, GroupChatDetail()
-          );
+          context.read<AccountProvider>().updateActivedWidget(GroupChatDetail());
         }
       },
       child: Container(

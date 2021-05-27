@@ -236,7 +236,7 @@ class _AssistantDetailState extends State<AssistantDetail> {
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
                     SizedBox(height: 6.0),
-                    Text(lang.online,
+                    Text(lang.onlineActive,
                       style: TextStyle(color: color.onPrimary.withOpacity(0.5), fontSize: 14.0))
                   ],
                 ),

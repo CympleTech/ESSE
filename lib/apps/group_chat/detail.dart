@@ -203,7 +203,6 @@ class _GroupChatDetailState extends State<GroupChatDetail> {
     final recentMessages = provider.activedMessages;
     final recentMessageKeys = recentMessages.keys.toList().reversed.toList();
 
-    final meName = context.read<AccountProvider>().activedAccount.name;
     this.group = provider.activedGroup;
     final isGroupOwner = provider.isActivedGroupOwner;
     final isGroupManager = provider.isActivedGroupManager;
@@ -214,7 +213,11 @@ class _GroupChatDetailState extends State<GroupChatDetail> {
         child: Text('Waiting...')
       );
     }
-    final isOnline = provider.activedOnline;
+
+    final accountProvider = context.watch<AccountProvider>();
+    final session = accountProvider.activedSession;
+    final meName = accountProvider.activedAccount.name;
+    final isOnline = session.isActive();
 
     return Column(
       children: [
@@ -245,7 +248,7 @@ class _GroupChatDetailState extends State<GroupChatDetail> {
                     SizedBox(height: 6.0),
                     Text(this.group.isClosed
                       ? lang.unfriended
-                      : (isOnline ? lang.online : lang.offline),
+                      : session.onlineLang(lang),
                       style: TextStyle(
                         color: color.onPrimary.withOpacity(0.5),
                         fontSize: 14.0))

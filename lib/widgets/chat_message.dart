@@ -193,12 +193,7 @@ class ChatMessage extends StatelessWidget {
           Icons.person_rounded,
           lang.contact,
           Column(children: [
-              Avatar(
-                width: 100.0,
-                name: infos[0],
-                avatarPath: infos[3],
-                needOnline: false
-              ),
+              Avatar(width: 100.0, name: infos[0], avatarPath: infos[3]),
               const SizedBox(height: 10.0),
               Text(infos[0]),
               const SizedBox(height: 10.0),
@@ -251,11 +246,7 @@ class ChatMessage extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(children: [
-                  Avatar(
-                    width: 40.0,
-                    name: infos[0],
-                    avatarPath: infos[3],
-                    needOnline: false),
+                  Avatar(width: 40.0, name: infos[0], avatarPath: infos[3]),
                   Container(
                     width: 135.0,
                     padding: const EdgeInsets.only(left: 10.0),
