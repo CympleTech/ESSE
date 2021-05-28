@@ -510,6 +510,21 @@ fn new_rpc_handler(
             let id = params[0].as_i64()?;
             let remote = GroupId::from_hex(params[1].as_str()?)?;
 
+            let db = session_db(state.group.read().await.base(), &gid)?;
+            let s = Session::get(&db, &id)?;
+            drop(db);
+
+            let msg = match s.s_type {
+                SessionType::Chat | SessionType::Group => {
+                    let event = LayerEvent::Suspend(s.gid);
+                    let data = postcard::to_allocvec(&event).unwrap_or(vec![]);
+                    SendType::Event(0, s.addr, data)
+                }
+                _ => {
+                    return Ok(HandleResult::new()); // others has no online.
+                }
+            };
+
             let mut layer_lock = state.layer.write().await;
             let suspend = layer_lock.running_mut(&gid)?.suspend(&remote, true)?;
             drop(layer_lock);
@@ -519,24 +534,40 @@ fn new_rpc_handler(
                 results.rpcs.push(json!([id]))
             }
 
-            // let group_lock = state.group.read().await;
-            // let db = session_db(group_lock.base(), &gid)?;
-            // let s = Session::get(&db, &id)?;
-            // drop(db);
-
-            // match s.s_type {
-            //     SessionType::Chat => {
-            //         let proof = group_lock.prove_addr(&gid, &s.addr)?;
-            //         results.layers.push((gid, s.gid, chat_conn(proof, s.addr)));
-            //     }
-            //     SessionType::Group => {
-            //         let proof = group_lock.prove_addr(&gid, &s.addr)?;
-            //         add_layer(&mut results, gid, group_chat_conn(proof, s.addr, s.gid));
-            //     }
-            //     _ => {}
-            // }
+            match s.s_type {
+                SessionType::Chat => {
+                    results.layers.push((gid, s.gid, msg));
+                }
+                SessionType::Group => {
+                    add_layer(&mut results, gid, msg);
+                }
+                _ => {}
+            }
 
             Ok(results)
+        },
+    );
+
+    handler.add_method(
+        "session-readed",
+        |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
+            let id = params[0].as_i64()?;
+            let db = session_db(state.group.read().await.base(), &gid)?;
+            Session::readed(&db, &id)?;
+            Ok(HandleResult::new())
+        },
+    );
+
+    handler.add_method(
+        "session-update",
+        |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
+            let id = params[0].as_i64()?;
+            let is_top = params[1].as_bool()?;
+            let is_close = params[2].as_bool()?;
+
+            let db = session_db(state.group.read().await.base(), &gid)?;
+            Session::update(&db, &id, is_top, is_close)?;
+            Ok(HandleResult::new())
         },
     );
 

@@ -152,8 +152,13 @@ impl Session {
         Ok(sessions)
     }
 
-    pub fn top(db: &DStorage, id: &i64, is_top: bool) -> Result<usize> {
-        db.update(&format!("UPDATE sessions SET is_top = 1 WHERE id = {}", id))
+    pub fn update(db: &DStorage, id: &i64, is_top: bool, is_close: bool) -> Result<usize> {
+        db.update(&format!(
+            "UPDATE sessions SET is_top = {}, is_close = {} WHERE id = {}",
+            if is_top { 1 } else { 0 },
+            if is_close { 1 } else { 0 },
+            id
+        ))
     }
 
     pub fn last(
@@ -180,7 +185,7 @@ impl Session {
         }
     }
 
-    pub fn read(db: &DStorage, id: &i64) -> Result<usize> {
+    pub fn readed(db: &DStorage, id: &i64) -> Result<usize> {
         db.update(&format!(
             "UPDATE sessions SET last_readed = 1 WHERE id = {}",
             id

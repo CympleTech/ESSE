@@ -33,10 +33,6 @@ pub(crate) enum LayerEvent {
     Suspend(GroupId),
     /// actived. extend BaseLayerEvent.
     Actived(GroupId),
-    /// receiver gid, sender gid. as BaseLayerEvent.
-    OnlinePing,
-    /// receiver gid, sender gid. as BaseLayerEvent.
-    OnlinePong,
     /// make friendship request.
     Request(User, String),
     /// agree friendship request.
@@ -71,7 +67,9 @@ pub(crate) async fn handle(
         RecvType::Connect(addr, data) | RecvType::ResultConnect(addr, data) => {
             // ESSE chat layer connect date structure.
             if handle_connect(&mgid, &fgid, &addr, data, &mut layer, &mut results)? {
-                let msg = conn_res_message(&layer, &mgid, addr).await?;
+                let proof = layer.group.read().await.prove_addr(&mgid, &addr)?;
+                let data = postcard::to_allocvec(&proof).unwrap_or(vec![]);
+                let msg = SendType::Result(0, addr, true, false, data);
                 results.layers.push((mgid, fgid, msg));
             } else {
                 let msg = SendType::Result(0, addr, false, false, vec![]);
@@ -235,7 +233,11 @@ impl LayerEvent {
                     results.rpcs.push(rpc::request_create(mgid, &request));
                     return Ok(results);
                 } else {
-                    let msg = conn_agree_message(layer, 0, &mgid, addr).await?;
+                    let group_lock = layer.group.read().await;
+                    let me = group_lock.clone_user(&mgid)?;
+                    let proof = group_lock.prove_addr(&mgid, &addr)?;
+                    drop(group_lock);
+                    let msg = agree_message(proof, me, addr)?;
                     results.layers.push((mgid, fgid, msg));
                 }
             }
@@ -270,14 +272,7 @@ impl LayerEvent {
 
                         // ADD NEW SESSION.
                         let s_db = session_db(&layer.base, &mgid)?;
-                        let mut session = Session::new(
-                            friend.id,
-                            friend.gid,
-                            friend.addr,
-                            SessionType::Chat,
-                            friend.name,
-                            friend.datetime,
-                        );
+                        let mut session = friend.to_session();
                         session.insert(&s_db)?;
                         results.rpcs.push(session_create(mgid, &session));
                     }
@@ -335,14 +330,7 @@ impl LayerEvent {
                     } else {
                         let c_db = chat_db(&layer.base, &mgid)?;
                         if let Some(f) = Friend::get_id(&c_db, fid)? {
-                            let mut session = Session::new(
-                                f.id,
-                                f.gid,
-                                f.addr,
-                                SessionType::Chat,
-                                f.name,
-                                f.datetime,
-                            );
+                            let mut session = f.to_session();
                             session.last_content = msg.content;
                             session.insert(&s_db)?;
                             results.rpcs.push(session_create(mgid, &session));
@@ -369,22 +357,6 @@ impl LayerEvent {
                     &mut results,
                 )?;
                 results.rpcs.push(rpc::friend_info(mgid, &f));
-            }
-            LayerEvent::OnlinePing => {
-                let (sid, fid) = layer.get_running_remote_id(&mgid, &fgid)?;
-                layer
-                    .running_mut(&mgid)?
-                    .check_add_online(fgid, Online::Direct(addr), sid, fid)?;
-
-                let data = postcard::to_allocvec(&LayerEvent::OnlinePong).unwrap_or(vec![]);
-                let msg = SendType::Event(0, addr, data);
-                results.layers.push((mgid, fgid, msg));
-            }
-            LayerEvent::OnlinePong => {
-                let (sid, fid) = layer.get_running_remote_id(&mgid, &fgid)?;
-                layer
-                    .running_mut(&mgid)?
-                    .check_add_online(fgid, Online::Direct(addr), sid, fid)?;
             }
             LayerEvent::Close => {
                 let (_sid, fid) = layer.get_running_remote_id(&mgid, &fgid)?;
@@ -477,9 +449,6 @@ impl LayerEvent {
 
         let mut msg = Message::new(&mgid, fid, true, m_type, raw, false);
         msg.insert(&db)?;
-
-        // TODO UPDATE SESSION
-
         drop(db);
         Ok((msg, nm_type))
     }
@@ -548,43 +517,12 @@ pub(crate) fn chat_conn(proof: Proof, addr: PeerAddr) -> SendType {
     SendType::Connect(0, addr, None, None, data)
 }
 
-async fn conn_res_message(layer: &Layer, mgid: &GroupId, addr: PeerAddr) -> Result<SendType> {
-    let proof = layer.group.read().await.prove_addr(mgid, &addr)?;
-    let data = postcard::to_allocvec(&proof).unwrap_or(vec![]);
-    Ok(SendType::Result(0, addr, true, false, data))
-}
-
-async fn conn_agree_message(
-    layer: &mut Layer,
-    tid: i64,
-    mgid: &GroupId,
-    addr: PeerAddr,
-) -> Result<SendType> {
-    let uid = layer.delivery.len() as u64 + 1;
-    layer.delivery.insert(uid, (*mgid, tid));
-    let group_lock = layer.group.read().await;
-    let proof = group_lock.prove_addr(mgid, &addr)?;
-    let me = group_lock.clone_user(mgid)?;
-    drop(group_lock);
+pub(super) fn agree_message(proof: Proof, me: User, addr: PeerAddr) -> Result<SendType> {
     let data = postcard::to_allocvec(&LayerEvent::Agree(me, proof)).unwrap_or(vec![]);
-    Ok(SendType::Event(uid, addr, data))
-}
-
-pub(super) fn rpc_agree_message(
-    layer: &mut Layer,
-    tid: i64,
-    proof: Proof,
-    me: User,
-    mgid: &GroupId,
-    addr: PeerAddr,
-) -> Result<SendType> {
-    let uid = layer.delivery.len() as u64 + 1;
-    layer.delivery.insert(uid, (*mgid, tid));
-    let data = postcard::to_allocvec(&LayerEvent::Agree(me, proof)).unwrap_or(vec![]);
-    Ok(SendType::Event(uid, addr, data))
+    Ok(SendType::Event(0, addr, data))
 }
 
 // maybe need if gid or addr in blocklist.
-fn res_reject() -> Vec<u8> {
+fn _res_reject() -> Vec<u8> {
     postcard::to_allocvec(&LayerEvent::Reject).unwrap_or(vec![])
 }

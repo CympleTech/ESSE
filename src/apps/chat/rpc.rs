@@ -306,8 +306,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
 
             let mut group_lock = state.group.write().await;
             let me = group_lock.clone_user(&gid)?;
-            let mut layer_lock = state.layer.write().await;
-            let db = chat_db(layer_lock.base(), &gid)?;
+            let db = chat_db(group_lock.base(), &gid)?;
             let mut results = HandleResult::new();
 
             if let Some(mut request) = Request::get_id(&db, id)? {
@@ -322,24 +321,20 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
                 request.is_over = true;
                 request.update(&db)?;
 
-                let f = Friend::from_request(&db, request)?;
-                results.rpcs.push(json!([id, f.to_rpc()]));
+                let friend = Friend::from_request(&db, request)?;
+                results.rpcs.push(json!([id, friend.to_rpc()]));
 
                 // ADD NEW SESSION.
-                let s_db = session_db(layer_lock.base(), &gid)?;
-                let mut session =
-                    Session::new(f.id, f.gid, f.addr, SessionType::Chat, f.name, f.datetime);
+                let s_db = session_db(group_lock.base(), &gid)?;
+                let mut session = friend.to_session();
                 session.insert(&s_db)?;
                 results.rpcs.push(session_create(gid, &session));
 
-                let proof = group_lock.prove_addr(&gid, &f.addr)?;
-                let msg =
-                    super::layer::rpc_agree_message(&mut layer_lock, id, proof, me, &gid, f.addr)?;
-                results.layers.push((gid, f.gid, msg));
+                let proof = group_lock.prove_addr(&gid, &friend.addr)?;
+                let msg = super::layer::agree_message(proof, me, friend.addr)?;
+                results.layers.push((gid, friend.gid, msg));
             }
-            db.close()?;
-            drop(group_lock);
-            drop(layer_lock);
+
             Ok(results)
         },
     );

@@ -112,11 +112,6 @@ impl Layer {
         self.running(mgid)?.get_online_id(fgid)
     }
 
-    pub fn merge_online(&self, mgid: &GroupId, gids: Vec<&GroupId>) -> Result<Vec<bool>> {
-        let runnings = self.running(mgid)?;
-        Ok(gids.iter().map(|g| runnings.is_online(g)).collect())
-    }
-
     pub fn remove_online(&mut self, gid: &GroupId, fgid: &GroupId) -> Option<PeerAddr> {
         self.running_mut(gid).ok()?.remove_online(fgid)
     }
@@ -195,6 +190,19 @@ impl OnlineSession {
             remain: 0,
         }
     }
+
+    fn close_suspend(&mut self) -> bool {
+        if self.suspend_me && self.suspend_remote {
+            if self.remain == 0 {
+                true
+            } else {
+                self.remain -= 1;
+                false
+            }
+        } else {
+            false
+        }
+    }
 }
 
 pub(crate) struct RunningAccount {
@@ -233,7 +241,7 @@ impl RunningAccount {
             }
 
             if online.suspend_remote && online.suspend_me {
-                online.remain = 120; // keep-alive 2~3 minutes
+                online.remain = 6; // keep-alive 10~11 minutes 120s/time
                 Ok(true)
             } else {
                 Ok(false)
@@ -248,11 +256,6 @@ impl RunningAccount {
             .get(gid)
             .map(|online| (online.db_id, online.db_fid))
             .ok_or(new_io_error("remote not online"))
-    }
-
-    /// get all sessions's groupid
-    pub fn is_online(&self, gid: &GroupId) -> bool {
-        self.sessions.contains_key(gid)
     }
 
     /// get online peer's addr.
@@ -368,10 +371,17 @@ impl RunningAccount {
     }
 
     /// list all onlines groups.
-    pub fn _list_onlines(&self) -> Vec<(&GroupId, &PeerAddr)> {
-        self.sessions
-            .iter()
-            .map(|(k, online)| (k, online.online.addr()))
-            .collect()
+    pub fn close_suspend(&mut self) -> Vec<(GroupId, PeerAddr, i64)> {
+        let mut needed = vec![];
+        for (fgid, online) in &mut self.sessions {
+            if online.close_suspend() {
+                needed.push((*fgid, *online.online.addr(), online.db_id));
+            }
+        }
+
+        for (gid, _, _) in needed.iter() {
+            self.sessions.remove(gid);
+        }
+        needed
     }
 }

@@ -1,3 +1,4 @@
+use once_cell::sync::OnceCell;
 use simplelog::{CombinedLogger, Config as LogConfig, LevelFilter};
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -23,6 +24,8 @@ use crate::storage::account_db;
 
 pub const DEFAULT_WS_ADDR: &'static str = "127.0.0.1:8080";
 pub const DEFAULT_LOG_FILE: &'static str = "esse.log.txt";
+
+pub static RPC_WS_UID: OnceCell<u64> = OnceCell::new();
 
 pub async fn start(db_path: String) -> Result<()> {
     let db_path = PathBuf::from(db_path);
@@ -72,6 +75,9 @@ pub async fn start(db_path: String) -> Result<()> {
     //let mut group_rpcs: HashMap<u64, GroupId> = HashMap::new();
     let mut now_rpc_uid = 0;
 
+    // running session remain task.
+    tdn::smol::spawn(session_remain(layer.clone(), sender.clone())).detach();
+
     while let Ok(message) = recver.recv().await {
         match message {
             ReceiveMessage::Group(fgid, g_msg) => {
@@ -97,6 +103,7 @@ pub async fn start(db_path: String) -> Result<()> {
                 }
 
                 if now_rpc_uid != uid && is_ws {
+                    let _ = RPC_WS_UID.set(uid);
                     now_rpc_uid = uid
                 }
 
@@ -145,6 +152,52 @@ async fn sleep_waiting_reboot(
     }
 
     Ok(())
+}
+
+async fn session_remain(layer: Arc<RwLock<Layer>>, sender: Sender<SendMessage>) -> Result<()> {
+    loop {
+        tdn::smol::Timer::after(std::time::Duration::from_secs(120)).await;
+        if let Some(uid) = RPC_WS_UID.get() {
+            let mut layer_lock = layer.write().await;
+            let mut rpcs = vec![];
+            let mut addrs = HashMap::new();
+
+            for (_, running) in layer_lock.runnings.iter_mut() {
+                let closed = running.close_suspend();
+                for (gid, addr, sid) in closed {
+                    addrs.insert(addr, false);
+                    rpcs.push(crate::rpc::session_lost(gid, &sid));
+                }
+            }
+            drop(layer_lock);
+
+            let layer_lock = layer.read().await;
+            for (_, running) in layer_lock.runnings.iter() {
+                for (addr, keep) in addrs.iter_mut() {
+                    if running.check_addr_online(addr) {
+                        *keep = true;
+                    }
+                }
+            }
+            drop(layer_lock);
+
+            for rpc in rpcs {
+                let _ = sender.send(SendMessage::Rpc(*uid, rpc, true)).await;
+            }
+
+            for (addr, keep) in addrs {
+                if !keep {
+                    let _ = sender
+                        .send(SendMessage::Layer(
+                            GroupId::default(),
+                            GroupId::default(),
+                            SendType::Disconnect(addr),
+                        ))
+                        .await;
+                }
+            }
+        }
+    }
 }
 
 #[inline]

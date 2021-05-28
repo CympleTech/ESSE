@@ -8,6 +8,7 @@ use tdn::types::{
 };
 use tdn_storage::local::{DStorage, DsValue};
 
+use crate::session::{Session, SessionType};
 use crate::storage::{
     read_avatar_sync, read_file_sync, read_image_sync, read_record_sync, write_avatar_sync,
     write_file_sync, write_image_sync, write_record_sync,
@@ -110,8 +111,6 @@ impl NetworkMessage {
 
         let mut msg = Message::new_with_id(hash, fid, is_me, m_type, raw, true);
         msg.insert(db)?;
-
-        // TODO UPDATE SESSION
 
         Ok(msg)
     }
@@ -265,6 +264,17 @@ impl Friend {
             friend.insert(&db)?;
             Ok(friend)
         }
+    }
+
+    pub fn to_session(&self) -> Session {
+        Session::new(
+            self.id,
+            self.gid,
+            self.addr,
+            SessionType::Chat,
+            self.name.clone(),
+            self.datetime,
+        )
     }
 
     pub fn to_rpc(&self) -> RpcParam {
@@ -455,11 +465,7 @@ impl Request {
     }
 
     pub fn to_friend(self) -> Friend {
-        let mut friend = Friend::new(self.gid, self.addr, self.name, self.remark);
-
-        // TODO add new session.
-
-        friend
+        Friend::new(self.gid, self.addr, self.name, self.remark)
     }
 
     /// here is zero-copy and unwrap is safe. checked.
