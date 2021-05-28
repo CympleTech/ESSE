@@ -7,7 +7,7 @@ use tdn::types::{
 };
 use tdn_did::Proof;
 
-use group_chat_types::{CheckType, Event, GroupConnect, GroupType, JoinProof, LayerEvent};
+use group_chat_types::{CheckType, Event, GroupType, JoinProof, LayerEvent};
 
 use crate::apps::chat::MessageType;
 use crate::rpc::RpcState;
@@ -83,7 +83,7 @@ pub(crate) fn member_offline(mgid: GroupId, gid: i64, mid: GroupId, maddr: PeerA
 }
 
 #[inline]
-pub(crate) fn message_create(mgid: GroupId, msg: Message) -> RpcParam {
+pub(crate) fn message_create(mgid: GroupId, msg: &Message) -> RpcParam {
     rpc_response(0, "group-chat-message-create", json!(msg.to_rpc()), mgid)
 }
 
@@ -163,8 +163,8 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             let addr = PeerAddr::from_hex(params[0].as_str()?)?;
 
             let mut results = HandleResult::new();
-            let data = postcard::to_allocvec(&GroupConnect::Check).unwrap_or(vec![]);
-            let s = SendType::Connect(0, addr, None, None, data);
+            let data = postcard::to_allocvec(&LayerEvent::Check).unwrap_or(vec![]);
+            let s = SendType::Event(0, addr, data);
             add_layer(&mut results, gid, s);
             Ok(results)
         },
@@ -200,8 +200,8 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             // TODO create proof.
             let proof: Proof = Default::default();
 
-            let data = postcard::to_allocvec(&GroupConnect::Create(info, proof)).unwrap_or(vec![]);
-            let s = SendType::Connect(0, addr, None, None, data);
+            let data = postcard::to_allocvec(&LayerEvent::Create(info, proof)).unwrap_or(vec![]);
+            let s = SendType::Event(0, addr, data);
             add_layer(&mut results, gid, s);
             Ok(results)
         },
@@ -225,8 +225,8 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             // TODO create proof.
             let proof: Proof = Default::default();
 
-            let data = postcard::to_allocvec(&GroupConnect::Create(info, proof)).unwrap_or(vec![]);
-            let s = SendType::Connect(0, addr, None, None, data);
+            let data = postcard::to_allocvec(&LayerEvent::Create(info, proof)).unwrap_or(vec![]);
+            let s = SendType::Event(0, addr, data);
             let mut results = HandleResult::new();
             add_layer(&mut results, gid, s);
             Ok(results)
@@ -251,9 +251,9 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             let mut results = HandleResult::rpc(request.to_rpc());
             let me = state.group.read().await.clone_user(&gid)?;
             let join_proof = JoinProof::Open(me.name, me.avatar);
-            let data = postcard::to_allocvec(&GroupConnect::Join(request.gid, join_proof))
+            let data = postcard::to_allocvec(&LayerEvent::Request(request.gid, join_proof))
                 .unwrap_or(vec![]);
-            let s = SendType::Connect(0, request.addr, None, None, data);
+            let s = SendType::Event(0, request.addr, data);
             add_layer(&mut results, gid, s);
             Ok(results)
         },

@@ -11,6 +11,7 @@ use tdn_storage::local::{DStorage, DsValue};
 use group_chat_types::{GroupInfo, GroupType, NetworkMessage};
 
 use crate::apps::chat::MessageType;
+use crate::session::{Session, SessionType};
 use crate::storage::{
     group_chat_db, write_avatar_sync, write_file_sync, write_image_sync, write_record_sync,
 };
@@ -68,7 +69,7 @@ pub(crate) struct GroupChat {
     /// group chat server addresse.
     pub g_addr: PeerAddr,
     /// group chat name.
-    g_name: String,
+    pub g_name: String,
     /// group chat simple intro.
     g_bio: String,
     /// group chat is created ok.
@@ -162,12 +163,12 @@ impl GroupChat {
         info: GroupInfo,
         height: i64,
         addr: PeerAddr,
-        base: PathBuf,
+        base: &PathBuf,
         mgid: &GroupId,
     ) -> Result<Self> {
         match info {
             GroupInfo::Common(owner, _, g_id, g_type, agree, name, g_bio, avatar) => {
-                write_avatar_sync(&base, &mgid, &g_id, avatar)?;
+                write_avatar_sync(base, &mgid, &g_id, avatar)?;
                 Ok(Self::new_from(
                     g_id, height, owner, g_type, addr, name, g_bio, agree, key,
                 ))
@@ -179,13 +180,24 @@ impl GroupChat {
                 let name = "".to_owned();
                 let bio = "".to_owned();
 
-                write_avatar_sync(&base, &mgid, &g_id, avatar)?;
+                write_avatar_sync(base, &mgid, &g_id, avatar)?;
 
                 Ok(Self::new_from(
                     g_id, height, owner, g_type, addr, name, bio, agree, key,
                 ))
             }
         }
+    }
+
+    pub fn to_session(&self) -> Session {
+        Session::new(
+            self.id,
+            self.g_id,
+            self.g_addr,
+            SessionType::Group,
+            self.g_name.clone(),
+            self.datetime,
+        )
     }
 
     pub fn to_group_info(self, name: String, avatar: Vec<u8>) -> GroupInfo {
@@ -625,11 +637,11 @@ pub(crate) struct Message {
     /// message type.
     m_type: MessageType,
     /// message content.
-    content: String,
+    pub content: String,
     /// message is delivery.
     is_delivery: bool,
     /// message created time.
-    datetime: i64,
+    pub datetime: i64,
     /// message is deteled
     is_deleted: bool,
 }
