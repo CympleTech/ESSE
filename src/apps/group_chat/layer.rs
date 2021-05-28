@@ -257,10 +257,11 @@ async fn handle_event(
                 mgid, gid, gcd, addr, height, from, to, events, base, results,
             )?;
         }
-        LayerEvent::Check => {}       // nerver here.
-        LayerEvent::Create(..) => {}  // nerver here.
-        LayerEvent::Request(..) => {} // nerver here.
-        LayerEvent::SyncReq(..) => {} // Never here.
+        LayerEvent::Check => {}             // nerver here.
+        LayerEvent::Create(..) => {}        // nerver here.
+        LayerEvent::Request(..) => {}       // nerver here.
+        LayerEvent::RequestResult(..) => {} // nerver here.
+        LayerEvent::SyncReq(..) => {}       // Never here.
     }
 
     Ok(())
