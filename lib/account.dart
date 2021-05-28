@@ -65,7 +65,7 @@ class Account {
       width: width,
       name: this.name,
       avatar: this.avatar,
-      online: true,
+      online: needOnline,
       onlineColor: this.online ? const Color(0xFF0EE50A) : const Color(0xFFEDEDED),
       hasNew: this.hasNew,
     );

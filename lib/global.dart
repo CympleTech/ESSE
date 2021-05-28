@@ -1,11 +1,11 @@
 class Global {
   static String gid = "0000000000000000000000000000000000000000000000000000000000000000";
-  //static String httpRpc = '127.0.0.1:8000';
-  //static String wsRpc = '127.0.0.1:8080';
-  static String httpRpc = '192.168.2.148:8001';
-  static String wsRpc = '192.168.2.148:8081';
-  //static String httpRpc = '192.168.50.250:8001';
-  //static String wsRpc = '192.168.50.250:8081';
+  static String httpRpc = '127.0.0.1:8000';
+  static String wsRpc = '127.0.0.1:8080';
+  //static String httpRpc = '192.168.2.148:8001';  // test code
+  //static String wsRpc = '192.168.2.148:8081';    // test code
+  //static String httpRpc = '192.168.50.250:8001'; // test code
+  //static String wsRpc = '192.168.50.250:8081';   // test code
   static String optionCache = 'option';
   static String addr = '0x';
 
