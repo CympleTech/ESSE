@@ -33,6 +33,24 @@ class GroupChatProvider extends ChangeNotifier {
     return false;
   }
 
+  List<int> get activedMemberOrder {
+    List<int> allKeys = [];
+    List<int> managers = [];
+    List<int> commons = [];
+    this.activedMembers.forEach((i, m) {
+        if (m.isManager) {
+          if (m.mid == this.activedGroup.owner) {
+            allKeys.add(i);
+          } else {
+            managers.add(i);
+          }
+        } else {
+          commons.add(i);
+        }
+    });
+    return allKeys + managers + commons;
+  }
+
   GroupChatProvider() {
     // rpc.
     rpc.addListener('group-chat-list', _list, false);
@@ -106,6 +124,18 @@ class GroupChatProvider extends ChangeNotifier {
 
   requestList(bool all) {
     rpc.send('group-chat-request-list', [all]);
+  }
+
+  close(int id) {
+    // rpc.send('group-chat-close', [id]);
+  }
+
+  delete(int id) {
+    // rpc.send('group-chat-delete', [id]);
+  }
+
+  reAdd(int id) {
+    // rpc.send('group-chat-readd', [id]);
   }
 
   _list(List params) {

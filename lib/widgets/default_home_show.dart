@@ -10,6 +10,8 @@ import 'package:esse/session.dart';
 
 import 'package:esse/apps/chat/detail.dart';
 import 'package:esse/apps/chat/provider.dart';
+import 'package:esse/apps/group_chat/detail.dart';
+import 'package:esse/apps/group_chat/provider.dart';
 import 'package:esse/apps/assistant/page.dart';
 import 'package:esse/apps/file/page.dart';
 
@@ -24,23 +26,11 @@ class DefaultHomeShow extends StatelessWidget {
     final allKeys = provider.topKeys + provider.orderKeys;
     final sessions = provider.sessions;
 
-    return Scaffold(
-      body: ListView.builder(
-        itemCount: allKeys.length,
-        itemBuilder: (BuildContext ctx, int index) => _SessionWidget(session: sessions[allKeys[index]]),
+    return ListView.builder(
+      itemCount: allKeys.length,
+      itemBuilder: (BuildContext ctx, int index) => _SessionWidget(
+        session: sessions[allKeys[index]]
       ),
-      // floatingActionButton: FloatingActionButton(
-      //   onPressed: () {
-      //     final widget = Text('');
-      //     if (isDesktop) {
-      //       Provider.of<AccountProvider>(context, listen: false).updateActivedSession(0, widget);
-      //     } else {
-      //       Navigator.push(context, MaterialPageRoute(builder: (_) => widget));
-      //     }
-      //   },
-      //   child: const Icon(Icons.add, color: Colors.white),
-      //   backgroundColor: Color(0xFF6174FF),
-      // ),
     );
   }
 }
@@ -66,20 +56,14 @@ class _SessionWidget extends StatelessWidget {
         switch (session.type) {
           case SessionType.Chat:
             context.read<ChatProvider>().updateActivedFriend(session.fid);
-            if (!isDesktop) {
-              coreWidget = ChatPage();
-            } else {
-              coreWidget = ChatDetail();
-            }
+            coreWidget = ChatDetail();
             break;
           case SessionType.Group:
+            context.read<GroupChatProvider>().updateActivedGroup(session.fid);
+            coreWidget = GroupChatDetail();
             break;
           case SessionType.Assistant:
-            if (!isDesktop) {
-              coreWidget = AssistantPage();
-            } else {
-              coreWidget = AssistantDetail();
-            }
+            coreWidget = AssistantDetail();
             break;
           case SessionType.Files:
             listTitle = lang.files;
@@ -89,17 +73,10 @@ class _SessionWidget extends StatelessWidget {
 
         context.read<AccountProvider>().updateActivedSession(session.id);
 
-        if (!isDesktop) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => coreWidget,
-            ),
-          );
+        if (!isDesktop && coreWidget != null) {
+          Navigator.push(context, MaterialPageRoute(builder: (_) => coreWidget));
         } else {
-          context.read<AccountProvider>().updateActivedWidget(
-            coreWidget, listTitle, listWidget
-          );
+          context.read<AccountProvider>().updateActivedWidget(coreWidget, listTitle, listWidget);
         }
       },
       child: Container(

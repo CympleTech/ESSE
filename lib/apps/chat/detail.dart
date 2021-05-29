@@ -19,18 +19,6 @@ import 'package:esse/apps/primitives.dart';
 import 'package:esse/apps/chat/models.dart';
 import 'package:esse/apps/chat/provider.dart';
 
-class ChatPage extends StatelessWidget {
-  const ChatPage({Key key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: SafeArea(
-        child: ChatDetail(),
-    ));
-  }
-}
-
 class ChatDetail extends StatefulWidget {
   const ChatDetail({Key key}) : super(key: key);
 
@@ -217,336 +205,340 @@ class _ChatDetailState extends State<ChatDetail> {
       );
     }
 
-    return Column(
-      children: [
-        Container(
-          padding: EdgeInsets.only(left: 20.0, right: 20.0, top: 10.0, bottom: 10.0),
-          child: Row(
-            children: [
-              if (!isDesktop)
-              GestureDetector(
-                onTap: () {
-                  context.read<ChatProvider>().clearActivedFriend();
-                  Navigator.pop(context);
-                },
-                child: Container(
-                  width: 20.0,
-                  child:
-                  Icon(Icons.arrow_back, color: color.primary)),
-              ),
-              SizedBox(width: 15.0),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      friend.name,
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    SizedBox(height: 6.0),
-                    Text(friend.isClosed
-                      ? lang.unfriended
-                      : session.onlineLang(lang),
-                      style: TextStyle(
-                        color: color.onPrimary.withOpacity(0.5),
-                        fontSize: 14.0))
-                  ],
-                ),
-              ),
-              SizedBox(width: 20.0),
-              GestureDetector(
-                onTap: () {},
-                child: Container(
-                  width: 20.0,
-                  child: Icon(Icons.phone_rounded,
-                    color: Color(0x26ADB0BB))),
-              ),
-              SizedBox(width: 20.0),
-              GestureDetector(
-                onTap: () {},
-                child: Container(
-                  width: 20.0,
-                  child: Icon(Icons.videocam_rounded,
-                    color: Color(0x26ADB0BB))),
-              ),
-              SizedBox(width: 20.0),
-              PopupMenuButton<int>(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(15)
-                ),
-                color: const Color(0xFFEDEDED),
-                child: Icon(Icons.more_vert_rounded, color: color.primary),
-                onSelected: (int value) {
-                  if (value == 2) {
-                    showShadowDialog(
-                      context,
-                      Icons.info,
-                      lang.friendInfo,
-                      UserInfo(
-                        id: 'EH' + friend.gid.toUpperCase(),
-                        name: friend.name,
-                        addr: '0x' + friend.addr)
-                    );
-                  } else if (value == 3) {
-                    print('TODO remark');
-                  } else if (value == 4) {
-                    showDialog(
-                      context: context,
-                      builder: (BuildContext context) {
-                        return AlertDialog(
-                          title: Text(lang.unfriend),
-                          content: Text(friend.name,
-                            style: TextStyle(color: color.primary)),
-                          actions: [
-                            TextButton(
-                              child: Text(lang.cancel),
-                              onPressed: () => Navigator.pop(context),
-                            ),
-                            TextButton(
-                              child: Text(lang.ok),
-                              onPressed:  () {
-                                Navigator.pop(context);
-                                Provider.of<ChatProvider>(
-                                  context, listen: false).friendClose(friend.id);
-                                if (!isDesktop) {
-                                  Navigator.pop(context);
-                                }
-                              },
-                            ),
-                          ]
-                        );
-                      },
-                    );
-                  } else if (value == 5) {
-                    Provider.of<ChatProvider>(context, listen: false).requestCreate(
-                      Request(friend.gid, friend.addr, friend.name, lang.fromContactCard(meName)));
-                  } else if (value == 6) {
-                    showDialog(
-                      context: context,
-                      builder: (BuildContext context) {
-                        return AlertDialog(
-                          title: Text(lang.delete + " " + lang.friend),
-                          content: Text(friend.name,
-                            style: TextStyle(color: Colors.red)),
-                          actions: [
-                            TextButton(
-                              child: Text(lang.cancel),
-                              onPressed: () => Navigator.pop(context),
-                            ),
-                            TextButton(
-                              child: Text(lang.ok),
-                              onPressed:  () {
-                                Navigator.pop(context);
-                                Provider.of<ChatProvider>(
-                                  context, listen: false).friendDelete(friend.id);
-                                if (!isDesktop) {
-                                  Navigator.pop(context);
-                                }
-                              },
-                            ),
-                          ]
-                        );
-                      },
-                    );
-                  }
-                },
-                itemBuilder: (context) {
-                  return <PopupMenuEntry<int>>[
-                    _menuItem(Color(0xFF6174FF), 2, Icons.qr_code_rounded, lang.friendInfo),
-                    //_menuItem(color.primary, 3, Icons.turned_in_rounded, lang.remark),
-                    friend.isClosed
-                    ? _menuItem(Color(0xFF6174FF), 5, Icons.send_rounded, lang.addFriend)
-                    : _menuItem(Color(0xFF6174FF), 4, Icons.block_rounded, lang.unfriend),
-                    _menuItem(Colors.red, 6, Icons.delete_rounded, lang.delete),
-                  ];
-                },
-              )
-            ]
-          ),
-        ),
-        const Divider(height: 1.0, color: Color(0x40ADB0BB)),
-        Expanded(
-          child: ListView.builder(
-            padding: EdgeInsets.symmetric(horizontal: 20.0),
-            itemCount: recentMessageKeys.length,
-            reverse: true,
-            itemBuilder: (BuildContext context, index) => ChatMessage(
-              name: friend.name,
-              message: recentMessages[recentMessageKeys[index]],
-            )
-        )),
-        if (session.online == OnlineType.Lost)
-        InkWell(
-          onTap: () {
-            context.read<AccountProvider>().updateActivedSession(session.id);
-          },
-          hoverColor: Colors.transparent,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
-            margin: const EdgeInsets.all(10.0),
-            decoration: BoxDecoration(
-              border: Border.all(color: color.primary),
-              borderRadius: BorderRadius.circular(10.0)
-            ),
-            child: Center(child: Text(lang.reconnect, style: TextStyle(color: color.primary))),
-          )
-        ),
-        if (!friend.isClosed && session.online != OnlineType.Lost)
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
-          child: Row(
-            children: [
-              GestureDetector(
-                onTap: isOnline ? () async {
-                  if (recordShow) {
-                    recordShow = false;
-                    textFocus.requestFocus();
-                  } else {
-                    _generateRecordPath();
-                    setState(() {
-                        menuShow = false;
-                        emojiShow = false;
-                        recordShow = true;
-                        textFocus.unfocus();
-                    });
-                  }
-                } : null,
-                child: Container(
-                  width: 20.0,
-                  child: Icon(Icons.mic_rounded, color: isOnline ? color.primary : Color(0xFFADB0BB))),
-              ),
-              SizedBox(width: 10.0),
-              Expanded(
-                child: Container(
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: color.surface,
-                    borderRadius: BorderRadius.circular(15.0),
+    return Scaffold(
+      body: SafeArea(
+        child: Column(
+          children: [
+            Container(
+              padding: EdgeInsets.only(left: 20.0, right: 20.0, top: 10.0, bottom: 10.0),
+              child: Row(
+                children: [
+                  if (!isDesktop)
+                  GestureDetector(
+                    onTap: () {
+                      context.read<ChatProvider>().clearActivedFriend();
+                      Navigator.pop(context);
+                    },
+                    child: Container(
+                      width: 20.0,
+                      child:
+                      Icon(Icons.arrow_back, color: color.primary)),
                   ),
-                  child: TextField(
-                    enabled: isOnline,
-                    style: TextStyle(fontSize: 14.0),
-                    textInputAction: TextInputAction.send,
-                    onChanged: (value) {
-                      if (value.length == 0 && sendShow) {
-                        setState(() {
-                            sendShow = false;
-                        });
-                      } else {
-                        if (!sendShow) {
-                          setState(() {
-                              sendShow = true;
-                          });
-                        }
+                  SizedBox(width: 15.0),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          friend.name,
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        SizedBox(height: 6.0),
+                        Text(friend.isClosed
+                          ? lang.unfriended
+                          : session.onlineLang(lang),
+                          style: TextStyle(
+                            color: color.onPrimary.withOpacity(0.5),
+                            fontSize: 14.0))
+                      ],
+                    ),
+                  ),
+                  SizedBox(width: 20.0),
+                  GestureDetector(
+                    onTap: () {},
+                    child: Container(
+                      width: 20.0,
+                      child: Icon(Icons.phone_rounded,
+                        color: Color(0x26ADB0BB))),
+                  ),
+                  SizedBox(width: 20.0),
+                  GestureDetector(
+                    onTap: () {},
+                    child: Container(
+                      width: 20.0,
+                      child: Icon(Icons.videocam_rounded,
+                        color: Color(0x26ADB0BB))),
+                  ),
+                  SizedBox(width: 20.0),
+                  PopupMenuButton<int>(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15)
+                    ),
+                    color: const Color(0xFFEDEDED),
+                    child: Icon(Icons.more_vert_rounded, color: color.primary),
+                    onSelected: (int value) {
+                      if (value == 2) {
+                        showShadowDialog(
+                          context,
+                          Icons.info,
+                          lang.friendInfo,
+                          UserInfo(
+                            id: 'EH' + friend.gid.toUpperCase(),
+                            name: friend.name,
+                            addr: '0x' + friend.addr)
+                        );
+                      } else if (value == 3) {
+                        print('TODO remark');
+                      } else if (value == 4) {
+                        showDialog(
+                          context: context,
+                          builder: (BuildContext context) {
+                            return AlertDialog(
+                              title: Text(lang.unfriend),
+                              content: Text(friend.name,
+                                style: TextStyle(color: color.primary)),
+                              actions: [
+                                TextButton(
+                                  child: Text(lang.cancel),
+                                  onPressed: () => Navigator.pop(context),
+                                ),
+                                TextButton(
+                                  child: Text(lang.ok),
+                                  onPressed:  () {
+                                    Navigator.pop(context);
+                                    Provider.of<ChatProvider>(
+                                      context, listen: false).friendClose(friend.id);
+                                    if (!isDesktop) {
+                                      Navigator.pop(context);
+                                    }
+                                  },
+                                ),
+                              ]
+                            );
+                          },
+                        );
+                      } else if (value == 5) {
+                        Provider.of<ChatProvider>(context, listen: false).requestCreate(
+                          Request(friend.gid, friend.addr, friend.name, lang.fromContactCard(meName)));
+                      } else if (value == 6) {
+                        showDialog(
+                          context: context,
+                          builder: (BuildContext context) {
+                            return AlertDialog(
+                              title: Text(lang.delete + " " + lang.friend),
+                              content: Text(friend.name,
+                                style: TextStyle(color: Colors.red)),
+                              actions: [
+                                TextButton(
+                                  child: Text(lang.cancel),
+                                  onPressed: () => Navigator.pop(context),
+                                ),
+                                TextButton(
+                                  child: Text(lang.ok),
+                                  onPressed:  () {
+                                    Navigator.pop(context);
+                                    Provider.of<ChatProvider>(
+                                      context, listen: false).friendDelete(friend.id);
+                                    if (!isDesktop) {
+                                      Navigator.pop(context);
+                                    }
+                                  },
+                                ),
+                              ]
+                            );
+                          },
+                        );
                       }
                     },
-                    onSubmitted: (_v) => _sendMessage(),
-                    decoration: InputDecoration(
-                      hintText: 'Aa',
-                      border: InputBorder.none,
-                      contentPadding: EdgeInsets.only(
-                        left: 15.0, right: 15.0, bottom: 7.0),
-                    ),
-                    controller: textController,
-                    focusNode: textFocus,
-                  ),
+                    itemBuilder: (context) {
+                      return <PopupMenuEntry<int>>[
+                        _menuItem(Color(0xFF6174FF), 2, Icons.qr_code_rounded, lang.friendInfo),
+                        //_menuItem(color.primary, 3, Icons.turned_in_rounded, lang.remark),
+                        friend.isClosed
+                        ? _menuItem(Color(0xFF6174FF), 5, Icons.send_rounded, lang.addFriend)
+                        : _menuItem(Color(0xFF6174FF), 4, Icons.block_rounded, lang.unfriend),
+                        _menuItem(Colors.red, 6, Icons.delete_rounded, lang.delete),
+                      ];
+                    },
+                  )
+                ]
+              ),
+            ),
+            const Divider(height: 1.0, color: Color(0x40ADB0BB)),
+            Expanded(
+              child: ListView.builder(
+                padding: EdgeInsets.symmetric(horizontal: 20.0),
+                itemCount: recentMessageKeys.length,
+                reverse: true,
+                itemBuilder: (BuildContext context, index) => ChatMessage(
+                  name: friend.name,
+                  message: recentMessages[recentMessageKeys[index]],
+                )
+            )),
+            if (session.online == OnlineType.Lost)
+            InkWell(
+              onTap: () {
+                context.read<AccountProvider>().updateActivedSession(session.id);
+              },
+              hoverColor: Colors.transparent,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
+                margin: const EdgeInsets.all(10.0),
+                decoration: BoxDecoration(
+                  border: Border.all(color: color.primary),
+                  borderRadius: BorderRadius.circular(10.0)
                 ),
-              ),
-              SizedBox(width: 10.0),
-              GestureDetector(
-                onTap: isOnline ? () {
-                  if (emojiShow) {
-                    textFocus.requestFocus();
-                  } else {
-                    setState(() {
-                        menuShow = false;
-                        recordShow = false;
-                        emojiShow = true;
-                        textFocus.unfocus();
-                    });
-                  }
-                } : null,
-                child: Container(
-                  width: 20.0,
-                  child: Icon(
-                    emojiShow
-                    ? Icons.keyboard_rounded
-                    : Icons.emoji_emotions_rounded,
-                    color: isOnline ? color.primary : Color(0xFFADB0BB))),
-              ),
-              SizedBox(width: 10.0),
-              sendShow
-              ? GestureDetector(
-                onTap: isOnline ? _sendMessage : null,
-                child: Container(
-                  width: 50.0,
-                  height: 30.0,
-                  decoration: BoxDecoration(
-                    color: Color(0xFF6174FF),
-                    borderRadius: BorderRadius.circular(10.0),
-                  ),
-                  child: Center(
-                    child: Icon(Icons.send,
-                      color: Colors.white, size: 20.0))),
+                child: Center(child: Text(lang.reconnect, style: TextStyle(color: color.primary))),
               )
-              : GestureDetector(
-                onTap: isOnline ? () {
-                  if (menuShow) {
-                    textFocus.requestFocus();
-                  } else {
-                    setState(() {
-                        emojiShow = false;
+            ),
+            if (!friend.isClosed && session.online != OnlineType.Lost)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
+              child: Row(
+                children: [
+                  GestureDetector(
+                    onTap: isOnline ? () async {
+                      if (recordShow) {
                         recordShow = false;
-                        menuShow = true;
-                        textFocus.unfocus();
-                    });
-                  }
-                }  : null,
-                child: Container(
-                  width: 20.0,
-                  child: Icon(Icons.add_circle_rounded,
-                    color: isOnline ? color.primary : Color(0xFFADB0BB))),
+                        textFocus.requestFocus();
+                      } else {
+                        _generateRecordPath();
+                        setState(() {
+                            menuShow = false;
+                            emojiShow = false;
+                            recordShow = true;
+                            textFocus.unfocus();
+                        });
+                      }
+                    } : null,
+                    child: Container(
+                      width: 20.0,
+                      child: Icon(Icons.mic_rounded, color: isOnline ? color.primary : Color(0xFFADB0BB))),
+                  ),
+                  SizedBox(width: 10.0),
+                  Expanded(
+                    child: Container(
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: color.surface,
+                        borderRadius: BorderRadius.circular(15.0),
+                      ),
+                      child: TextField(
+                        enabled: isOnline,
+                        style: TextStyle(fontSize: 14.0),
+                        textInputAction: TextInputAction.send,
+                        onChanged: (value) {
+                          if (value.length == 0 && sendShow) {
+                            setState(() {
+                                sendShow = false;
+                            });
+                          } else {
+                            if (!sendShow) {
+                              setState(() {
+                                  sendShow = true;
+                              });
+                            }
+                          }
+                        },
+                        onSubmitted: (_v) => _sendMessage(),
+                        decoration: InputDecoration(
+                          hintText: 'Aa',
+                          border: InputBorder.none,
+                          contentPadding: EdgeInsets.only(
+                            left: 15.0, right: 15.0, bottom: 7.0),
+                        ),
+                        controller: textController,
+                        focusNode: textFocus,
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: 10.0),
+                  GestureDetector(
+                    onTap: isOnline ? () {
+                      if (emojiShow) {
+                        textFocus.requestFocus();
+                      } else {
+                        setState(() {
+                            menuShow = false;
+                            recordShow = false;
+                            emojiShow = true;
+                            textFocus.unfocus();
+                        });
+                      }
+                    } : null,
+                    child: Container(
+                      width: 20.0,
+                      child: Icon(
+                        emojiShow
+                        ? Icons.keyboard_rounded
+                        : Icons.emoji_emotions_rounded,
+                        color: isOnline ? color.primary : Color(0xFFADB0BB))),
+                  ),
+                  SizedBox(width: 10.0),
+                  sendShow
+                  ? GestureDetector(
+                    onTap: isOnline ? _sendMessage : null,
+                    child: Container(
+                      width: 50.0,
+                      height: 30.0,
+                      decoration: BoxDecoration(
+                        color: Color(0xFF6174FF),
+                        borderRadius: BorderRadius.circular(10.0),
+                      ),
+                      child: Center(
+                        child: Icon(Icons.send,
+                          color: Colors.white, size: 20.0))),
+                  )
+                  : GestureDetector(
+                    onTap: isOnline ? () {
+                      if (menuShow) {
+                        textFocus.requestFocus();
+                      } else {
+                        setState(() {
+                            emojiShow = false;
+                            recordShow = false;
+                            menuShow = true;
+                            textFocus.unfocus();
+                        });
+                      }
+                    }  : null,
+                    child: Container(
+                      width: 20.0,
+                      child: Icon(Icons.add_circle_rounded,
+                        color: isOnline ? color.primary : Color(0xFFADB0BB))),
+                  ),
+                ],
               ),
-            ],
-          ),
-        ),
-        if (emojiShow && isOnline) Emoji(action: _selectEmoji),
-        if (recordShow && isOnline)
-        Container(
-          height: 100.0,
-          child: AudioRecorder(
-            path: Global.recordPath + _recordName, onStop: _sendRecord),
-        ),
-        if (menuShow && isOnline)
-        Container(
-          height: 100.0,
-          child: Wrap(
-            spacing: 20.0,
-            runSpacing: 20.0,
-            alignment: WrapAlignment.center,
-            children: <Widget>[
-              ExtensionButton(
-                icon: Icons.image_rounded,
-                text: lang.album,
-                action: _sendImage,
-                bgColor: color.surface,
-                iconColor: color.primary),
-              ExtensionButton(
-                icon: Icons.folder_rounded,
-                text: lang.file,
-                action: _sendFile,
-                bgColor: color.surface,
-                iconColor: color.primary),
-              ExtensionButton(
-                icon: Icons.person_rounded,
-                text: lang.contact,
-                action: () => _sendContact(color, lang, context.read<ChatProvider>().friends.values),
-                bgColor: color.surface,
-                iconColor: color.primary),
-            ],
-          ),
+            ),
+            if (emojiShow && isOnline) Emoji(action: _selectEmoji),
+            if (recordShow && isOnline)
+            Container(
+              height: 100.0,
+              child: AudioRecorder(
+                path: Global.recordPath + _recordName, onStop: _sendRecord),
+            ),
+            if (menuShow && isOnline)
+            Container(
+              height: 100.0,
+              child: Wrap(
+                spacing: 20.0,
+                runSpacing: 20.0,
+                alignment: WrapAlignment.center,
+                children: <Widget>[
+                  ExtensionButton(
+                    icon: Icons.image_rounded,
+                    text: lang.album,
+                    action: _sendImage,
+                    bgColor: color.surface,
+                    iconColor: color.primary),
+                  ExtensionButton(
+                    icon: Icons.folder_rounded,
+                    text: lang.file,
+                    action: _sendFile,
+                    bgColor: color.surface,
+                    iconColor: color.primary),
+                  ExtensionButton(
+                    icon: Icons.person_rounded,
+                    text: lang.contact,
+                    action: () => _sendContact(color, lang, context.read<ChatProvider>().friends.values),
+                    bgColor: color.surface,
+                    iconColor: color.primary),
+                ],
+              ),
+            )
+          ],
         )
-      ],
+      )
     );
   }
 }

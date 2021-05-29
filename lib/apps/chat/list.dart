@@ -63,15 +63,11 @@ class ListChat extends StatelessWidget {
       onTap: () {
         context.read<AccountProvider>().updateActivedSession(0, SessionType.Chat, friend.id);
         context.read<ChatProvider>().updateActivedFriend(friend.id);
+        final widget = ChatDetail();
         if (!isDesktop) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => ChatPage(),
-            ),
-          );
+          Navigator.push(context, MaterialPageRoute(builder: (_) => widget));
         } else {
-          context.read<AccountProvider>().updateActivedWidget(ChatDetail());
+          context.read<AccountProvider>().updateActivedWidget(widget);
         }
       },
       child: Container(

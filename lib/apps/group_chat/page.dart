@@ -60,19 +60,13 @@ class ListChat extends StatelessWidget {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () {
-        context.read<GroupChatProvider>().updateActivedGroup(group.id);
-
         context.read<AccountProvider>().updateActivedSession(0, SessionType.Group, group.id);
-
+        context.read<GroupChatProvider>().updateActivedGroup(group.id);
+        final widget = GroupChatDetail();
         if (!isDesktop) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => GroupChatPage(),
-            ),
-          );
+          Navigator.push(context, MaterialPageRoute(builder: (_) => widget));
         } else {
-          context.read<AccountProvider>().updateActivedWidget(GroupChatDetail());
+          context.read<AccountProvider>().updateActivedWidget(widget);
         }
       },
       child: Container(

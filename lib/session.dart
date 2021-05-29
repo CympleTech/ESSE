@@ -97,6 +97,8 @@ class Session {
     switch (this.type) {
       case SessionType.Chat:
         return [showAvatar(), this.name, this.lastContent, this.lastTime.toString()];
+      case SessionType.Group:
+        return [showAvatar(), this.name, this.lastContent, this.lastTime.toString()];
       case SessionType.Assistant:
         final params = Session.innerService(InnerService.Assistant, lang);
         return [params[0], params[1], params[2], ''];

@@ -32,33 +32,26 @@ extension InnerServiceExtension on InnerService {
     String listTitle = null;
     Widget listHome = null;
 
-    if (isDesktop) {
-      switch (this) {
-        case InnerService.Files:
-          listTitle = lang.files;
-          listHome = FolderList();
-          break;
-        case InnerService.Assistant:
-          coreWidget = AssistantDetail();
-          break;
-        case InnerService.GroupChat:
-          listTitle = lang.groupChat;
-          listHome = GroupChatList();
-          break;
-      }
-      Provider.of<AccountProvider>(context, listen: false).updateActivedWidget(coreWidget, listTitle, listHome);
+    switch (this) {
+      case InnerService.Files:
+        listTitle = lang.files;
+        listHome = FolderList();
+        break;
+      case InnerService.Assistant:
+        coreWidget = AssistantDetail();
+        break;
+      case InnerService.GroupChat:
+        listTitle = lang.groupChat;
+        listHome = GroupChatList();
+        break;
+    }
+
+    if (this == InnerService.Assistant) {
+      Navigator.push(context, MaterialPageRoute(builder: (_) => coreWidget));
     } else {
-      switch (this) {
-        case InnerService.Files:
-          Provider.of<AccountProvider>(context, listen: false).updateActivedWidget(null, lang.files, FolderList());
-          break;
-        case InnerService.Assistant:
-          Navigator.push(context, MaterialPageRoute(builder: (_) => AssistantPage()));
-          break;
-        case InnerService.GroupChat:
-          Provider.of<AccountProvider>(context, listen: false).updateActivedWidget(null, lang.groupChat, GroupChatList());
-          break;
-      }
+      Provider.of<AccountProvider>(context, listen: false).updateActivedWidget(
+        coreWidget, listTitle, listHome
+      );
     }
   }
 }

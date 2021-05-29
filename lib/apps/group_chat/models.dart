@@ -155,16 +155,7 @@ class Member {
   String addr;
   String name;
   bool isManager;
-
-  // MOCK need deleted.
-  Member(String name, bool isManager) {
-    this.id = 0;
-    this.fid = 0;
-    this.mid = 'EH0000000000000000000000000000000000000000000000000000000000000000';
-    this.addr = '0x0000000000000000000000000000000000000000000000000000000000000000';
-    this.name = name;
-    this.isManager = isManager;
-  }
+  bool online = false;
 
   Member.fromList(List params) {
     this.id = params[0];
@@ -175,15 +166,15 @@ class Member {
     this.isManager = params[5];
   }
 
-  Avatar showAvatar({double width = 45.0}) {
+  Avatar showAvatar({double width = 45.0, colorSurface = false}) {
     final avatar = Global.avatarPath + this.mid + '.png';
     return Avatar(
       width: width,
       name: this.name,
       avatarPath: avatar,
-      online: false,
-      hasNew: this.isManager,
-      hasNewColor: Color(0xFF6174FF),
+      online: this.online,
+      onlineColor: Color(0xFF0EE50A),
+      colorSurface: colorSurface,
     );
   }
 }

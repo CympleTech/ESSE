@@ -14,6 +14,7 @@ class Avatar extends StatelessWidget {
   final bool hasNew;
   final Color hasNewColor;
   final bool loading;
+  final bool colorSurface;
 
   const Avatar(
     {Key key,
@@ -26,6 +27,7 @@ class Avatar extends StatelessWidget {
       this.hasNew = false,
       this.hasNewColor = Colors.red,
       this.loading = false,
+      this.colorSurface = true,
   })
   : super(key: key);
 
@@ -46,8 +48,14 @@ class Avatar extends StatelessWidget {
       width: this.width,
       height: this.width,
       decoration: showAvatar != null
-      ? BoxDecoration(image: DecorationImage(image: showAvatar, fit: BoxFit.cover), borderRadius: BorderRadius.circular(15.0))
-      : BoxDecoration(color: color.surface, borderRadius: BorderRadius.circular(15.0)),
+      ? BoxDecoration(
+        image: DecorationImage(image: showAvatar, fit: BoxFit.cover),
+        borderRadius: BorderRadius.circular(15.0)
+      )
+      : BoxDecoration(
+        color: this.colorSurface ? color.surface : color.background,
+        borderRadius: BorderRadius.circular(15.0)
+      ),
       child: Stack(
         alignment: Alignment.center,
         children: <Widget>[

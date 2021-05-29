@@ -1,3 +1,5 @@
+import 'dart:ui' show ImageFilter;
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -20,19 +22,9 @@ import 'package:esse/apps/chat/provider.dart';
 import 'package:esse/apps/group_chat/models.dart';
 import 'package:esse/apps/group_chat/provider.dart';
 
-class GroupChatPage extends StatelessWidget {
-  const GroupChatPage({Key key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: SafeArea(
-        child: GroupChatDetail(),
-    ));
-  }
-}
-
 class GroupChatDetail extends StatefulWidget {
+  static GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<ScaffoldState>();
+
   const GroupChatDetail({Key key}) : super(key: key);
 
   @override
@@ -200,6 +192,7 @@ class _GroupChatDetailState extends State<GroupChatDetail> {
     final isDesktop = isDisplayDesktop(context);
 
     final provider = context.watch<GroupChatProvider>();
+    final members = provider.activedMembers;
     final recentMessages = provider.activedMessages;
     final recentMessageKeys = recentMessages.keys.toList().reversed.toList();
 
@@ -219,337 +212,323 @@ class _GroupChatDetailState extends State<GroupChatDetail> {
     final meName = accountProvider.activedAccount.name;
     final isOnline = session.isActive();
 
-    return Column(
-      children: [
-        Container(
-          padding: EdgeInsets.only(left: 20.0, right: 20.0, top: 10.0, bottom: 10.0),
-          child: Row(
-            children: [
-              if (!isDesktop)
-              GestureDetector(
-                onTap: () {
-                  context.read<GroupChatProvider>().clearActivedGroup();
-                  Navigator.pop(context);
-                },
-                child: Container(
-                  width: 20.0,
-                  child:
-                  Icon(Icons.arrow_back, color: color.primary)),
-              ),
-              SizedBox(width: 15.0),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      this.group.name,
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    SizedBox(height: 6.0),
-                    Text(this.group.isClosed
-                      ? lang.unfriended
-                      : session.onlineLang(lang),
-                      style: TextStyle(
-                        color: color.onPrimary.withOpacity(0.5),
-                        fontSize: 14.0))
-                  ],
-                ),
-              ),
-              SizedBox(width: 20.0),
-              GestureDetector(
-                onTap: () {},
-                child: Container(
-                  width: 20.0,
-                  child: Icon(Icons.phone_rounded,
-                    color: Color(0x26ADB0BB))),
-              ),
-              SizedBox(width: 20.0),
-              GestureDetector(
-                onTap: () {},
-                child: Container(
-                  width: 20.0,
-                  child: Icon(Icons.videocam_rounded,
-                    color: Color(0x26ADB0BB))),
-              ),
-              SizedBox(width: 20.0),
-              PopupMenuButton<int>(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(15)
-                ),
-                color: const Color(0xFFEDEDED),
-                child: Icon(Icons.more_vert_rounded, color: color.primary),
-                onSelected: (int value) {
-                  if (value == 2) {
-                    showShadowDialog(
-                      context,
-                      Icons.info,
-                      lang.groupChat,
-                      UserInfo(
-                        id: 'EG' + this.group.gid.toUpperCase(),
-                        name: this.group.name,
-                        addr: '0x' + this.group.addr)
-                    );
-                  } else if (value == 3) {
-                    final memberWidgets = provider.activedMembers.values.map((m) {
-                        return MemberAvatar(
-                          member: m, title: lang.members,
-                          isGroupManager: isGroupManager, isGroupOwner: isGroupOwner,
-                        );
-                    }).toList();
-
-                    showShadowDialog(
-                      context,
-                      Icons.group_rounded,
-                      lang.members,
-                      Wrap(
-                        spacing: 10.0,
-                        runSpacing: 10.0,
-                        children: memberWidgets,
-                      ),
-                      10.0, //height
-                    );
-                  } else if (value == 4) {
-                    showDialog(
-                      context: context,
-                      builder: (BuildContext context) {
-                        return AlertDialog(
-                          title: Text(lang.unfriend),
-                          content: Text(this.group.name,
-                            style: TextStyle(color: color.primary)),
-                          actions: [
-                            TextButton(
-                              child: Text(lang.cancel),
-                              onPressed: () => Navigator.pop(context),
-                            ),
-                            TextButton(
-                              child: Text(lang.ok),
-                              onPressed:  () {
-                                Navigator.pop(context);
-                                //Provider.of<GroupChatProvider>(context, listen: false).groupClose(this.group.id);
-                                if (!isDesktop) {
-                                  Navigator.pop(context);
-                                }
-                              },
-                            ),
-                          ]
-                        );
-                      },
-                    );
-                  } else if (value == 5) {
-                    // Provider.of<GroupChatProvider>(context, listen: false).requestCreate(
-                    //   Request(this.group.gid, this.group.addr, this.group.name, lang.fromContactCard(meName)));
-                  } else if (value == 6) {
-                    showDialog(
-                      context: context,
-                      builder: (BuildContext context) {
-                        return AlertDialog(
-                          title: Text(lang.delete + ' ' + lang.groupChat),
-                          content: Text(this.group.name,
-                            style: TextStyle(color: Colors.red)),
-                          actions: [
-                            TextButton(
-                              child: Text(lang.cancel),
-                              onPressed: () => Navigator.pop(context),
-                            ),
-                            TextButton(
-                              child: Text(lang.ok),
-                              onPressed:  () {
-                                Navigator.pop(context);
-                                //Provider.of<GroupChatProvider>(context, listen: false).groupDelete(this.group.id);
-                                if (!isDesktop) {
-                                  Navigator.pop(context);
-                                }
-                              },
-                            ),
-                          ]
-                        );
-                      },
-                    );
-                  }
-                },
-                itemBuilder: (context) {
-                  return <PopupMenuEntry<int>>[
-                    _menuItem(Color(0xFF6174FF), 2, Icons.qr_code_rounded, lang.info),
-                    _menuItem(Color(0xFF6174FF), 3, Icons.group_rounded, lang.members),
-                    // _menuItem(color.primary, 3, Icons.turned_in_rounded, lang.remark),
-                    // this.group.isClosed
-                    // ? _menuItem(Color(0xFF6174FF), 5, Icons.send_rounded, lang.addGroup)
-                    // : _menuItem(Color(0xFF6174FF), 4, Icons.block_rounded, lang.unfriend),
-                    _menuItem(Colors.orange, 6, Icons.block_rounded, lang.exit),
-                    _menuItem(Colors.red, 6, Icons.delete_rounded, lang.delete),
-                  ];
-                },
-              )
-            ]
-          ),
-        ),
-        const Divider(height: 1.0, color: Color(0x40ADB0BB)),
-        Expanded(
-          child: ListView.builder(
-            padding: EdgeInsets.symmetric(horizontal: 20.0),
-            itemCount: recentMessageKeys.length,
-            reverse: true,
-            itemBuilder: (BuildContext context, index) => ChatMessage(
-              name: this.group.name,
-              message: recentMessages[recentMessageKeys[index]],
-            )
-        )),
-        if (!this.group.isClosed)
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
-          child: Row(
-            children: [
-              GestureDetector(
-                onTap: isOnline ? () async {
-                  if (recordShow) {
-                    recordShow = false;
-                    textFocus.requestFocus();
-                  } else {
-                    _generateRecordPath();
-                    setState(() {
-                        menuShow = false;
-                        emojiShow = false;
-                        recordShow = true;
-                        textFocus.unfocus();
-                    });
-                  }
-                } : null,
-                child: Container(
-                  width: 20.0,
-                  child: Icon(Icons.mic_rounded, color: isOnline ? color.primary : Color(0xFFADB0BB))),
-              ),
-              SizedBox(width: 10.0),
-              Expanded(
-                child: Container(
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: color.surface,
-                    borderRadius: BorderRadius.circular(15.0),
+    return Scaffold(
+      key: GroupChatDetail._scaffoldKey,
+      endDrawer: _MemberDrawerWidget(title: lang.members),
+      drawerScrimColor: color.background,
+      body: SafeArea(
+        child: Column(
+          children: [
+            Container(
+              padding: EdgeInsets.only(left: 20.0, right: 20.0, top: 10.0, bottom: 10.0),
+              child: Row(
+                children: [
+                  if (!isDesktop)
+                  GestureDetector(
+                    onTap: () {
+                      context.read<GroupChatProvider>().clearActivedGroup();
+                      Navigator.pop(context);
+                    },
+                    child: Container(
+                      width: 20.0,
+                      child:
+                      Icon(Icons.arrow_back, color: color.primary)),
                   ),
-                  child: TextField(
-                    enabled: isOnline,
-                    style: TextStyle(fontSize: 14.0),
-                    textInputAction: TextInputAction.send,
-                    onChanged: (value) {
-                      if (value.length == 0 && sendShow) {
-                        setState(() {
-                            sendShow = false;
-                        });
-                      } else {
-                        if (!sendShow) {
-                          setState(() {
-                              sendShow = true;
-                          });
-                        }
+                  SizedBox(width: 15.0),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          this.group.name,
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        SizedBox(height: 6.0),
+                        Text(this.group.isClosed
+                          ? lang.unfriended
+                          : session.onlineLang(lang),
+                          style: TextStyle(
+                            color: color.onPrimary.withOpacity(0.5),
+                            fontSize: 14.0))
+                      ],
+                    ),
+                  ),
+                  SizedBox(width: 20.0),
+                  GestureDetector(
+                    onTap: () {},
+                    child: Container(
+                      width: 20.0,
+                      child: Icon(Icons.phone_rounded,
+                        color: Color(0x26ADB0BB))),
+                  ),
+                  SizedBox(width: 20.0),
+                  GestureDetector(
+                    onTap: () {},
+                    child: Container(
+                      width: 20.0,
+                      child: Icon(Icons.videocam_rounded,
+                        color: Color(0x26ADB0BB))),
+                  ),
+                  SizedBox(width: 20.0),
+                  GestureDetector(
+                    onTap: () {
+                      GroupChatDetail._scaffoldKey.currentState.openEndDrawer();
+                    },
+                    child: Container(
+                      width: 20.0,
+                      child: Icon(Icons.group_rounded, color: color.primary)),
+                  ),
+                  SizedBox(width: 20.0),
+                  PopupMenuButton<int>(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15)
+                    ),
+                    color: const Color(0xFFEDEDED),
+                    child: Icon(Icons.more_vert_rounded, color: color.primary),
+                    onSelected: (int value) {
+                      if (value == 1) {
+                        showShadowDialog(context, Icons.info, lang.groupChat,
+                          UserInfo(
+                            id: 'EG' + this.group.gid.toUpperCase(),
+                            name: this.group.name,
+                            addr: '0x' + this.group.addr
+                          )
+                        );
+                      } else if (value == 2) {
+                        showDialog(
+                          context: context, builder: (BuildContext context) {
+                            return AlertDialog(
+                              title: Text(lang.exit),
+                              content: Text(this.group.name,
+                                style: TextStyle(color: color.primary)),
+                              actions: [
+                                TextButton(child: Text(lang.cancel),
+                                  onPressed: () => Navigator.pop(context),
+                                ),
+                                TextButton(child: Text(lang.ok),
+                                  onPressed:  () {
+                                    Navigator.pop(context);
+                                    provider.close(this.group.id);
+                                  },
+                                ),
+                              ]
+                            );
+                          },
+                        );
+                      } else if (value == 3) {
+                        showDialog(
+                          context: context, builder: (BuildContext context) {
+                            return AlertDialog(
+                              title: Text(lang.delete + ' ' + lang.groupChat),
+                              content: Text(this.group.name,
+                                style: TextStyle(color: Colors.red)),
+                              actions: [
+                                TextButton(
+                                  child: Text(lang.cancel),
+                                  onPressed: () => Navigator.pop(context),
+                                ),
+                                TextButton(
+                                  child: Text(lang.ok),
+                                  onPressed:  () {
+                                    Navigator.pop(context);
+                                    provider.delete(this.group.id);
+                                  },
+                                ),
+                              ]
+                            );
+                          },
+                        );
+                      } else if (value == 4) {
+                        provider.reAdd(this.group.id);
                       }
                     },
-                    onSubmitted: (_v) => _sendMessage(),
-                    decoration: InputDecoration(
-                      hintText: 'Aa',
-                      border: InputBorder.none,
-                      contentPadding: EdgeInsets.only(
-                        left: 15.0, right: 15.0, bottom: 7.0),
+                    itemBuilder: (context) {
+                      return <PopupMenuEntry<int>>[
+                        _menuItem(Color(0xFF6174FF), 1, Icons.qr_code_rounded, lang.info),
+                        this.group.isClosed
+                        ? _menuItem(Color(0xFF6174FF), 4, Icons.send_rounded, lang.addGroup)
+                        : _menuItem(Colors.orange, 2, Icons.block_rounded, lang.exit),
+                        _menuItem(Colors.red, 3, Icons.delete_rounded, lang.delete),
+                      ];
+                    },
+                  )
+                ]
+              ),
+            ),
+            const Divider(height: 1.0, color: Color(0x40ADB0BB)),
+            Expanded(
+              child: ListView.builder(
+                padding: EdgeInsets.symmetric(horizontal: 20.0),
+                itemCount: recentMessageKeys.length,
+                reverse: true,
+                itemBuilder: (BuildContext context, index) {
+                  final message = recentMessages[recentMessageKeys[index]];
+                  final member = members[message.fid];
+                  return ChatMessage(
+                    avatar: member.showAvatar(),
+                    name: member.name,
+                    message: message,
+                  );
+                }
+            )),
+            if (!this.group.isClosed)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
+              child: Row(
+                children: [
+                  GestureDetector(
+                    onTap: isOnline ? () async {
+                      if (recordShow) {
+                        recordShow = false;
+                        textFocus.requestFocus();
+                      } else {
+                        _generateRecordPath();
+                        setState(() {
+                            menuShow = false;
+                            emojiShow = false;
+                            recordShow = true;
+                            textFocus.unfocus();
+                        });
+                      }
+                    } : null,
+                    child: Container(
+                      width: 20.0,
+                      child: Icon(Icons.mic_rounded, color: isOnline ? color.primary : Color(0xFFADB0BB))),
+                  ),
+                  SizedBox(width: 10.0),
+                  Expanded(
+                    child: Container(
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: color.surface,
+                        borderRadius: BorderRadius.circular(15.0),
+                      ),
+                      child: TextField(
+                        enabled: isOnline,
+                        style: TextStyle(fontSize: 14.0),
+                        textInputAction: TextInputAction.send,
+                        onChanged: (value) {
+                          if (value.length == 0 && sendShow) {
+                            setState(() {
+                                sendShow = false;
+                            });
+                          } else {
+                            if (!sendShow) {
+                              setState(() {
+                                  sendShow = true;
+                              });
+                            }
+                          }
+                        },
+                        onSubmitted: (_v) => _sendMessage(),
+                        decoration: InputDecoration(
+                          hintText: 'Aa',
+                          border: InputBorder.none,
+                          contentPadding: EdgeInsets.only(
+                            left: 15.0, right: 15.0, bottom: 7.0),
+                        ),
+                        controller: textController,
+                        focusNode: textFocus,
+                      ),
                     ),
-                    controller: textController,
-                    focusNode: textFocus,
                   ),
-                ),
-              ),
-              SizedBox(width: 10.0),
-              GestureDetector(
-                onTap: isOnline ? () {
-                  if (emojiShow) {
-                    textFocus.requestFocus();
-                  } else {
-                    setState(() {
-                        menuShow = false;
-                        recordShow = false;
-                        emojiShow = true;
-                        textFocus.unfocus();
-                    });
-                  }
-                } : null,
-                child: Container(
-                  width: 20.0,
-                  child: Icon(
-                    emojiShow
-                    ? Icons.keyboard_rounded
-                    : Icons.emoji_emotions_rounded,
-                    color: isOnline ? color.primary : Color(0xFFADB0BB))),
-              ),
-              SizedBox(width: 10.0),
-              sendShow
-              ? GestureDetector(
-                onTap: isOnline ? _sendMessage : null,
-                child: Container(
-                  width: 50.0,
-                  height: 30.0,
-                  decoration: BoxDecoration(
-                    color: Color(0xFF6174FF),
-                    borderRadius: BorderRadius.circular(10.0),
+                  SizedBox(width: 10.0),
+                  GestureDetector(
+                    onTap: isOnline ? () {
+                      if (emojiShow) {
+                        textFocus.requestFocus();
+                      } else {
+                        setState(() {
+                            menuShow = false;
+                            recordShow = false;
+                            emojiShow = true;
+                            textFocus.unfocus();
+                        });
+                      }
+                    } : null,
+                    child: Container(
+                      width: 20.0,
+                      child: Icon(
+                        emojiShow
+                        ? Icons.keyboard_rounded
+                        : Icons.emoji_emotions_rounded,
+                        color: isOnline ? color.primary : Color(0xFFADB0BB))),
                   ),
-                  child: Center(
-                    child: Icon(Icons.send,
-                      color: Colors.white, size: 20.0))),
-              )
-              : GestureDetector(
-                onTap: isOnline ? () {
-                  if (menuShow) {
-                    textFocus.requestFocus();
-                  } else {
-                    setState(() {
-                        emojiShow = false;
-                        recordShow = false;
-                        menuShow = true;
-                        textFocus.unfocus();
-                    });
-                  }
-                }  : null,
-                child: Container(
-                  width: 20.0,
-                  child: Icon(Icons.add_circle_rounded,
-                    color: isOnline ? color.primary : Color(0xFFADB0BB))),
+                  SizedBox(width: 10.0),
+                  sendShow
+                  ? GestureDetector(
+                    onTap: isOnline ? _sendMessage : null,
+                    child: Container(
+                      width: 50.0,
+                      height: 30.0,
+                      decoration: BoxDecoration(
+                        color: Color(0xFF6174FF),
+                        borderRadius: BorderRadius.circular(10.0),
+                      ),
+                      child: Center(
+                        child: Icon(Icons.send,
+                          color: Colors.white, size: 20.0))),
+                  )
+                  : GestureDetector(
+                    onTap: isOnline ? () {
+                      if (menuShow) {
+                        textFocus.requestFocus();
+                      } else {
+                        setState(() {
+                            emojiShow = false;
+                            recordShow = false;
+                            menuShow = true;
+                            textFocus.unfocus();
+                        });
+                      }
+                    }  : null,
+                    child: Container(
+                      width: 20.0,
+                      child: Icon(Icons.add_circle_rounded,
+                        color: isOnline ? color.primary : Color(0xFFADB0BB))),
+                  ),
+                ],
               ),
-            ],
-          ),
-        ),
-        if (emojiShow && isOnline) Emoji(action: _selectEmoji),
-        if (recordShow && isOnline)
-        Container(
-          height: 100.0,
-          child: AudioRecorder(
-            path: Global.recordPath + _recordName, onStop: _sendRecord),
-        ),
-        if (menuShow && isOnline)
-        Container(
-          height: 100.0,
-          child: Wrap(
-            spacing: 20.0,
-            runSpacing: 20.0,
-            alignment: WrapAlignment.center,
-            children: <Widget>[
-              ExtensionButton(
-                icon: Icons.image_rounded,
-                text: lang.album,
-                action: _sendImage,
-                bgColor: color.surface,
-                iconColor: color.primary),
-              ExtensionButton(
-                icon: Icons.folder_rounded,
-                text: lang.file,
-                action: _sendFile,
-                bgColor: color.surface,
-                iconColor: color.primary),
-              ExtensionButton(
-                icon: Icons.person_rounded,
-                text: lang.contact,
-                action: () => _sendContact(color, lang, context.read<ChatProvider>().friends.values),
-                bgColor: color.surface,
-                iconColor: color.primary),
-            ],
-          ),
+            ),
+            if (emojiShow && isOnline) Emoji(action: _selectEmoji),
+            if (recordShow && isOnline)
+            Container(
+              height: 100.0,
+              child: AudioRecorder(
+                path: Global.recordPath + _recordName, onStop: _sendRecord),
+            ),
+            if (menuShow && isOnline)
+            Container(
+              height: 100.0,
+              child: Wrap(
+                spacing: 20.0,
+                runSpacing: 20.0,
+                alignment: WrapAlignment.center,
+                children: <Widget>[
+                  ExtensionButton(
+                    icon: Icons.image_rounded,
+                    text: lang.album,
+                    action: _sendImage,
+                    bgColor: color.surface,
+                    iconColor: color.primary),
+                  ExtensionButton(
+                    icon: Icons.folder_rounded,
+                    text: lang.file,
+                    action: _sendFile,
+                    bgColor: color.surface,
+                    iconColor: color.primary),
+                  ExtensionButton(
+                    icon: Icons.person_rounded,
+                    text: lang.contact,
+                    action: () => _sendContact(color, lang, context.read<ChatProvider>().friends.values),
+                    bgColor: color.surface,
+                    iconColor: color.primary),
+                ],
+              ),
+            )
+          ],
         )
-      ],
+      )
     );
   }
 }
@@ -607,39 +586,62 @@ Widget _menuItem(Color color, int value, IconData icon, String text) {
   );
 }
 
-class MemberAvatar extends StatelessWidget {
+class _MemberDrawerWidget extends StatelessWidget {
   final String title;
-  final Member member;
-  final bool isGroupManager;
-  final bool isGroupOwner;
+  const _MemberDrawerWidget({Key key, this.title}) : super(key: key);
 
-  const MemberAvatar({Key key, this.title, this.member, this.isGroupManager, this.isGroupOwner}) : super(key: key);
+  Widget _item(context, Member member, bool isOwner, Color color) {
+    return ListTile(
+      leading: member.showAvatar(),
+      title: Text(member.name, textAlign: TextAlign.left, style: TextStyle(fontSize: 16.0)),
+      trailing: Text(isOwner ? 'Owner' : (member.isManager ? 'Manager' : ''),
+        style: TextStyle(color: color)),
+      onTap: () {
+        Navigator.pop(context);
+        showShadowDialog(context, Icons.group_rounded, title,
+          MemberDetail(member: member, isGroupOwner: isOwner, isGroupManager: member.isManager),
+          10.0,
+        );
+      }
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: () => showShadowDialog(
-        context,
-        Icons.group_rounded,
-        title,
-        MemberDetail(member: member, isGroupOwner: isGroupOwner, isGroupManager: isGroupManager),
-        10.0,
-      ),
-      hoverColor: Colors.transparent,
-      child: Column(
-        children: [
-          member.showAvatar(),
-          SizedBox(height: 4.0),
-          Container(
-            alignment: Alignment.center,
-            width: 60.0,
-            child: Text(
-              member.name,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(fontSize: 14.0)),
+    final color = Theme.of(context).colorScheme;
+    final lang = AppLocalizations.of(context);
+    final isLight = color.brightness == Brightness.light;
+    final isDesktop = isDisplayDesktop(context);
+
+    final provider = context.watch<GroupChatProvider>();
+    final members = provider.activedMembers;
+    final allKeys = provider.activedMemberOrder;
+
+    return Drawer(
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 4.0, sigmaY: 4.0),
+        child: SafeArea(
+          child: Container(
+            decoration: BoxDecoration(color: color.surface),
+            padding: const EdgeInsets.symmetric(vertical: 20.0),
+            child: Column(
+              children: [
+                Text(lang.members, style: Theme.of(context).textTheme.title),
+                const SizedBox(height: 10.0),
+                const Divider(height: 1.0, color: Color(0x40ADB0BB)),
+                const SizedBox(height: 10.0),
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: allKeys.length,
+                    itemBuilder: (BuildContext ctx, int index) => _item(
+                      context, members[allKeys[index]], index == 0, color.primary
+                    ),
+                  )
+                )
+              ]
+            ),
           )
-        ]
+        )
       )
     );
   }
@@ -685,7 +687,7 @@ class _MemberDetailState extends State<MemberDetail> {
     return Column(
       mainAxisSize: MainAxisSize.max,
       children: [
-        widget.member.showAvatar(width: 100.0),
+        widget.member.showAvatar(width: 100.0, colorSurface: true),
         const SizedBox(height: 10.0),
         Text(widget.member.name),
         const SizedBox(height: 10.0),

@@ -20,10 +20,11 @@ import 'package:esse/apps/chat/models.dart' show Request;
 import 'package:esse/apps/chat/provider.dart';
 
 class ChatMessage extends StatelessWidget {
+  final Widget avatar;
   final String name;
   final BaseMessage message;
 
-  const ChatMessage({Key key, this.name, this.message}): super(key: key);
+  const ChatMessage({Key key, this.name, this.message, this.avatar}): super(key: key);
 
   Widget _showText(context, color, isDesktop) {
     final width = MediaQuery.of(context).size.width * 0.6;
@@ -347,36 +348,66 @@ class ChatMessage extends StatelessWidget {
     final lang = AppLocalizations.of(context);
     final isDesktop = isDisplayDesktop(context);
     final messageShow = _show(context, color, lang, isDesktop);
+    final isAvatar = avatar != null && !message.isMe;
+
+    final timeWidget = Container(
+      padding: EdgeInsets.only(top: 6.0),
+      child: Row(children: [
+          if (message.isMe) Spacer(),
+          if (isAvatar)
+          Container(
+            width: 50.0,
+            child: Text(name, maxLines: 1, overflow: TextOverflow.ellipsis,
+              style: TextStyle(color: color.onPrimary.withOpacity(0.5), fontSize: 12.0)
+          )),
+          const SizedBox(width: 4.0),
+          Text(message.time.toString(), style: TextStyle(
+              color: color.onPrimary.withOpacity(0.5),
+              fontSize: 12.0)),
+          const SizedBox(width: 4.0),
+          Icon(
+            message.isDelivery == null ? Icons.hourglass_top
+            : (message.isDelivery ? Icons.done : Icons.error),
+            size: 12.0,
+            color: message.isDelivery == null ? color.primaryVariant
+            : (message.isDelivery ? color.primary : Colors.red)
+          ),
+    ]));
+
+    final mainWidget = Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Expanded(
+          child: Align(
+            alignment: message.isMe ? Alignment.topRight : Alignment.topLeft,
+            child: messageShow,
+          ),
+        ),
+    ]);
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 5.0),
-      child: Column(children: [
-          Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Expanded(
-                child: Align(
-                  alignment:
-                  message.isMe ? Alignment.topRight : Alignment.topLeft,
-                  child: messageShow,
-                ),
-              ),
-          ]),
-          Container(
-            padding: EdgeInsets.only(top: 10.0),
-            child: Row(children: [
-                if (message.isMe) Spacer(),
-                Text(message.time.toString(),
-                  style: TextStyle(
-                    color: color.onPrimary.withOpacity(0.5),
-                    fontSize: 12.0)),
-                SizedBox(width: 4.0),
-                Icon(
-                  message.isDelivery == null ? Icons.hourglass_top
-                  : (message.isDelivery ? Icons.done : Icons.error),
-                  size: 12.0,
-                  color: message.isDelivery == null ? color.primaryVariant
-                  : (message.isDelivery ? color.primary : Colors.red)
-                ),
-          ]))
-    ]));
+      child:
+      isAvatar
+      ? Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          avatar,
+          const SizedBox(width: 4.0),
+          Expanded(
+            child: Column(
+              children: [
+                mainWidget,
+                timeWidget,
+              ]
+            )
+          )
+        ]
+      )
+      : Column(
+        children: [
+          mainWidget,
+          timeWidget,
+        ]
+      )
+    );
   }
 }
