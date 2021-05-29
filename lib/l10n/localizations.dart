@@ -81,6 +81,7 @@ abstract class AppLocalizations {
   String get unknown;
   String get create;
   String get exit;
+  String get loadMore;
 
   // theme
   String get themeDark;
@@ -138,6 +139,7 @@ abstract class AppLocalizations {
   String get deviceTip;
   String get deviceChangeWs;
   String get deviceChangeHttp;
+  String get deviceRemote;
   String get deviceLocal;
   String get deviceQrcode;
   String get deviceQrcodeIntro;
@@ -163,12 +165,28 @@ abstract class AppLocalizations {
   String get assistant;
   String get assistantBio;
   String get groupChat;
+  String get groupChatAdd;
+  String get groupChatIntro;
+  String get groupChatId;
+  String get groupChatName;
+  String get groupChatKey;
+  String get groupChatAddr;
+  String get groupChatInfo;
   String get groupChatBio;
+  String get groupJoin;
+  String get groupCreate;
+  String get groupTypeEncrypted;
+  String get groupTypeEncryptedInfo;
+  String get groupTypePrivate;
+  String get groupTypePrivateInfo;
+  String get groupTypeOpen;
+  String get groupTypeOpenInfo;
   String get groupCheckTypeAllow;
   String get groupCheckTypeNone;
   String get groupCheckTypeSuspend;
   String get groupCheckTypeDeny;
   String get members;
+  String get groupRequireConsent;
 }
 
 class _AppLocalizationsDelegate

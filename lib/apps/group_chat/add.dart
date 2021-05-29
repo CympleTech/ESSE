@@ -33,11 +33,9 @@ class GroupAddPage extends StatefulWidget {
 class _GroupAddPageState extends State<GroupAddPage> {
   TextEditingController _joinIdController = TextEditingController();
   TextEditingController _joinAddrController = TextEditingController();
-  TextEditingController _joinRemarkController = TextEditingController();
   TextEditingController _joinNameController = TextEditingController();
   FocusNode _joinIdFocus = FocusNode();
   FocusNode _joinAddrFocus = FocusNode();
-  FocusNode _joinRemarkFocus = FocusNode();
 
   TextEditingController _createAddrController = TextEditingController();
   TextEditingController _createNameController = TextEditingController();
@@ -47,6 +45,8 @@ class _GroupAddPageState extends State<GroupAddPage> {
   FocusNode _createNameFocus = FocusNode();
   FocusNode _createBioFocus = FocusNode();
   FocusNode _createKeyFocus = FocusNode();
+
+  int _groupAddr = 0;
   int _groupType = 0;
   bool _groupNeedAgree = false;
   bool _groupHasKey = true;
@@ -56,6 +56,24 @@ class _GroupAddPageState extends State<GroupAddPage> {
   String _myName = '';
 
   bool _requestsLoadMore = true;
+
+  // 0 => encrypted, 1 => common, 2 => open.
+  Widget _groupAddrWidget(String text, int value, ColorScheme color) {
+    return Row(
+      children: [
+        Radio(
+          value: value,
+          groupValue: _groupAddr,
+          onChanged: (n) => setState(() {
+              _groupAddr = n;
+          }),
+        ),
+        _groupAddr == value
+        ? Text(text, style: TextStyle(color: color.primary))
+        : Text(text),
+      ]
+    );
+  }
 
   // 0 => encrypted, 1 => common, 2 => open.
   Widget _groupTypeWidget(String text, int value, ColorScheme color) {
@@ -126,13 +144,11 @@ class _GroupAddPageState extends State<GroupAddPage> {
       addr = addr.substring(2);
     }
     var name = _joinNameController.text;
-    var remark = _joinRemarkController.text;
-    context.read<GroupChatProvider>().join(id, addr, name, remark);
+    context.read<GroupChatProvider>().join(id, addr, name, "");
     setState(() {
         _joinIdController.text = '';
         _joinAddrController.text = '';
         _joinNameController.text = '';
-        _joinRemarkController.text = '';
     });
   }
 
@@ -165,9 +181,6 @@ class _GroupAddPageState extends State<GroupAddPage> {
         setState(() {});
     });
     _joinAddrFocus.addListener(() {
-        setState(() {});
-    });
-    _joinRemarkFocus.addListener(() {
         setState(() {});
     });
     _createAddrFocus.addListener(() {
@@ -214,7 +227,7 @@ class _GroupAddPageState extends State<GroupAddPage> {
             title: Row(
               children: [
                 Expanded(
-                  child: Text('Add Group Chat',
+                  child: Text(lang.groupChatAdd,
                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20.0)),
                 ),
                 TextButton(
@@ -233,7 +246,7 @@ class _GroupAddPageState extends State<GroupAddPage> {
                     children: [
                       Icon(Icons.add_box_rounded, color: color.primary),
                       const SizedBox(width: 8.0),
-                      Text('Join A Group', style: TextStyle(color: color.primary))
+                      Text(lang.groupJoin, style: TextStyle(color: color.primary))
                   ])
                 ),
                 Tab(
@@ -242,7 +255,7 @@ class _GroupAddPageState extends State<GroupAddPage> {
                     children: [
                       Icon(Icons.create_rounded, color: color.primary),
                       const SizedBox(width: 8.0),
-                      Text('Create A Group', style: TextStyle(color: color.primary))
+                      Text(lang.groupCreate, style: TextStyle(color: color.primary))
                   ])
                 ),
               ],
@@ -253,226 +266,265 @@ class _GroupAddPageState extends State<GroupAddPage> {
               Container(
                 padding: const EdgeInsets.all(20),
                 child: SingleChildScrollView(
-                  child: Form(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: <Widget>[
-                        InputText(
-                          icon: Icons.groups,
-                          text: 'Group ID',
-                          controller: _joinIdController,
-                          focus: _joinIdFocus),
-
-                        const SizedBox(height: 20.0),
-                        InputText(
-                          icon: Icons.location_on,
-                          text: lang.address,
-                          controller: _joinAddrController,
-                          focus: _joinAddrFocus),
-                        const SizedBox(height: 20.0),
-                        InputText(
-                          icon: Icons.turned_in,
-                          text: lang.remark,
-                          controller: _joinRemarkController,
-                          focus: _joinRemarkFocus),
-                        const SizedBox(height: 20.0),
-                        ButtonText(action: _join, text: lang.send, width: 600.0),
-                        const SizedBox(height: 20.0),
-                        const Divider(height: 1.0, color: Color(0x40ADB0BB)),
-                        const SizedBox(height: 10.0),
-                        if (requests.isNotEmpty)
-                        Container(
-                          width: 600.0,
-                          child: ListView.builder(
-                            itemCount: requestKeys.length,
-                            shrinkWrap: true,
-                            physics: ClampingScrollPhysics(),
-                            scrollDirection: Axis.vertical,
-                            itemBuilder: (BuildContext context, int index) =>
-                            _RequestItem(request: requests[requestKeys[index]]),
-                          ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: <Widget>[
+                      const SizedBox(height: 20.0),
+                      InputText(
+                        icon: Icons.groups,
+                        text: lang.groupChatId,
+                        controller: _joinIdController,
+                        focus: _joinIdFocus),
+                      const SizedBox(height: 20.0),
+                      InputText(
+                        icon: Icons.location_on,
+                        text: lang.groupChatAddr,
+                        controller: _joinAddrController,
+                        focus: _joinAddrFocus),
+                      const SizedBox(height: 20.0),
+                      ButtonText(action: _join, text: lang.send, width: 600.0),
+                      const SizedBox(height: 20.0),
+                      const Divider(height: 1.0, color: Color(0x40ADB0BB)),
+                      const SizedBox(height: 10.0),
+                      if (requests.isNotEmpty)
+                      Container(
+                        width: 600.0,
+                        child: ListView.builder(
+                          itemCount: requestKeys.length,
+                          shrinkWrap: true,
+                          physics: ClampingScrollPhysics(),
+                          scrollDirection: Axis.vertical,
+                          itemBuilder: (BuildContext context, int index) =>
+                          _RequestItem(request: requests[requestKeys[index]]),
                         ),
-                        if (_requestsLoadMore)
-                        TextButton(
-                          onPressed: () {
-                            provider.requestList(true);
-                            setState(() {
-                                _requestsLoadMore = false;
-                            });
-                          },
-                          child: Text('load more...', style: TextStyle(fontSize: 14.0)),
-                        ),
-                      ],
-                    ),
+                      ),
+                      if (_requestsLoadMore)
+                      TextButton(
+                        onPressed: () {
+                          provider.requestList(true);
+                          setState(() {
+                              _requestsLoadMore = false;
+                          });
+                        },
+                        child: Text(lang.loadMore, style: TextStyle(fontSize: 14.0)),
+                      ),
+                    ],
                   ),
                 ),
               ),
               Container(
                 padding: const EdgeInsets.all(20),
                 child: SingleChildScrollView(
-                  child: Form(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: <Widget>[
-                        Container(
-                          height: 50.0,
-                          width: 600.0,
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                                  decoration: BoxDecoration(
-                                    color: color.surface,
-                                    border: Border.all(color: _createAddrFocus.hasFocus
-                                      ? color.primary : color.surface),
-                                    borderRadius: BorderRadius.circular(15.0),
-                                  ),
-                                  child: TextField(
-                                    style: TextStyle(fontSize: 16.0),
-                                    decoration: InputDecoration(
-                                      border: InputBorder.none,
-                                      hintText: lang.address),
-                                    controller: _createAddrController,
-                                    focusNode: _createAddrFocus,
-                                    onSubmitted: (_v) => _checkAddrPermission(),
-                                    onChanged: (v) {
-                                      if (v.length > 0) {
-                                        setState(() {
-                                            _addrChecked = true;
-                                        });
-                                      }
-                                  }),
-                                ),
-                              ),
-                              if (checkOk)
-                              Container(
-                                padding: const EdgeInsets.only(left: 8.0),
-                                child: Icon(Icons.cloud_done_rounded,
-                                  color: Colors.green),
-                              ),
-                              const SizedBox(width: 8.0),
-                              Container(
-                                width: 100.0,
-                                child: InkWell(
-                                  onTap: _addrChecked ? _checkGroupAddr : null,
-                                  child: Container(
-                                    height: 45.0,
-                                    decoration: BoxDecoration(
-                                      color: Color(0xFF6174FF),
-                                      borderRadius: BorderRadius.circular(15.0)),
-                                    child: Center(
-                                      child: Text(lang.search,
-                                        style: TextStyle(fontSize: 16.0, color: Colors.white))),
-                              ))),
-                        ])),
-                        const SizedBox(height: 8.0),
-                        Text(checkLang, style: TextStyle(fontSize: 14.0,
-                            color: checkOk ? Colors.green : Colors.red)),
-                        Container(
-                          width: 600.0,
-                          padding: const EdgeInsets.all(10.0),
-                          alignment: Alignment.centerLeft,
-                          child: Text('Group Info', textAlign: TextAlign.left, style: TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold)),
-                        ),
-                        Container(
-                          width: 100.0,
-                          height: 100.0,
-                          margin: const EdgeInsets.symmetric(vertical: 10.0),
-                          decoration: BoxDecoration(
-                            color: color.surface,
-                            borderRadius: BorderRadius.circular(15.0)),
-                          child: Stack(
-                            alignment: Alignment.center,
-                            children: <Widget>[
-                              Icon(Icons.camera_alt,
-                                size: 47.0, color: Color(0xFFADB0BB)),
-                              Positioned(
-                                bottom: -1.0,
-                                right: -1.0,
-                                child: InkWell(
-                                  child: Icon(Icons.add_circle,
-                                    size: 32.0, color: color.primary),
-                                  onTap: null, //() => _getImage(context, account.name, color, lang),
-                                )
-                              ),
-                            ],
-                          ),
-                        ),
-                        Container(
-                          padding: EdgeInsets.symmetric(vertical: 10.0),
-                          width: 600.0,
-                          child: Row(
-                            mainAxisSize: MainAxisSize.max,
-                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                            children: [
-                              _groupTypeWidget('Encrypted', 0, color),
-                              _groupTypeWidget('Common', 1, color),
-                              _groupTypeWidget('Open', 2, color),
-                            ]
-                          )
-                        ),
-                        Container(
-                          padding: EdgeInsets.symmetric(vertical: 10.0),
-                          child: InputText(
-                            icon: Icons.account_box,
-                            text: 'Group Name',
-                            controller: _createNameController,
-                            focus: _createNameFocus),
-                        ),
-                        Container(
-                          padding: EdgeInsets.symmetric(vertical: 10.0),
-                          child: InputText(
-                            icon: Icons.campaign,
-                            text: 'Group Bio',
-                            controller: _createBioController,
-                            focus: _createBioFocus),
-                        ),
-                        if (_groupHasKey)
-                        Container(
-                          padding: EdgeInsets.symmetric(vertical: 10.0),
-                          child: InputText(
-                            icon: Icons.enhanced_encryption,
-                            text: 'Encrypted Key',
-                            controller: _createKeyController,
-                            focus: _createKeyFocus),
-                        ),
-                        if (_groupHasNeedAgree)
-                        Container(
-                          height: 50.0,
-                          width: 600.0,
-                          child: Row(
-                            children: [
-                              Switch(
-                                value: _groupNeedAgree,
-                                onChanged: (value) {
-                                  setState(() {
-                                      _groupNeedAgree = value;
-                                  });
-                                },
-                              ),
-                              Text('Need Group Manager Agree.')
-                            ]
-                          ),
-                        ),
-                        const SizedBox(height: 20.0),
-                        ButtonText(action: _create, text: lang.create, width: 600.0),
-                        const SizedBox(height: 20.0),
-                        const Divider(height: 1.0, color: Color(0x40ADB0BB)),
-                        const SizedBox(height: 10.0),
-                        Container(
-                          width: 600.0,
-                          child: ListView.builder(
-                            itemCount: createKeys.length,
-                            shrinkWrap: true,
-                            physics: ClampingScrollPhysics(),
-                            scrollDirection: Axis.vertical,
-                            itemBuilder: (BuildContext context, int index) =>
-                            _CreateItem(group: groups[createKeys[index]], name: _myName),
-                          ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: <Widget>[
+                      Container(
+                        width: 600.0,
+                        padding: const EdgeInsets.all(10.0),
+                        alignment: Alignment.centerLeft,
+                        child: Text('1. ' + lang.groupChatAddr, textAlign: TextAlign.left,
+                          style: Theme.of(context).textTheme.title),
+                      ),
+                      Container(
+                        padding: EdgeInsets.only(bottom: 10.0),
+                        width: 600.0,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.max,
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            _groupAddrWidget(lang.deviceRemote, 0, color),
+                            _groupAddrWidget(lang.deviceLocal, 1, color),
+                          ]
                         )
-                      ],
-                    ),
+                      ),
+                      if (_groupAddr == 0)
+                      Container(
+                        height: 50.0,
+                        width: 600.0,
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                                decoration: BoxDecoration(
+                                  color: color.surface,
+                                  border: Border.all(color: _createAddrFocus.hasFocus
+                                    ? color.primary : color.surface),
+                                  borderRadius: BorderRadius.circular(15.0),
+                                ),
+                                child: TextField(
+                                  style: TextStyle(fontSize: 16.0),
+                                  decoration: InputDecoration(
+                                    border: InputBorder.none,
+                                    hintText: lang.address),
+                                  controller: _createAddrController,
+                                  focusNode: _createAddrFocus,
+                                  onSubmitted: (_v) => _checkAddrPermission(),
+                                  onChanged: (v) {
+                                    if (v.length > 0) {
+                                      setState(() {
+                                          _addrChecked = true;
+                                      });
+                                    }
+                                }),
+                              ),
+                            ),
+                            if (checkOk)
+                            Container(
+                              padding: const EdgeInsets.only(left: 8.0),
+                              child: Icon(Icons.cloud_done_rounded,
+                                color: Colors.green),
+                            ),
+                            const SizedBox(width: 8.0),
+                            InkWell(
+                              onTap: _addrChecked ? _checkGroupAddr : null,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                                height: 45.0,
+                                decoration: BoxDecoration(
+                                  color: Color(0xFF6174FF),
+                                  borderRadius: BorderRadius.circular(15.0)),
+                                child: Center(
+                                  child: Text(lang.search,
+                                    style: TextStyle(fontSize: 16.0, color: Colors.white))),
+                            )),
+                            const SizedBox(width: 8.0),
+                            InkWell(
+                              onTap: _addrChecked ? _checkGroupAddr : null,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                                height: 45.0,
+                                decoration: BoxDecoration(
+                                  color: Color(0xFF6174FF),
+                                  borderRadius: BorderRadius.circular(15.0)),
+                                child: Center(
+                                  child: Text(lang.add,
+                                    style: TextStyle(fontSize: 16.0, color: Colors.white))),
+                            )),
+                      ])),
+                      const SizedBox(height: 8.0),
+                      Text(checkLang, style: TextStyle(fontSize: 14.0,
+                          color: checkOk ? Colors.green : Colors.red)),
+                      Container(
+                        width: 600.0,
+                        padding: const EdgeInsets.all(10.0),
+                        alignment: Alignment.centerLeft,
+                        child: Text('2. ' + lang.groupChatInfo, textAlign: TextAlign.left,
+                          style: Theme.of(context).textTheme.title),
+                      ),
+                      Container(
+                        width: 100.0,
+                        height: 100.0,
+                        margin: const EdgeInsets.symmetric(vertical: 10.0),
+                        decoration: BoxDecoration(
+                          color: color.surface,
+                          borderRadius: BorderRadius.circular(15.0)),
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: <Widget>[
+                            Icon(Icons.camera_alt,
+                              size: 47.0, color: Color(0xFFADB0BB)),
+                            Positioned(
+                              bottom: -1.0,
+                              right: -1.0,
+                              child: InkWell(
+                                child: Icon(Icons.add_circle,
+                                  size: 32.0, color: color.primary),
+                                onTap: null, //() => _getImage(context, account.name, color, lang),
+                              )
+                            ),
+                          ],
+                        ),
+                      ),
+                      Container(
+                        padding: EdgeInsets.symmetric(vertical: 10.0),
+                        width: 600.0,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.max,
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            _groupTypeWidget(lang.groupTypeEncrypted, 0, color),
+                            _groupTypeWidget(lang.groupTypePrivate, 1, color),
+                            _groupTypeWidget(lang.groupTypeOpen, 2, color),
+                          ]
+                        )
+                      ),
+                      Container(
+                        width: 600.0,
+                        padding: const EdgeInsets.all(12.0),
+                        margin: const EdgeInsets.only(bottom: 10.0),
+                        decoration: BoxDecoration(color: color.surface,
+                          borderRadius: BorderRadius.circular(15.0)
+                        ),
+                        child: Text(
+                          _groupType == 0 ? lang.groupTypeEncryptedInfo
+                          : (_groupType == 1 ? lang.groupTypePrivateInfo
+                            : lang.groupTypeOpenInfo),
+                          style: TextStyle(fontSize: 14.0, height: 1.5,
+                            fontStyle: FontStyle.italic),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                      Container(
+                        padding: EdgeInsets.symmetric(vertical: 10.0),
+                        child: InputText(
+                          icon: Icons.account_box,
+                          text: lang.groupChatName,
+                          controller: _createNameController,
+                          focus: _createNameFocus),
+                      ),
+                      Container(
+                        padding: EdgeInsets.symmetric(vertical: 10.0),
+                        child: InputText(
+                          icon: Icons.campaign,
+                          text: lang.groupChatBio,
+                          controller: _createBioController,
+                          focus: _createBioFocus),
+                      ),
+                      if (_groupHasKey)
+                      Container(
+                        padding: EdgeInsets.symmetric(vertical: 10.0),
+                        child: InputText(
+                          icon: Icons.enhanced_encryption,
+                          text: lang.groupChatKey,
+                          controller: _createKeyController,
+                          focus: _createKeyFocus),
+                      ),
+                      if (_groupHasNeedAgree)
+                      Container(
+                        height: 50.0,
+                        width: 600.0,
+                        child: Row(
+                          children: [
+                            Switch(
+                              value: _groupNeedAgree,
+                              onChanged: (value) {
+                                setState(() {
+                                    _groupNeedAgree = value;
+                                });
+                              },
+                            ),
+                            Text(lang.groupRequireConsent)
+                          ]
+                        ),
+                      ),
+                      const SizedBox(height: 20.0),
+                      ButtonText(action: _create, text: lang.create, width: 600.0),
+                      const SizedBox(height: 20.0),
+                      const Divider(height: 1.0, color: Color(0x40ADB0BB)),
+                      const SizedBox(height: 10.0),
+                      Container(
+                        width: 600.0,
+                        child: ListView.builder(
+                          itemCount: createKeys.length,
+                          shrinkWrap: true,
+                          physics: ClampingScrollPhysics(),
+                          scrollDirection: Axis.vertical,
+                          itemBuilder: (BuildContext context, int index) =>
+                          _CreateItem(group: groups[createKeys[index]], name: _myName),
+                        ),
+                      )
+                    ],
                   ),
                 ),
               ),

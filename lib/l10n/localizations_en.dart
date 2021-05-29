@@ -86,6 +86,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get create => 'Create';
   @override
   String get exit => 'Exit';
+  @override
+  String get loadMore => 'Load more...';
 
   // theme
   @override
@@ -189,6 +191,8 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get deviceChangeHttp => 'Change http';
   @override
+  String get deviceRemote => 'Remote';
+  @override
   String get deviceLocal => 'Local';
   @override
   String get deviceQrcode => 'Device QR Code';
@@ -237,7 +241,37 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get groupChat => 'Group Chats';
   @override
-  String get groupChatBio => 'Multiple group chats';
+  String get groupChatAdd => 'Add Group Chat';
+  @override
+  String get groupChatIntro => 'Multiple group chats';
+  @override
+  String get groupChatId => 'Group ID';
+  @override
+  String get groupChatName => 'Group Name';
+  @override
+  String get groupChatKey => 'Encrypted Key';
+  @override
+  String get groupChatAddr => 'Group Address';
+  @override
+  String get groupChatInfo => 'Group Information';
+  @override
+  String get groupChatBio => 'Group Bio';
+  @override
+  String get groupJoin => 'Join Open Group';
+  @override
+  String get groupCreate => 'Create Group';
+  @override
+  String get groupTypeEncrypted => 'Encrypted';
+  @override
+  String get groupTypeEncryptedInfo => "Encrypted: It can only be joined by the invitation of members, and the manager's consent is optional, Members hold a zero-knowledge proof about the key to enter; Group information and messages are encrypted and stored on the server, and the server NOT has secret key, INVISIBLE information.";
+  @override
+  String get groupTypePrivate => 'Private';
+  @override
+  String get groupTypePrivateInfo => "Private: It can only be joined by the invitation of members, and the manager's consent is optional; Group information and messages are stored on the server, VISIBLE information.";
+  @override
+  String get groupTypeOpen => 'Open';
+  @override
+  String get groupTypeOpenInfo => 'Open: Any member who has group information can freely enter and leave; Group information and messages are stored on the server, VISIBLE information.';
   @override
   String get groupCheckTypeAllow => 'You can create a new group chat';
   @override
@@ -248,4 +282,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get groupCheckTypeDeny => 'No permission to create here';
   @override
   String get members => 'Members';
+  @override
+  String get groupRequireConsent => "Requires manager's consent";
 }

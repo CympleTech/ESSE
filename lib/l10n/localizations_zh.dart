@@ -86,6 +86,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get create => '创建';
   @override
   String get exit => '退出';
+  @override
+  String get loadMore => '加载更多';
 
   // theme
   @override
@@ -189,6 +191,8 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String get deviceChangeHttp => '修改 Http 接口';
   @override
+  String get deviceRemote => '远程';
+  @override
   String get deviceLocal => '本机';
   @override
   String get deviceQrcode => '设备二维码';
@@ -237,7 +241,37 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String get groupChat => '群聊';
   @override
-  String get groupChatBio => '各种各样的群聊';
+  String get groupChatAdd => '添加群聊';
+  @override
+  String get groupChatIntro => '各种各样的群聊';
+  @override
+  String get groupChatId => '群ID';
+  @override
+  String get groupChatAddr => '群聊地址';
+  @override
+  String get groupChatName => '群名称';
+  @override
+  String get groupChatKey => '加密密码';
+  @override
+  String get groupChatInfo => '群聊信息';
+  @override
+  String get groupChatBio => '群公告';
+  @override
+  String get groupJoin => '加入公开群';
+  @override
+  String get groupCreate => '新建群';
+  @override
+  String get groupTypeEncrypted => '加密';
+  @override
+  String get groupTypeEncryptedInfo => '加密的群聊：只能通过群成员邀请加入，可选是否需要管理员同意，成员需持有密钥的零知识证明方可进入；群信息和消息全部加密存储在服务端，服务端无密钥，不可见信息。';
+  @override
+  String get groupTypePrivate => '私有';
+  @override
+  String get groupTypePrivateInfo => '私有的群聊：只能通过群成员邀请加入，可选是否需要管理员同意；群信息和消息存储在服务端，服务端可见信息。';
+  @override
+  String get groupTypeOpen => '公开';
+  @override
+  String get groupTypeOpenInfo => '公开的群聊：任何拥有群信息的成员均可自由进出；群信息和消息存储在服务端，服务端可见信息。';
   @override
   String get groupCheckTypeAllow => '可以创建新的群聊';
   @override
@@ -248,4 +282,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get groupCheckTypeDeny => '没有权限在此创建群聊';
   @override
   String get members => '成员';
+  @override
+  String get groupRequireConsent => "需要管理员同意";
 }
