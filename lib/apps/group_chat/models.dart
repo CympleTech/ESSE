@@ -9,7 +9,7 @@ import 'package:esse/apps/primitives.dart';
 
 enum GroupType {
   Encrypted,
-  Common,
+  Private,
   Open,
 }
 
@@ -26,7 +26,7 @@ extension GroupTypeExtension on GroupType {
     switch (this) {
       case GroupType.Encrypted:
         return 0;
-      case GroupType.Common:
+      case GroupType.Private:
         return 1;
       case GroupType.Encrypted:
         return 2;
@@ -40,7 +40,7 @@ extension GroupTypeExtension on GroupType {
       case 0:
         return GroupType.Encrypted;
       case 1:
-        return GroupType.Common;
+        return GroupType.Private;
       case 2:
         return GroupType.Open;
       default:

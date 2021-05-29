@@ -9,7 +9,7 @@ import 'package:esse/apps/primitives.dart';
 import 'package:esse/apps/group_chat/models.dart';
 
 class GroupChatProvider extends ChangeNotifier {
-  List<GroupType> createSupported = [GroupType.Encrypted, GroupType.Common, GroupType.Open];
+  List<GroupType> createSupported = [GroupType.Encrypted, GroupType.Private, GroupType.Open];
   CheckType createCheckType = CheckType.Wait;
 
   Map<int, GroupChat> groups = {};

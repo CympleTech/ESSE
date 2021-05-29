@@ -202,7 +202,7 @@ impl GroupChat {
 
     pub fn to_group_info(self, name: String, avatar: Vec<u8>) -> GroupInfo {
         match self.g_type {
-            GroupType::Common | GroupType::Open => GroupInfo::Common(
+            GroupType::Private | GroupType::Open => GroupInfo::Common(
                 self.owner,
                 name,
                 self.g_id,
