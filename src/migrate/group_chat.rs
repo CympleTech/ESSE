@@ -34,6 +34,7 @@ pub(super) const GROUP_CHAT_VERSIONS: [&str; 4] = [
     addr TEXT NOT NULL,
     name TEXT NOT NULL,
     is_manager INTEGER NOT NULL,
+    is_block INTEGER NOT NULL,
     datetime INTEGER NOT NULL,
     is_deleted INTEGER NOT NULL);",
   "CREATE TABLE IF NOT EXISTS messages(

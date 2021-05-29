@@ -316,9 +316,9 @@ impl GroupChat {
             self.g_addr.to_hex(),
             self.g_name,
             self.g_bio,
-            if self.is_ok { 1 } else { 0 },
-            if self.is_need_agree { 1 } else { 0 },
-            if self.is_closed { 1 } else { 0 },
+            self.is_ok,
+            self.is_need_agree,
+            self.is_closed,
             self.key.to_hex(),
             self.datetime,
         );
@@ -465,11 +465,10 @@ impl Request {
             self.name,
             self.remark,
             self.key.to_hex(),
-            if self.is_ok { 1 } else { 0 },
-            if self.is_over { 1 } else { 0 },
+            self.is_ok,
+            self.is_over,
             self.datetime,
         );
-        println!("{}", sql);
         let id = db.insert(&sql)?;
         self.id = id;
         Ok(())
@@ -490,7 +489,7 @@ impl Request {
 
         let sql = format!(
             "UPDATE requests SET is_ok={}, is_over=1 WHERE gid = '{}' AND is_over = 0",
-            if is_ok { 1 } else { 0 },
+            is_ok,
             gcd.to_hex(),
         );
         db.update(&sql)?;
@@ -517,6 +516,8 @@ pub(crate) struct Member {
     m_name: String,
     /// is group chat manager.
     is_manager: bool,
+    /// is member is block by me.
+    is_block: bool,
     /// member's joined time.
     datetime: i64,
     /// member is leave or delete.
@@ -540,6 +541,7 @@ impl Member {
             is_manager,
             datetime,
             id: 0,
+            is_block: false,
             is_deleted: false,
         }
     }
@@ -552,6 +554,7 @@ impl Member {
             self.m_addr.to_hex(),
             self.m_name,
             self.is_manager,
+            self.is_block,
         ])
     }
 
@@ -565,6 +568,7 @@ impl Member {
         Self {
             is_deleted,
             datetime: v.pop().unwrap().as_i64(),
+            is_block: v.pop().unwrap().as_bool(),
             is_manager: v.pop().unwrap().as_bool(),
             m_name: v.pop().unwrap().as_string(),
             m_addr: PeerAddr::from_hex(v.pop().unwrap().as_string()).unwrap_or(Default::default()),
@@ -576,7 +580,7 @@ impl Member {
 
     pub fn all(db: &DStorage, fid: &i64) -> Result<Vec<Member>> {
         let matrix = db.query(&format!(
-            "SELECT id, fid, mid, addr, name, is_manager, datetime FROM members WHERE is_deleted = false AND fid = {}", fid))?;
+            "SELECT id, fid, mid, addr, name, is_manager, is_block, datetime FROM members WHERE is_deleted = false AND fid = {}", fid))?;
         let mut groups = vec![];
         for values in matrix {
             groups.push(Member::from_values(values, false));
@@ -585,12 +589,13 @@ impl Member {
     }
 
     pub fn insert(&mut self, db: &DStorage) -> Result<()> {
-        let sql = format!("INSERT INTO members (fid, mid, addr, name, is_manager, datetime, is_deleted) VALUES ({}, '{}', '{}', '{}', {}, {}, false)",
+        let sql = format!("INSERT INTO members (fid, mid, addr, name, is_manager, is_block, datetime, is_deleted) VALUES ({}, '{}', '{}', '{}', {}, {}, {}, false)",
             self.fid,
             self.m_id.to_hex(),
             self.m_addr.to_hex(),
             self.m_name,
-            if self.is_manager { 1 } else { 0 },
+            self.is_manager,
+            self.is_block,
             self.datetime,
         );
         let id = db.insert(&sql)?;
@@ -601,6 +606,20 @@ impl Member {
     pub fn get_id(db: &DStorage, fid: &i64, mid: &GroupId) -> Result<i64> {
         let mut matrix = db.query(&format!(
             "SELECT id FROM members WHERE fid = {} AND mid = '{}'",
+            fid,
+            mid.to_hex()
+        ))?;
+        if matrix.len() > 0 {
+            Ok(matrix.pop().unwrap().pop().unwrap().as_i64()) // safe unwrap.
+        } else {
+            Err(new_io_error("missing member"))
+        }
+    }
+
+    /// get member not deleted, not blocked.
+    pub fn get_ok(db: &DStorage, fid: &i64, mid: &GroupId) -> Result<i64> {
+        let mut matrix = db.query(&format!(
+            "SELECT id FROM members WHERE is_deleted = false AND is_block = false AND fid = {} AND mid = '{}'",
             fid,
             mid.to_hex()
         ))?;
@@ -642,8 +661,6 @@ pub(crate) struct Message {
     is_delivery: bool,
     /// message created time.
     pub datetime: i64,
-    /// message is deteled
-    is_deleted: bool,
 }
 
 impl Message {
@@ -664,7 +681,6 @@ impl Message {
             datetime,
             height,
             is_me,
-            is_deleted: false,
             is_delivery: true,
             id: 0,
         }
@@ -686,15 +702,8 @@ impl Message {
         Self::new_with_time(height, fid, mid, is_me, m_type, content, datetime)
     }
     /// here is zero-copy and unwrap is safe. checked.
-    fn from_values(mut v: Vec<DsValue>, contains_deleted: bool) -> Message {
-        let is_deleted = if contains_deleted {
-            v.pop().unwrap().as_bool()
-        } else {
-            false
-        };
-
+    fn from_values(mut v: Vec<DsValue>) -> Message {
         Message {
-            is_deleted,
             datetime: v.pop().unwrap().as_i64(),
             is_delivery: v.pop().unwrap().as_bool(),
             content: v.pop().unwrap().as_string(),
@@ -725,7 +734,7 @@ impl Message {
         let matrix = db.query(&format!("SELECT id, height, fid, mid, is_me, m_type, content, is_delivery, datetime FROM messages WHERE is_deleted = false AND fid = {}", fid))?;
         let mut groups = vec![];
         for values in matrix {
-            groups.push(Message::from_values(values, false));
+            groups.push(Message::from_values(values));
         }
         Ok(groups)
     }
@@ -735,10 +744,10 @@ impl Message {
             self.height,
             self.fid,
             self.mid,
-            if self.is_me { 1 } else { 0 },
+            self.is_me,
             self.m_type.to_int(),
             self.content,
-            if self.is_delivery { 1 } else { 0 },
+            self.is_delivery,
             self.datetime,
         );
         let id = db.insert(&sql)?;
@@ -770,7 +779,7 @@ pub(super) fn from_network_message(
     base: &PathBuf,
 ) -> Result<Message> {
     let db = group_chat_db(base, mgid)?;
-    let mdid = Member::get_id(&db, &gdid, &mid)?;
+    let mdid = Member::get_ok(&db, &gdid, &mid)?;
     let is_me = &mid == mgid;
 
     // handle event.
@@ -820,8 +829,6 @@ pub(super) fn from_network_message(
 
     let mut msg = Message::new_with_time(height, gdid, mdid, is_me, m_type, raw, datetime);
     msg.insert(&db)?;
-
-    // TODO SESSION UPDATE.
 
     Ok(msg)
 }

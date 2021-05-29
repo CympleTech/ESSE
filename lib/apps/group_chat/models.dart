@@ -155,6 +155,7 @@ class Member {
   String addr;
   String name;
   bool isManager;
+  bool isBlock;
   bool online = false;
 
   Member.fromList(List params) {
@@ -164,6 +165,7 @@ class Member {
     this.addr = params[3];
     this.name = params[4];
     this.isManager = params[5];
+    this.isBlock = params[6];
   }
 
   Avatar showAvatar({double width = 45.0, colorSurface = true}) {

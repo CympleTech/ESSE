@@ -356,7 +356,7 @@ impl Friend {
             self.addr.to_hex(),
             self.name,
             self.remark,
-            if self.is_closed { 1 } else { 0 },
+            self.is_closed,
             self.datetime,
         );
         let id = db.insert(&sql)?;
@@ -369,8 +369,8 @@ impl Friend {
             self.addr.to_hex(),
             self.name,
             self.remark,
-            if self.is_closed { 1 } else { 0 },
-            if self.is_deleted { 1 } else { 0 },
+            self.is_closed,
+            self.is_deleted,
             self.id
         );
         db.update(&sql)
@@ -541,10 +541,10 @@ impl Request {
             self.addr.to_hex(),
             self.name,
             self.remark,
-            if self.is_me { 1 } else { 0 },
-            if self.is_ok { 1 } else { 0 },
-            if self.is_over { 1 } else { 0 },
-            if self.is_delivery { 1 } else { 0 },
+            self.is_me,
+            self.is_ok,
+            self.is_over,
+            self.is_delivery,
             self.datetime,
         );
         let id = db.insert(&sql)?;
@@ -558,12 +558,12 @@ impl Request {
             self.addr.to_hex(),
             self.name,
             self.remark,
-            if self.is_me { 1 } else { 0 },
-            if self.is_ok { 1 } else { 0 },
-            if self.is_over { 1 } else { 0 },
-            if self.is_delivery { 1 } else { 0 },
+            self.is_me,
+            self.is_ok,
+            self.is_over,
+            self.is_delivery,
             self.datetime,
-            if self.is_deleted { 1 } else { 0 },
+            self.is_deleted,
             self.id,
         );
         db.update(&sql)
@@ -722,10 +722,10 @@ impl Message {
             "INSERT INTO messages (hash, fid, is_me, m_type, content, is_delivery, datetime, is_deleted) VALUES ('{}',{},{},{},'{}',{},{},false)",
             self.hash.to_hex(),
             self.fid,
-            if self.is_me { 1 } else { 0 },
+            self.is_me,
             self.m_type.to_int(),
             self.content,
-            if self.is_delivery { 1 } else { 0 },
+            self.is_delivery,
             self.datetime,
         );
         self.id = db.insert(&sql)?;
@@ -735,8 +735,7 @@ impl Message {
     pub fn delivery(db: &DStorage, id: i64, is_delivery: bool) -> Result<usize> {
         let sql = format!(
             "UPDATE messages SET is_delivery={} WHERE id = {}",
-            if is_delivery { 1 } else { 0 },
-            id,
+            is_delivery, id,
         );
         db.update(&sql)
     }

@@ -122,11 +122,11 @@ impl Session {
             self.addr.to_hex(),
             self.s_type.to_int(),
             self.name,
-            if self.is_top { 1 } else { 0 },
-            if self.is_close { 1 } else { 0 },
+            self.is_top,
+            self.is_close,
             self.last_datetime,
             self.last_content,
-            if self.last_readed { 1 } else { 0 },
+            self.last_readed,
         );
         let id = db.insert(&sql)?;
         self.id = id;
@@ -155,9 +155,7 @@ impl Session {
     pub fn update(db: &DStorage, id: &i64, is_top: bool, is_close: bool) -> Result<usize> {
         db.update(&format!(
             "UPDATE sessions SET is_top = {}, is_close = {} WHERE id = {}",
-            if is_top { 1 } else { 0 },
-            if is_close { 1 } else { 0 },
-            id
+            is_top, is_close, id
         ))
     }
 
