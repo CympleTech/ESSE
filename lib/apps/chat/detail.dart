@@ -273,6 +273,7 @@ class _ChatDetailState extends State<ChatDetail> {
                           Icons.info,
                           lang.friendInfo,
                           UserInfo(
+                            app: 'add-friend',
                             id: 'EH' + friend.gid.toUpperCase(),
                             name: friend.name,
                             addr: '0x' + friend.addr)

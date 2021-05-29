@@ -317,6 +317,10 @@ class AccountProvider extends ChangeNotifier {
   _sessionLast(List params) {
     final id = params[0];
     this.sessions[id].last(params);
+    if (id == this.actived && !this.sessions[id].lastReaded) {
+      rpc.send('session-readed', [id]);
+      this.sessions[id].lastReaded = true;
+    }
     orderSessions(id);
     notifyListeners();
   }

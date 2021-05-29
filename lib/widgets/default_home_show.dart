@@ -121,13 +121,13 @@ class _SessionWidget extends StatelessWidget {
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(color: Color(0xFFADB0BB), fontSize: 12.0)),
                         ),
-                        // if (session.isClosed)
-                        // Container(
-                        //   margin: const EdgeInsets.only(left: 15.0, right: 20.0),
-                        //   child: Text(lang.unfriended,
-                        //     style: TextStyle(color: color.primary, fontSize: 12.0),
-                        //   ),
-                        // )
+                        Container(width: 8.0, height: 8.0,
+                          margin: const EdgeInsets.only(left: 15.0, right: 20.0),
+                          decoration: BoxDecoration(
+                            color: session.lastReaded ? color.background : Colors.red,
+                            shape: BoxShape.circle
+                          ),
+                        ),
                     ]),
                   ],
                 ),

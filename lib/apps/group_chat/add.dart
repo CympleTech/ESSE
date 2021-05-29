@@ -100,6 +100,8 @@ class _GroupAddPageState extends State<GroupAddPage> {
 
   _scanCallback(bool isOk, String app, List params) {
     Navigator.of(context).pop();
+    print(app);
+    print(params);
     if (isOk && app == 'add-group' && params.length == 3) {
       this._joinIdController.text = params[0];
       this._joinAddrController.text = params[1];
@@ -211,24 +213,12 @@ class _GroupAddPageState extends State<GroupAddPage> {
           appBar: AppBar(
             title: Row(
               children: [
-                if (!isDesktop)
-                GestureDetector(
-                  onTap: () {
-                    //context.read<ChatProvider>().requestClear();
-                    Navigator.pop(context);
-                  },
-                  child: Container(
-                    width: 20.0,
-                    child: Icon(Icons.arrow_back, color: color.primary)),
-                ),
-                SizedBox(width: 15.0),
                 Expanded(
                   child: Text('Add Group Chat',
                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20.0)),
                 ),
                 TextButton(
-                  onPressed: () => Navigator.push(
-                    context,
+                  onPressed: () => Navigator.push(context,
                     MaterialPageRoute(builder: (context) => QRScan(callback: _scanCallback))
                   ),
                   child: Text(lang.scanQr, style: TextStyle(fontSize: 16.0)),

@@ -476,6 +476,10 @@ fn new_rpc_handler(
             let id = params[0].as_i64()?;
             let remote = GroupId::from_hex(params[1].as_str()?)?;
 
+            let group_lock = state.group.read().await;
+            let db = session_db(group_lock.base(), &gid)?;
+            Session::readed(&db, &id)?;
+
             let mut layer_lock = state.layer.write().await;
             let online = layer_lock.running_mut(&gid)?.active(&remote, true);
             drop(layer_lock);
@@ -483,8 +487,6 @@ fn new_rpc_handler(
                 return Ok(HandleResult::rpc(json!([id, addr.to_hex()])));
             }
 
-            let group_lock = state.group.read().await;
-            let db = session_db(group_lock.base(), &gid)?;
             let s = Session::get(&db, &id)?;
             drop(db);
 

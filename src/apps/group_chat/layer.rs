@@ -241,7 +241,7 @@ async fn handle_event(
                     println!("Sync: create message ok");
                     results
                         .rpcs
-                        .push(session_last(mgid, &sid, &msg.datetime, &msg.content, true));
+                        .push(session_last(mgid, &sid, &msg.datetime, &msg.content, false));
                 }
             }
 

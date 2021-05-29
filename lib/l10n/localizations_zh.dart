@@ -143,7 +143,7 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String get myQrcode => '我的二维码';
   @override
-  String get qrFriend => '扫二维码加好友';
+  String get qrFriend => '扫二维码添加';
   @override
   String get friendInfo => '好友信息';
   @override

@@ -8,14 +8,15 @@ import 'package:esse/l10n/localizations.dart';
 import 'package:esse/utils/better_print.dart';
 
 class UserInfo extends StatefulWidget {
+  final String app;
   final String id;
   final String name;
   final String addr;
   Map qrInfo;
 
-  UserInfo({Key key, this.id, this.name, this.addr}) : super(key: key) {
+  UserInfo({Key key, this.id, this.name, this.addr, this.app}) : super(key: key) {
     this.qrInfo = {
-      "app": "add-friend",
+      "app": this.app,
       "params": [this.id, this.addr, this.name],
     };
   }

@@ -166,7 +166,7 @@ class Member {
     this.isManager = params[5];
   }
 
-  Avatar showAvatar({double width = 45.0, colorSurface = false}) {
+  Avatar showAvatar({double width = 45.0, colorSurface = true}) {
     final avatar = Global.avatarPath + this.mid + '.png';
     return Avatar(
       width: width,

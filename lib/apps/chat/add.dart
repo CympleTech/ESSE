@@ -141,7 +141,8 @@ class _ChatAddPageState extends State<ChatAddPage> {
                       context,
                       Icons.info,
                       lang.info,
-                      UserInfo(id: account.id, name: account.name, addr: Global.addr)
+                      UserInfo(app: 'add-friend',
+                        id: account.id, name: account.name, addr: Global.addr)
                     ),
                     child: Text(lang.myQrcode, style: TextStyle(fontSize: 16.0)),
                   ),

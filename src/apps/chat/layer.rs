@@ -325,7 +325,7 @@ impl LayerEvent {
                             &id,
                             &msg.datetime,
                             &msg.content,
-                            true,
+                            false,
                         ));
                     } else {
                         let c_db = chat_db(&layer.base, &mgid)?;

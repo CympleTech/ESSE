@@ -289,6 +289,7 @@ class _GroupChatDetailState extends State<GroupChatDetail> {
                       if (value == 1) {
                         showShadowDialog(context, Icons.info, lang.groupChat,
                           UserInfo(
+                            app: 'add-group',
                             id: 'EG' + this.group.gid.toUpperCase(),
                             name: this.group.name,
                             addr: '0x' + this.group.addr
@@ -591,18 +592,21 @@ class _MemberDrawerWidget extends StatelessWidget {
   const _MemberDrawerWidget({Key key, this.title}) : super(key: key);
 
   Widget _item(context, Member member, bool isOwner, Color color) {
-    return ListTile(
-      leading: member.showAvatar(),
-      title: Text(member.name, textAlign: TextAlign.left, style: TextStyle(fontSize: 16.0)),
-      trailing: Text(isOwner ? 'Owner' : (member.isManager ? 'Manager' : ''),
-        style: TextStyle(color: color)),
-      onTap: () {
-        Navigator.pop(context);
-        showShadowDialog(context, Icons.group_rounded, title,
-          MemberDetail(member: member, isGroupOwner: isOwner, isGroupManager: member.isManager),
-          10.0,
-        );
-      }
+    return Container(
+      height: 55.0,
+      child: ListTile(
+        leading: member.showAvatar(colorSurface: false),
+        title: Text(member.name, textAlign: TextAlign.left, style: TextStyle(fontSize: 16.0)),
+        trailing: Text(isOwner ? 'Owner' : (member.isManager ? 'Manager' : ''),
+          style: TextStyle(color: color)),
+        onTap: () {
+          Navigator.pop(context);
+          showShadowDialog(context, Icons.group_rounded, title,
+            MemberDetail(member: member, isGroupOwner: isOwner, isGroupManager: member.isManager),
+            10.0,
+          );
+        }
+      )
     );
   }
 
@@ -687,7 +691,7 @@ class _MemberDetailState extends State<MemberDetail> {
     return Column(
       mainAxisSize: MainAxisSize.max,
       children: [
-        widget.member.showAvatar(width: 100.0, colorSurface: true),
+        widget.member.showAvatar(width: 100.0),
         const SizedBox(height: 10.0),
         Text(widget.member.name),
         const SizedBox(height: 10.0),

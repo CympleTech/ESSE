@@ -28,16 +28,6 @@ pub(crate) fn create_result(mgid: GroupId, gid: i64, ok: bool) -> RpcParam {
 }
 
 #[inline]
-pub(crate) fn group_online(mgid: GroupId, gid: i64) -> RpcParam {
-    rpc_response(0, "group-chat-online", json!([gid]), mgid)
-}
-
-#[inline]
-pub(crate) fn group_offline(mgid: GroupId, fid: i64, gid: &GroupId) -> RpcParam {
-    rpc_response(0, "group-chat-offline", json!([fid, gid.to_hex()]), mgid)
-}
-
-#[inline]
 pub(crate) fn group_agree(mgid: GroupId, rid: i64, group: GroupChat) -> RpcParam {
     rpc_response(0, "group-chat-agree", json!([rid, group.to_rpc()]), mgid)
 }
