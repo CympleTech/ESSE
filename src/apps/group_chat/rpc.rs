@@ -33,8 +33,18 @@ pub(crate) fn group_agree(mgid: GroupId, rid: i64, group: GroupChat) -> RpcParam
 }
 
 #[inline]
-pub(crate) fn group_reject(mgid: GroupId, rid: i64) -> RpcParam {
-    rpc_response(0, "group-chat-reject", json!([rid]), mgid)
+pub(crate) fn group_reject(mgid: GroupId, rid: i64, efficacy: bool) -> RpcParam {
+    rpc_response(0, "group-chat-reject", json!([rid, efficacy]), mgid)
+}
+
+#[inline]
+pub(crate) fn request_create(mgid: GroupId, req: &Request) -> RpcParam {
+    rpc_response(0, "group-chat-join", json!(req.to_rpc()), mgid)
+}
+
+#[inline]
+pub(crate) fn request_handle(mgid: GroupId, id: i64, ok: bool) -> RpcParam {
+    rpc_response(0, "group-chat-join-handle", json!([id, ok]), mgid)
 }
 
 #[inline]
@@ -244,6 +254,26 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             let data = postcard::to_allocvec(&LayerEvent::Request(request.gid, join_proof))
                 .unwrap_or(vec![]);
             let s = SendType::Event(0, request.addr, data);
+            add_layer(&mut results, gid, s);
+            Ok(results)
+        },
+    );
+
+    handler.add_method(
+        "group-chat-request-handle",
+        |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
+            let gcd = GroupId::from_hex(params[0].as_str()?)?;
+            let id = params[1].as_i64()?;
+            let rid = params[2].as_i64()?;
+            let ok = params[3].as_bool()?;
+
+            let db = group_chat_db(state.layer.read().await.base(), &gid)?;
+            let gc = GroupChat::get_id(&db, &id)??;
+
+            let mut results = HandleResult::new();
+            let data =
+                postcard::to_allocvec(&LayerEvent::RequestResult(gcd, rid, ok)).unwrap_or(vec![]);
+            let s = SendType::Event(0, gc.g_addr, data);
             add_layer(&mut results, gid, s);
             Ok(results)
         },

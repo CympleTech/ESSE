@@ -115,6 +115,7 @@ class GroupChat {
 class Request {
   int id;
   int fid;
+  int rid;
   String gid;
   String addr;
   String name;
@@ -138,13 +139,14 @@ class Request {
   Request.fromList(List params) {
     this.id = params[0];
     this.fid = params[1];
-    this.gid = params[2];
-    this.addr = params[3];
-    this.name = params[4];
-    this.remark = params[5];
-    this.ok = params[6];
-    this.over = params[7];
-    this.time = RelativeTime.fromInt(params[8]);
+    this.rid = params[2];
+    this.gid = params[3];
+    this.addr = params[4];
+    this.name = params[5];
+    this.remark = params[6];
+    this.ok = params[7];
+    this.over = params[8];
+    this.time = RelativeTime.fromInt(params[9]);
   }
 }
 

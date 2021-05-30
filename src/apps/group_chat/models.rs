@@ -344,6 +344,7 @@ impl GroupChat {
 pub(crate) struct Request {
     id: i64,
     fid: i64,
+    rid: i64,
     pub gid: GroupId,
     pub addr: PeerAddr,
     pub name: String,
@@ -358,6 +359,7 @@ pub(crate) struct Request {
 impl Request {
     pub fn new_by_remote(
         fid: i64,
+        rid: i64,
         gid: GroupId,
         addr: PeerAddr,
         name: String,
@@ -366,6 +368,7 @@ impl Request {
     ) -> Self {
         Self {
             fid,
+            rid,
             gid,
             addr,
             name,
@@ -403,6 +406,7 @@ impl Request {
             is_over: false,
             is_deleted: false,
             fid: 0,
+            rid: 0,
             id: 0,
         }
     }
@@ -411,6 +415,7 @@ impl Request {
         json!([
             self.id,
             self.fid,
+            self.rid,
             self.gid.to_hex(),
             self.addr.to_hex(),
             self.name,
@@ -438,6 +443,7 @@ impl Request {
             name: v.pop().unwrap().as_string(),
             addr: PeerAddr::from_hex(v.pop().unwrap().as_string()).unwrap_or(Default::default()),
             gid: GroupId::from_hex(v.pop().unwrap().as_string()).unwrap_or(Default::default()),
+            rid: v.pop().unwrap().as_i64(),
             fid: v.pop().unwrap().as_i64(),
             id: v.pop().unwrap().as_i64(),
         }
@@ -445,9 +451,9 @@ impl Request {
 
     pub fn list(db: &DStorage, is_all: bool) -> Result<Vec<Request>> {
         let sql = if is_all {
-            format!("SELECT id, fid, gid, addr, name, remark, is_ok, is_over, datetime FROM requests WHERE is_deleted = false")
+            format!("SELECT id, fid, rid, gid, addr, name, remark, is_ok, is_over, datetime FROM requests WHERE is_deleted = false")
         } else {
-            format!("SELECT id, fid, gid, addr, name, remark, is_ok, is_over, datetime FROM requests WHERE is_deleted = false AND is_over = 0")
+            format!("SELECT id, fid, rid, gid, addr, name, remark, is_ok, is_over, datetime FROM requests WHERE is_deleted = false AND is_over = 0")
         };
         let matrix = db.query(&sql)?;
         let mut requests = vec![];
@@ -458,8 +464,9 @@ impl Request {
     }
 
     pub fn insert(&mut self, db: &DStorage) -> Result<()> {
-        let sql = format!("INSERT INTO requests (fid, gid, addr, name, remark, key, is_ok, is_over, datetime, is_deleted) VALUES ({}, '{}', '{}', '{}', '{}', '{}', {}, {}, {}, false)",
+        let sql = format!("INSERT INTO requests (fid, rid, gid, addr, name, remark, key, is_ok, is_over, datetime, is_deleted) VALUES ({}, {}, '{}', '{}', '{}', '{}', '{}', {}, {}, {}, false)",
             self.fid,
+            self.rid,
             self.gid.to_hex(),
             self.addr.to_hex(),
             self.name,
@@ -472,6 +479,24 @@ impl Request {
         let id = db.insert(&sql)?;
         self.id = id;
         Ok(())
+    }
+
+    pub fn over_rid(db: &DStorage, gcd: &GroupId, rid: &i64, is_ok: bool) -> Result<i64> {
+        let mut matrix = db.query(&format!(
+            "SELECT id from requests WHERE gid = '{}' AND rid = {} AND is_over = 0",
+            gcd.to_hex(),
+            rid
+        ))?;
+        if matrix.len() == 0 {
+            return Err(new_io_error("request is missing"));
+        }
+        let id = matrix.pop().unwrap().pop().unwrap().as_i64(); // safe.
+        let sql = format!(
+            "UPDATE requests SET is_ok={}, is_over=1 WHERE id = {}",
+            is_ok, id,
+        );
+        db.update(&sql)?;
+        Ok(id)
     }
 
     pub fn over(db: &DStorage, gcd: &GroupId, is_ok: bool) -> Result<(i64, GroupChatKey)> {

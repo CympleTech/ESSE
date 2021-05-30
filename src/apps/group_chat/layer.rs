@@ -9,7 +9,9 @@ use tdn::{
     },
 };
 
-use group_chat_types::{ConnectProof, Event, LayerConnect, LayerEvent, LayerResult, PackedEvent};
+use group_chat_types::{
+    ConnectProof, Event, JoinProof, LayerConnect, LayerEvent, LayerResult, PackedEvent,
+};
 use tdn_did::Proof;
 use tdn_storage::local::DStorage;
 
@@ -189,11 +191,11 @@ async fn handle_event(
                 .prove_addr(&mgid, &addr)?;
             add_layer(results, mgid, group_chat_conn(proof, addr, gcd));
         }
-        LayerEvent::Reject(gcd) => {
+        LayerEvent::Reject(gcd, efficacy) => {
             println!("Reject..........");
             let db = group_chat_db(layer.read().await.base(), &mgid)?;
             let (rid, _key) = Request::over(&db, &gcd, true)?;
-            results.rpcs.push(rpc::group_reject(mgid, rid));
+            results.rpcs.push(rpc::group_reject(mgid, rid, efficacy));
         }
         LayerEvent::MemberOnline(gcd, mid, maddr) => {
             let (_sid, gid) = layer.read().await.get_running_remote_id(&mgid, &gcd)?;
@@ -259,11 +261,37 @@ async fn handle_event(
                 mgid, gid, gcd, addr, height, from, to, events, base, results,
             )?;
         }
-        LayerEvent::Check => {}             // nerver here.
-        LayerEvent::Create(..) => {}        // nerver here.
-        LayerEvent::Request(..) => {}       // nerver here.
-        LayerEvent::RequestResult(..) => {} // nerver here.
-        LayerEvent::SyncReq(..) => {}       // Never here.
+        LayerEvent::RequestHandle(gcd, rgid, raddr, join_proof, rid, time) => {
+            let (_sid, gid) = layer.read().await.get_running_remote_id(&mgid, &gcd)?;
+
+            match join_proof {
+                JoinProof::Invite(i, _proof, mname, mavatar) => {
+                    let mut req =
+                        Request::new_by_remote(gid, rid, rgid, raddr, mname, i.to_hex(), time);
+                    let base = layer.read().await.base().clone();
+                    let db = group_chat_db(&base, &mgid)?;
+                    req.insert(&db)?;
+                    if mavatar.len() > 0 {
+                        write_avatar_sync(&base, &mgid, &rgid, mavatar)?;
+                    }
+                    results.rpcs.push(rpc::request_create(mgid, &req));
+                }
+                JoinProof::Zkp(_proof) => {
+                    //
+                }
+                JoinProof::Open(..) => {} // nerver here.
+            }
+        }
+        LayerEvent::RequestResult(gcd, rid, ok) => {
+            let (_sid, _gid) = layer.read().await.get_running_remote_id(&mgid, &gcd)?;
+            let db = group_chat_db(layer.read().await.base(), &mgid)?;
+            let id = Request::over_rid(&db, &gcd, &rid, ok)?;
+            results.rpcs.push(rpc::request_handle(mgid, id, ok));
+        }
+        LayerEvent::Request(..) => {} // nerver here.
+        LayerEvent::Check => {}       // nerver here.
+        LayerEvent::Create(..) => {}  // nerver here.
+        LayerEvent::SyncReq(..) => {} // Nerver here.
     }
 
     Ok(())
