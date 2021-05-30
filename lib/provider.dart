@@ -221,7 +221,11 @@ class AccountProvider extends ChangeNotifier {
 
     if (id > 0) {
       if (this.actived != id && this.actived > 0) {
-        rpc.send('session-suspend', [this.actived, this.activedSession.gid]);
+        bool must = false;
+        if (this.activedSession.type == SessionType.Group) {
+          must = true;
+        }
+        rpc.send('session-suspend', [this.actived, this.activedSession.gid, must]);
       }
       this.actived = id;
       final online = this.activedSession.online;

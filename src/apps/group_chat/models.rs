@@ -630,6 +630,16 @@ impl Member {
         }
     }
 
+    pub fn addr_update(db: &DStorage, fid: &i64, mid: &GroupId, addr: &PeerAddr) -> Result<usize> {
+        let sql = format!(
+            "UPDATE members SET addr='{}' WHERE fid = {} AND mid = '{}'",
+            addr.to_hex(),
+            fid,
+            mid.to_hex(),
+        );
+        db.update(&sql)
+    }
+
     pub fn update(db: &DStorage, id: &i64, addr: &PeerAddr, name: &str) -> Result<usize> {
         let sql = format!(
             "UPDATE members SET addr='{}', name='{}' WHERE id = {}",

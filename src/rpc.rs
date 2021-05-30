@@ -511,6 +511,7 @@ fn new_rpc_handler(
         |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
             let id = params[0].as_i64()?;
             let remote = GroupId::from_hex(params[1].as_str()?)?;
+            let must = params[2].as_bool()?; // if need must suspend.
 
             let db = session_db(state.group.read().await.base(), &gid)?;
             let s = Session::get(&db, &id)?;
@@ -528,7 +529,7 @@ fn new_rpc_handler(
             };
 
             let mut layer_lock = state.layer.write().await;
-            let suspend = layer_lock.running_mut(&gid)?.suspend(&remote, true)?;
+            let suspend = layer_lock.running_mut(&gid)?.suspend(&remote, true, must)?;
             drop(layer_lock);
 
             let mut results = HandleResult::new();

@@ -191,7 +191,7 @@ impl LayerEvent {
             }
             LayerEvent::Suspend(_) => {
                 let (sid, _fid) = layer.get_running_remote_id(&mgid, &fgid)?;
-                if layer.running_mut(&mgid)?.suspend(&fgid, false)? {
+                if layer.running_mut(&mgid)?.suspend(&fgid, false, false)? {
                     results.rpcs.push(session_suspend(mgid, &sid));
                 }
             }

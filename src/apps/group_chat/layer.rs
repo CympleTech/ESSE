@@ -127,7 +127,7 @@ async fn handle_event(
         LayerEvent::Suspend(gcd) => {
             let mut layer_lock = layer.write().await;
             let (sid, _gid) = layer_lock.get_running_remote_id(&mgid, &gcd)?;
-            if layer_lock.running_mut(&mgid)?.suspend(&gcd, false)? {
+            if layer_lock.running_mut(&mgid)?.suspend(&gcd, false, true)? {
                 results.rpcs.push(session_suspend(mgid, &sid));
             }
             drop(layer_lock);
@@ -197,11 +197,13 @@ async fn handle_event(
         }
         LayerEvent::MemberOnline(gcd, mid, maddr) => {
             let (_sid, gid) = layer.read().await.get_running_remote_id(&mgid, &gcd)?;
+            let db = group_chat_db(layer.read().await.base(), &mgid)?;
+            let _ = Member::addr_update(&db, &gid, &mid, &maddr);
             results.rpcs.push(rpc::member_online(mgid, gid, mid, maddr));
         }
-        LayerEvent::MemberOffline(gcd, mid, ma) => {
+        LayerEvent::MemberOffline(gcd, mid) => {
             let (_sid, gid) = layer.read().await.get_running_remote_id(&mgid, &gcd)?;
-            results.rpcs.push(rpc::member_offline(mgid, gid, mid, ma));
+            results.rpcs.push(rpc::member_offline(mgid, gid, mid));
         }
         LayerEvent::Sync(gcd, height, event) => {
             let (sid, gid) = layer.read().await.get_running_remote_id(&mgid, &gcd)?;

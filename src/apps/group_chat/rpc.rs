@@ -63,11 +63,11 @@ pub(crate) fn member_online(mgid: GroupId, gid: i64, mid: GroupId, maddr: PeerAd
 }
 
 #[inline]
-pub(crate) fn member_offline(mgid: GroupId, gid: i64, mid: GroupId, maddr: PeerAddr) -> RpcParam {
+pub(crate) fn member_offline(mgid: GroupId, gid: i64, mid: GroupId) -> RpcParam {
     rpc_response(
         0,
         "group-chat-member-offline",
-        json!([gid, mid.to_hex(), maddr.to_hex()]),
+        json!([gid, mid.to_hex()]),
         mgid,
     )
 }

@@ -260,11 +260,40 @@ class GroupChatProvider extends ChangeNotifier {
   }
 
   _memberOnline(List params) {
-    //
+    final id = params[0];
+    final mgid = params[1];
+    final maddr = params[2];
+
+    if (this.actived == id) {
+      int mid;
+      this.activedMembers.forEach((i, m) {
+          if (m.mid == mgid) {
+            mid = i;
+          }
+      });
+      if (mid != null) {
+        this.activedMembers[mid].addr = maddr;
+        this.activedMembers[mid].online = true;
+        notifyListeners();
+      }
+    }
   }
 
   _memberOffline(List params) {
-    //
+    final id = params[0];
+    final mgid = params[1];
+    if (this.actived == id) {
+      int mid;
+      this.activedMembers.forEach((i, m) {
+          if (m.mid == mgid) {
+            mid = i;
+          }
+      });
+      if (mid != null) {
+        this.activedMembers[mid].online = false;
+        notifyListeners();
+      }
+    }
   }
 
   _messageCreate(List params) {

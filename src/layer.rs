@@ -232,8 +232,13 @@ impl RunningAccount {
         }
     }
 
-    pub fn suspend(&mut self, gid: &GroupId, is_me: bool) -> Result<bool> {
+    pub fn suspend(&mut self, gid: &GroupId, is_me: bool, must: bool) -> Result<bool> {
         if let Some(online) = self.sessions.get_mut(gid) {
+            if must {
+                online.suspend_me = true;
+                online.suspend_remote = true;
+            }
+
             if is_me {
                 online.suspend_me = true;
             } else {
