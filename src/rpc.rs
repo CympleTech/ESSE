@@ -59,12 +59,6 @@ pub(crate) fn network_dht(peers: Vec<PeerAddr>) -> RpcParam {
 }
 
 #[inline]
-pub(crate) fn network_seed(peers: Vec<SocketAddr>) -> RpcParam {
-    let s_peers: Vec<String> = peers.iter().map(|p| p.to_string()).collect();
-    rpc_response(0, "network-seed", json!(s_peers), GroupId::default())
-}
-
-#[inline]
 pub(crate) fn account_update(mgid: GroupId, name: &str, avatar: String) -> RpcParam {
     rpc_response(
         0,
@@ -166,11 +160,10 @@ pub(crate) async fn inner_rpc(
     sender: &async_channel::Sender<SendMessage>,
 ) -> Result<()> {
     // Inner network default rpc method. only use in http-rpc.
-    if method == "network-stable" || method == "network-dht" || method == "network-seed" {
+    if method == "network-stable" || method == "network-dht" {
         let req = match method {
             "network-stable" => StateRequest::Stable,
             "network-dht" => StateRequest::DHT,
-            "network-seed" => StateRequest::Seed,
             _ => return Ok(()),
         };
 
@@ -183,8 +176,7 @@ pub(crate) async fn inner_rpc(
         let param = match r.recv().await {
             Ok(StateResponse::Stable(peers)) => network_stable(peers),
             Ok(StateResponse::DHT(peers)) => network_dht(peers),
-            Ok(StateResponse::Seed(seeds)) => network_seed(seeds),
-            Err(_) => {
+            Ok(_) | Err(_) => {
                 return Ok(());
             }
         };

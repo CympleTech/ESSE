@@ -20,7 +20,6 @@ class _NetworkDetailState extends State<NetworkDetail> {
 
   List<String> networkDht = [];
   List<List<String>> networkStable = [];
-  List<String> networkSeed = [];
 
   changeWs() async {
     Global.changeWs(wsController.text);
@@ -53,20 +52,6 @@ class _NetworkDetailState extends State<NetworkDetail> {
     }
   }
 
-  void loadNetworkSeed() async {
-    final res = await httpPost(Global.httpRpc, 'network-seed', []);
-    if (res.isOk) {
-      this.networkSeed.clear();
-      res.params.forEach((p) {
-        this.networkSeed.add(p);
-      });
-      setState(() {});
-    } else {
-      // TODO tostor error
-      print(res.error);
-    }
-  }
-
   void loadNetworkStable() async {
     final res = await httpPost(Global.httpRpc, 'network-stable', []);
     if (res.isOk) {
@@ -85,7 +70,6 @@ class _NetworkDetailState extends State<NetworkDetail> {
   initState() {
     loadNetworkStable();
     loadNetworkDht();
-    loadNetworkSeed();
     super.initState();
   }
 
@@ -198,22 +182,6 @@ class _NetworkDetailState extends State<NetworkDetail> {
               ]));
           }),
         ),
-        _settingHead(lang.networkSeed),
-        Container(
-          height: this.networkSeed.length > 0 ? 100.0 : 50.0,
-          child: ListView.builder(
-            itemCount: this.networkSeed.length,
-            itemBuilder: (context, index) {
-              final item = this.networkSeed[index];
-              return Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.eco, size: 18.0, color: color.primary),
-                  SizedBox(width: 15.0),
-                  Text(item, style: TextStyle(fontSize: 14.0)),
-              ]);
-          }),
-        )
     ]);
   }
 }
