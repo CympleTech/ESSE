@@ -597,7 +597,10 @@ class _MemberDrawerWidget extends StatelessWidget {
       child: ListTile(
         leading: member.showAvatar(colorSurface: false),
         title: Text(member.name, textAlign: TextAlign.left, style: TextStyle(fontSize: 16.0)),
-        trailing: Text(isOwner ? 'Owner' : (member.isManager ? 'Manager' : ''),
+        trailing: Text(member.isBlock
+          ? 'Blocked' : (isOwner
+            ? 'Owner' : (member.isManager
+              ? 'Manager' : '')),
           style: TextStyle(color: color)),
         onTap: () {
           Navigator.pop(context);
@@ -750,6 +753,23 @@ class _MemberDetailState extends State<MemberDetail> {
               border: Border.all(color: Colors.red),
               borderRadius: BorderRadius.circular(10.0)),
             child: Center(child: Text(lang.delete,
+                style: TextStyle(fontSize: 14.0, color: Colors.red))),
+          )
+        ),
+        InkWell(
+          onTap: () {
+            Navigator.pop(context);
+            context.read<GroupChatProvider>().memberUpdate(
+              widget.member.id, !widget.member.isBlock);
+          },
+          hoverColor: Colors.transparent,
+          child: Container(
+            width: 300.0,
+            padding: const EdgeInsets.symmetric(vertical: 10.0),
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.red),
+              borderRadius: BorderRadius.circular(10.0)),
+            child: Center(child: Text(widget.member.isBlock ? 'Blocked' : 'Block',
                 style: TextStyle(fontSize: 14.0, color: Colors.red))),
           )
         ),

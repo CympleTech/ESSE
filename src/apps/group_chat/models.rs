@@ -674,6 +674,11 @@ impl Member {
         );
         db.update(&sql)
     }
+
+    pub fn block(db: &DStorage, id: &i64, block: bool) -> Result<usize> {
+        let sql = format!("UPDATE members SET is_block={} WHERE id = {}", block, id,);
+        db.update(&sql)
+    }
 }
 
 /// Group Chat Message Model.

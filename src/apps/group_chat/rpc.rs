@@ -280,6 +280,18 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
     );
 
     handler.add_method(
+        "group-chat-member-update",
+        |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
+            let id = params[0].as_i64()?;
+            let is_block = params[1].as_bool()?;
+
+            let db = group_chat_db(state.layer.read().await.base(), &gid)?;
+            Member::block(&db, &id, is_block)?;
+            Ok(HandleResult::new())
+        },
+    );
+
+    handler.add_method(
         "group-chat-message-create",
         |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
             let gcd = GroupId::from_hex(params[0].as_str()?)?;

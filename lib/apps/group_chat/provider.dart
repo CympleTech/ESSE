@@ -37,18 +37,23 @@ class GroupChatProvider extends ChangeNotifier {
     List<int> allKeys = [];
     List<int> managers = [];
     List<int> commons = [];
+    List<int> blocks = [];
     this.activedMembers.forEach((i, m) {
-        if (m.isManager) {
-          if (m.mid == this.activedGroup.owner) {
-            allKeys.add(i);
-          } else {
-            managers.add(i);
-          }
+        if (m.isBlock) {
+          blocks.add(i);
         } else {
-          commons.add(i);
+          if (m.isManager) {
+            if (m.mid == this.activedGroup.owner) {
+              allKeys.add(i);
+            } else {
+              managers.add(i);
+            }
+          } else {
+            commons.add(i);
+          }
         }
     });
-    return allKeys + managers + commons;
+    return allKeys + managers + commons + blocks;
   }
 
   GroupChatProvider() {
@@ -143,6 +148,10 @@ class GroupChatProvider extends ChangeNotifier {
 
   reAdd(int id) {
     // rpc.send('group-chat-readd', [id]);
+  }
+
+  memberUpdate(int id, bool isBlock) {
+    rpc.send('group-chat-member-update', [id, isBlock]);
   }
 
   _list(List params) {
