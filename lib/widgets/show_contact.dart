@@ -8,7 +8,7 @@ import 'package:esse/apps/chat/provider.dart';
 class ContactList extends StatefulWidget {
   final Function callback;
   final bool multiple;
-  const ContactList({Key key, this.callback, this.multiple}): super(key: key);
+  const ContactList({Key key, this.callback, this.multiple = true}): super(key: key);
 
   @override
   _ContactListState createState() => _ContactListState();
@@ -34,17 +34,22 @@ class _ContactListState extends State<ContactList> {
   Widget _friend(int i, Friend friend) {
     return Container(
       height: 55.0,
-      child: ListTile(
+      child: widget.multiple
+      ? ListTile(
         leading: friend.showAvatar(),
         title: Text(friend.name),
         trailing: Checkbox(
           value: _checks[i],
-          onChanged: (bool value) {
-            setState(() {
-                _checks[i] = value;
-            });
-          },
-        ),
+          onChanged: (bool value) => setState(() => _checks[i] = value),
+        )
+      )
+      : ListTile(
+        onTap: () {
+          Navigator.pop(context);
+          widget.callback(friend.id);
+        },
+        leading: friend.showAvatar(),
+        title: Text(friend.name),
       )
     );
   }
@@ -54,7 +59,7 @@ class _ContactListState extends State<ContactList> {
     final color = Theme.of(context).colorScheme;
     final lang = AppLocalizations.of(context);
 
-    double maxHeight = (MediaQuery.of(context).size.height - 300);
+    double maxHeight = (MediaQuery.of(context).size.height - 400);
     if (maxHeight < 100.0) {
       maxHeight = 100.0;
     }
@@ -93,6 +98,7 @@ class _ContactListState extends State<ContactList> {
         ),
         const Divider(height: 1.0, color: Color(0x40ADB0BB)),
         const SizedBox(height: 10.0),
+        if (widget.multiple)
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [

@@ -9,11 +9,10 @@ import 'package:esse/l10n/localizations.dart';
 import 'package:esse/widgets/emoji.dart';
 import 'package:esse/widgets/shadow_dialog.dart';
 import 'package:esse/widgets/audio_recorder.dart';
-import 'package:esse/widgets/user_info.dart';
+import 'package:esse/widgets/show_contact.dart';
 import 'package:esse/global.dart';
 import 'package:esse/options.dart';
 
-import 'package:esse/apps/chat/provider.dart';
 import 'package:esse/apps/assistant/models.dart';
 import 'package:esse/apps/assistant/provider.dart';
 import 'package:esse/apps/assistant/message.dart';
@@ -131,64 +130,24 @@ class _AssistantDetailState extends State<AssistantDetail> {
     });
   }
 
-  void _sendContact(ColorScheme color, AppLocalizations lang, friends) {
+  _callback(int id) {
+    context.read<AssistantProvider>().create(MessageType.Contact, "${id}");
+    setState(() {
+        textFocus.requestFocus();
+        emojiShow = false;
+        sendShow = false;
+        menuShow = false;
+        recordShow = false;
+    });
+  }
+
+  void _sendContact(ColorScheme color, AppLocalizations lang) {
     showShadowDialog(
       context,
       Icons.person_rounded,
-      'Contact',
-      Column(children: [
-          Container(
-            height: 40.0,
-            decoration: BoxDecoration(
-              color: color.surface,
-              borderRadius: BorderRadius.circular(15.0)),
-            child: TextField(
-              autofocus: false,
-              textInputAction: TextInputAction.search,
-              textAlignVertical: TextAlignVertical.center,
-              style: TextStyle(fontSize: 14.0),
-              onSubmitted: (value) {
-                toast(context, 'WIP...');
-              },
-              decoration: InputDecoration(
-                hintText: lang.search,
-                hintStyle: TextStyle(color: color.onPrimary.withOpacity(0.5)),
-                border: InputBorder.none,
-                contentPadding:
-                EdgeInsets.only(left: 15.0, right: 15.0, bottom: 15.0),
-              ),
-            ),
-          ),
-          SizedBox(height: 15.0),
-          Column(
-            children: friends.map<Widget>((contact) {
-                return GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: () async {
-                    context.read<AssistantProvider>().create(MessageType.Contact, "${contact.id}");
-                    Navigator.of(context).pop();
-                    setState(() {
-                        textFocus.requestFocus();
-                        emojiShow = false;
-                        sendShow = false;
-                        menuShow = false;
-                        recordShow = false;
-                    });
-                  },
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20.0, vertical: 14.0),
-                    child: Row(
-                      children: [
-                        contact.showAvatar(),
-                        SizedBox(width: 15.0),
-                        Text(contact.name, style: TextStyle(fontSize: 16.0)),
-                      ],
-                    ),
-                  ),
-                );
-            }).toList())
-    ]));
+      lang.contact,
+      ContactList(callback: _callback, multiple: false)
+    );
   }
 
   @override
@@ -424,8 +383,7 @@ class _AssistantDetailState extends State<AssistantDetail> {
                   ExtensionButton(
                     icon: Icons.person_rounded,
                     text: lang.contact,
-                    action: () => _sendContact(color, lang,
-                      context.read<ChatProvider>().friends.values),
+                    action: () => _sendContact(color, lang),
                     bgColor: color.surface,
                     iconColor: color.primary),
                 ],

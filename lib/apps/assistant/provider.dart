@@ -28,7 +28,6 @@ class AssistantProvider extends ChangeNotifier {
 
   create(MessageType q_type, String q_content) {
     rpc.send('assistant-create', [q_type.toInt(), q_content]);
-    notifyListeners();
   }
 
   /// delete a message.

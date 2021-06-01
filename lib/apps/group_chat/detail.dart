@@ -20,7 +20,6 @@ import 'package:esse/global.dart';
 import 'package:esse/provider.dart';
 
 import 'package:esse/apps/primitives.dart';
-import 'package:esse/apps/chat/provider.dart';
 import 'package:esse/apps/group_chat/models.dart';
 import 'package:esse/apps/group_chat/provider.dart';
 
@@ -127,64 +126,24 @@ class _GroupChatDetailState extends State<GroupChatDetail> {
     });
   }
 
-  void _sendContact(ColorScheme color, AppLocalizations lang, friends) {
+  _callback(int id) {
+    context.read<GroupChatProvider>().messageCreate(MessageType.Contact, "${id}");
+    setState(() {
+        textFocus.requestFocus();
+        emojiShow = false;
+        sendShow = false;
+        menuShow = false;
+        recordShow = false;
+    });
+  }
+
+  void _sendContact(ColorScheme color, AppLocalizations lang) {
     showShadowDialog(
       context,
       Icons.person_rounded,
-      'Contact',
-      Column(children: [
-          Container(
-            height: 40.0,
-            decoration: BoxDecoration(
-              color: color.surface,
-              borderRadius: BorderRadius.circular(15.0)),
-            child: TextField(
-              autofocus: false,
-              textInputAction: TextInputAction.search,
-              textAlignVertical: TextAlignVertical.center,
-              style: TextStyle(fontSize: 14.0),
-              onSubmitted: (value) {
-                toast(context, 'WIP...');
-              },
-              decoration: InputDecoration(
-                hintText: lang.search,
-                hintStyle: TextStyle(color: color.onPrimary.withOpacity(0.5)),
-                border: InputBorder.none,
-                contentPadding:
-                EdgeInsets.only(left: 15.0, right: 15.0, bottom: 15.0),
-              ),
-            ),
-          ),
-          SizedBox(height: 15.0),
-          Column(
-            children: friends.map<Widget>((contact) {
-                return GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: () async {
-                    //context.read<GroupChatProvider>().messageCreate(Message(friend.id, MessageType.Contact, "${contact.id}"));
-                    Navigator.of(context).pop();
-                    setState(() {
-                        textFocus.requestFocus();
-                        emojiShow = false;
-                        sendShow = false;
-                        menuShow = false;
-                        recordShow = false;
-                    });
-                  },
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20.0, vertical: 14.0),
-                    child: Row(
-                      children: [
-                        contact.showAvatar(),
-                        SizedBox(width: 15.0),
-                        Text(contact.name, style: TextStyle(fontSize: 16.0)),
-                      ],
-                    ),
-                  ),
-                );
-            }).toList())
-    ]));
+      lang.contact,
+      ContactList(callback: _callback, multiple: false)
+    );
   }
 
   @override
@@ -527,7 +486,7 @@ class _GroupChatDetailState extends State<GroupChatDetail> {
                   ExtensionButton(
                     icon: Icons.person_rounded,
                     text: lang.contact,
-                    action: () => _sendContact(color, lang, context.read<ChatProvider>().friends.values),
+                    action: () => _sendContact(color, lang),
                     bgColor: color.surface,
                     iconColor: color.primary),
                 ],
