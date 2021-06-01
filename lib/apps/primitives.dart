@@ -1,6 +1,7 @@
 import 'package:esse/utils/relative_time.dart';
 import 'package:esse/widgets/avatar.dart';
 import 'package:esse/global.dart';
+import 'package:esse/apps/group_chat/models.dart' show GroupType, GroupTypeExtension;
 
 enum MessageType {
   String,
@@ -92,6 +93,40 @@ class BaseMessage {
     addr = raw.substring(i_did + 2);
 
     return [name, did, addr, Global.avatarPath + did + '.png'];
+  }
+
+  List showInvite() {
+    var type = GroupType.Open;
+    var gid = '';
+    var addr = '';
+    var name = '';
+    var proof = '';
+
+    final i_type = this.content.indexOf(';;');
+    if (i_type > 0) {
+      type = GroupTypeExtension.fromInt(int.parse(this.content.substring(0, i_type)));
+    }
+
+    final raw_0 = this.content.substring(i_type + 2);
+    final i_gid = raw_0.indexOf(';;');
+    if (i_gid > 0) {
+      gid = raw_0.substring(0, i_gid);
+    }
+
+    final raw_1 = raw_0.substring(i_gid + 2);
+    final i_addr = raw_1.indexOf(';;');
+    if (i_addr > 0) {
+      addr = raw_1.substring(0, i_addr);
+    }
+
+    final raw_2 = raw_1.substring(i_addr + 2);
+    final i_name = raw_2.indexOf(';;');
+    if (i_name > 0) {
+      name = raw_2.substring(0, i_name).replaceAll('-;', ';');
+    }
+    proof = raw_2.substring(i_name + 2);
+
+    return [type, gid, addr, name, proof];
   }
 
   static String rawRecordName(int time, String name) {

@@ -118,18 +118,6 @@ class GroupChatProvider extends ChangeNotifier {
     this.activedMembers.clear();
   }
 
-  check(String addr) {
-    rpc.send('group-chat-check', [addr]);
-  }
-
-  create(int gtype, String myName, String addr, String name, String bio, bool needAgree) {
-    rpc.send('group-chat-create', [gtype, myName, addr, name, bio, needAgree]);
-  }
-
-  reSend(int id, String myName) {
-    rpc.send('group-chat-resend', [id, myName]);
-  }
-
   join(GroupType gtype, String gid, String gaddr, String name, String remark, [String proof = '', String key = '']) {
     rpc.send('group-chat-join', [gtype.toInt(), gid, gaddr, name, remark, proof, key]);
   }
@@ -147,10 +135,6 @@ class GroupChatProvider extends ChangeNotifier {
     rpc.send('group-chat-message-create', [gid, mtype.toInt(), content]);
   }
 
-  requestList(bool all) {
-    rpc.send('group-chat-request-list', [all]);
-  }
-
   close(int id) {
     // rpc.send('group-chat-close', [id]);
   }
@@ -161,12 +145,6 @@ class GroupChatProvider extends ChangeNotifier {
 
   reAdd(int id) {
     // rpc.send('group-chat-readd', [id]);
-  }
-
-  invite(String gid, List<int> ids) {
-    print(gid);
-    print(ids);
-    rpc.send('group-chat-invite', [ids]);
   }
 
   memberUpdate(int id, bool isBlock) {

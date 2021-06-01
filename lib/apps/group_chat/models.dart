@@ -35,6 +35,17 @@ extension GroupTypeExtension on GroupType {
     }
   }
 
+  String lang(AppLocalizations lang) {
+    switch (this) {
+      case GroupType.Encrypted:
+        return lang.groupTypeEncrypted;
+      case GroupType.Private:
+        return lang.groupTypePrivate;
+      case GroupType.Open:
+        return lang.groupTypeOpen;
+    }
+  }
+
   static GroupType fromInt(int s) {
     switch (s) {
       case 0:

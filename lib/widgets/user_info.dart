@@ -12,9 +12,12 @@ class UserInfo extends StatefulWidget {
   final String id;
   final String name;
   final String addr;
+  final String title;
+  final String remark;
+  final String bio;
   Map qrInfo;
 
-  UserInfo({Key key, this.id, this.name, this.addr, this.app}) : super(key: key) {
+  UserInfo({Key key, this.id, this.name, this.addr, this.app, this.title, this.remark, this.bio}) : super(key: key) {
     this.qrInfo = {
       "app": this.app,
       "params": [this.id, this.addr, this.name],
@@ -39,7 +42,11 @@ class _UserInfoState extends State<UserInfo> {
     Color addrColor = addrCopy ? color.primary : color.onPrimary;
 
     return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
+        Text(widget.name, style: TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 10),
         Container(
           width: 200.0,
           padding: const EdgeInsets.all(2.0),
@@ -77,9 +84,9 @@ class _UserInfoState extends State<UserInfo> {
             ]
           )
         ),
-        const SizedBox(height: 20),
-        Center(child: Text(lang.qrFriend, style: TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold))),
-        const SizedBox(height: 20),
+        const SizedBox(height: 8),
+        Text(widget.title, style: TextStyle(fontSize: 16.0, fontStyle: FontStyle.italic)),
+        const SizedBox(height: 10),
         const Divider(height: 1.0, color: Color(0x40ADB0BB)),
         const SizedBox(height: 20),
         InkWell(
@@ -103,7 +110,7 @@ class _UserInfoState extends State<UserInfo> {
             ),
           )
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 16),
         InkWell(
           onTap: () {
             Clipboard.setData(ClipboardData(text: widget.addr));
@@ -125,6 +132,35 @@ class _UserInfoState extends State<UserInfo> {
             ),
           )
         ),
+        if (widget.remark != null)
+        Container(
+          width: 250.0,
+          padding: const EdgeInsets.only(top: 16.0),
+          child: Row(
+            children: [
+              Icon(Icons.turned_in, size: 20.0, color: color.primary),
+              const SizedBox(width: 16.0),
+              Expanded(
+                child: Center(child: Text(widget.remark, style: TextStyle(fontSize: 14))),
+              )
+            ]
+          ),
+        ),
+        if (widget.bio != null)
+        Container(
+          width: 250.0,
+          padding: const EdgeInsets.only(top: 16.0),
+          child: Row(
+            children: [
+              Icon(Icons.campaign, size: 20.0, color: color.primary),
+              const SizedBox(width: 16.0),
+              Expanded(
+                child: Center(child: Text(widget.bio, style: TextStyle(fontSize: 14))),
+              )
+            ]
+          ),
+        ),
+        const SizedBox(height: 16),
       ]
     );
   }

@@ -14,6 +14,7 @@ import 'package:esse/widgets/shadow_button.dart';
 import 'package:esse/widgets/shadow_dialog.dart';
 import 'package:esse/widgets/qr_scan.dart';
 import 'package:esse/global.dart';
+import 'package:esse/rpc.dart';
 import 'package:esse/provider.dart';
 
 import 'package:esse/apps/group_chat/models.dart';
@@ -113,7 +114,7 @@ class _GroupAddPageState extends State<GroupAddPage> {
     if (addr.substring(0, 2) == '0x') {
       addr = addr.substring(2);
     }
-    context.read<GroupChatProvider>().check(addr);
+    rpc.send('group-chat-check', [addr]);
   }
 
   _scanCallback(bool isOk, String app, List params) {
@@ -160,7 +161,7 @@ class _GroupAddPageState extends State<GroupAddPage> {
     }
     final name = _createNameController.text.trim();
     final bio = _createBioController.text.trim();
-    context.read<GroupChatProvider>().create(_groupType, _myName, addr, name, bio, _groupNeedAgree);
+    rpc.send('group-chat-create', [_groupType, _myName, addr, name, bio, _groupNeedAgree]);
     setState(() {
         _createNameController.text = '';
         _createBioController.text = '';
@@ -195,8 +196,9 @@ class _GroupAddPageState extends State<GroupAddPage> {
     _createKeyFocus.addListener(() {
         setState(() {});
     });
+
+    rpc.send('group-chat-request-list', [false]);
     new Future.delayed(Duration.zero, () {
-        context.read<GroupChatProvider>().requestList(false);
         _myName = context.read<AccountProvider>().activedAccount.name;
     });
   }
@@ -301,7 +303,7 @@ class _GroupAddPageState extends State<GroupAddPage> {
                       if (_requestsLoadMore)
                       TextButton(
                         onPressed: () {
-                          provider.requestList(true);
+                          rpc.send('group-chat-request-list', [true]);
                           setState(() {
                               _requestsLoadMore = false;
                           });
@@ -799,7 +801,7 @@ class _CreateItem extends StatelessWidget {
                       style: TextStyle(color: Color(0xFFADB0BB), fontSize: 14.0),
                   ))
                   : InkWell(
-                    onTap: () => context.read<GroupChatProvider>().reSend(group.id, name),
+                    onTap: () => rpc.send('group-chat-resend', [group.id, name]),
                     hoverColor: Colors.transparent,
                     child: Container(
                       height: 35.0,

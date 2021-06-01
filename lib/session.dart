@@ -96,15 +96,15 @@ class Session {
   List parse(AppLocalizations lang) {
     switch (this.type) {
       case SessionType.Chat:
-        return [showAvatar(), this.name, this.lastContent, this.lastTime.toString()];
+        return [showAvatar(), this.name, this.lastContent, this.lastTime.toString(), null];
       case SessionType.Group:
-        return [showAvatar(), this.name, this.lastContent, this.lastTime.toString()];
+        return [showAvatar(), this.name, this.lastContent, this.lastTime.toString(), Icons.groups];
       case SessionType.Assistant:
         final params = Session.innerService(InnerService.Assistant, lang);
-        return [params[0], params[1], params[2], ''];
+        return [params[0], params[1], params[2], '', Icons.campaign];
       case SessionType.Files:
         final params = Session.innerService(InnerService.Files, lang);
-        return [params[0], params[1], params[2], ''];
+        return [params[0], params[1], params[2], '', Icons.campaign];
     }
   }
 

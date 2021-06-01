@@ -276,7 +276,11 @@ class _ChatDetailState extends State<ChatDetail> {
                             app: 'add-friend',
                             id: 'EH' + friend.gid.toUpperCase(),
                             name: friend.name,
-                            addr: '0x' + friend.addr)
+                            addr: '0x' + friend.addr,
+                            title: lang.qrFriend,
+                            remark: friend.remark,
+                          ),
+                          0.0,
                         );
                       } else if (value == 3) {
                         print('TODO remark');

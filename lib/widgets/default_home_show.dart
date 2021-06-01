@@ -107,19 +107,29 @@ class _SessionWidget extends StatelessWidget {
                         ),
                         Container(
                           margin: const EdgeInsets.only(left: 15.0, right: 20.0),
-                          child: Text(params[3],
-                            style: const TextStyle(color: Color(0xFFADB0BB), fontSize: 12.0),
-                          ),
+                          child: Text(params[3], style: const TextStyle(color: Color(0xFFADB0BB), fontSize: 12.0)),
                         )
                     ]),
                     const SizedBox(height: 4.0),
                     Row(
                       children: [
                         Expanded(
-                          child: Text(params[2],
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(color: Color(0xFFADB0BB), fontSize: 12.0)),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              if (params[4] != null)
+                              Container(
+                                margin: const EdgeInsets.only(right: 6.0),
+                                child: Icon(params[4], size: 16.0, color: Color(0xFFADB0BB)),
+                              ),
+                              Expanded(
+                                child: Text(params[2],
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(color: Color(0xFFADB0BB), fontSize: 12.0)),
+                              )
+                            ]
+                          ),
                         ),
                         Container(width: 8.0, height: 8.0,
                           margin: const EdgeInsets.only(left: 15.0, right: 20.0),

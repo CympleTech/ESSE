@@ -216,7 +216,7 @@ class _GroupChatDetailState extends State<GroupChatDetail> {
 
     return Scaffold(
       key: GroupChatDetail._scaffoldKey,
-      endDrawer: _MemberDrawerWidget(gid: this.group.gid, title: lang.members),
+      endDrawer: _MemberDrawerWidget(id: this.group.id, gid: this.group.gid, title: lang.members),
       drawerScrimColor: color.background,
       body: SafeArea(
         child: Column(
@@ -294,8 +294,11 @@ class _GroupChatDetailState extends State<GroupChatDetail> {
                             app: 'add-group',
                             id: 'EG' + this.group.gid.toUpperCase(),
                             name: this.group.name,
-                            addr: '0x' + this.group.addr
-                          )
+                            addr: '0x' + this.group.addr,
+                            title: this.group.type.lang(lang) + ' ' + lang.groupChat,
+                            bio: this.group.bio,
+                          ),
+                          0.0,
                         );
                       } else if (value == 2) {
                         showDialog(
@@ -590,9 +593,10 @@ Widget _menuItem(Color color, int value, IconData icon, String text) {
 }
 
 class _MemberDrawerWidget extends StatelessWidget {
+  final int id;
   final String gid;
   final String title;
-  const _MemberDrawerWidget({Key key, this.gid, this.title}) : super(key: key);
+  const _MemberDrawerWidget({Key key, this.id, this.gid, this.title}) : super(key: key);
 
   Widget _meItem(Member member, bool meOwner, bool meManager, Color color, lang) {
     return Container(
@@ -630,7 +634,7 @@ class _MemberDrawerWidget extends StatelessWidget {
   }
 
   _action(List<int> ids) {
-    rpc.send('group-chat-invite', [gid, ids]);
+    rpc.send('group-chat-invite', [id, gid, ids]);
   }
 
   _invite(context, String title) {

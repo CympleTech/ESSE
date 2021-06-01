@@ -309,23 +309,73 @@ class ChatMessage extends StatelessWidget {
   }
 
   Widget _showInvite(context, lang, color) {
-    // contact [name, gid, addr, avatar]
-    //final infos = message.showContact();
-    //final gid = 'EG' + infos[1].toUpperCase();
+    // contact [type, gid, addr, name, proof]
+    final infos = message.showInvite();
+    print(infos);
+    final gid = 'EG' + infos[1].toUpperCase();
 
-    final width = MediaQuery.of(context).size.width * 0.6;
-    // text
-    return Container(
-      constraints: BoxConstraints(minWidth: 50, maxWidth: width),
-      padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 14.0),
-      decoration: BoxDecoration(
-        color: message.isMe ? Color(0xFF6174FF) : color.primaryVariant,
-        borderRadius: BorderRadius.circular(15.0),
-      ),
-      child: Text(message.content,
-        style: TextStyle(
-          color: message.isMe ? Colors.white : Color(0xFF1C1939),
-          fontSize: 14.0)));
+    if (infos != null) {
+      return GestureDetector(
+        onTap: () => showShadowDialog(
+          context,
+          Icons.groups_rounded,
+          lang.groupChat,
+          Text(infos[3]),
+        ),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 10.0),
+          width: 200.0,
+          decoration: BoxDecoration(
+            color: const Color(0x40ADB0BB),
+            borderRadius: BorderRadius.circular(15.0),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 40.0,
+                    height: 40.0,
+                    padding: const EdgeInsets.all(8.0),
+                    decoration: BoxDecoration(
+                      color: color.surface,
+                      borderRadius: BorderRadius.circular(15.0),
+                    ),
+                    child: Icon(Icons.groups_rounded, color: color.primary),
+                  ),
+                  Container(
+                    width: 135.0,
+                    padding: const EdgeInsets.only(left: 10.0),
+                    child: Column(children: [
+                        Text(infos[3], maxLines: 1, overflow: TextOverflow.ellipsis,
+                          style: TextStyle(color: color.onPrimary, fontSize: 16.0)),
+                        const SizedBox(height: 5.0),
+                        Text(betterPrint(gid), style: TextStyle(color: Colors.grey, fontSize: 12.0)),
+                  ])),
+              ]),
+              const SizedBox(height: 5.0),
+              const Divider(height: 1.0, color: Color(0x40ADB0BB)),
+              const SizedBox(height: 3.0),
+              Text(lang.groupChat, style: TextStyle(color: Colors.grey, fontSize: 10.0)),
+      ])));
+    } else {
+      final width = MediaQuery.of(context).size.width * 0.6;
+
+      // text
+      return Container(
+        constraints: BoxConstraints(minWidth: 50, maxWidth: width),
+        padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 14.0),
+        decoration: BoxDecoration(
+          color: message.isMe ? Color(0xFF6174FF) : color.primaryVariant,
+          borderRadius: BorderRadius.circular(15.0),
+        ),
+        child: Text(message.content,
+          style: TextStyle(
+            color: message.isMe ? Colors.white : Color(0xFF1C1939),
+            fontSize: 14.0))
+      );
+    }
   }
 
   Widget _infoListTooltip(icon, color, text) {
