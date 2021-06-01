@@ -33,27 +33,40 @@ class GroupChatProvider extends ChangeNotifier {
     return false;
   }
 
-  List<int> get activedMemberOrder {
+  List activedMemberOrder(String myId) {
+    int meId = 0;
+    bool meOwner = false;
+    bool meManager = false;
     List<int> allKeys = [];
     List<int> managers = [];
     List<int> commons = [];
     List<int> blocks = [];
     this.activedMembers.forEach((i, m) {
-        if (m.isBlock) {
-          blocks.add(i);
-        } else {
+        if (m.mid == myId) {
+          meId = i;
           if (m.isManager) {
+            meManager = true;
             if (m.mid == this.activedGroup.owner) {
-              allKeys.add(i);
-            } else {
-              managers.add(i);
+              meOwner = true;
             }
+          }
+        } else {
+          if (m.isBlock) {
+            blocks.add(i);
           } else {
-            commons.add(i);
+            if (m.isManager) {
+              if (m.mid == this.activedGroup.owner) {
+                allKeys.add(i);
+              } else {
+                managers.add(i);
+              }
+            } else {
+              commons.add(i);
+            }
           }
         }
     });
-    return allKeys + managers + commons + blocks;
+    return [allKeys + managers + commons + blocks, meId, meOwner, meManager];
   }
 
   GroupChatProvider() {
@@ -117,8 +130,8 @@ class GroupChatProvider extends ChangeNotifier {
     rpc.send('group-chat-resend', [id, myName]);
   }
 
-  join(String gid, String gaddr, String name, String remark, [String key = '']) {
-    rpc.send('group-chat-join', [gid, gaddr, name, remark, key]);
+  join(GroupType gtype, String gid, String gaddr, String name, String remark, [String proof = '', String key = '']) {
+    rpc.send('group-chat-join', [gtype.toInt(), gid, gaddr, name, remark, proof, key]);
   }
 
   requestHandle(String gid, int id, int rid, bool ok) {
@@ -148,6 +161,12 @@ class GroupChatProvider extends ChangeNotifier {
 
   reAdd(int id) {
     // rpc.send('group-chat-readd', [id]);
+  }
+
+  invite(String gid, List<int> ids) {
+    print(gid);
+    print(ids);
+    rpc.send('group-chat-invite', [ids]);
   }
 
   memberUpdate(int id, bool isBlock) {

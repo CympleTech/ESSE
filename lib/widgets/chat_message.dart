@@ -308,6 +308,26 @@ class ChatMessage extends StatelessWidget {
     }
   }
 
+  Widget _showInvite(context, lang, color) {
+    // contact [name, gid, addr, avatar]
+    //final infos = message.showContact();
+    //final gid = 'EG' + infos[1].toUpperCase();
+
+    final width = MediaQuery.of(context).size.width * 0.6;
+    // text
+    return Container(
+      constraints: BoxConstraints(minWidth: 50, maxWidth: width),
+      padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 14.0),
+      decoration: BoxDecoration(
+        color: message.isMe ? Color(0xFF6174FF) : color.primaryVariant,
+        borderRadius: BorderRadius.circular(15.0),
+      ),
+      child: Text(message.content,
+        style: TextStyle(
+          color: message.isMe ? Colors.white : Color(0xFF1C1939),
+          fontSize: 14.0)));
+  }
+
   Widget _infoListTooltip(icon, color, text) {
     return Container(
       width: 300.0,
@@ -338,6 +358,8 @@ class ChatMessage extends StatelessWidget {
       return _showContact(context, lang, color);
     } else if (message.type == MessageType.Record) {
       return  _showRecord();
+    } else if (message.type == MessageType.Invite) {
+      return  _showInvite(context, lang, color);
     }
     return _showText(context, color, isDesktop);
   }

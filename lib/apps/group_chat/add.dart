@@ -144,7 +144,7 @@ class _GroupAddPageState extends State<GroupAddPage> {
       addr = addr.substring(2);
     }
     var name = _joinNameController.text;
-    context.read<GroupChatProvider>().join(id, addr, name, "");
+    context.read<GroupChatProvider>().join(GroupType.Open, id, addr, name, "");
     setState(() {
         _joinIdController.text = '';
         _joinAddrController.text = '';

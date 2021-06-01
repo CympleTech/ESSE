@@ -9,9 +9,9 @@ use tdn_did::Proof;
 
 use group_chat_types::{CheckType, Event, GroupType, JoinProof, LayerEvent};
 
-use crate::apps::chat::MessageType;
+use crate::apps::chat::{Friend, MessageType};
 use crate::rpc::RpcState;
-use crate::storage::group_chat_db;
+use crate::storage::{chat_db, group_chat_db};
 
 use super::add_layer;
 use super::models::{to_network_message, GroupChat, GroupChatKey, Member, Message, Request};
@@ -236,11 +236,14 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
     handler.add_method(
         "group-chat-join",
         |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
-            let gcd = GroupId::from_hex(params[0].as_str()?)?;
-            let gaddr = PeerAddr::from_hex(params[1].as_str()?)?;
-            let gname = params[2].as_str()?.to_owned();
-            let gremark = params[3].as_str()?.to_owned();
-            let gkey = params[4].as_str()?;
+            let _gtype = GroupType::from_u32(params[0].as_i64()? as u32);
+            let gcd = GroupId::from_hex(params[1].as_str()?)?;
+            let gaddr = PeerAddr::from_hex(params[2].as_str()?)?;
+            let gname = params[3].as_str()?.to_owned();
+            let gremark = params[4].as_str()?.to_owned();
+            let gproof = params[5].as_str()?;
+            let _proof = Proof::from_hex(gproof).unwrap_or(Proof::default());
+            let gkey = params[6].as_str()?;
             let key = GroupChatKey::from_hex(gkey).unwrap_or(GroupChatKey::new(vec![]));
 
             let mut request = Request::new_by_me(gcd, gaddr, gname, gremark, key);
@@ -255,6 +258,75 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
                 .unwrap_or(vec![]);
             let s = SendType::Event(0, request.addr, data);
             add_layer(&mut results, gid, s);
+            Ok(results)
+        },
+    );
+
+    handler.add_method(
+        "group-chat-invite",
+        |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
+            let id = params[0].as_i64()?;
+            let gcd = GroupId::from_hex(params[1].as_str()?)?;
+            let ids: Vec<i64> = params[2]
+                .as_array()?
+                .iter()
+                .filter_map(|v| v.as_i64())
+                .collect();
+
+            //
+            let group_lock = state.group.read().await;
+            let base = group_lock.base().clone();
+
+            let chat = chat_db(&base, &gid)?;
+            let group_db = group_chat_db(&base, &gid)?;
+
+            let mut invites = vec![];
+            for id in ids {
+                let friend = Friend::get_id(&chat, id)??;
+                if Member::get_id(&group_db, &id, &friend.gid).is_err() {
+                    let proof = group_lock.prove_addr(&gid, &friend.gid.into())?;
+                    invites.push((friend.id, friend.gid, friend.addr, proof));
+                }
+            }
+            drop(chat);
+
+            let gc = GroupChat::get_id(&group_db, &id)??;
+            let tmp_name = gc.g_name.replace(";", "-;");
+
+            let mut results = HandleResult::new();
+            let mut layer_lock = state.layer.write().await;
+            for (fid, fgid, mut faddr, proof) in invites {
+                let contact_values = format!(
+                    "{};;{};;{};;{};;{}",
+                    gc.g_type.to_u32(),
+                    gcd.to_hex(),
+                    gc.g_addr.to_hex(),
+                    tmp_name,
+                    proof.to_hex(),
+                );
+
+                // check if encrypted group type. need online.
+                if gc.g_type == GroupType::Encrypted {
+                    if let Ok(addr) = layer_lock.running(&gid)?.online(&fgid) {
+                        faddr = addr;
+                    } else {
+                        continue;
+                    }
+                }
+
+                let (msg, nw) = crate::apps::chat::LayerEvent::from_message(
+                    &base,
+                    gid,
+                    fid,
+                    MessageType::Invite,
+                    contact_values,
+                )
+                .await?;
+                let event = crate::apps::chat::LayerEvent::Message(msg.hash, nw);
+                let s =
+                    crate::apps::chat::event_message(&mut layer_lock, msg.id, gid, faddr, &event);
+                results.layers.push((gid, fgid, s));
+            }
             Ok(results)
         },
     );

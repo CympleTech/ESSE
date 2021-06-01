@@ -445,6 +445,7 @@ impl LayerEvent {
                 // TODO
                 (NetworkMessage::Video, content)
             }
+            MessageType::Invite => (NetworkMessage::Invite(content.clone()), content),
         };
 
         let mut msg = Message::new(&mgid, fid, true, m_type, raw, false);
@@ -499,7 +500,7 @@ pub(super) fn reject_message(
     SendType::Event(uid, addr, data)
 }
 
-pub(super) fn event_message(
+pub(crate) fn event_message(
     layer: &mut Layer,
     tid: i64,
     me_id: GroupId,

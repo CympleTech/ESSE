@@ -82,6 +82,11 @@ abstract class AppLocalizations {
   String get create;
   String get exit;
   String get loadMore;
+  String get me;
+  String get manager;
+  String get block;
+  String get blocked;
+  String get invite;
 
   // theme
   String get themeDark;
@@ -175,6 +180,7 @@ abstract class AppLocalizations {
   String get groupChatBio;
   String get groupJoin;
   String get groupCreate;
+  String get groupOwner;
   String get groupTypeEncrypted;
   String get groupTypeEncryptedInfo;
   String get groupTypePrivate;

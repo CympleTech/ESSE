@@ -65,7 +65,7 @@ pub(crate) struct GroupChat {
     /// group chat id.
     pub g_id: GroupId,
     /// group chat type.
-    g_type: GroupType,
+    pub g_type: GroupType,
     /// group chat server addresse.
     pub g_addr: PeerAddr,
     /// group chat name.

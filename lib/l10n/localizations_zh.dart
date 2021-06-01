@@ -88,6 +88,16 @@ class AppLocalizationsZh extends AppLocalizations {
   String get exit => '退出';
   @override
   String get loadMore => '加载更多';
+  @override
+  String get me => '我';
+  @override
+  String get manager => '管理员';
+  @override
+  String get block => '拉黑';
+  @override
+  String get blocked => '已拉黑';
+  @override
+  String get invite => '邀请';
 
   // theme
   @override
@@ -260,6 +270,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get groupJoin => '加入公开群';
   @override
   String get groupCreate => '新建群';
+  @override
+  String get groupOwner => '群主';
   @override
   String get groupTypeEncrypted => '加密';
   @override

@@ -88,6 +88,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get exit => 'Exit';
   @override
   String get loadMore => 'Load more...';
+  @override
+  String get me => 'Me';
+  @override
+  String get manager => 'Manager';
+  @override
+  String get block => 'Block';
+  @override
+  String get blocked => 'Blocked';
+  @override
+  String get invite => 'Invite';
 
   // theme
   @override
@@ -260,6 +270,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get groupJoin => 'Join Open Group';
   @override
   String get groupCreate => 'Create Group';
+  @override
+  String get groupOwner => 'Owner';
   @override
   String get groupTypeEncrypted => 'Encrypted';
   @override

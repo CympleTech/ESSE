@@ -14,6 +14,8 @@ import 'package:esse/widgets/shadow_dialog.dart';
 import 'package:esse/widgets/audio_recorder.dart';
 import 'package:esse/widgets/user_info.dart';
 import 'package:esse/widgets/chat_message.dart';
+import 'package:esse/widgets/show_contact.dart';
+import 'package:esse/rpc.dart';
 import 'package:esse/global.dart';
 import 'package:esse/provider.dart';
 
@@ -214,7 +216,7 @@ class _GroupChatDetailState extends State<GroupChatDetail> {
 
     return Scaffold(
       key: GroupChatDetail._scaffoldKey,
-      endDrawer: _MemberDrawerWidget(title: lang.members),
+      endDrawer: _MemberDrawerWidget(gid: this.group.gid, title: lang.members),
       drawerScrimColor: color.background,
       body: SafeArea(
         child: Column(
@@ -588,28 +590,54 @@ Widget _menuItem(Color color, int value, IconData icon, String text) {
 }
 
 class _MemberDrawerWidget extends StatelessWidget {
+  final String gid;
   final String title;
-  const _MemberDrawerWidget({Key key, this.title}) : super(key: key);
+  const _MemberDrawerWidget({Key key, this.gid, this.title}) : super(key: key);
 
-  Widget _item(context, Member member, bool isOwner, Color color) {
+  Widget _meItem(Member member, bool meOwner, bool meManager, Color color, lang) {
+    return Container(
+      height: 55.0,
+      child: ListTile(
+        leading: member.showAvatar(colorSurface: false),
+        title: Text(lang.me, textAlign: TextAlign.left,
+          style: TextStyle(fontSize: 16.0, fontStyle: FontStyle.italic)),
+        trailing: Text(meOwner ? lang.groupOwner : (meManager ? lang.manager : ''),
+          style: TextStyle(color: color)),
+      )
+    );
+  }
+
+  Widget _item(context, Member member, bool isOwner, bool meOwner, bool meManager, Color color, lang) {
     return Container(
       height: 55.0,
       child: ListTile(
         leading: member.showAvatar(colorSurface: false),
         title: Text(member.name, textAlign: TextAlign.left, style: TextStyle(fontSize: 16.0)),
         trailing: Text(member.isBlock
-          ? 'Blocked' : (isOwner
-            ? 'Owner' : (member.isManager
-              ? 'Manager' : '')),
+          ? lang.blocked : (isOwner
+            ? lang.groupOwner : (member.isManager
+              ? lang.manager : '')),
           style: TextStyle(color: color)),
         onTap: () {
           Navigator.pop(context);
           showShadowDialog(context, Icons.group_rounded, title,
-            MemberDetail(member: member, isGroupOwner: isOwner, isGroupManager: member.isManager),
+            MemberDetail(member: member, isGroupOwner: meOwner, isGroupManager: meManager),
             10.0,
           );
         }
       )
+    );
+  }
+
+  _action(List<int> ids) {
+    rpc.send('group-chat-invite', [gid, ids]);
+  }
+
+  _invite(context, String title) {
+    Navigator.pop(context);
+    showShadowDialog(context, Icons.people_rounded, title,
+      ContactList(callback: _action, multiple: true),
+      0.0,
     );
   }
 
@@ -619,10 +647,15 @@ class _MemberDrawerWidget extends StatelessWidget {
     final lang = AppLocalizations.of(context);
     final isLight = color.brightness == Brightness.light;
     final isDesktop = isDisplayDesktop(context);
+    final myId = context.read<AccountProvider>().activedAccountId;
 
     final provider = context.watch<GroupChatProvider>();
     final members = provider.activedMembers;
-    final allKeys = provider.activedMemberOrder;
+    final all = provider.activedMemberOrder(myId);
+    final allKeys = all[0];
+    final meId = all[1];
+    final meOwner = all[2];
+    final meManager = all[3];
 
     return Drawer(
       child: BackdropFilter(
@@ -633,15 +666,41 @@ class _MemberDrawerWidget extends StatelessWidget {
             padding: const EdgeInsets.symmetric(vertical: 20.0),
             child: Column(
               children: [
-                Text(lang.members, style: Theme.of(context).textTheme.title),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.only(left: 20.0),
+                      child: Text("${lang.members} (${allKeys.length + 1})",
+                        style: Theme.of(context).textTheme.title),
+                    ),
+                    Container(
+                      margin: const EdgeInsets.only(right: 10.0),
+                      padding: const EdgeInsets.symmetric(vertical: 2.0, horizontal: 10.0),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Color(0xFF6174FF)),
+                        borderRadius: BorderRadius.circular(25.0)),
+                      child: TextButton(child: Row(
+                          children: [
+                            Icon(Icons.add, size: 16.0),
+                            Text(lang.invite),
+                          ]
+                        ),
+                        onPressed: () => _invite(context, lang.contact),
+                      ),
+                    )
+                  ]
+                ),
                 const SizedBox(height: 10.0),
                 const Divider(height: 1.0, color: Color(0x40ADB0BB)),
                 const SizedBox(height: 10.0),
+                _meItem(members[meId], meOwner, meManager, color.primary, lang),
                 Expanded(
                   child: ListView.builder(
                     itemCount: allKeys.length,
                     itemBuilder: (BuildContext ctx, int index) => _item(
-                      context, members[allKeys[index]], index == 0, color.primary
+                      context, members[allKeys[index]],
+                      index == 0 && !meOwner, meOwner, meManager, color.primary, lang
                     ),
                   )
                 )
@@ -702,75 +761,84 @@ class _MemberDetailState extends State<MemberDetail> {
         const SizedBox(height: 10.0),
         _infoListTooltip(Icons.person, color.primary, widget.member.mid),
         _infoListTooltip(Icons.location_on, color.primary, widget.member.addr),
-        const SizedBox(height: 10.0),
         if (widget.isGroupOwner)
-        InkWell(
-          onTap: () {
-            Navigator.pop(context);
-            // TODO delete.
-          },
-          hoverColor: Colors.transparent,
-          child: Container(
-            width: 300.0,
-            padding: const EdgeInsets.symmetric(vertical: 10.0),
-            decoration: BoxDecoration(
-              border: Border.all(),
-              borderRadius: BorderRadius.circular(10.0)),
-            child: Center(child: Text(widget.member.isManager ? 'Cancel Manager' : 'Set Manager',
-                style: TextStyle(fontSize: 14.0))),
+        Container(
+          padding: const EdgeInsets.only(top: 20.0, bottom: 10.0),
+          child: InkWell(
+            onTap: () {
+              Navigator.pop(context);
+              // TODO delete.
+            },
+            hoverColor: Colors.transparent,
+            child: Container(
+              width: 300.0,
+              padding: const EdgeInsets.symmetric(vertical: 10.0),
+              decoration: BoxDecoration(
+                border: Border.all(color: color.primary),
+                borderRadius: BorderRadius.circular(10.0)),
+              child: Center(child: Text(widget.member.isManager ? 'Cancel Manager' : 'Set Manager',
+                  style: TextStyle(fontSize: 14.0, color: color.primary))),
+            )
           )
         ),
-        const SizedBox(height: 10.0),
         if (notFriend)
-        InkWell(
-          onTap: () {
-            Navigator.pop(context);
-            // TODO delete.
-          },
-          hoverColor: Colors.transparent,
-          child: Container(
-            width: 300.0,
-            padding: const EdgeInsets.symmetric(vertical: 10.0),
-            decoration: BoxDecoration(
-              border: Border.all(color: Color(0xFF6174FF)),
-              borderRadius: BorderRadius.circular(10.0)),
-            child: Center(child: Text(lang.addFriend,
-                style: TextStyle(fontSize: 14.0, color: Color(0xFF6174FF)))),
+        Container(
+          padding: const EdgeInsets.symmetric(vertical: 10.0),
+          child: InkWell(
+            onTap: () {
+              Navigator.pop(context);
+              // TODO delete.
+            },
+            hoverColor: Colors.transparent,
+            child: Container(
+              width: 300.0,
+              padding: const EdgeInsets.symmetric(vertical: 10.0),
+              decoration: BoxDecoration(
+                border: Border.all(color: Color(0xFF6174FF)),
+                borderRadius: BorderRadius.circular(10.0)),
+              child: Center(child: Text(lang.addFriend,
+                  style: TextStyle(fontSize: 14.0, color: Color(0xFF6174FF)))),
+            )
           )
         ),
-        const SizedBox(height: 10.0),
         if (widget.isGroupManager || widget.isGroupOwner)
-        InkWell(
-          onTap: () {
-            Navigator.pop(context);
-            // TODO delete.
-          },
-          hoverColor: Colors.transparent,
-          child: Container(
-            width: 300.0,
-            padding: const EdgeInsets.symmetric(vertical: 10.0),
-            decoration: BoxDecoration(
-              border: Border.all(color: Colors.red),
-              borderRadius: BorderRadius.circular(10.0)),
-            child: Center(child: Text(lang.delete,
-                style: TextStyle(fontSize: 14.0, color: Colors.red))),
+        Container(
+          padding: const EdgeInsets.symmetric(vertical: 10.0),
+          child: InkWell(
+            onTap: () {
+              Navigator.pop(context);
+              // TODO delete.
+            },
+            hoverColor: Colors.transparent,
+            child: Container(
+              width: 300.0,
+              padding: const EdgeInsets.symmetric(vertical: 10.0),
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.red),
+                borderRadius: BorderRadius.circular(10.0)),
+              child: Center(child: Text(lang.delete,
+                  style: TextStyle(fontSize: 14.0, color: Colors.red))),
+            )
           )
         ),
-        InkWell(
-          onTap: () {
-            Navigator.pop(context);
-            context.read<GroupChatProvider>().memberUpdate(
-              widget.member.id, !widget.member.isBlock);
-          },
-          hoverColor: Colors.transparent,
-          child: Container(
-            width: 300.0,
-            padding: const EdgeInsets.symmetric(vertical: 10.0),
-            decoration: BoxDecoration(
-              border: Border.all(color: Colors.red),
-              borderRadius: BorderRadius.circular(10.0)),
-            child: Center(child: Text(widget.member.isBlock ? 'Blocked' : 'Block',
-                style: TextStyle(fontSize: 14.0, color: Colors.red))),
+        Container(
+          padding: const EdgeInsets.symmetric(vertical: 10.0),
+          child: InkWell(
+            onTap: () {
+              Navigator.pop(context);
+              context.read<GroupChatProvider>().memberUpdate(
+                widget.member.id, !widget.member.isBlock);
+            },
+            hoverColor: Colors.transparent,
+            child: Container(
+              width: 300.0,
+              padding: const EdgeInsets.symmetric(vertical: 10.0),
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.black),
+                borderRadius: BorderRadius.circular(10.0)),
+              child: Center(child: Text(widget.member.isBlock ? lang.blocked : lang.block,
+                  style: TextStyle(fontSize: 14.0, color: Colors.black))),
+            )
           )
         ),
       ]

@@ -11,6 +11,7 @@ enum MessageType {
   Record,
   Phone,
   Video,
+  Invite,
 }
 
 // use 00-99
@@ -33,6 +34,8 @@ extension MessageTypeExtension on MessageType {
         return 6;
       case MessageType.Video:
         return 7;
+      case MessageType.Invite:
+        return 8;
       default:
         return 0;
     }
@@ -56,6 +59,8 @@ extension MessageTypeExtension on MessageType {
         return MessageType.Phone;
       case 7:
         return MessageType.Video;
+      case 8:
+        return MessageType.Invite;
       default:
         return MessageType.String;
     }

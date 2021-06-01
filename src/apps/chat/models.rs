@@ -51,6 +51,7 @@ pub(crate) enum NetworkMessage {
     Emoji,
     Phone,
     Video,
+    Invite(String),
     None,
 }
 
@@ -97,6 +98,7 @@ impl NetworkMessage {
                 // TODO
                 (MessageType::Video, "".to_owned())
             }
+            NetworkMessage::Invite(content) => (MessageType::Invite, content),
             NetworkMessage::None => {
                 return Ok(Message::new_with_id(
                     hash,
@@ -148,6 +150,7 @@ impl NetworkMessage {
                 };
                 Ok(NetworkMessage::Record(bytes, time))
             }
+            MessageType::Invite => Ok(NetworkMessage::Invite(model.content)),
             MessageType::Emoji => Ok(NetworkMessage::Emoji),
             MessageType::Phone => Ok(NetworkMessage::Phone),
             MessageType::Video => Ok(NetworkMessage::Video),
@@ -165,6 +168,7 @@ pub(crate) enum MessageType {
     Record,
     Phone,
     Video,
+    Invite,
 }
 
 impl MessageType {
@@ -178,6 +182,7 @@ impl MessageType {
             MessageType::Record => 5,
             MessageType::Phone => 6,
             MessageType::Video => 7,
+            MessageType::Invite => 8,
         }
     }
 
@@ -191,6 +196,7 @@ impl MessageType {
             5 => MessageType::Record,
             6 => MessageType::Phone,
             7 => MessageType::Video,
+            8 => MessageType::Invite,
             _ => MessageType::String,
         }
     }
