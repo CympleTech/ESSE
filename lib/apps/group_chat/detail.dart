@@ -18,6 +18,7 @@ import 'package:esse/widgets/show_contact.dart';
 import 'package:esse/rpc.dart';
 import 'package:esse/global.dart';
 import 'package:esse/provider.dart';
+import 'package:esse/session.dart' show SessionType;
 
 import 'package:esse/apps/primitives.dart';
 import 'package:esse/apps/group_chat/models.dart';
@@ -55,6 +56,12 @@ class _GroupChatDetailState extends State<GroupChatDetail> {
           });
         }
     });
+  }
+
+  @override
+  void deactivate() {
+    context.read<AccountProvider>().clearActivedSession(SessionType.Group);
+    super.deactivate();
   }
 
   _generateRecordPath() {

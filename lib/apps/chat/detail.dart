@@ -14,7 +14,7 @@ import 'package:esse/widgets/chat_message.dart';
 import 'package:esse/widgets/show_contact.dart';
 import 'package:esse/global.dart';
 import 'package:esse/provider.dart';
-import 'package:esse/session.dart';
+import 'package:esse/session.dart' show SessionType, OnlineType;
 
 import 'package:esse/apps/primitives.dart';
 import 'package:esse/apps/chat/models.dart';
@@ -51,6 +51,12 @@ class _ChatDetailState extends State<ChatDetail> {
           });
         }
     });
+  }
+
+  @override
+  void deactivate() {
+    context.read<AccountProvider>().clearActivedSession(SessionType.Chat);
+    super.deactivate();
   }
 
   _generateRecordPath() {

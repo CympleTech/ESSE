@@ -207,6 +207,16 @@ class AccountProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  clearActivedSession(SessionType type) {
+    if (this.activedSession.type == type && this.actived > 0) {
+      rpc.send('session-suspend', [this.actived, this.activedSession.gid,
+          this.activedSession.type == SessionType.Group]
+      );
+      this.actived = 0;
+      this.coreShowWidget = DefaultCoreShow();
+    }
+  }
+
   updateActivedSession(int id, [SessionType type, int fid]) {
     if (fid != null && fid > 0) {
       for (int k in this.sessions.keys) {
@@ -221,11 +231,9 @@ class AccountProvider extends ChangeNotifier {
 
     if (id > 0) {
       if (this.actived != id && this.actived > 0) {
-        bool must = false;
-        if (this.activedSession.type == SessionType.Group) {
-          must = true;
-        }
-        rpc.send('session-suspend', [this.actived, this.activedSession.gid, must]);
+        rpc.send('session-suspend', [this.actived, this.activedSession.gid,
+            this.activedSession.type == SessionType.Group]
+        );
       }
       this.actived = id;
       this.activedSession.lastReaded = true;
