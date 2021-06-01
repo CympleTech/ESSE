@@ -23,13 +23,27 @@ class _ChatListState extends State<ChatList> {
   Widget build(BuildContext context) {
     final provider = context.watch<ChatProvider>();
     final isDesktop = isDisplayDesktop(context);
+    final lang = AppLocalizations.of(context);
+    final color = Theme.of(context).colorScheme;
     final friends = provider.friends;
     final chatKeys = provider.orderKeys;
 
     return Scaffold(
-      body: ListView.builder(
-        itemCount: chatKeys.length,
-        itemBuilder: (BuildContext ctx, int index) => ListChat(friend: friends[chatKeys[index]]),
+      appBar: AppBar(
+        title: Text(lang.contact),
+        bottom: PreferredSize(
+          child: Container(color: const Color(0x40ADB0BB), height: 1.0),
+          preferredSize: Size.fromHeight(1.0)
+        ),
+      ),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 10.0),
+          child: ListView.builder(
+            itemCount: chatKeys.length,
+            itemBuilder: (BuildContext ctx, int index) => ListChat(friend: friends[chatKeys[index]]),
+          )
+        ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {

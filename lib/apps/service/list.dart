@@ -39,7 +39,7 @@ class _ServiceListState extends State<ServiceList> {
                 name: params[0],
                 bio: params[1],
                 logo: params[2],
-                callback: () => v.callback(context, isDesktop, lang),
+                callback: () => v.callback(),
                 isDesktop: isDesktop,
               );
           }).toList()
@@ -70,16 +70,12 @@ class ListInnerService extends StatelessWidget {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () {
-        final widgets = this.callback();
-        if (widgets != null) {
+        final widget = this.callback();
+        if (widget != null) {
           if (this.isDesktop) {
-            Provider.of<AccountProvider>(context, listen: false).updateActivedWidget(widgets[0], widgets[1], widgets[2]);
+            Provider.of<AccountProvider>(context, listen: false).updateActivedWidget(widget);
           } else {
-            if (widgets[2] != null) {
-              Provider.of<AccountProvider>(context, listen: false).updateActivedWidget(null, widgets[1], widgets[2]);
-            } else {
-              Navigator.push(context, MaterialPageRoute(builder: (_) => widgets[0]));
-            }
+            Navigator.push(context, MaterialPageRoute(builder: (_) => widget));
           }
         }
       },

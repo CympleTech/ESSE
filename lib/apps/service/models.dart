@@ -1,13 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-
 import 'package:esse/l10n/localizations.dart';
-import 'package:esse/provider.dart';
 
 import 'package:esse/apps/assistant/page.dart';
 import 'package:esse/apps/file/page.dart';
 import 'package:esse/apps/group_chat/page.dart';
-
 
 enum InnerService {
   Files,
@@ -27,31 +23,14 @@ extension InnerServiceExtension on InnerService {
     }
   }
 
-  void callback(context, isDesktop, lang) {
-    Widget coreWidget = null;
-    String listTitle = null;
-    Widget listHome = null;
-
+  Widget callback() {
     switch (this) {
       case InnerService.Files:
-        listTitle = lang.files;
-        listHome = FolderList();
-        break;
+        return FolderList();
       case InnerService.Assistant:
-        coreWidget = AssistantDetail();
-        break;
+        return AssistantDetail();
       case InnerService.GroupChat:
-        listTitle = lang.groupChat;
-        listHome = GroupChatList();
-        break;
-    }
-
-    if (this == InnerService.Assistant) {
-      Navigator.push(context, MaterialPageRoute(builder: (_) => coreWidget));
-    } else {
-      Provider.of<AccountProvider>(context, listen: false).updateActivedWidget(
-        coreWidget, listTitle, listHome
-      );
+        return GroupChatList();
     }
   }
 }

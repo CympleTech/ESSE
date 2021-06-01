@@ -22,16 +22,20 @@ import 'package:esse/account.dart';
 import 'package:esse/global.dart';
 import 'package:esse/options.dart';
 import 'package:esse/provider.dart';
+import 'package:esse/session.dart';
 
 import 'package:esse/apps/device/provider.dart';
 import 'package:esse/apps/device/page.dart';
 import 'package:esse/apps/chat/provider.dart';
 import 'package:esse/apps/chat/list.dart';
+import 'package:esse/apps/chat/detail.dart';
 import 'package:esse/apps/chat/add.dart';
 import 'package:esse/apps/file/page.dart';
 import 'package:esse/apps/service/list.dart';
 import 'package:esse/apps/service/add.dart';
 import 'package:esse/apps/assistant/page.dart';
+import 'package:esse/apps/group_chat/detail.dart';
+import 'package:esse/apps/group_chat/provider.dart';
 
 class HomePage extends StatelessWidget {
   static GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<ScaffoldState>();
@@ -47,22 +51,21 @@ class HomePage extends StatelessWidget {
 
     if (isDesktop) {
       return WillPopScope(
-          onWillPop: () =>
-              SystemChannels.platform.invokeMethod('SystemNavigator.pop'),
-          child: Scaffold(
-            key: _scaffoldKey,
-            drawer: const DrawerWidget(),
-            drawerScrimColor: Color(0x26ADB0BB),
-            body: SafeArea(
-                child: Row(children: [
-              Container(
-                width: 375.0,
-                child: HomeList(_scaffoldKey),
-              ),
-              SizedBox(width: 20.0),
-              Expanded(child: context.watch<AccountProvider>().coreShowWidget),
-            ])),
-          ));
+        onWillPop: () => SystemChannels.platform.invokeMethod('SystemNavigator.pop'),
+        child: Scaffold(
+          key: _scaffoldKey,
+          drawer: const DrawerWidget(),
+          drawerScrimColor: const Color(0x26ADB0BB),
+          body: SafeArea(
+            child: Row(
+              children: [
+                Container(width: 375.0,
+                  child: HomeList(scaffoldKey: _scaffoldKey),
+                ),
+                const SizedBox(width: 20.0),
+                Expanded(child: context.watch<AccountProvider>().coreShowWidget),
+          ])),
+      ));
     } else {
       var style;
       if (isLight) {
@@ -72,25 +75,24 @@ class HomePage extends StatelessWidget {
       }
 
       return WillPopScope(
-          onWillPop: () =>
-              SystemChannels.platform.invokeMethod('SystemNavigator.pop'),
-          child: Scaffold(
-            key: _scaffoldKey,
-            drawer: const DrawerWidget(),
-            drawerScrimColor: Color(0x26ADB0BB),
-            body: AnnotatedRegion<SystemUiOverlayStyle>(
-                value: style.copyWith(statusBarColor: colorScheme.background),
-                child: SafeArea(
-                  child: HomeList(_scaffoldKey),
-                )),
-          ));
+        onWillPop: () => SystemChannels.platform.invokeMethod('SystemNavigator.pop'),
+        child: Scaffold(
+          key: _scaffoldKey,
+          drawer: const DrawerWidget(),
+          drawerScrimColor: const Color(0x26ADB0BB),
+          body: AnnotatedRegion<SystemUiOverlayStyle>(
+            value: style.copyWith(statusBarColor: colorScheme.background),
+            child: SafeArea(
+              child: HomeList(scaffoldKey: _scaffoldKey),
+          )),
+      ));
     }
   }
 }
 
 class HomeList extends StatefulWidget {
-  final GlobalKey<ScaffoldState> _scaffoldKey;
-  HomeList(this._scaffoldKey);
+  final GlobalKey<ScaffoldState> scaffoldKey;
+  const HomeList({Key key, this.scaffoldKey}) : super(key: key);
 
   @override
   _HomeListState createState() => _HomeListState();
@@ -133,102 +135,93 @@ class _HomeListState extends State<HomeList> {
     final color = Theme.of(context).colorScheme;
     final lang = AppLocalizations.of(context);
     final provider = context.watch<AccountProvider>();
+    final allKeys = provider.topKeys + provider.orderKeys;
+    final sessions = provider.sessions;
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 10.0),
-      child: Column(
-        children: [
+    return Scaffold(
+      appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.menu),
+          onPressed: () => widget.scaffoldKey.currentState.openDrawer(),
+        ),
+        bottom: PreferredSize(
+          child: Container(color: const Color(0x40ADB0BB), height: 1.0),
+          preferredSize: Size.fromHeight(1.0)
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.search),
+            onPressed: null,
+          ),
           Container(
-            height: 30.0,
-            padding: const EdgeInsets.symmetric(horizontal: 20.0),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                GestureDetector(
-                  onTap: widget._scaffoldKey.currentState.openDrawer,
-                  child: Icon(
-                    Icons.menu_rounded,
-                    color: color.primary,
-                    size: 28.0,
-                  ),
+            margin: const EdgeInsets.symmetric(horizontal: 20.0),
+            alignment: Alignment.center,
+            child: Stack(
+              children: <Widget>[
+                PopupMenuButton<int>(
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                  color: const Color(0xFFEDEDED),
+                  child: Icon(Icons.add_circle_outline, color: color.primary),
+                  onSelected: (int value) {
+                    if (value == 0) {
+                      _scanQr(isDesktop);
+                    } else if (value == 1) {
+                      final widget = ChatAddPage();
+                      provider.systemAppFriendAddNew = false;
+                      if (isDesktop) {
+                        provider.updateActivedWidget(widget);
+                      } else {
+                        setState(() {});
+                        Navigator.push(context, MaterialPageRoute(builder: (_) => widget));
+                      }
+                    } else if (value == 2) {
+                      showShadowDialog(
+                        context,
+                        Icons.info,
+                        lang.info,
+                        UserInfo(
+                          app: 'add-friend',
+                          id: provider.activedAccount.id,
+                          name: provider.activedAccount.name,
+                          addr: Global.addr)
+                      );
+                    }
+                  },
+                  itemBuilder: (context) {
+                    return <PopupMenuEntry<int>>[
+                      _menuItem(0, Icons.qr_code_scanner_rounded, lang.scan),
+                      _menuItem(1, Icons.person_add_rounded, lang.addFriend,
+                        provider.systemAppFriendAddNew),
+                      _menuItem(2, Icons.qr_code_rounded, lang.myQrcode),
+                    ];
+                  },
                 ),
-                Expanded(
-                  child: Center(
-                    child: Text(provider.homeShowTitle, style: TextStyle(fontWeight: FontWeight.bold)),
-                )),
-                Icon(Icons.search_rounded, color: color.primary),
-                const SizedBox(width: 20.0),
-                Stack(
-                  children: <Widget>[
-                    Container(
-                      width: 28.0,
-                      height: 28.0,
-                      child: provider.homeShowTitle == ''
-                      ? PopupMenuButton<int>(
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(15)),
-                        color: const Color(0xFFEDEDED),
-                        child: Icon(Icons.add_circle_outline_rounded,
-                          color: color.primary),
-                        onSelected: (int value) {
-                          if (value == 0) {
-                            _scanQr(isDesktop);
-                          } else if (value == 1) {
-                            final widget = ChatAddPage();
-                            if (isDesktop) {
-                              provider.updateActivedWidget(widget);
-                            } else {
-                              provider.systemAppFriendAddNew = false;
-                              setState(() {});
-                              Navigator.push(context, MaterialPageRoute(builder: (_) => widget));
-                            }
-                          } else if (value == 2) {
-                            showShadowDialog(
-                              context,
-                              Icons.info,
-                              lang.info,
-                              UserInfo(
-                                app: 'add-friend',
-                                id: provider.activedAccount.id,
-                                name: provider.activedAccount.name,
-                                addr: Global.addr)
-                            );
-                          }
-                        },
-                        itemBuilder: (context) {
-                          return <PopupMenuEntry<int>>[
-                            _menuItem(0, Icons.qr_code_scanner_rounded, lang.scan),
-                            _menuItem(1, Icons.person_add_rounded, lang.addFriend,
-                              provider.systemAppFriendAddNew),
-                            _menuItem(2, Icons.qr_code_rounded, lang.myQrcode),
-                          ];
-                        },
-                      )
-                      : GestureDetector(onTap: () => provider.updateToHome(),
-                        child: Icon(Icons.home_outlined, color: color.primary))),
-                    if (provider.systemAppFriendAddNew)
-                    Positioned(
-                      top: 0,
-                      right: 0,
-                      child: Container(
-                        width: 8.0,
-                        height: 8.0,
-                        decoration: BoxDecoration(
-                          color: Colors.red,
-                          shape: BoxShape.circle,
-                    ))),
-                  ],
-                ),
+                if (provider.systemAppFriendAddNew)
+                Positioned(
+                  top: 0,
+                  right: 0,
+                  child: Container(
+                    width: 8.0,
+                    height: 8.0,
+                    decoration: BoxDecoration(
+                      color: Colors.red,
+                      shape: BoxShape.circle,
+                ))),
               ],
             ),
-          ),
-          const SizedBox(height: 10.0),
-          const Divider(height: 1.0, color: Color(0x40ADB0BB)),
-          const SizedBox(height: 5.0),
-          Expanded(
-            child: provider.homeShowWidget,
           )
-        ],
+        ]
+      ),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 10.0),
+          child: ListView.builder(
+            itemCount: allKeys.length,
+            itemBuilder: (BuildContext ctx, int index) => _SessionWidget(
+              session: sessions[allKeys[index]]
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -359,9 +352,15 @@ class DrawerWidget extends StatelessWidget {
                       style: TextStyle(fontSize: 16.0)),
                     onTap: () {
                       Navigator.pop(context);
-                      Provider.of<AccountProvider>(context, listen: false).updateActivedWidget(
-                        null, lang.contact, ChatList()
-                      );
+                      final coreWidget = ChatList();
+                      if (isDesktop) {
+                        Provider.of<AccountProvider>(context, listen: false).updateActivedWidget(
+                          coreWidget
+                        );
+                      } else {
+                        Navigator.push(context, MaterialPageRoute(builder: (_) => coreWidget));
+                      }
+
                   }),
                   ListTile(
                     leading: Icon(Icons.grid_view_rounded, color: color.primary),
@@ -369,9 +368,14 @@ class DrawerWidget extends StatelessWidget {
                       style: TextStyle(fontSize: 16.0)),
                     onTap: () {
                       Navigator.pop(context);
-                      Provider.of<AccountProvider>(context, listen: false).updateActivedWidget(
-                        null, lang.groups, ServiceList()
-                      );
+                      final coreWidget = ServiceList();
+                      if (isDesktop) {
+                        Provider.of<AccountProvider>(context, listen: false).updateActivedWidget(
+                          coreWidget
+                        );
+                      } else {
+                        Navigator.push(context, MaterialPageRoute(builder: (_) => coreWidget));
+                      }
                   }),
                   const Divider(height: 1.0, color: Color(0x40ADB0BB)),
                   ListTile(
@@ -456,6 +460,120 @@ class DrawerWidget extends StatelessWidget {
                 ],
               ),
             ))));
+  }
+}
+
+class _SessionWidget extends StatelessWidget {
+  final Session session;
+  const _SessionWidget({Key key, this.session}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    final color = Theme.of(context).colorScheme;
+    final lang = AppLocalizations.of(context);
+    final isDesktop = isDisplayDesktop(context);
+    final params = session.parse(lang);
+
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () {
+        Widget coreWidget = null;
+
+        switch (session.type) {
+          case SessionType.Chat:
+            context.read<ChatProvider>().updateActivedFriend(session.fid);
+            coreWidget = ChatDetail();
+            break;
+          case SessionType.Group:
+            context.read<GroupChatProvider>().updateActivedGroup(session.fid);
+            coreWidget = GroupChatDetail();
+            break;
+          case SessionType.Assistant:
+            coreWidget = AssistantDetail();
+            break;
+          case SessionType.Files:
+            coreWidget = FolderList();
+            break;
+        }
+
+        context.read<AccountProvider>().updateActivedSession(session.id);
+
+        if (coreWidget != null) {
+          if (!isDesktop) {
+            Navigator.push(context, MaterialPageRoute(builder: (_) => coreWidget));
+          } else {
+            context.read<AccountProvider>().updateActivedWidget(coreWidget);
+          }
+        }
+      },
+      child: Container(
+        height: 55.0,
+        child: Row(
+          children: [
+            Container(
+              width: 45.0,
+              height: 45.0,
+              margin: const EdgeInsets.only(left: 20.0, right: 15.0),
+              child: params[0],
+            ),
+            Expanded(
+              child: Container(
+                height: 55.0,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(params[1],
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(fontSize: 16.0))
+                        ),
+                        Container(
+                          margin: const EdgeInsets.only(left: 15.0, right: 20.0),
+                          child: Text(params[3], style: const TextStyle(color: Color(0xFFADB0BB), fontSize: 12.0)),
+                        )
+                    ]),
+                    const SizedBox(height: 4.0),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              if (params[4] != null)
+                              Container(
+                                margin: const EdgeInsets.only(right: 6.0),
+                                child: Icon(params[4], size: 16.0, color: Color(0xFFADB0BB)),
+                              ),
+                              Expanded(
+                                child: Text(params[2],
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(color: Color(0xFFADB0BB), fontSize: 12.0)),
+                              )
+                            ]
+                          ),
+                        ),
+                        Container(width: 8.0, height: 8.0,
+                          margin: const EdgeInsets.only(left: 15.0, right: 20.0),
+                          decoration: BoxDecoration(
+                            color: session.lastReaded ? color.background : Colors.red,
+                            shape: BoxShape.circle
+                          ),
+                        ),
+                    ]),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 

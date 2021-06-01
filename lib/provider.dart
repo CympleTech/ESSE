@@ -7,7 +7,6 @@ import 'package:flutter/material.dart';
 import 'package:esse/account.dart';
 import 'package:esse/utils/logined_cache.dart';
 import 'package:esse/widgets/default_core_show.dart';
-import 'package:esse/widgets/default_home_show.dart';
 import 'package:esse/global.dart';
 import 'package:esse/rpc.dart';
 import 'package:esse/session.dart';
@@ -34,12 +33,6 @@ class AccountProvider extends ChangeNotifier {
   /// actived session.
   int actived = 0;
   Session get activedSession => this.sessions[actived];
-
-  /// left home list sessions widget.
-  String homeShowTitle = '';
-  Widget defaultListShow = DefaultHomeShow();
-  Widget currentListShow = null;
-  Widget get homeShowWidget => this.currentListShow ?? this.defaultListShow;
 
   /// right main screen show session details.
   Widget coreShowWidget = DefaultCoreShow();
@@ -120,7 +113,6 @@ class AccountProvider extends ChangeNotifier {
     this.activedAccountId = gid;
     this.activedAccount.hasNew = false;
     this.coreShowWidget = DefaultCoreShow();
-    this.currentListShow = null;
 
     // load sessions.
     this.sessions.clear();
@@ -141,7 +133,6 @@ class AccountProvider extends ChangeNotifier {
   logout() {
     this.accounts.clear();
     this.clearActivedAccount();
-    this.currentListShow = null;
     this.sessions.clear();
     this.orderKeys.clear();
     this.topKeys.clear();
@@ -201,12 +192,6 @@ class AccountProvider extends ChangeNotifier {
     rpc.send('account-system-info', []);
   }
 
-  updateToHome() {
-    this.homeShowTitle = '';
-    this.currentListShow = null;
-    notifyListeners();
-  }
-
   clearActivedSession(SessionType type) {
     if (this.activedSession.type == type && this.actived > 0) {
       rpc.send('session-suspend', [this.actived, this.activedSession.gid,
@@ -254,19 +239,12 @@ class AccountProvider extends ChangeNotifier {
     }
   }
 
-  updateActivedWidget([Widget coreWidget, String title, Widget homeWidget]) {
-    print("update actived widget");
-    if (homeWidget != null && title != null) {
-      this.homeShowTitle = title;
-      this.currentListShow = homeWidget;
-    }
-
+  updateActivedWidget(Widget coreWidget) {
     if (coreWidget != null) {
+      print("update actived widget");
       this.coreShowWidget = coreWidget;
+      notifyListeners();
     }
-
-    this.systemAppFriendAddNew = false;
-    notifyListeners();
   }
 
   // -- callback when receive rpc info. -- //
