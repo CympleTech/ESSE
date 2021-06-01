@@ -236,27 +236,52 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
     handler.add_method(
         "group-chat-join",
         |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
-            let _gtype = GroupType::from_u32(params[0].as_i64()? as u32);
+            let gtype = GroupType::from_u32(params[0].as_i64()? as u32);
             let gcd = GroupId::from_hex(params[1].as_str()?)?;
             let gaddr = PeerAddr::from_hex(params[2].as_str()?)?;
             let gname = params[3].as_str()?.to_owned();
-            let gremark = params[4].as_str()?.to_owned();
+            let gremark = params[4].as_str()?;
             let gproof = params[5].as_str()?;
-            let _proof = Proof::from_hex(gproof).unwrap_or(Proof::default());
+            let proof = Proof::from_hex(gproof).unwrap_or(Proof::default());
             let gkey = params[6].as_str()?;
             let key = GroupChatKey::from_hex(gkey).unwrap_or(GroupChatKey::new(vec![]));
 
-            let mut request = Request::new_by_me(gcd, gaddr, gname, gremark, key);
             let db = group_chat_db(state.layer.read().await.base(), &gid)?;
-            request.insert(&db)?;
+            if GroupChat::get(&db, &gcd)?.is_some() {
+                debug!("Had joined this group.");
+                return Ok(HandleResult::new()); // had join this group.
+            }
+
+            let mut results = HandleResult::new();
+            // check request is exsit.
+            if !Request::exist(&db, &gcd)? {
+                let mut request = Request::new_by_me(gcd, gaddr, gname, gremark.to_owned(), key);
+                request.insert(&db)?;
+                results.rpcs.push(request.to_rpc());
+            } else {
+                debug!("Had request again.");
+            }
             drop(db);
 
-            let mut results = HandleResult::rpc(request.to_rpc());
             let me = state.group.read().await.clone_user(&gid)?;
-            let join_proof = JoinProof::Open(me.name, me.avatar);
-            let data = postcard::to_allocvec(&LayerEvent::Request(request.gid, join_proof))
-                .unwrap_or(vec![]);
-            let s = SendType::Event(0, request.addr, data);
+            let join_proof = match gtype {
+                GroupType::Encrypted => {
+                    // remark is inviter did.
+                    let _fgid = GroupId::from_hex(gremark)?;
+                    // TODO
+                    JoinProof::Zkp(proof)
+                }
+                GroupType::Private => {
+                    // remark is inviter did.
+                    let fgid = GroupId::from_hex(gremark)?;
+                    JoinProof::Invite(fgid, proof, me.name, me.avatar)
+                }
+                GroupType::Open => JoinProof::Open(me.name, me.avatar),
+            };
+
+            let data =
+                postcard::to_allocvec(&LayerEvent::Request(gcd, join_proof)).unwrap_or(vec![]);
+            let s = SendType::Event(0, gaddr, data);
             add_layer(&mut results, gid, s);
             Ok(results)
         },
@@ -297,12 +322,13 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             let mut layer_lock = state.layer.write().await;
             for (fid, fgid, mut faddr, proof) in invites {
                 let contact_values = format!(
-                    "{};;{};;{};;{};;{}",
+                    "{};;{};;{};;{};;{};;{}",
                     gc.g_type.to_u32(),
                     gcd.to_hex(),
                     gc.g_addr.to_hex(),
                     tmp_name,
                     proof.to_hex(),
+                    gc.key.to_hex(),
                 );
 
                 // check if encrypted group type. need online.

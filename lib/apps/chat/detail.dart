@@ -366,6 +366,7 @@ class _ChatDetailState extends State<ChatDetail> {
                 itemCount: recentMessageKeys.length,
                 reverse: true,
                 itemBuilder: (BuildContext context, index) => ChatMessage(
+                  fgid: friend.gid,
                   name: friend.name,
                   message: recentMessages[recentMessageKeys[index]],
                 )

@@ -127,7 +127,6 @@ class Session {
       avatarPath: avatar,
       online: this.online != OnlineType.Lost,
       onlineColor: color,
-      hasNew: !this.lastReaded,
       loading: this.online == OnlineType.Waiting,
     );
   }

@@ -101,6 +101,7 @@ class BaseMessage {
     var addr = '';
     var name = '';
     var proof = '';
+    var key = '';
 
     final i_type = this.content.indexOf(';;');
     if (i_type > 0) {
@@ -124,9 +125,17 @@ class BaseMessage {
     if (i_name > 0) {
       name = raw_2.substring(0, i_name).replaceAll('-;', ';');
     }
-    proof = raw_2.substring(i_name + 2);
 
-    return [type, gid, addr, name, proof];
+    final raw_3 = raw_2.substring(i_name + 2);
+    final i_proof = raw_3.indexOf(';;');
+    if (i_proof > 0) {
+      proof = raw_3.substring(0, i_proof);
+      key = raw_3.substring(i_proof + 2);
+    } else {
+      proof = raw_3;
+    }
+
+    return [type, gid, addr, name, proof, key];
   }
 
   static String rawRecordName(int time, String name) {

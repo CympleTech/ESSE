@@ -79,7 +79,7 @@ pub(crate) struct GroupChat {
     /// group chat need manager agree.
     is_need_agree: bool,
     /// group chat encrypted-key.
-    key: GroupChatKey,
+    pub key: GroupChatKey,
     /// group chat created time.
     pub datetime: i64,
     /// is deleted.
@@ -479,6 +479,18 @@ impl Request {
         let id = db.insert(&sql)?;
         self.id = id;
         Ok(())
+    }
+
+    pub fn exist(db: &DStorage, gcd: &GroupId) -> Result<bool> {
+        let matrix = db.query(&format!(
+            "SELECT id from requests WHERE gid = '{}' AND is_over = 0",
+            gcd.to_hex(),
+        ))?;
+        if matrix.len() == 0 {
+            Ok(false)
+        } else {
+            Ok(true)
+        }
     }
 
     pub fn over_rid(db: &DStorage, gcd: &GroupId, rid: &i64, is_ok: bool) -> Result<i64> {

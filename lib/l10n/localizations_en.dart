@@ -249,7 +249,7 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get assistantBio => 'Jarvis is a robot, only belongs to you.';
   @override
-  String get groupChat => 'Group Chats';
+  String get groupChat => 'Group Chat';
   @override
   String get groupChatAdd => 'Add Group Chat';
   @override

@@ -15,13 +15,29 @@ class UserInfo extends StatefulWidget {
   final String title;
   final String remark;
   final String bio;
+  final Function callback;
+  final bool showQr;
+  final Widget avatar;
   Map qrInfo;
 
-  UserInfo({Key key, this.id, this.name, this.addr, this.app, this.title, this.remark, this.bio}) : super(key: key) {
-    this.qrInfo = {
-      "app": this.app,
-      "params": [this.id, this.addr, this.name],
-    };
+  UserInfo({Key key,
+      this.app,
+      this.id,
+      this.addr,
+      this.name,
+      this.title,
+      this.remark,
+      this.bio,
+      this.callback,
+      this.avatar,
+      this.showQr = true
+  }) : super(key: key) {
+    if (this.showQr) {
+      this.qrInfo = {
+        "app": this.app,
+        "params": [this.id, this.addr, this.name],
+      };
+    }
   }
 
   @override
@@ -45,10 +61,15 @@ class _UserInfoState extends State<UserInfo> {
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
+        if (widget.avatar != null)
+        widget.avatar,
+        const SizedBox(height: 10.0),
         Text(widget.name, style: TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold)),
         const SizedBox(height: 10),
+        if (widget.showQr)
         Container(
           width: 200.0,
+          margin: const EdgeInsets.only(bottom: 8.0),
           padding: const EdgeInsets.all(2.0),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(5.0),
@@ -84,7 +105,7 @@ class _UserInfoState extends State<UserInfo> {
             ]
           )
         ),
-        const SizedBox(height: 8),
+        if (widget.title != null)
         Text(widget.title, style: TextStyle(fontSize: 16.0, fontStyle: FontStyle.italic)),
         const SizedBox(height: 10),
         const Divider(height: 1.0, color: Color(0x40ADB0BB)),
@@ -161,6 +182,21 @@ class _UserInfoState extends State<UserInfo> {
           ),
         ),
         const SizedBox(height: 16),
+        if (widget.callback != null)
+        Container(
+          width: 250.0,
+          padding: const EdgeInsets.symmetric(vertical: 10.0),
+          child: InkWell(
+            onTap: widget.callback,
+            hoverColor: Colors.transparent,
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 10.0),
+              decoration: BoxDecoration(border: Border.all(color: color.primary),
+                borderRadius: BorderRadius.circular(10.0)),
+              child: Center(child: Text(lang.add, style: TextStyle(fontSize: 14.0, color: color.primary))),
+            )
+          ),
+        ),
       ]
     );
   }

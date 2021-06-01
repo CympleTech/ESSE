@@ -13,24 +13,50 @@ import 'package:esse/utils/better_print.dart';
 import 'package:esse/widgets/avatar.dart';
 import 'package:esse/widgets/audio_player.dart';
 import 'package:esse/widgets/shadow_dialog.dart';
+import 'package:esse/widgets/user_info.dart';
 import 'package:esse/global.dart';
 
 import 'package:esse/apps/primitives.dart';
 import 'package:esse/apps/chat/models.dart' show Request;
+import 'package:esse/apps/group_chat/models.dart' show GroupType, GroupTypeExtension;
 import 'package:esse/apps/chat/provider.dart';
+import 'package:esse/apps/group_chat/provider.dart';
 
 class ChatMessage extends StatelessWidget {
   final Widget avatar;
+  final String fgid;
   final String name;
   final BaseMessage message;
 
-  const ChatMessage({Key key, this.name, this.message, this.avatar}): super(key: key);
+  const ChatMessage({Key key, this.fgid, this.name, this.message, this.avatar}): super(key: key);
 
-  Widget _showText(context, color, isDesktop) {
-    final width = MediaQuery.of(context).size.width * 0.6;
+  Widget _showContactCard(Widget avatar, String gid, String name, String title, ColorScheme color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 10.0),
+      width: 200.0,
+      decoration: BoxDecoration(color: const Color(0x40ADB0BB), borderRadius: BorderRadius.circular(15.0)),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(children: [
+              avatar,
+              Container(width: 135.0, padding: const EdgeInsets.only(left: 10.0),
+                child: Column(children: [
+                    Text(name, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: color.onPrimary, fontSize: 16.0)),
+                    const SizedBox(height: 4.0),
+                    Text(betterPrint(gid), style: TextStyle(color: Colors.grey, fontSize: 12.0)),
+          ]))]),
+          const SizedBox(height: 5.0),
+          const Divider(height: 1.0, color: Color(0x40ADB0BB)),
+          const SizedBox(height: 3.0),
+          Text(title, style: TextStyle(color: Colors.grey, fontSize: 10.0)),
+      ])
+    );
+  }
+
+  Widget _showText(context, color, maxWidth) {
     // text
     return Container(
-      constraints: BoxConstraints(minWidth: 50, maxWidth: isDesktop ? width - 300.0 : width),
+      constraints: BoxConstraints(minWidth: 50, maxWidth: maxWidth),
       padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 14.0),
       decoration: BoxDecoration(
         color: message.isMe ? Color(0xFF6174FF) : color.primaryVariant,
@@ -182,199 +208,73 @@ class ChatMessage extends StatelessWidget {
     );
   }
 
-  Widget _showContact(context, lang, color) {
+  Widget _showContact(context, lang, color, maxWidth) {
     // contact [name, gid, addr, avatar]
     final infos = message.showContact();
-    final gid = 'EH' + infos[1].toUpperCase();
-
-    if (infos != null) {
+    if (infos[1].length > 0) {
+      final gid = 'EH' + infos[1].toUpperCase();
       return GestureDetector(
         onTap: () => showShadowDialog(
           context,
           Icons.person_rounded,
-          lang.contact,
-          Column(children: [
-              Avatar(width: 100.0, name: infos[0], avatarPath: infos[3]),
-              const SizedBox(height: 10.0),
-              Text(infos[0]),
-              const SizedBox(height: 10.0),
-              const Divider(height: 1.0, color: Color(0x40ADB0BB)),
-              const SizedBox(height: 10.0),
-              _infoListTooltip(Icons.person, color.primary, gid),
-              _infoListTooltip(Icons.location_on, color.primary, "0x" + infos[2]),
-              Container(
-                width: 300.0,
-                padding: const EdgeInsets.symmetric(vertical: 10.0),
-                child: Row(
-                  children: [
-                    Icon(Icons.turned_in, size: 20.0, color: color.primary),
-                    const SizedBox(width: 20.0),
-                    Expanded(child: Text(lang.fromContactCard(name))),
-                  ]
-                ),
-              ),
-              const SizedBox(height: 20.0),
-              InkWell(
-                onTap: () {
-                  Navigator.pop(context);
-                  Provider.of<ChatProvider>(context, listen: false).requestCreate(
-                    Request(infos[1], infos[2], infos[0], lang.fromContactCard(name))
-                  );
-                },
-                hoverColor: Colors.transparent,
-                child: Container(
-                  width: 200.0,
-                  padding: const EdgeInsets.symmetric(vertical: 10.0),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: color.primary),
-                    borderRadius: BorderRadius.circular(10.0)),
-                  child: Center(child: Text(lang.addFriend,
-                      style: TextStyle(fontSize: 14.0, color: color.primary))),
-                )
-              ),
-            ]
-          )
-        ),
-        child: Container(
-          padding: const EdgeInsets.symmetric(
-            vertical: 10.0, horizontal: 10.0),
-          width: 200.0,
-          decoration: BoxDecoration(
-            color: const Color(0x40ADB0BB),
-            borderRadius: BorderRadius.circular(15.0),
+          lang.contactCard,
+          UserInfo(
+            showQr: false, id: gid, addr: '0x' + infos[2], name: infos[0],
+            remark: lang.fromContactCard(name),
+            avatar: Avatar(width: 100.0, name: infos[0], avatarPath: infos[3]),
+            callback: () {
+              Navigator.pop(context);
+              Provider.of<ChatProvider>(context, listen: false).requestCreate(
+                Request(infos[1], infos[2], infos[0], lang.fromContactCard(name))
+              );
+            },
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(children: [
-                  Avatar(width: 40.0, name: infos[0], avatarPath: infos[3]),
-                  Container(
-                    width: 135.0,
-                    padding: const EdgeInsets.only(left: 10.0),
-                    child: Column(children: [
-                        Text(infos[0],
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            color: color.onPrimary, fontSize: 16.0)),
-                        SizedBox(height: 5.0),
-                        Text(betterPrint(gid),
-                          style: TextStyle(
-                            color: Colors.grey, fontSize: 12.0)),
-                  ])),
-              ]),
-              SizedBox(height: 5.0),
-              const Divider(height: 1.0, color: Color(0x40ADB0BB)),
-              SizedBox(height: 3.0),
-              Text(lang.contactCard,
-                style: TextStyle(color: Colors.grey, fontSize: 10.0)),
-      ])));
-    } else {
-      return Container(
-        padding:
-        const EdgeInsets.symmetric(vertical: 10.0, horizontal: 10.0),
-        width: 200.0,
-        decoration: BoxDecoration(
-          color: const Color(0x40ADB0BB),
-          borderRadius: BorderRadius.circular(15.0),
         ),
-        child:
-        Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Row(children: [
-                Container(
-                  height: 35.0,
-                  child: Image(
-                    image: AssetImage('assets/images/image_missing.png'),
-                    fit: BoxFit.cover),
-                ),
-                Container(
-                  width: 130.0,
-                  padding: const EdgeInsets.only(left: 10.0),
-                  child: Text(message.content,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: color.onPrimary.withOpacity(0.5),
-                      decoration: TextDecoration.lineThrough,
-                      fontSize: 16.0)),
-                ),
-            ]),
-            SizedBox(height: 5.0),
-            const Divider(height: 1.0, color: Color(0x40ADB0BB)),
-            SizedBox(height: 3.0),
-            Text(lang.contactCard,
-              style: TextStyle(color: Colors.grey, fontSize: 10.0)),
-      ]));
+        child: _showContactCard(
+          Avatar(width: 40.0, name: infos[0], avatarPath: infos[3]),
+          gid, infos[0], lang.contactCard, color
+        )
+      );
+    } else {
+      return _showText(context, color, maxWidth);
     }
   }
 
-  Widget _showInvite(context, lang, color) {
-    // contact [type, gid, addr, name, proof]
+  Widget _showInvite(context, lang, color, maxWidth) {
+    // contact [type, gid, addr, name, proof, key]
     final infos = message.showInvite();
-    print(infos);
-    final gid = 'EG' + infos[1].toUpperCase();
-
-    if (infos != null) {
+    if (infos[1].length > 0) {
+      final gid = 'EG' + infos[1].toUpperCase();
+      final GroupType gtype = infos[0];
       return GestureDetector(
         onTap: () => showShadowDialog(
           context,
           Icons.groups_rounded,
           lang.groupChat,
-          Text(infos[3]),
-        ),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 10.0),
-          width: 200.0,
-          decoration: BoxDecoration(
-            color: const Color(0x40ADB0BB),
-            borderRadius: BorderRadius.circular(15.0),
+          UserInfo(showQr: false, id: gid, addr: '0x' + infos[2], name: infos[3],
+            title: gtype.lang(lang),
+            avatar: Container(width: 100.0, height: 100.0,
+              padding: const EdgeInsets.all(8.0),
+              decoration: BoxDecoration(color: color.surface, borderRadius: BorderRadius.circular(15.0)),
+              child: Icon(Icons.groups_rounded, color: color.primary, size: 36.0),
+            ),
+            callback: () {
+              Navigator.pop(context);
+              Provider.of<GroupChatProvider>(context, listen: false).join(
+                gtype, infos[1], infos[2], infos[3], fgid, infos[4], infos[5]
+              );
+            },
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    width: 40.0,
-                    height: 40.0,
-                    padding: const EdgeInsets.all(8.0),
-                    decoration: BoxDecoration(
-                      color: color.surface,
-                      borderRadius: BorderRadius.circular(15.0),
-                    ),
-                    child: Icon(Icons.groups_rounded, color: color.primary),
-                  ),
-                  Container(
-                    width: 135.0,
-                    padding: const EdgeInsets.only(left: 10.0),
-                    child: Column(children: [
-                        Text(infos[3], maxLines: 1, overflow: TextOverflow.ellipsis,
-                          style: TextStyle(color: color.onPrimary, fontSize: 16.0)),
-                        const SizedBox(height: 5.0),
-                        Text(betterPrint(gid), style: TextStyle(color: Colors.grey, fontSize: 12.0)),
-                  ])),
-              ]),
-              const SizedBox(height: 5.0),
-              const Divider(height: 1.0, color: Color(0x40ADB0BB)),
-              const SizedBox(height: 3.0),
-              Text(lang.groupChat, style: TextStyle(color: Colors.grey, fontSize: 10.0)),
-      ])));
-    } else {
-      final width = MediaQuery.of(context).size.width * 0.6;
-
-      // text
-      return Container(
-        constraints: BoxConstraints(minWidth: 50, maxWidth: width),
-        padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 14.0),
-        decoration: BoxDecoration(
-          color: message.isMe ? Color(0xFF6174FF) : color.primaryVariant,
-          borderRadius: BorderRadius.circular(15.0),
         ),
-        child: Text(message.content,
-          style: TextStyle(
-            color: message.isMe ? Colors.white : Color(0xFF1C1939),
-            fontSize: 14.0))
+        child: _showContactCard(
+          Container(width: 40.0, height: 40.0,
+            decoration: BoxDecoration(color: color.surface, borderRadius: BorderRadius.circular(15.0)),
+            child: Icon(Icons.groups_rounded, color: color.primary, size: 20.0),
+          ),
+          gid, infos[3], lang.groupChat, color)
       );
+    } else {
+      return _showText(context, color, maxWidth);
     }
   }
 
@@ -397,21 +297,23 @@ class ChatMessage extends StatelessWidget {
     );
   }
 
-  Widget _show(context, color, lang, isDesktop) {
+  Widget _show(context, color, lang, isDesktop, maxWidth) {
+    final width = MediaQuery.of(context).size.width * 0.6;
+
     if (message.type == MessageType.String) {
-      return _showText(context, color, isDesktop);
+      return _showText(context, color, maxWidth);
     } else if (message.type == MessageType.Image) {
       return _showImage(context, lang, color);
     } else if (message.type == MessageType.File) {
       return _showFile(context, lang, color);
     } else if (message.type == MessageType.Contact) {
-      return _showContact(context, lang, color);
+      return _showContact(context, lang, color, maxWidth);
     } else if (message.type == MessageType.Record) {
       return  _showRecord();
     } else if (message.type == MessageType.Invite) {
-      return  _showInvite(context, lang, color);
+      return  _showInvite(context, lang, color, maxWidth);
     }
-    return _showText(context, color, isDesktop);
+    return _showText(context, color, maxWidth);
   }
 
   @override
@@ -419,7 +321,9 @@ class ChatMessage extends StatelessWidget {
     final color = Theme.of(context).colorScheme;
     final lang = AppLocalizations.of(context);
     final isDesktop = isDisplayDesktop(context);
-    final messageShow = _show(context, color, lang, isDesktop);
+    final width = MediaQuery.of(context).size.width * 0.6;
+    final maxWidth = isDesktop ? width - 300.0 : width;
+    final messageShow = _show(context, color, lang, isDesktop, maxWidth);
     final isAvatar = avatar != null && !message.isMe;
 
     final timeWidget = Container(

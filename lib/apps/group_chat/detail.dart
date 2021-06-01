@@ -295,7 +295,7 @@ class _GroupChatDetailState extends State<GroupChatDetail> {
                             id: 'EG' + this.group.gid.toUpperCase(),
                             name: this.group.name,
                             addr: '0x' + this.group.addr,
-                            title: this.group.type.lang(lang) + ' ' + lang.groupChat,
+                            title: this.group.type.lang(lang),
                             bio: this.group.bio,
                           ),
                           0.0,
@@ -371,6 +371,7 @@ class _GroupChatDetailState extends State<GroupChatDetail> {
                   final message = recentMessages[recentMessageKeys[index]];
                   final member = members[message.fid];
                   return ChatMessage(
+                    fgid: member.mid,
                     avatar: member.showAvatar(),
                     name: member.name,
                     message: message,
