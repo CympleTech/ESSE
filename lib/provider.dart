@@ -228,6 +228,7 @@ class AccountProvider extends ChangeNotifier {
         rpc.send('session-suspend', [this.actived, this.activedSession.gid, must]);
       }
       this.actived = id;
+      this.activedSession.lastReaded = true;
       final online = this.activedSession.online;
       if (online == OnlineType.Lost || online == OnlineType.Suspend) {
         if (online == OnlineType.Lost) {

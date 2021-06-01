@@ -153,9 +153,7 @@ class ChatProvider extends ChangeNotifier {
   /// and then this message will show in message list.
   messageCreate(Message msg) {
     final fgid = this.friends[msg.fid].gid;
-
     rpc.send('chat-message-create', [msg.fid, fgid, msg.type.toInt(), msg.content]);
-    notifyListeners();
   }
 
   /// delete a message.
