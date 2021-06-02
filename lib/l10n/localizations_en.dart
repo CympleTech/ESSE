@@ -141,9 +141,9 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get addFriend => 'Add Friend';
   @override
-  String get addGroup => 'Add Service';
+  String get addService => 'Add Service';
   @override
-  String get groups => 'Services';
+  String get services => 'Services';
   @override
   String get devices => 'Devices';
   @override

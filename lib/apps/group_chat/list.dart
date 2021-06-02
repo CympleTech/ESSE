@@ -21,15 +21,28 @@ class _GroupChatListState extends State<GroupChatList> {
   @override
   Widget build(BuildContext context) {
     final color = Theme.of(context).colorScheme;
+    final lang = AppLocalizations.of(context);
     final isDesktop = isDisplayDesktop(context);
     final provider = context.watch<GroupChatProvider>();
     final orderKeys = provider.orderKeys;
     final groups = provider.groups;
 
     return Scaffold(
-      body: ListView.builder(
-        itemCount: orderKeys.length,
-        itemBuilder: (BuildContext ctx, int index) => ListChat(group: groups[orderKeys[index]]),
+      appBar: AppBar(
+        title: Text(lang.groupChat),
+        bottom: PreferredSize(
+          child: Container(color: const Color(0x40ADB0BB), height: 1.0),
+          preferredSize: Size.fromHeight(1.0)
+        ),
+      ),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 10.0),
+          child: ListView.builder(
+            itemCount: orderKeys.length,
+            itemBuilder: (BuildContext ctx, int index) => ListChat(group: groups[orderKeys[index]]),
+          )
+        ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {

@@ -6,9 +6,9 @@ import 'package:esse/utils/file_image.dart';
 import 'package:esse/l10n/localizations.dart';
 import 'package:esse/provider.dart';
 
-class FolderList extends StatefulWidget {
+class FilesList extends StatefulWidget {
   @override
-  _FolderListState createState() => _FolderListState();
+  _FilesListState createState() => _FilesListState();
 }
 
 const List FILE_DIRECTORY = [
@@ -22,33 +22,23 @@ const List FILE_DIRECTORY = [
     ["Trash", Icons.auto_delete_rounded],
   ];
 
-class _FolderListState extends State<FolderList> {
+class _FilesListState extends State<FilesList> {
   int chooseIndex = 0;
 
   @override
   void initState() {
     super.initState();
-    Future.delayed(Duration.zero, () {
-        final isDesktop = isDisplayDesktop(context);
-        if (isDesktop) {
-          loadFolder(true, chooseIndex);
-        }
-    });
+    loadRecents();
   }
 
-  loadFolder(bool isDesktop, int index) async {
-    final widget = FilePage(title: FILE_DIRECTORY[index][0]);
-    if (isDesktop) {
-      Provider.of<AccountProvider>(context, listen: false).updateActivedWidget(widget);
-    } else {
-      Navigator.push(context, MaterialPageRoute(builder: (_) => widget));
-    }
+  loadRecents() {
+    //
   }
 
   changeItem(int index, bool isDesktop) {
     setState(() {
         chooseIndex = index;
-        loadFolder(isDesktop, index);
+        // loadFolder(isDesktop, index);
     });
   }
 
@@ -82,11 +72,26 @@ class _FolderListState extends State<FolderList> {
   @override
   Widget build(BuildContext context) {
     final color = Theme.of(context).colorScheme;
+    final lang = AppLocalizations.of(context);
     final isDesktop = isDisplayDesktop(context);
 
-    return ListView.builder(
-      itemCount: FILE_DIRECTORY.length,
-      itemBuilder: (BuildContext ctx, int index) => item(index, color, isDesktop),
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(lang.files + ' (${lang.wip})'),
+        bottom: PreferredSize(
+          child: Container(color: const Color(0x40ADB0BB), height: 1.0),
+          preferredSize: Size.fromHeight(1.0)
+        ),
+      ),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 10.0),
+          child: ListView.builder(
+            itemCount: FILE_DIRECTORY.length,
+            itemBuilder: (BuildContext ctx, int index) => item(index, color, isDesktop),
+          )
+        ),
+      ),
     );
   }
 }

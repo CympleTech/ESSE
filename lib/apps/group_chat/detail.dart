@@ -318,7 +318,7 @@ class _GroupChatDetailState extends State<GroupChatDetail> {
                       return <PopupMenuEntry<int>>[
                         _menuItem(Color(0xFF6174FF), 1, Icons.qr_code_rounded, lang.info),
                         this.group.isClosed
-                        ? _menuItem(Color(0xFF6174FF), 4, Icons.send_rounded, lang.addGroup)
+                        ? _menuItem(Color(0xFF6174FF), 4, Icons.send_rounded, lang.add)
                         : _menuItem(Colors.orange, 2, Icons.block_rounded, lang.exit),
                         _menuItem(Colors.red, 3, Icons.delete_rounded, lang.delete),
                       ];

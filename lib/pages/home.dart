@@ -30,7 +30,7 @@ import 'package:esse/apps/chat/provider.dart';
 import 'package:esse/apps/chat/list.dart';
 import 'package:esse/apps/chat/detail.dart';
 import 'package:esse/apps/chat/add.dart';
-import 'package:esse/apps/file/page.dart';
+import 'package:esse/apps/file/list.dart';
 import 'package:esse/apps/service/list.dart';
 import 'package:esse/apps/service/add.dart';
 import 'package:esse/apps/assistant/page.dart';
@@ -364,7 +364,7 @@ class DrawerWidget extends StatelessWidget {
                   }),
                   ListTile(
                     leading: Icon(Icons.grid_view_rounded, color: color.primary),
-                    title: Text(lang.groups, textAlign: TextAlign.left,
+                    title: Text(lang.services, textAlign: TextAlign.left,
                       style: TextStyle(fontSize: 16.0)),
                     onTap: () {
                       Navigator.pop(context);
@@ -492,7 +492,7 @@ class _SessionWidget extends StatelessWidget {
             coreWidget = AssistantDetail();
             break;
           case SessionType.Files:
-            coreWidget = FolderList();
+            coreWidget = FilesList();
             break;
         }
 

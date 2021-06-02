@@ -6,10 +6,7 @@ import 'package:esse/l10n/localizations.dart';
 import 'package:esse/provider.dart';
 
 import 'package:esse/apps/service/models.dart';
-import 'package:esse/apps/assistant/page.dart';
-import 'package:esse/apps/assistant/provider.dart';
-import 'package:esse/apps/assistant/models.dart';
-import 'package:esse/apps/file/page.dart';
+import 'package:esse/apps/service/add.dart';
 
 const List<InnerService> INNER_SERVICES = [
   InnerService.Files,
@@ -30,26 +27,44 @@ class _ServiceListState extends State<ServiceList> {
     final lang = AppLocalizations.of(context);
     final isDesktop = isDisplayDesktop(context);
 
-    return Column(
-      children: [
-        Column(
-          children: INNER_SERVICES.map((v) {
-              final params = v.params(lang);
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(lang.services),
+        bottom: PreferredSize(
+          child: Container(color: const Color(0x40ADB0BB), height: 1.0),
+          preferredSize: Size.fromHeight(1.0)
+        ),
+      ),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 10.0),
+          child: ListView.builder(
+            itemCount: INNER_SERVICES.length,
+            itemBuilder: (BuildContext ctx, int index) {
+              final params = INNER_SERVICES[index].params(lang);
               return ListInnerService(
                 name: params[0],
                 bio: params[1],
                 logo: params[2],
-                callback: () => v.callback(),
+                callback: () => INNER_SERVICES[index].callback(),
                 isDesktop: isDesktop,
               );
-          }).toList()
+            }
+          )
         ),
-        // Expanded(
-        //   child: ListView.builder(
-        //     itemCount: serviceKeys.length,
-        //     itemBuilder: (BuildContext ctx, int index) => _ListService(),
-        // )),
-      ]
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          final widget = ServiceAddPage();
+          if (isDesktop) {
+            Provider.of<AccountProvider>(context, listen: false).updateActivedWidget(widget);
+          } else {
+            Navigator.push(context, MaterialPageRoute(builder: (_) => widget));
+          }
+        },
+        child: const Icon(Icons.add, color: Colors.white),
+        backgroundColor: Color(0xFF6174FF),
+      ),
     );
   }
 }

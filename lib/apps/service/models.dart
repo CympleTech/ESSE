@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:esse/l10n/localizations.dart';
 
 import 'package:esse/apps/assistant/page.dart';
-import 'package:esse/apps/file/page.dart';
-import 'package:esse/apps/group_chat/page.dart';
+import 'package:esse/apps/file/list.dart';
+import 'package:esse/apps/group_chat/list.dart';
 
 enum InnerService {
   Files,
@@ -26,7 +26,7 @@ extension InnerServiceExtension on InnerService {
   Widget callback() {
     switch (this) {
       case InnerService.Files:
-        return FolderList();
+        return FilesList();
       case InnerService.Assistant:
         return AssistantDetail();
       case InnerService.GroupChat:
