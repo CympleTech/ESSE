@@ -28,13 +28,8 @@ pub(crate) fn create_result(mgid: GroupId, gid: i64, ok: bool) -> RpcParam {
 }
 
 #[inline]
-pub(crate) fn group_agree(mgid: GroupId, rid: i64, group: GroupChat) -> RpcParam {
-    rpc_response(0, "group-chat-agree", json!([rid, group.to_rpc()]), mgid)
-}
-
-#[inline]
-pub(crate) fn group_reject(mgid: GroupId, rid: i64, efficacy: bool) -> RpcParam {
-    rpc_response(0, "group-chat-reject", json!([rid, efficacy]), mgid)
+pub(crate) fn group_create(mgid: GroupId, group: GroupChat) -> RpcParam {
+    rpc_response(0, "group-chat-create", json!(group.to_rpc()), mgid)
 }
 
 #[inline]
@@ -43,8 +38,8 @@ pub(crate) fn request_create(mgid: GroupId, req: &Request) -> RpcParam {
 }
 
 #[inline]
-pub(crate) fn request_handle(mgid: GroupId, id: i64, ok: bool) -> RpcParam {
-    rpc_response(0, "group-chat-join-handle", json!([id, ok]), mgid)
+pub(crate) fn request_handle(mgid: GroupId, id: i64, ok: bool, efficacy: bool) -> RpcParam {
+    rpc_response(0, "group-chat-join-handle", json!([id, ok, efficacy]), mgid)
 }
 
 #[inline]
@@ -340,7 +335,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
                     }
                 }
 
-                let (msg, nw) = crate::apps::chat::LayerEvent::from_message(
+                let (msg, nw, _) = crate::apps::chat::LayerEvent::from_message(
                     &base,
                     gid,
                     fid,

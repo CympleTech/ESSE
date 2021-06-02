@@ -229,6 +229,7 @@ class GroupChatProvider extends ChangeNotifier {
   _requestHandle(List params) {
     final id = params[0];
     final ok = params[1];
+    final _efficacy = params[2];
     if (this.requests.containsKey(id)) {
       this.requests[id].overIt(ok);
       notifyListeners();

@@ -513,7 +513,7 @@ class _SessionWidget extends StatelessWidget {
             Container(
               width: 45.0,
               height: 45.0,
-              margin: const EdgeInsets.only(left: 20.0, right: 15.0),
+              margin: const EdgeInsets.only(left: 10.0, right: 12.0),
               child: params[0],
             ),
             Expanded(

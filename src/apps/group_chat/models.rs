@@ -829,7 +829,7 @@ pub(super) fn from_network_message(
     msg: NetworkMessage,
     datetime: i64,
     base: &PathBuf,
-) -> Result<Message> {
+) -> Result<(Message, String)> {
     let db = group_chat_db(base, mgid)?;
     let mdid = Member::get_ok(&db, &gdid, &mid)?;
     let is_me = &mid == mgid;
@@ -868,19 +868,29 @@ pub(super) fn from_network_message(
             (MessageType::Video, "".to_owned())
         }
         NetworkMessage::None => {
-            return Ok(Message::new(
-                height,
-                gdid,
-                mdid,
-                is_me,
-                MessageType::String,
+            return Ok((
+                Message::new(
+                    height,
+                    gdid,
+                    mdid,
+                    is_me,
+                    MessageType::String,
+                    "".to_owned(),
+                ),
                 "".to_owned(),
             ));
         }
     };
 
+    let scontent = match m_type {
+        MessageType::String => {
+            format!("{}:{}", m_type.to_int(), raw)
+        }
+        _ => format!("{}:", m_type.to_int()),
+    };
+
     let mut msg = Message::new_with_time(height, gdid, mdid, is_me, m_type, raw, datetime);
     msg.insert(&db)?;
 
-    Ok(msg)
+    Ok((msg, scontent))
 }

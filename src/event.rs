@@ -333,7 +333,7 @@ impl InnerEvent {
                         .detach();
                     }
 
-                    let msg = m.handle(is_me, gid, group.base(), &db, f.id, hash)?;
+                    let (msg, _) = m.handle(is_me, gid, group.base(), &db, f.id, hash)?;
                     results.rpcs.push(chat_rpc::message_create(gid, &msg));
                     (MESSAGE_TABLE_PATH, msg.id)
                 } else {
@@ -858,7 +858,7 @@ impl SyncEvent {
                     }
 
                     let id = if let Some(f) = Friend::get_it(&chat_db, &fgid)? {
-                        let msg = m.handle(is_me, gid, &base, &chat_db, f.id, eid)?;
+                        let (msg, _) = m.handle(is_me, gid, &base, &chat_db, f.id, eid)?;
                         results.rpcs.push(chat_rpc::message_create(gid, &msg));
                         msg.id
                     } else {

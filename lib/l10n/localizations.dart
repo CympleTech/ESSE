@@ -87,6 +87,9 @@ abstract class AppLocalizations {
   String get block;
   String get blocked;
   String get invite;
+  String get emoji;
+  String get record;
+  String get others;
 
   // theme
   String get themeDark;

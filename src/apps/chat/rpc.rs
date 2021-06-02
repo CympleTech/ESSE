@@ -423,7 +423,8 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             let base = layer_lock.base();
             let faddr = layer_lock.running(&gid)?.online(&fgid)?;
 
-            let (msg, nw) = LayerEvent::from_message(base, gid, fid, m_type, content).await?;
+            let (msg, nw, scontent) =
+                LayerEvent::from_message(base, gid, fid, m_type, content).await?;
             let event = LayerEvent::Message(msg.hash, nw);
             let s = super::layer::event_message(&mut layer_lock, msg.id, gid, faddr, &event);
             drop(layer_lock);
@@ -439,18 +440,18 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
                 &fid,
                 &SessionType::Chat,
                 &msg.datetime,
-                &msg.content,
+                &scontent,
                 true,
             ) {
                 results
                     .rpcs
-                    .push(session_last(gid, &id, &msg.datetime, &msg.content, true));
+                    .push(session_last(gid, &id, &msg.datetime, &scontent, true));
             } else {
                 let c_db = chat_db(&layer_lock.base, &gid)?;
                 let f = Friend::get_id(&c_db, fid)??;
                 let mut session =
                     Session::new(f.id, f.gid, f.addr, SessionType::Chat, f.name, f.datetime);
-                session.last_content = msg.content;
+                session.last_content = scontent;
                 session.insert(&s_db)?;
                 results.rpcs.push(session_create(gid, &session));
             }

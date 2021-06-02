@@ -330,7 +330,7 @@ class _GroupChatDetailState extends State<GroupChatDetail> {
             const Divider(height: 1.0, color: Color(0x40ADB0BB)),
             Expanded(
               child: ListView.builder(
-                padding: EdgeInsets.symmetric(horizontal: 20.0),
+                padding: EdgeInsets.symmetric(horizontal: 10.0),
                 itemCount: recentMessageKeys.length,
                 reverse: true,
                 itemBuilder: (BuildContext context, index) {
@@ -634,7 +634,7 @@ class _MemberDrawerWidget extends StatelessWidget {
         child: SafeArea(
           child: Container(
             decoration: BoxDecoration(color: color.surface),
-            padding: const EdgeInsets.symmetric(vertical: 20.0),
+            padding: const EdgeInsets.symmetric(vertical: 10.0),
             child: Column(
               children: [
                 Row(
@@ -646,15 +646,16 @@ class _MemberDrawerWidget extends StatelessWidget {
                         style: Theme.of(context).textTheme.title),
                     ),
                     Container(
+                      height: 36.0,
                       margin: const EdgeInsets.only(right: 10.0),
-                      padding: const EdgeInsets.symmetric(vertical: 2.0, horizontal: 10.0),
+                      padding: const EdgeInsets.symmetric(horizontal: 8.0),
                       decoration: BoxDecoration(
                         border: Border.all(color: Color(0xFF6174FF)),
                         borderRadius: BorderRadius.circular(25.0)),
                       child: TextButton(child: Row(
                           children: [
                             Icon(Icons.add, size: 16.0),
-                            Text(lang.invite),
+                            Text(lang.invite, style: TextStyle(fontSize: 14.0)),
                           ]
                         ),
                         onPressed: () => _invite(context, lang.contact),

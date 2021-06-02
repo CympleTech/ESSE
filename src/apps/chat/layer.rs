@@ -300,7 +300,8 @@ impl LayerEvent {
                 let (_sid, fid) = layer.get_running_remote_id(&mgid, &fgid)?;
                 let db = chat_db(&layer.base, &mgid)?;
                 if !Message::exist(&db, &hash)? {
-                    let msg = m.clone().handle(false, mgid, &layer.base, &db, fid, hash)?;
+                    let (msg, scontent) =
+                        m.clone().handle(false, mgid, &layer.base, &db, fid, hash)?;
                     layer.group.write().await.broadcast(
                         &mgid,
                         InnerEvent::SessionMessageCreate(fgid, false, hash, m),
@@ -317,21 +318,17 @@ impl LayerEvent {
                         &fid,
                         &SessionType::Chat,
                         &msg.datetime,
-                        &msg.content,
+                        &scontent,
                         true,
                     ) {
-                        results.rpcs.push(session_last(
-                            mgid,
-                            &id,
-                            &msg.datetime,
-                            &msg.content,
-                            false,
-                        ));
+                        results
+                            .rpcs
+                            .push(session_last(mgid, &id, &msg.datetime, &scontent, false));
                     } else {
                         let c_db = chat_db(&layer.base, &mgid)?;
                         if let Some(f) = Friend::get_id(&c_db, fid)? {
                             let mut session = f.to_session();
-                            session.last_content = msg.content;
+                            session.last_content = scontent;
                             session.insert(&s_db)?;
                             results.rpcs.push(session_create(mgid, &session));
                         }
@@ -389,7 +386,7 @@ impl LayerEvent {
         fid: i64,
         m_type: MessageType,
         content: String,
-    ) -> std::result::Result<(Message, NetworkMessage), tdn::types::rpc::RpcError> {
+    ) -> std::result::Result<(Message, NetworkMessage, String), tdn::types::rpc::RpcError> {
         let db = chat_db(&base, &mgid)?;
 
         // handle message's type.
@@ -448,10 +445,17 @@ impl LayerEvent {
             MessageType::Invite => (NetworkMessage::Invite(content.clone()), content),
         };
 
+        let scontent = match m_type {
+            MessageType::String => {
+                format!("{}:{}", m_type.to_int(), raw)
+            }
+            _ => format!("{}:", m_type.to_int()),
+        };
+
         let mut msg = Message::new(&mgid, fid, true, m_type, raw, false);
         msg.insert(&db)?;
         drop(db);
-        Ok((msg, nm_type))
+        Ok((msg, nm_type, scontent))
     }
 }
 

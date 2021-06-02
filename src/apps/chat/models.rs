@@ -64,7 +64,7 @@ impl NetworkMessage {
         db: &DStorage,
         fid: i64,
         hash: EventId,
-    ) -> Result<Message> {
+    ) -> Result<(Message, String)> {
         // handle event.
         let (m_type, raw) = match self {
             NetworkMessage::String(content) => (MessageType::String, content),
@@ -100,21 +100,31 @@ impl NetworkMessage {
             }
             NetworkMessage::Invite(content) => (MessageType::Invite, content),
             NetworkMessage::None => {
-                return Ok(Message::new_with_id(
-                    hash,
-                    fid,
-                    is_me,
-                    MessageType::String,
+                return Ok((
+                    Message::new_with_id(
+                        hash,
+                        fid,
+                        is_me,
+                        MessageType::String,
+                        "".to_owned(),
+                        true,
+                    ),
                     "".to_owned(),
-                    true,
                 ));
             }
+        };
+
+        let scontent = match m_type {
+            MessageType::String => {
+                format!("{}:{}", m_type.to_int(), raw)
+            }
+            _ => format!("{}:", m_type.to_int()),
         };
 
         let mut msg = Message::new_with_id(hash, fid, is_me, m_type, raw, true);
         msg.insert(db)?;
 
-        Ok(msg)
+        Ok((msg, scontent))
     }
 
     pub fn from_model(base: &PathBuf, gid: &GroupId, model: Message) -> Result<NetworkMessage> {

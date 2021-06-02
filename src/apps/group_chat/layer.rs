@@ -179,7 +179,10 @@ async fn handle_event(
             results.rpcs.push(session_create(mgid, &session));
 
             // 3. update UI.
-            results.rpcs.push(rpc::group_agree(mgid, rid, group));
+            results
+                .rpcs
+                .push(rpc::request_handle(mgid, rid, true, false));
+            results.rpcs.push(rpc::group_create(mgid, group));
 
             // 4. try connect.
             let proof = layer
@@ -195,7 +198,9 @@ async fn handle_event(
             println!("Reject..........");
             let db = group_chat_db(layer.read().await.base(), &mgid)?;
             let (rid, _key) = Request::over(&db, &gcd, true)?;
-            results.rpcs.push(rpc::group_reject(mgid, rid, efficacy));
+            results
+                .rpcs
+                .push(rpc::request_handle(mgid, rid, false, efficacy));
         }
         LayerEvent::MemberOnline(gcd, mid, maddr) => {
             let (_sid, gid) = layer.read().await.get_running_remote_id(&mgid, &gcd)?;
@@ -240,7 +245,8 @@ async fn handle_event(
                 Event::MessageCreate(mid, nmsg, mtime) => {
                     println!("Sync: create message start");
                     let base = layer.read().await.base.clone();
-                    let msg = from_network_message(height, gid, mid, &mgid, nmsg, mtime, &base)?;
+                    let (msg, scontent) =
+                        from_network_message(height, gid, mid, &mgid, nmsg, mtime, &base)?;
                     results.rpcs.push(rpc::message_create(mgid, &msg));
                     println!("Sync: create message ok");
 
@@ -251,21 +257,17 @@ async fn handle_event(
                         &gid,
                         &SessionType::Group,
                         &msg.datetime,
-                        &msg.content,
+                        &scontent,
                         true,
                     ) {
-                        results.rpcs.push(session_last(
-                            mgid,
-                            &id,
-                            &msg.datetime,
-                            &msg.content,
-                            false,
-                        ));
+                        results
+                            .rpcs
+                            .push(session_last(mgid, &id, &msg.datetime, &scontent, false));
                     } else {
                         let c_db = group_chat_db(&base, &mgid)?;
                         if let Some(f) = GroupChat::get_id(&c_db, &gid)? {
                             let mut session = f.to_session();
-                            session.last_content = msg.content;
+                            session.last_content = scontent;
                             session.insert(&s_db)?;
                             results.rpcs.push(session_create(mgid, &session));
                         }
@@ -408,7 +410,7 @@ fn handle_sync_event(
             // TODO
         }
         PackedEvent::MessageCreate(mid, nmsg, time) => {
-            let msg = from_network_message(height, *fid, mid, mgid, nmsg, time, base)?;
+            let (msg, _) = from_network_message(height, *fid, mid, mgid, nmsg, time, base)?;
             results.rpcs.push(rpc::message_create(*mgid, &msg));
         }
         PackedEvent::None => {}

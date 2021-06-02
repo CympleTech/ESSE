@@ -98,6 +98,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get blocked => '已拉黑';
   @override
   String get invite => '邀请';
+  @override
+  String get emoji => '动画表情';
+  @override
+  String get record => '语音';
+  @override
+  String get others => '其他';
 
   // theme
   @override

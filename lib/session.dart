@@ -93,12 +93,44 @@ class Session {
     return this.online == OnlineType.Active || this.online == OnlineType.Suspend;
   }
 
+  String content(AppLocalizations lang) {
+    MessageType type = MessageType.String;
+    String raw = this.lastContent;
+
+    final i_type = this.lastContent.indexOf(':');
+    if (i_type > 0) {
+      type = MessageTypeExtension.fromInt(int.parse(this.lastContent.substring(0, i_type)));
+      raw = this.lastContent.substring(i_type + 1);
+    }
+
+    switch (type) {
+      case MessageType.String:
+        return raw;
+      case MessageType.Image:
+        return "[${lang.album}]";
+      case MessageType.File:
+        return "[${lang.file}]";
+      case MessageType.Contact:
+        return "[${lang.contactCard}]";
+      case MessageType.Emoji:
+        return "[${lang.emoji}]";
+      case MessageType.Record:
+        return "[${lang.record}]";
+      case MessageType.Phone:
+        return "[${lang.others}]";
+      case MessageType.Video:
+        return "[${lang.others}]";
+      case MessageType.Invite:
+        return "[${lang.invite}]";
+    }
+  }
+
   List parse(AppLocalizations lang) {
     switch (this.type) {
       case SessionType.Chat:
-        return [showAvatar(), this.name, this.lastContent, this.lastTime.toString(), null];
+        return [showAvatar(), this.name, content(lang), this.lastTime.toString(), null];
       case SessionType.Group:
-        return [showAvatar(), this.name, this.lastContent, this.lastTime.toString(), Icons.groups];
+        return [showAvatar(), this.name, content(lang), this.lastTime.toString(), Icons.groups];
       case SessionType.Assistant:
         final params = Session.innerService(InnerService.Assistant, lang);
         return [params[0], params[1], params[2], '', Icons.campaign];

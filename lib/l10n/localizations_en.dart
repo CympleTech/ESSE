@@ -98,6 +98,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get blocked => 'Blocked';
   @override
   String get invite => 'Invite';
+  @override
+  String get emoji => 'Emoji';
+  @override
+  String get record => 'Record';
+  @override
+  String get others => 'Others';
 
   // theme
   @override
