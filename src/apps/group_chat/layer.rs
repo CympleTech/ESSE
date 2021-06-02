@@ -17,7 +17,7 @@ use tdn_storage::local::DStorage;
 
 use crate::layer::{Layer, Online};
 use crate::rpc::{session_connect, session_create, session_last, session_lost, session_suspend};
-use crate::session::{connect_session, SessionType};
+use crate::session::{connect_session, Session, SessionType};
 use crate::storage::{group_chat_db, session_db, write_avatar_sync};
 
 use super::models::{from_network_message, GroupChat, Member, Request};
@@ -243,9 +243,33 @@ async fn handle_event(
                     let msg = from_network_message(height, gid, mid, &mgid, nmsg, mtime, &base)?;
                     results.rpcs.push(rpc::message_create(mgid, &msg));
                     println!("Sync: create message ok");
-                    results
-                        .rpcs
-                        .push(session_last(mgid, &sid, &msg.datetime, &msg.content, false));
+
+                    // UPDATE SESSION.
+                    let s_db = session_db(&base, &mgid)?;
+                    if let Ok(id) = Session::last(
+                        &s_db,
+                        &gid,
+                        &SessionType::Group,
+                        &msg.datetime,
+                        &msg.content,
+                        true,
+                    ) {
+                        results.rpcs.push(session_last(
+                            mgid,
+                            &id,
+                            &msg.datetime,
+                            &msg.content,
+                            false,
+                        ));
+                    } else {
+                        let c_db = group_chat_db(&base, &mgid)?;
+                        if let Some(f) = GroupChat::get_id(&c_db, &gid)? {
+                            let mut session = f.to_session();
+                            session.last_content = msg.content;
+                            session.insert(&s_db)?;
+                            results.rpcs.push(session_create(mgid, &session));
+                        }
+                    }
                 }
             }
 

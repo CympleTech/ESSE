@@ -115,6 +115,7 @@ class AccountProvider extends ChangeNotifier {
     this.coreShowWidget = DefaultCoreShow();
 
     // load sessions.
+    this.actived = 0;
     this.sessions.clear();
     this.orderKeys.clear();
     rpc.send('session-list', []);
@@ -131,6 +132,7 @@ class AccountProvider extends ChangeNotifier {
   }
 
   logout() {
+    this.actived = 0;
     this.accounts.clear();
     this.clearActivedAccount();
     this.sessions.clear();
@@ -193,7 +195,7 @@ class AccountProvider extends ChangeNotifier {
   }
 
   clearActivedSession(SessionType type) {
-    if (this.activedSession.type == type && this.actived > 0) {
+    if (this.actived > 0 && this.activedSession.type == type) {
       rpc.send('session-suspend', [this.actived, this.activedSession.gid,
           this.activedSession.type == SessionType.Group]
       );
@@ -227,7 +229,7 @@ class AccountProvider extends ChangeNotifier {
         if (online == OnlineType.Lost) {
           this.activedSession.online = OnlineType.Waiting;
           Timer(Duration(seconds: 10), () {
-              if (this.sessions[id].online == OnlineType.Waiting) {
+              if (this.sessions[id] != null && this.sessions[id].online == OnlineType.Waiting) {
                 this.sessions[id].online = OnlineType.Lost;
                 notifyListeners();
               }
