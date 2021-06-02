@@ -213,7 +213,7 @@ async fn handle_event(
             results.rpcs.push(rpc::member_offline(mgid, gid, mid));
         }
         LayerEvent::Sync(gcd, height, event) => {
-            let (sid, gid) = layer.read().await.get_running_remote_id(&mgid, &gcd)?;
+            let (_sid, gid) = layer.read().await.get_running_remote_id(&mgid, &gcd)?;
 
             println!("Sync: height: {}", height);
             let base = layer.read().await.base().clone();
@@ -312,7 +312,7 @@ async fn handle_event(
             let (_sid, _gid) = layer.read().await.get_running_remote_id(&mgid, &gcd)?;
             let db = group_chat_db(layer.read().await.base(), &mgid)?;
             let id = Request::over_rid(&db, &gcd, &rid, ok)?;
-            results.rpcs.push(rpc::request_handle(mgid, id, ok));
+            results.rpcs.push(rpc::request_handle(mgid, id, ok, false));
         }
         LayerEvent::Request(..) => {} // nerver here.
         LayerEvent::Check => {}       // nerver here.

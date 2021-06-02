@@ -18,6 +18,7 @@ import 'package:esse/rpc.dart';
 import 'package:esse/provider.dart';
 
 import 'package:esse/apps/group_chat/models.dart';
+import 'package:esse/apps/group_chat/list.dart';
 import 'package:esse/apps/group_chat/provider.dart';
 
 class GroupAddPage extends StatefulWidget {
@@ -220,26 +221,28 @@ class _GroupAddPageState extends State<GroupAddPage> {
     final requests = provider.requests;
     final requestKeys = requests.keys.toList().reversed.toList();
 
-    return SafeArea(
-      child: DefaultTabController(
+    return DefaultTabController(
         initialIndex: 0,
         length: 2,
         child: Scaffold(
           appBar: AppBar(
-            title: Row(
-              children: [
-                Expanded(
-                  child: Text(lang.groupChatAdd,
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20.0)),
+            title: Text(lang.addFriend),
+            leading: isDesktop
+            ? IconButton(
+              onPressed: () {
+                context.read<GroupChatProvider>().requestClear();
+                context.read<AccountProvider>().updateActivedWidget(GroupChatList());
+              },
+              icon: Icon(Icons.arrow_back, color: color.primary),
+            ) : null,
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.push(context,
+                  MaterialPageRoute(builder: (context) => QRScan(callback: _scanCallback))
                 ),
-                TextButton(
-                  onPressed: () => Navigator.push(context,
-                    MaterialPageRoute(builder: (context) => QRScan(callback: _scanCallback))
-                  ),
-                  child: Text(lang.scanQr, style: TextStyle(fontSize: 16.0)),
-                ),
-              ],
-            ),
+                child: Text(lang.scanQr, style: TextStyle(fontSize: 16.0)),
+              ),
+            ],
             bottom: TabBar(
               tabs: <Widget>[
                 Tab(
@@ -531,7 +534,7 @@ class _GroupAddPageState extends State<GroupAddPage> {
                 ),
               ),
             ],
-      )))
+      ))
     );
   }
 }

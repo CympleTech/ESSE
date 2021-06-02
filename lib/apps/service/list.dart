@@ -35,23 +35,21 @@ class _ServiceListState extends State<ServiceList> {
           preferredSize: Size.fromHeight(1.0)
         ),
       ),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 10.0),
-          child: ListView.builder(
-            itemCount: INNER_SERVICES.length,
-            itemBuilder: (BuildContext ctx, int index) {
-              final params = INNER_SERVICES[index].params(lang);
-              return ListInnerService(
-                name: params[0],
-                bio: params[1],
-                logo: params[2],
-                callback: () => INNER_SERVICES[index].callback(),
-                isDesktop: isDesktop,
-              );
-            }
-          )
-        ),
+      body: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 10.0),
+        child: ListView.builder(
+          itemCount: INNER_SERVICES.length,
+          itemBuilder: (BuildContext ctx, int index) {
+            final params = INNER_SERVICES[index].params(lang);
+            return ListInnerService(
+              name: params[0],
+              bio: params[1],
+              logo: params[2],
+              callback: () => INNER_SERVICES[index].callback(),
+              isDesktop: isDesktop,
+            );
+          }
+        )
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {

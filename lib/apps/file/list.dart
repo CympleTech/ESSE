@@ -83,14 +83,12 @@ class _FilesListState extends State<FilesList> {
           preferredSize: Size.fromHeight(1.0)
         ),
       ),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 10.0),
-          child: ListView.builder(
-            itemCount: FILE_DIRECTORY.length,
-            itemBuilder: (BuildContext ctx, int index) => item(index, color, isDesktop),
-          )
-        ),
+      body: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 10.0),
+        child: ListView.builder(
+          itemCount: FILE_DIRECTORY.length,
+          itemBuilder: (BuildContext ctx, int index) => item(index, color, isDesktop),
+        )
       ),
     );
   }

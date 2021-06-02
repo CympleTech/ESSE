@@ -118,6 +118,10 @@ class GroupChatProvider extends ChangeNotifier {
     this.activedMembers.clear();
   }
 
+  requestClear() {
+    this.requests.clear();
+  }
+
   join(GroupType gtype, String gid, String gaddr, String name, String remark, [String proof = '', String key = '']) {
     rpc.send('group-chat-join', [gtype.toInt(), gid, gaddr, name, remark, proof, key]);
   }

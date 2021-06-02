@@ -17,6 +17,7 @@ import 'package:esse/global.dart';
 import 'package:esse/provider.dart';
 
 import 'package:esse/apps/chat/models.dart';
+import 'package:esse/apps/chat/list.dart';
 import 'package:esse/apps/chat/provider.dart';
 
 class ChatAddPage extends StatefulWidget {
@@ -31,7 +32,6 @@ class ChatAddPage extends StatefulWidget {
 }
 
 class _ChatAddPageState extends State<ChatAddPage> {
-  final _formKey = GlobalKey<FormState>();
   TextEditingController userIdEditingController = TextEditingController();
   TextEditingController addrEditingController = TextEditingController();
   TextEditingController remarkEditingController = TextEditingController();
@@ -115,113 +115,101 @@ class _ChatAddPageState extends State<ChatAddPage> {
     final requestKeys = requests.keys.toList().reversed.toList(); // it had sorted.
 
     return Scaffold(
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(10.0),
-          child: Column(children: <Widget>[
-              Row(
-                children: [
-                  if (!isDesktop)
-                  GestureDetector(
-                    onTap: () {
-                      context.read<ChatProvider>().requestClear();
-                      Navigator.pop(context);
-                    },
-                    child: Container(
-                      width: 20.0,
-                      child: Icon(Icons.arrow_back, color: color.primary)),
-                  ),
-                  SizedBox(width: 15.0),
-                  Expanded(
-                    child: Text(lang.addFriend,
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20.0)),
-                  ),
-                  TextButton(
-                    onPressed: () => showShadowDialog(
-                      context,
-                      Icons.info,
-                      lang.info,
-                      UserInfo(app: 'add-friend',
-                        id: account.id, name: account.name, addr: Global.addr)
-                    ),
-                    child: Text(lang.myQrcode, style: TextStyle(fontSize: 16.0)),
-                  ),
-                ],
-              ),
-              isDesktop ? SizedBox(height: 20.0) : SizedBox(height: 50.0),
-              Expanded(
-                child: SingleChildScrollView(
-                  child: Container(
-                    constraints: BoxConstraints(minWidth: 200, maxWidth: 600),
-                    padding: const EdgeInsets.all(20),
-                    child: Form(
-                      key: _formKey,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: <Widget>[
-                          Container(
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                              children: [
-                                ShadowButton(
-                                  icon: Icons.camera_alt,
-                                  color: color,
-                                  text: lang.scanQr,
-                                  action: () => Navigator.push(
-                                    context,
-                                    MaterialPageRoute(builder: (context) => QRScan(callback: scanCallback))
-                                )),
-                                if (MediaQuery.of(context).size.width < 400) Spacer(),
-                                ShadowButton(
-                                  icon: Icons.image,
-                                  color: color,
-                                  text: lang.scanImage,
-                                  action: chooseImage),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 40.0),
-                          InputText(
-                            icon: Icons.person,
-                            text: lang.id,
-                            controller: userIdEditingController,
-                            focus: userIdFocus),
-                          const SizedBox(height: 20.0),
-                          InputText(
-                            icon: Icons.location_on,
-                            text: lang.address,
-                            controller: addrEditingController,
-                            focus: addrFocus),
-                          const SizedBox(height: 20.0),
-                          InputText(
-                            icon: Icons.turned_in,
-                            text: lang.remark,
-                            controller: remarkEditingController,
-                            focus: remarkFocus),
-                          const SizedBox(height: 20.0),
-                          ButtonText(action: send, text: lang.send, width: 600.0),
-                          const SizedBox(height: 20.0),
-                          const Divider(height: 1.0, color: Color(0x40ADB0BB)),
-                          const SizedBox(height: 10.0),
-                          if (requests.isNotEmpty)
-                          ListView.builder(
-                            itemCount: requestKeys.length,
-                            shrinkWrap: true,
-                            physics: ClampingScrollPhysics(),
-                            scrollDirection: Axis.vertical,
-                            itemBuilder: (BuildContext context, int index) =>
-                            _RequestItem(request: requests[requestKeys[index]]),
-                          ),
-                        ],
-                      ),
-                    ),
+      appBar: AppBar(
+        title: Text(lang.addFriend),
+        bottom: PreferredSize(
+          child: Container(color: const Color(0x40ADB0BB), height: 1.0),
+          preferredSize: Size.fromHeight(1.0)
+        ),
+        leading: isDesktop
+        ? IconButton(
+          onPressed: () {
+            context.read<ChatProvider>().requestClear();
+            context.read<AccountProvider>().updateActivedWidget(ChatList());
+          },
+          icon: Icon(Icons.arrow_back, color: color.primary),
+        ) : null,
+        actions: [
+          TextButton(
+            onPressed: () => showShadowDialog(
+              context,
+              Icons.info,
+              lang.info,
+              UserInfo(app: 'add-friend',
+                id: account.id, name: account.name, addr: Global.addr)
+            ),
+            child: Text(lang.myQrcode, style: TextStyle(fontSize: 16.0)),
+          ),
+        ]
+      ),
+      body: Container(
+        padding: const EdgeInsets.all(10.0),
+        alignment: Alignment.topCenter,
+        child: SingleChildScrollView(
+          child: Container(
+            width: 600,
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              children: <Widget>[
+                Container(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      ShadowButton(
+                        icon: Icons.camera_alt,
+                        color: color,
+                        text: lang.scanQr,
+                        action: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => QRScan(callback: scanCallback))
+                      )),
+                      if (MediaQuery.of(context).size.width < 400) Spacer(),
+                      ShadowButton(
+                        icon: Icons.image,
+                        color: color,
+                        text: lang.scanImage,
+                        action: chooseImage),
+                    ],
                   ),
                 ),
-              ),
-            ]
-          )
-        )
-    ));
+                const SizedBox(height: 40.0),
+                InputText(
+                  icon: Icons.person,
+                  text: lang.id,
+                  controller: userIdEditingController,
+                  focus: userIdFocus),
+                const SizedBox(height: 20.0),
+                InputText(
+                  icon: Icons.location_on,
+                  text: lang.address,
+                  controller: addrEditingController,
+                  focus: addrFocus),
+                const SizedBox(height: 20.0),
+                InputText(
+                  icon: Icons.turned_in,
+                  text: lang.remark,
+                  controller: remarkEditingController,
+                  focus: remarkFocus),
+                const SizedBox(height: 20.0),
+                ButtonText(action: send, text: lang.send, width: 600.0),
+                const SizedBox(height: 20.0),
+                const Divider(height: 1.0, color: Color(0x40ADB0BB)),
+                const SizedBox(height: 10.0),
+                if (requests.isNotEmpty)
+                ListView.builder(
+                  itemCount: requestKeys.length,
+                  shrinkWrap: true,
+                  physics: ClampingScrollPhysics(),
+                  scrollDirection: Axis.vertical,
+                  itemBuilder: (BuildContext context, int index) =>
+                  _RequestItem(request: requests[requestKeys[index]]),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
 

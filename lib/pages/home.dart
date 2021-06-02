@@ -212,14 +212,12 @@ class _HomeListState extends State<HomeList> {
           )
         ]
       ),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 10.0),
-          child: ListView.builder(
-            itemCount: allKeys.length,
-            itemBuilder: (BuildContext ctx, int index) => _SessionWidget(
-              session: sessions[allKeys[index]]
-            ),
+      body: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 10.0),
+        child: ListView.builder(
+          itemCount: allKeys.length,
+          itemBuilder: (BuildContext ctx, int index) => _SessionWidget(
+            session: sessions[allKeys[index]]
           ),
         ),
       ),

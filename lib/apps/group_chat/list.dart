@@ -35,14 +35,12 @@ class _GroupChatListState extends State<GroupChatList> {
           preferredSize: Size.fromHeight(1.0)
         ),
       ),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 10.0),
-          child: ListView.builder(
-            itemCount: orderKeys.length,
-            itemBuilder: (BuildContext ctx, int index) => ListChat(group: groups[orderKeys[index]]),
-          )
-        ),
+      body: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 10.0),
+        child: ListView.builder(
+          itemCount: orderKeys.length,
+          itemBuilder: (BuildContext ctx, int index) => ListChat(group: groups[orderKeys[index]]),
+        )
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {

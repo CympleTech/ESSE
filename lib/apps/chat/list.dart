@@ -36,14 +36,12 @@ class _ChatListState extends State<ChatList> {
           preferredSize: Size.fromHeight(1.0)
         ),
       ),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 10.0),
-          child: ListView.builder(
-            itemCount: chatKeys.length,
-            itemBuilder: (BuildContext ctx, int index) => ListChat(friend: friends[chatKeys[index]]),
-          )
-        ),
+      body: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 10.0),
+        child: ListView.builder(
+          itemCount: chatKeys.length,
+          itemBuilder: (BuildContext ctx, int index) => ListChat(friend: friends[chatKeys[index]]),
+        )
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
