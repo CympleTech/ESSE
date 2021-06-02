@@ -60,7 +60,9 @@ class _GroupChatDetailState extends State<GroupChatDetail> {
 
   @override
   void deactivate() {
-    context.read<AccountProvider>().clearActivedSession(SessionType.Group);
+    if (!isDisplayDesktop(context)) {
+      context.read<AccountProvider>().clearActivedSession(SessionType.Group);
+    }
     super.deactivate();
   }
 

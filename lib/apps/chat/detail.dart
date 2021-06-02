@@ -55,7 +55,9 @@ class _ChatDetailState extends State<ChatDetail> {
 
   @override
   void deactivate() {
-    context.read<AccountProvider>().clearActivedSession(SessionType.Chat);
+    if (!isDisplayDesktop(context)) {
+      context.read<AccountProvider>().clearActivedSession(SessionType.Chat);
+    }
     super.deactivate();
   }
 
