@@ -919,6 +919,7 @@ pub(super) fn from_network_message(
             // TODO
             (MessageType::Video, "".to_owned())
         }
+        NetworkMessage::Invite(content) => (MessageType::Invite, content),
         NetworkMessage::None => {
             return Ok((
                 Message::new(
