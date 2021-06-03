@@ -19,6 +19,7 @@ enum CheckType {
   Suspend,
   Deny,
   Wait,
+  Nothing,
 }
 
 extension GroupTypeExtension on GroupType {
@@ -87,7 +88,7 @@ extension CheckTypeExtension on CheckType {
       case 3:
         return CheckType.Deny;
       default:
-        return CheckType.Deny;
+        return CheckType.Nothing;
     }
   }
 }

@@ -2,7 +2,6 @@ use async_fs as fs;
 use image::{load_from_memory, DynamicImage, GenericImageView};
 use rand::{distributions::Alphanumeric, thread_rng, Rng};
 use std::path::PathBuf;
-use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use tdn::types::{

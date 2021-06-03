@@ -51,8 +51,6 @@ class _GroupAddPageState extends State<GroupAddPage> {
   int _groupAddr = 0;
   int _groupType = 1;
   bool _groupNeedAgree = false;
-  bool _groupHasKey = true;
-  bool _groupHasNeedAgree = true;
   bool _addrOnline = false;
   bool _addrChecked = false;
   String _myName = '';
@@ -87,17 +85,6 @@ class _GroupAddPageState extends State<GroupAddPage> {
           groupValue: _groupType,
           onChanged: disabled ? null : (n) => setState(() {
               _groupType = n;
-              if (n == 0) {
-                _groupHasKey = true;
-              } else {
-                _groupHasKey = false;
-              }
-
-              if (n == 2) {
-                _groupHasNeedAgree = false;
-              } else {
-                _groupHasNeedAgree = true;
-              }
           }),
         ),
         _groupType == value
@@ -117,7 +104,7 @@ class _GroupAddPageState extends State<GroupAddPage> {
     if (addr.substring(0, 2) == '0x') {
       addr = addr.substring(2);
     }
-    rpc.send('group-chat-check', [addr]);
+    context.read<GroupChatProvider>().check(addr);
   }
 
   _scanCallback(bool isOk, String app, List params) {
@@ -203,6 +190,8 @@ class _GroupAddPageState extends State<GroupAddPage> {
     rpc.send('group-chat-request-list', [false]);
     new Future.delayed(Duration.zero, () {
         _myName = context.read<AccountProvider>().activedAccount.name;
+        context.read<GroupChatProvider>().clearCheck();
+        setState(() {});
     });
   }
 
@@ -488,7 +477,7 @@ class _GroupAddPageState extends State<GroupAddPage> {
                           controller: _createBioController,
                           focus: _createBioFocus),
                       ),
-                      if (_groupHasKey)
+                      if (_groupType == 0)
                       Container(
                         padding: EdgeInsets.symmetric(vertical: 10.0),
                         child: InputText(
@@ -497,7 +486,7 @@ class _GroupAddPageState extends State<GroupAddPage> {
                           controller: _createKeyController,
                           focus: _createKeyFocus),
                       ),
-                      if (_groupHasNeedAgree)
+                      if (_groupType != 2)
                       Container(
                         height: 50.0,
                         width: 600.0,
