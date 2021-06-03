@@ -394,7 +394,8 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             let addr = state.layer.read().await.running(&gid)?.online(&gcd)?;
 
             let mut results = HandleResult::new();
-            let (nmsg, datetime) = to_network_message(m_type, m_content)?;
+            let base = state.group.read().await.base().clone();
+            let (nmsg, datetime) = to_network_message(&base, &gid, m_type, m_content).await?;
             let event = Event::MessageCreate(gid, nmsg, datetime);
             let data = postcard::to_allocvec(&LayerEvent::Sync(gcd, 0, event)).unwrap_or(vec![]);
             let msg = SendType::Event(0, addr, data);

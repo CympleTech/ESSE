@@ -97,7 +97,7 @@ class _GroupChatDetailState extends State<GroupChatDetail> {
   void _sendImage() async {
     final image = await pickImage();
     if (image != null) {
-      //context.read<GroupChatProvider>().messageCreate(Message(group.id, MessageType.Image, image));
+      context.read<GroupChatProvider>().messageCreate(MessageType.Image, image);
     }
     setState(() {
         textFocus.requestFocus();
@@ -111,7 +111,7 @@ class _GroupChatDetailState extends State<GroupChatDetail> {
   void _sendFile() async {
     final file = await pickFile();
     if (file != null) {
-      //context.read<GroupChatProvider>().messageCreate(Message(group.id, MessageType.File, file));
+      context.read<GroupChatProvider>().messageCreate(MessageType.File, file);
     }
     setState(() {
         textFocus.requestFocus();
@@ -124,8 +124,9 @@ class _GroupChatDetailState extends State<GroupChatDetail> {
 
   void _sendRecord(int time) async {
     final raw = BaseMessage.rawRecordName(time, _recordName);
-    //context.read<GroupChatProvider>().messageCreate(Message(group.id, MessageType.Record, raw));
-
+    if (raw != null) {
+      context.read<GroupChatProvider>().messageCreate(MessageType.Record, raw);
+    }
     setState(() {
         textFocus.requestFocus();
         emojiShow = false;
@@ -136,7 +137,9 @@ class _GroupChatDetailState extends State<GroupChatDetail> {
   }
 
   _callback(int id) {
-    context.read<GroupChatProvider>().messageCreate(MessageType.Contact, "${id}");
+    if (id != null) {
+      context.read<GroupChatProvider>().messageCreate(MessageType.Contact, "${id}");
+    }
     setState(() {
         textFocus.requestFocus();
         emojiShow = false;

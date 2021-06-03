@@ -10,10 +10,11 @@ use tdn_storage::local::{DStorage, DsValue};
 
 use group_chat_types::{GroupInfo, GroupType, NetworkMessage};
 
-use crate::apps::chat::MessageType;
+use crate::apps::chat::{Friend, MessageType};
 use crate::session::{Session, SessionType};
 use crate::storage::{
-    group_chat_db, write_avatar_sync, write_file_sync, write_image_sync, write_record_sync,
+    chat_db, group_chat_db, read_avatar, read_file, read_record, write_avatar_sync,
+    write_file_sync, write_image_sync, write_record_sync,
 };
 
 pub(crate) struct GroupChatKey(Vec<u8>);
@@ -808,8 +809,10 @@ impl Message {
     }
 }
 
-pub(super) fn to_network_message(
-    _mtype: MessageType,
+pub(super) async fn to_network_message(
+    base: &PathBuf,
+    gid: &GroupId,
+    mtype: MessageType,
     content: &str,
 ) -> Result<(NetworkMessage, i64)> {
     let start = SystemTime::now();
@@ -818,7 +821,56 @@ pub(super) fn to_network_message(
         .map(|s| s.as_secs())
         .unwrap_or(0) as i64; // safe for all life.
 
-    Ok((NetworkMessage::String(content.to_owned()), datetime))
+    let nmsg = match mtype {
+        MessageType::String => NetworkMessage::String(content.to_owned()),
+        MessageType::Image => {
+            let bytes = read_file(&PathBuf::from(content)).await?;
+            NetworkMessage::Image(bytes)
+        }
+        MessageType::File => {
+            let file_path = PathBuf::from(content);
+            let bytes = read_file(&file_path).await?;
+            let old_name = file_path
+                .file_name()
+                .and_then(|s| s.to_str())
+                .unwrap_or("")
+                .to_owned();
+            NetworkMessage::File(old_name, bytes)
+        }
+        MessageType::Contact => {
+            let cid: i64 = content.parse().map_err(|_e| new_io_error("id error"))?;
+            let db = chat_db(base, gid)?;
+            let contact = Friend::get_id(&db, cid)?.ok_or(new_io_error("contact missind"))?;
+            drop(db);
+            let avatar_bytes = read_avatar(base, &gid, &contact.gid).await?;
+            NetworkMessage::Contact(contact.name, contact.gid, contact.addr, avatar_bytes)
+        }
+        MessageType::Record => {
+            let (bytes, time) = if let Some(i) = content.find('-') {
+                let time = content[0..i].parse().unwrap_or(0);
+                let bytes = read_record(base, &gid, &content[i + 1..]).await?;
+                (bytes, time)
+            } else {
+                (vec![], 0)
+            };
+            NetworkMessage::Record(bytes, time)
+        }
+        MessageType::Emoji => {
+            // TODO
+            NetworkMessage::Emoji
+        }
+        MessageType::Phone => {
+            // TODO
+            NetworkMessage::Phone
+        }
+        MessageType::Video => {
+            // TODO
+            NetworkMessage::Video
+        }
+        MessageType::Invite => NetworkMessage::Invite(content.to_owned()),
+    };
+
+    Ok((nmsg, datetime))
 }
 
 pub(super) fn from_network_message(
