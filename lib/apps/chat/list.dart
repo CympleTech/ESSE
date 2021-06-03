@@ -30,7 +30,7 @@ class _ChatListState extends State<ChatList> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(lang.contact),
+        title: Text(lang.friends),
         bottom: PreferredSize(
           child: Container(color: const Color(0x40ADB0BB), height: 1.0),
           preferredSize: Size.fromHeight(1.0)

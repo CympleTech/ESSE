@@ -50,6 +50,7 @@ abstract class AppLocalizations {
   String get info;
   String get contact;
   String get friend;
+  String get friends;
   String get logout;
   String get onlineWaiting;
   String get onlineActive;
@@ -173,6 +174,7 @@ abstract class AppLocalizations {
   String get assistant;
   String get assistantBio;
   String get groupChat;
+  String get groupChats;
   String get groupChatAdd;
   String get groupChatIntro;
   String get groupChatId;

@@ -25,6 +25,8 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String get friend => '好友';
   @override
+  String get friends => '好友';
+  @override
   String get logout => '退出';
   @override
   String get onlineWaiting => '连接中...';
@@ -149,7 +151,7 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String get addService => '添加服务';
   @override
-  String get services => '服务列表';
+  String get services => '服务';
   @override
   String get devices => '关联设备';
   @override
@@ -256,6 +258,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get assistantBio => 'Jarvis 是个机器人，只属于你。';
   @override
   String get groupChat => '群聊';
+  @override
+  String get groupChats => '群聊';
   @override
   String get groupChatAdd => '添加群聊';
   @override

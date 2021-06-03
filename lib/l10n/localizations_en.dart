@@ -25,6 +25,8 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get friend => 'Friend';
   @override
+  String get friends => 'Friends';
+  @override
   String get logout => 'Logout';
   @override
   String get onlineWaiting => 'Waiting...';
@@ -256,6 +258,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assistantBio => 'Jarvis is a robot, only belongs to you.';
   @override
   String get groupChat => 'Group Chat';
+  @override
+  String get groupChats => 'Groups';
   @override
   String get groupChatAdd => 'Add Group Chat';
   @override

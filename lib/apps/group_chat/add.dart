@@ -49,7 +49,7 @@ class _GroupAddPageState extends State<GroupAddPage> {
   FocusNode _createKeyFocus = FocusNode();
 
   int _groupAddr = 0;
-  int _groupType = 0;
+  int _groupType = 1;
   bool _groupNeedAgree = false;
   bool _groupHasKey = true;
   bool _groupHasNeedAgree = true;
@@ -60,31 +60,32 @@ class _GroupAddPageState extends State<GroupAddPage> {
   bool _requestsLoadMore = true;
 
   // 0 => encrypted, 1 => common, 2 => open.
-  Widget _groupAddrWidget(String text, int value, ColorScheme color) {
+  Widget _groupAddrWidget(String text, int value, ColorScheme color, bool disabled) {
     return Row(
       children: [
         Radio(
           value: value,
           groupValue: _groupAddr,
-          onChanged: (n) => setState(() {
+          onChanged: disabled ? null : (n) => setState(() {
               _groupAddr = n;
           }),
         ),
         _groupAddr == value
         ? Text(text, style: TextStyle(color: color.primary))
-        : Text(text),
+        : (disabled ? Text(text, style: TextStyle(color: Color(0xFFADB0BB)))
+          : Text(text)),
       ]
     );
   }
 
   // 0 => encrypted, 1 => common, 2 => open.
-  Widget _groupTypeWidget(String text, int value, ColorScheme color) {
+  Widget _groupTypeWidget(String text, int value, ColorScheme color, bool disabled) {
     return Row(
       children: [
         Radio(
           value: value,
           groupValue: _groupType,
-          onChanged: (n) => setState(() {
+          onChanged: disabled ? null : (n) => setState(() {
               _groupType = n;
               if (n == 0) {
                 _groupHasKey = true;
@@ -101,7 +102,8 @@ class _GroupAddPageState extends State<GroupAddPage> {
         ),
         _groupType == value
         ? Text(text, style: TextStyle(color: color.primary))
-        : Text(text),
+        : (disabled ? Text(text, style: TextStyle(color: Color(0xFFADB0BB)))
+          : Text(text)),
       ]
     );
   }
@@ -337,8 +339,8 @@ class _GroupAddPageState extends State<GroupAddPage> {
                           mainAxisSize: MainAxisSize.max,
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
-                            _groupAddrWidget(lang.deviceRemote, 0, color),
-                            _groupAddrWidget(lang.deviceLocal, 1, color),
+                            _groupAddrWidget(lang.deviceRemote, 0, color, false),
+                            _groupAddrWidget(lang.deviceLocal, 1, color, true),
                           ]
                         )
                       ),
@@ -448,9 +450,9 @@ class _GroupAddPageState extends State<GroupAddPage> {
                           mainAxisSize: MainAxisSize.max,
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
-                            _groupTypeWidget(lang.groupTypeEncrypted, 0, color),
-                            _groupTypeWidget(lang.groupTypePrivate, 1, color),
-                            _groupTypeWidget(lang.groupTypeOpen, 2, color),
+                            _groupTypeWidget(lang.groupTypeEncrypted, 0, color, true),
+                            _groupTypeWidget(lang.groupTypePrivate, 1, color, false),
+                            _groupTypeWidget(lang.groupTypeOpen, 2, color, false),
                           ]
                         )
                       ),

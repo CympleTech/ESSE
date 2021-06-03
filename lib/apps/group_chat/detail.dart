@@ -81,7 +81,6 @@ class _GroupChatDetailState extends State<GroupChatDetail> {
     context.read<GroupChatProvider>().messageCreate(MessageType.String, textController.text);
     setState(() {
         textController.text = '';
-        textFocus.requestFocus();
 
         emojiShow = false;
         sendShow = false;
@@ -100,7 +99,6 @@ class _GroupChatDetailState extends State<GroupChatDetail> {
       context.read<GroupChatProvider>().messageCreate(MessageType.Image, image);
     }
     setState(() {
-        textFocus.requestFocus();
         emojiShow = false;
         sendShow = false;
         menuShow = false;
@@ -114,7 +112,6 @@ class _GroupChatDetailState extends State<GroupChatDetail> {
       context.read<GroupChatProvider>().messageCreate(MessageType.File, file);
     }
     setState(() {
-        textFocus.requestFocus();
         emojiShow = false;
         sendShow = false;
         menuShow = false;
@@ -128,7 +125,6 @@ class _GroupChatDetailState extends State<GroupChatDetail> {
       context.read<GroupChatProvider>().messageCreate(MessageType.Record, raw);
     }
     setState(() {
-        textFocus.requestFocus();
         emojiShow = false;
         sendShow = false;
         menuShow = false;
@@ -141,7 +137,6 @@ class _GroupChatDetailState extends State<GroupChatDetail> {
       context.read<GroupChatProvider>().messageCreate(MessageType.Contact, "${id}");
     }
     setState(() {
-        textFocus.requestFocus();
         emojiShow = false;
         sendShow = false;
         menuShow = false;

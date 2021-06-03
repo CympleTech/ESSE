@@ -34,6 +34,7 @@ import 'package:esse/apps/file/list.dart';
 import 'package:esse/apps/service/list.dart';
 import 'package:esse/apps/service/add.dart';
 import 'package:esse/apps/assistant/page.dart';
+import 'package:esse/apps/group_chat/list.dart';
 import 'package:esse/apps/group_chat/detail.dart';
 import 'package:esse/apps/group_chat/provider.dart';
 
@@ -346,7 +347,7 @@ class DrawerWidget extends StatelessWidget {
                   const Divider(height: 1.0, color: Color(0x40ADB0BB)),
                   ListTile(
                     leading: Icon(Icons.people_rounded, color: color.primary),
-                    title: Text(lang.contact, textAlign: TextAlign.left,
+                    title: Text(lang.friends, textAlign: TextAlign.left,
                       style: TextStyle(fontSize: 16.0)),
                     onTap: () {
                       Navigator.pop(context);
@@ -359,6 +360,21 @@ class DrawerWidget extends StatelessWidget {
                         Navigator.push(context, MaterialPageRoute(builder: (_) => coreWidget));
                       }
 
+                  }),
+                  ListTile(
+                    leading: Icon(Icons.groups_rounded, color: color.primary),
+                    title: Text(lang.groupChats, textAlign: TextAlign.left,
+                      style: TextStyle(fontSize: 16.0)),
+                    onTap: () {
+                      Navigator.pop(context);
+                      final coreWidget = GroupChatList();
+                      if (isDesktop) {
+                        Provider.of<AccountProvider>(context, listen: false).updateActivedWidget(
+                          coreWidget
+                        );
+                      } else {
+                        Navigator.push(context, MaterialPageRoute(builder: (_) => coreWidget));
+                      }
                   }),
                   ListTile(
                     leading: Icon(Icons.grid_view_rounded, color: color.primary),
