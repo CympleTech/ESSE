@@ -336,7 +336,11 @@ class _GroupChatDetailState extends State<GroupChatDetail> {
                 itemBuilder: (BuildContext context, index) {
                   final message = recentMessages[recentMessageKeys[index]];
                   final member = members[message.fid];
-                  return ChatMessage(
+                  return member == null ? ChatMessage(
+                    fgid: "",
+                    name: lang.delete,
+                    message: message,
+                  ) : ChatMessage(
                     fgid: member.mid,
                     avatar: member.showAvatar(),
                     name: member.name,
