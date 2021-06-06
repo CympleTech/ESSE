@@ -106,6 +106,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get record => 'Record';
   @override
   String get others => 'Others';
+  @override
+  String get closed => 'Closed';
 
   // theme
   @override

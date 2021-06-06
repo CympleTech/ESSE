@@ -18,7 +18,6 @@ class GroupChatProvider extends ChangeNotifier {
   SplayTreeMap<int, Request> requests = SplayTreeMap();
 
   int actived;
-  bool activedOnline;
   SplayTreeMap<int, Message> activedMessages = SplayTreeMap();
   SplayTreeMap<int, Member> activedMembers = SplayTreeMap();
 
@@ -72,8 +71,6 @@ class GroupChatProvider extends ChangeNotifier {
   GroupChatProvider() {
     // rpc.
     rpc.addListener('group-chat-list', _list, false);
-    rpc.addListener('group-chat-online', _online, false);
-    rpc.addListener('group-chat-offline', _offline, false);
     rpc.addListener('group-chat-check', _check, false);
     rpc.addListener('group-chat-create', _create, false);
     rpc.addListener('group-chat-result', _result, false);
@@ -144,20 +141,26 @@ class GroupChatProvider extends ChangeNotifier {
   }
 
   messageCreate(MessageType mtype, String content) {
-    final gid = this.activedGroup.gid;
-    rpc.send('group-chat-message-create', [gid, mtype.toInt(), content]);
+    final gcd = this.activedGroup.gid;
+    rpc.send('group-chat-message-create', [gcd, mtype.toInt(), content]);
   }
 
   close(int id) {
-    // rpc.send('group-chat-close', [id]);
+    final gcd = this.activedGroup.gid;
+    rpc.send('group-chat-close', [gcd, id]);
+
+    this.activedGroup.isClosed = true;
+    notifyListeners();
   }
 
   delete(int id) {
-    // rpc.send('group-chat-delete', [id]);
-  }
+    final gcd = this.activedGroup.gid;
+    rpc.send('group-chat-delete', [gcd, id]);
 
-  reAdd(int id) {
-    // rpc.send('group-chat-readd', [id]);
+    this.actived = 0;
+    this.groups.remove(id);
+    this.activedMessages.clear();
+    this.activedMembers.clear();
   }
 
   memberUpdate(int id, bool isBlock) {
@@ -176,20 +179,6 @@ class GroupChatProvider extends ChangeNotifier {
         this.groups[gc.id] = gc;
     });
     notifyListeners();
-  }
-
-  _online(List params) {
-    if (this.actived == params[0]) {
-      this.activedOnline = true;
-      notifyListeners();
-    }
-  }
-
-  _offline(List params) {
-    if (this.actived == params[0]) {
-      this.activedOnline = false;
-      notifyListeners();
-    }
   }
 
   _check(List params) {

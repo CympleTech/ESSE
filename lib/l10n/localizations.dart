@@ -91,6 +91,7 @@ abstract class AppLocalizations {
   String get emoji;
   String get record;
   String get others;
+  String get closed;
 
   // theme
   String get themeDark;

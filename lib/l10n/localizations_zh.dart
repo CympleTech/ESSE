@@ -106,6 +106,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get record => '语音';
   @override
   String get others => '其他';
+  @override
+  String get closed => '已关闭';
 
   // theme
   @override

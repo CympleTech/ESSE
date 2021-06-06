@@ -19,7 +19,7 @@ pub(crate) enum SessionType {
 }
 
 impl SessionType {
-    fn to_int(&self) -> i64 {
+    pub fn to_int(&self) -> i64 {
         match self {
             SessionType::Chat => 0,
             SessionType::Group => 1,
@@ -157,6 +157,39 @@ impl Session {
             "UPDATE sessions SET is_top = {}, is_close = {} WHERE id = {}",
             is_top, is_close, id
         ))
+    }
+
+    pub fn delete(db: &DStorage, fid: &i64, s_type: &SessionType) -> Result<i64> {
+        let sql = format!(
+            "SELECT id from sessions WHERE fid = {} AND s_type = {}",
+            fid,
+            s_type.to_int()
+        );
+        let mut matrix = db.query(&sql)?;
+        if let Some(mut values) = matrix.pop() {
+            let id = values.pop().unwrap().as_i64(); // safe unwrap.
+            db.delete(&format!("DELETE FROM sessions WHERE id = {}", id))?;
+            Ok(id)
+        } else {
+            Err(new_io_error("session missing"))
+        }
+    }
+
+    pub fn close(db: &DStorage, fid: &i64, s_type: &SessionType) -> Result<i64> {
+        let sql = format!(
+            "SELECT id from sessions WHERE fid = {} AND s_type = {}",
+            fid,
+            s_type.to_int()
+        );
+        let mut matrix = db.query(&sql)?;
+        if let Some(mut values) = matrix.pop() {
+            let id = values.pop().unwrap().as_i64(); // safe unwrap.
+            let s = format!("UPDATE sessions SET is_close = 1 WHERE id = {}", id);
+            db.update(&s)?;
+            Ok(id)
+        } else {
+            Err(new_io_error("session missing"))
+        }
     }
 
     pub fn last(

@@ -10,8 +10,9 @@ use tdn_did::Proof;
 use group_chat_types::{CheckType, Event, GroupType, JoinProof, LayerEvent};
 
 use crate::apps::chat::{Friend, MessageType};
-use crate::rpc::RpcState;
-use crate::storage::{chat_db, group_chat_db};
+use crate::rpc::{session_close, session_delete, RpcState};
+use crate::session::{Session, SessionType};
+use crate::storage::{chat_db, group_chat_db, session_db};
 
 use super::add_layer;
 use super::models::{to_network_message, GroupChat, GroupChatKey, Member, Message, Request};
@@ -400,6 +401,53 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             let data = postcard::to_allocvec(&LayerEvent::Sync(gcd, 0, event)).unwrap_or(vec![]);
             let msg = SendType::Event(0, addr, data);
             add_layer(&mut results, gid, msg);
+            Ok(results)
+        },
+    );
+
+    handler.add_method(
+        "group-chat-close",
+        |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
+            let gcd = GroupId::from_hex(params[0].as_str()?)?;
+            let id = params[1].as_i64()?;
+
+            let addr = state.layer.write().await.remove_online(&gid, &gcd)?;
+
+            let mut results = HandleResult::new();
+            let base = state.layer.read().await.base().clone();
+            let sid = Session::close(&session_db(&base, &gid)?, &id, &SessionType::Group)?;
+            results.rpcs.push(session_close(gid, &sid));
+
+            let db = group_chat_db(&base, &gid)?;
+            GroupChat::close(&db, &id)?;
+
+            let event = Event::MemberLeave(gid);
+            let data = postcard::to_allocvec(&LayerEvent::Sync(gcd, 0, event)).unwrap_or(vec![]);
+            let msg = SendType::Event(0, addr, data);
+            add_layer(&mut results, gid, msg);
+            Ok(results)
+        },
+    );
+
+    handler.add_method(
+        "group-chat-delete",
+        |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
+            let gcd = GroupId::from_hex(params[0].as_str()?)?;
+            let id = params[1].as_i64()?;
+
+            let mut results = HandleResult::new();
+            let base = state.layer.read().await.base().clone();
+            let sid = Session::delete(&session_db(&base, &gid)?, &id, &SessionType::Group)?;
+            results.rpcs.push(session_delete(gid, &sid));
+            let db = group_chat_db(&base, &gid)?;
+            if GroupChat::delete(&db, &id)? {
+                let addr = state.layer.write().await.remove_online(&gid, &gcd)?;
+                let event = Event::MemberLeave(gid);
+                let data =
+                    postcard::to_allocvec(&LayerEvent::Sync(gcd, 0, event)).unwrap_or(vec![]);
+                let msg = SendType::Event(0, addr, data);
+                add_layer(&mut results, gid, msg);
+            }
             Ok(results)
         },
     );

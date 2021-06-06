@@ -194,7 +194,7 @@ class _GroupChatDetailState extends State<GroupChatDetail> {
                   if (!isDesktop)
                   GestureDetector(
                     onTap: () {
-                      context.read<GroupChatProvider>().clearActivedGroup();
+                      provider.clearActivedGroup();
                       Navigator.pop(context);
                     },
                     child: Container(
@@ -202,7 +202,7 @@ class _GroupChatDetailState extends State<GroupChatDetail> {
                       child:
                       Icon(Icons.arrow_back, color: color.primary)),
                   ),
-                  SizedBox(width: 15.0),
+                  const SizedBox(width: 15.0),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -211,9 +211,9 @@ class _GroupChatDetailState extends State<GroupChatDetail> {
                           this.group.name,
                           style: TextStyle(fontWeight: FontWeight.bold),
                         ),
-                        SizedBox(height: 6.0),
+                        const SizedBox(height: 6.0),
                         Text(this.group.isClosed
-                          ? lang.unfriended
+                          ? lang.closed
                           : session.onlineLang(lang),
                           style: TextStyle(
                             color: color.onPrimary.withOpacity(0.5),
@@ -221,7 +221,7 @@ class _GroupChatDetailState extends State<GroupChatDetail> {
                       ],
                     ),
                   ),
-                  SizedBox(width: 20.0),
+                  const SizedBox(width: 20.0),
                   GestureDetector(
                     onTap: () {},
                     child: Container(
@@ -229,7 +229,7 @@ class _GroupChatDetailState extends State<GroupChatDetail> {
                       child: Icon(Icons.phone_rounded,
                         color: Color(0x26ADB0BB))),
                   ),
-                  SizedBox(width: 20.0),
+                  const SizedBox(width: 20.0),
                   GestureDetector(
                     onTap: () {},
                     child: Container(
@@ -237,7 +237,7 @@ class _GroupChatDetailState extends State<GroupChatDetail> {
                       child: Icon(Icons.videocam_rounded,
                         color: Color(0x26ADB0BB))),
                   ),
-                  SizedBox(width: 20.0),
+                  const SizedBox(width: 20.0),
                   GestureDetector(
                     onTap: () {
                       GroupChatDetail._scaffoldKey.currentState.openEndDrawer();
@@ -246,7 +246,7 @@ class _GroupChatDetailState extends State<GroupChatDetail> {
                       width: 20.0,
                       child: Icon(Icons.group_rounded, color: color.primary)),
                   ),
-                  SizedBox(width: 20.0),
+                  const SizedBox(width: 20.0),
                   PopupMenuButton<int>(
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(15)
@@ -304,22 +304,23 @@ class _GroupChatDetailState extends State<GroupChatDetail> {
                                   onPressed:  () {
                                     Navigator.pop(context);
                                     provider.delete(this.group.id);
+                                    context.read<AccountProvider>().clearActivedSession(
+                                      SessionType.Group
+                                    );
                                   },
                                 ),
                               ]
                             );
                           },
                         );
-                      } else if (value == 4) {
-                        provider.reAdd(this.group.id);
                       }
                     },
                     itemBuilder: (context) {
                       return <PopupMenuEntry<int>>[
                         _menuItem(Color(0xFF6174FF), 1, Icons.qr_code_rounded, lang.info),
-                        this.group.isClosed
-                        ? _menuItem(Color(0xFF6174FF), 4, Icons.send_rounded, lang.add)
-                        : _menuItem(Colors.orange, 2, Icons.block_rounded, lang.exit),
+                        if (!this.group.isClosed && isOnline)
+                        _menuItem(Colors.orange, 2, Icons.block_rounded, lang.exit),
+                        if (isOnline)
                         _menuItem(Colors.red, 3, Icons.delete_rounded, lang.delete),
                       ];
                     },

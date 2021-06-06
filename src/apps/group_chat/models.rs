@@ -338,6 +338,30 @@ impl GroupChat {
         let sql = format!("UPDATE groups SET height={} WHERE id = {}", height, id,);
         db.update(&sql)
     }
+
+    pub fn close(db: &DStorage, id: &i64) -> Result<usize> {
+        let sql = format!("UPDATE groups SET is_closed = 1 WHERE id = {}", id);
+        db.update(&sql)
+    }
+
+    /// return if is closed
+    pub fn delete(db: &DStorage, id: &i64) -> Result<bool> {
+        let sql = format!("SELECT is_closed FROM groups WHERE id = {}", id);
+        let mut matrix = db.query(&sql)?;
+        let is_closed = if let Some(mut value) = matrix.pop() {
+            value.pop().unwrap().as_bool() // safe unwrap
+        } else {
+            false
+        };
+
+        let sql = format!(
+            "UPDATE groups SET is_closed = 1, is_deleted = 1 WHERE id = {}",
+            id
+        );
+        db.update(&sql)?;
+
+        Ok(is_closed)
+    }
 }
 
 /// Group Join Request model. include my requests and other requests.

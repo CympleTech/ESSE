@@ -153,6 +153,10 @@ class Session {
         break;
     }
 
+    if (this.isClose) {
+      color = Color(0xFFADB0BB);
+    }
+
     return Avatar(
       width: width,
       name: this.name,

@@ -572,7 +572,12 @@ class _SessionWidget extends StatelessWidget {
                             ]
                           ),
                         ),
-                        Container(width: 8.0, height: 8.0,
+                        session.isClose
+                        ? Container(
+                          margin: const EdgeInsets.only(left: 15.0, right: 20.0),
+                          child: Icon(Icons.block_rounded, color: Color(0xFFADB0BB), size: 14.0)
+                        )
+                        : Container(width: 8.0, height: 8.0,
                           margin: const EdgeInsets.only(left: 15.0, right: 20.0),
                           decoration: BoxDecoration(
                             color: session.lastReaded ? color.background : Colors.red,

@@ -58,6 +58,7 @@ class AccountProvider extends ChangeNotifier {
     rpc.addListener('session-create', _sessionCreate, true);
     rpc.addListener('session-update', _sessionUpdate, false);
     rpc.addListener('session-close', _sessionClose, false);
+    rpc.addListener('session-delete', _sessionDelete, false);
     rpc.addListener('session-connect', _sessionConnect, false);
     rpc.addListener('session-suspend', _sessionSuspend, false);
     rpc.addListener('session-lost', _sessionLost, false);
@@ -334,8 +335,18 @@ class AccountProvider extends ChangeNotifier {
   _sessionClose(List params) {
     final id = params[0];
     this.sessions[id].isClose = true;
+    notifyListeners();
+  }
+
+  _sessionDelete(List params) {
+    final id = params[0];
+    this.sessions.remove(id);
     this.orderKeys.remove(id);
     this.topKeys.remove(id);
+    if (id == this.actived) {
+      this.actived = 0;
+      this.coreShowWidget = DefaultCoreShow();
+    }
     notifyListeners();
   }
 

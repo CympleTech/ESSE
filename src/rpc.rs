@@ -116,6 +116,16 @@ pub(crate) fn session_lost(mgid: GroupId, id: &i64) -> RpcParam {
 }
 
 #[inline]
+pub(crate) fn session_delete(mgid: GroupId, id: &i64) -> RpcParam {
+    rpc_response(0, "session-delete", json!([id]), mgid)
+}
+
+#[inline]
+pub(crate) fn session_close(mgid: GroupId, id: &i64) -> RpcParam {
+    rpc_response(0, "session-close", json!([id]), mgid)
+}
+
+#[inline]
 fn session_list(sessions: Vec<Session>) -> RpcParam {
     let mut results = vec![];
     for session in sessions {
