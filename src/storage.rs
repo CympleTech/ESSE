@@ -207,6 +207,22 @@ pub(crate) fn read_avatar_sync(base: &PathBuf, gid: &GroupId, remote: &GroupId) 
     }
 }
 
+pub(crate) async fn write_avatar(
+    base: &PathBuf,
+    gid: &GroupId,
+    remote: &GroupId,
+    bytes: &[u8],
+) -> Result<()> {
+    if bytes.len() < 1 {
+        return Ok(());
+    }
+    let mut path = base.clone();
+    path.push(gid.to_hex());
+    path.push(AVATAR_DIR);
+    path.push(avatar_png(remote));
+    fs::write(path, bytes).await
+}
+
 pub(crate) fn write_avatar_sync(
     base: &PathBuf,
     gid: &GroupId,

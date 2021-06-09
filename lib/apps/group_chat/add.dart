@@ -1,4 +1,5 @@
-import 'dart:async';
+import 'dart:convert' show base64;
+import 'dart:typed_data' show Uint8List;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
@@ -13,6 +14,7 @@ import 'package:esse/widgets/user_info.dart';
 import 'package:esse/widgets/shadow_button.dart';
 import 'package:esse/widgets/shadow_dialog.dart';
 import 'package:esse/widgets/qr_scan.dart';
+import 'package:esse/widgets/select_avatar.dart';
 import 'package:esse/global.dart';
 import 'package:esse/rpc.dart';
 import 'package:esse/provider.dart';
@@ -47,6 +49,7 @@ class _GroupAddPageState extends State<GroupAddPage> {
   FocusNode _createNameFocus = FocusNode();
   FocusNode _createBioFocus = FocusNode();
   FocusNode _createKeyFocus = FocusNode();
+  Uint8List _createAvatarBytes;
 
   int _groupAddr = 0;
   int _groupType = 1;
@@ -151,7 +154,8 @@ class _GroupAddPageState extends State<GroupAddPage> {
     }
     final name = _createNameController.text.trim();
     final bio = _createBioController.text.trim();
-    rpc.send('group-chat-create', [_groupType, _myName, addr, name, bio, _groupNeedAgree]);
+    final avatar = _createAvatarBytes != null ? base64.encode(_createAvatarBytes) : "";
+    rpc.send('group-chat-create', [_groupType, _myName, addr, name, bio, _groupNeedAgree, avatar]);
     setState(() {
         _createNameController.text = '';
         _createBioController.text = '';
@@ -414,20 +418,32 @@ class _GroupAddPageState extends State<GroupAddPage> {
                         margin: const EdgeInsets.symmetric(vertical: 10.0),
                         decoration: BoxDecoration(
                           color: color.surface,
+                          image: _createAvatarBytes != null ? DecorationImage(
+                            image: MemoryImage(_createAvatarBytes),
+                            fit: BoxFit.cover,
+                          ) : null,
                           borderRadius: BorderRadius.circular(15.0)),
                         child: Stack(
                           alignment: Alignment.center,
                           children: <Widget>[
-                            Icon(Icons.camera_alt,
-                              size: 47.0, color: Color(0xFFADB0BB)),
+                            if (_createAvatarBytes == null)
+                            Icon(Icons.camera_alt, size: 48.0, color: Color(0xFFADB0BB)),
                             Positioned(
                               bottom: -1.0,
                               right: -1.0,
                               child: InkWell(
-                                child: Icon(Icons.add_circle,
-                                  size: 32.0, color: color.primary),
-                                onTap: null, //() => _getImage(context, account.name, color, lang),
-                              )
+                                child: Container(
+                                  decoration: const ShapeDecoration(
+                                    color: Colors.white,
+                                    shape: CircleBorder(),
+                                  ),
+                                  child: Icon(Icons.add_circle,
+                                    size: 32.0, color: color.primary),
+                                ),
+                                onTap: () => selectAvatar(context, (bytes) => setState(() {
+                                      _createAvatarBytes = bytes;
+                                })),
+                              ),
                             ),
                           ],
                         ),

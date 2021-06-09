@@ -1,20 +1,17 @@
-import 'dart:io' show File;
-import 'dart:ui';
-import 'dart:convert';
-import 'dart:typed_data';
+import 'dart:convert' show base64;
+import 'dart:typed_data' show Uint8List;
 
-import 'package:crop/crop.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:esse/l10n/localizations.dart';
-import 'package:esse/utils/pick_image.dart';
 import 'package:esse/utils/mnemonic.dart';
 import 'package:esse/utils/device_info.dart';
 import 'package:esse/widgets/button_text.dart';
 import 'package:esse/widgets/shadow_dialog.dart';
 import 'package:esse/widgets/show_pin.dart';
+import 'package:esse/widgets/select_avatar.dart';
 import 'package:esse/pages/home.dart';
 import 'package:esse/account.dart';
 import 'package:esse/global.dart';
@@ -43,8 +40,6 @@ class _AccountGeneratePageState extends State<AccountGeneratePage> {
   TextEditingController _nameController = new TextEditingController();
   FocusNode _nameFocus = new FocusNode();
 
-  CropController _imageController = CropController();
-  double _imageScale = 1.0;
   Uint8List _imageBytes;
 
   @override
@@ -117,97 +112,6 @@ class _AccountGeneratePageState extends State<AccountGeneratePage> {
       }),
       20.0,
     );
-  }
-
-  void getImage(context, color, lang) async {
-    final imagePath = await pickImage();
-    if (imagePath == null) {
-      return;
-    }
-    final image = File(imagePath);
-
-    showGeneralDialog(
-      context: context,
-      barrierDismissible: true,
-      barrierLabel:
-      MaterialLocalizations.of(context).modalBarrierDismissLabel,
-      barrierColor: Color(0x26ADB0BB),
-      transitionDuration: const Duration(milliseconds: 150),
-      transitionBuilder: _buildMaterialDialogTransitions,
-      pageBuilder: (BuildContext context, Animation<double> animation,
-        Animation<double> secondaryAnimation) {
-        return AlertDialog(
-          content: Container(
-            height: 180.0,
-            padding: EdgeInsets.only(top: 20.0),
-            child: Column(children: [
-                Container(
-                  height: 100.0,
-                  width: 100.0,
-                  child: Crop(
-                    controller: _imageController,
-                    shape: BoxShape.rectangle,
-                    helper: Container(
-                      decoration: BoxDecoration(
-                        border:
-                        Border.all(color: color.primary, width: 2),
-                      ),
-                      child: Icon(Icons.filter_center_focus_rounded,
-                        color: color.primary),
-                    ),
-                    child: Image(
-                      image: FileImage(image), fit: BoxFit.cover)),
-                ),
-                SizedBox(height: 20.0),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  mainAxisSize: MainAxisSize.max,
-                  children: [
-                    GestureDetector(
-                      child: Icon(Icons.zoom_in_rounded,
-                        size: 30.0, color: color.primary),
-                      onTap: () => setState(() {
-                          _imageScale += 0.5;
-                          _imageController.scale = _imageScale;
-                      }),
-                    ),
-                    GestureDetector(
-                      child: Icon(Icons.zoom_out_rounded,
-                        size: 30.0, color: color.primary),
-                      onTap: () => setState(() {
-                          if (_imageScale > 1.0) {
-                            _imageScale -= 0.5;
-                            _imageController.scale = _imageScale;
-                          }
-                      }),
-                    ),
-                ])
-          ])),
-          actions: [
-            Container(
-              margin: const EdgeInsets.only(right: 40.0, bottom: 20.0),
-              child: GestureDetector(
-                onTap: () => Navigator.of(context).pop(),
-                child: Text(lang.cancel))),
-            Container(
-              margin: const EdgeInsets.only(right: 20.0, bottom: 20.0),
-              child: GestureDetector(
-                onTap: () async {
-                  final pixelRatio =
-                  MediaQuery.of(context).devicePixelRatio;
-                  final cropped = await _imageController.crop(
-                    pixelRatio: pixelRatio);
-                  final byteData = await cropped.toByteData(
-                    format: ImageByteFormat.png);
-                  Navigator.of(context).pop();
-                  setState(() {
-                      _imageBytes = byteData.buffer.asUint8List();
-                  });
-                },
-                child: Text(lang.ok,
-                  style: TextStyle(color: color.primary)))),
-        ]);
-    });
   }
 
   Widget _mnemonicState(ColorScheme color, AppLocalizations lang) {
@@ -373,35 +277,25 @@ class _AccountGeneratePageState extends State<AccountGeneratePage> {
   }
 
   Widget newAccountAvatar(color, lang) {
-    final noImage = _imageBytes == null;
     return Container(
       width: 100,
       height: 100,
-      decoration: noImage
-      ? BoxDecoration(
-        color: color.surface, borderRadius: BorderRadius.circular(15.0))
-      : BoxDecoration(
+      decoration: BoxDecoration(
         color: color.surface,
-        image: DecorationImage(
+        image: _imageBytes == null ? DecorationImage(
           image: MemoryImage(_imageBytes),
           fit: BoxFit.cover,
-        ),
+        ) : null,
         borderRadius: BorderRadius.circular(15.0)),
       child: Stack(
         alignment: Alignment.center,
         children: <Widget>[
-          if (noImage)
+          if (_imageBytes == null)
           Icon(Icons.camera_alt, size: 47.0, color: Color(0xFFADB0BB)),
           Positioned(
             bottom: -1.0,
             right: -1.0,
-            child: noImage
-            ? InkWell(
-              child: Icon(Icons.add_circle,
-                size: 32.0, color: color.primary),
-              onTap: () => getImage(context, color, lang),
-            )
-            : InkWell(
+            child: InkWell(
               child: Container(
                 decoration: const ShapeDecoration(
                   color: Colors.white,
@@ -410,7 +304,9 @@ class _AccountGeneratePageState extends State<AccountGeneratePage> {
                 child: Icon(Icons.add_circle,
                   size: 32.0, color: color.primary),
               ),
-              onTap: () => getImage(context, color, lang),
+              onTap: () => selectAvatar(context, (bytes) => setState(() {
+                    _imageBytes = bytes;
+              })),
             ),
           ),
         ],
@@ -460,21 +356,4 @@ Widget _footer(String text1, Function callback) {
       ),
     ),
   );
-}
-
-Widget _buildMaterialDialogTransitions(
-  BuildContext context,
-  Animation<double> animation,
-  Animation<double> secondaryAnimation,
-  Widget child) {
-  return BackdropFilter(
-    filter: ImageFilter.blur(
-      sigmaX: 4 * animation.value, sigmaY: 4 * animation.value),
-    child: ScaleTransition(
-      scale: CurvedAnimation(
-        parent: animation,
-        curve: Curves.easeOut,
-      ),
-      child: child,
-  ));
 }
