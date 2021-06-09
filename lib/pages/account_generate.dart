@@ -282,7 +282,7 @@ class _AccountGeneratePageState extends State<AccountGeneratePage> {
       height: 100,
       decoration: BoxDecoration(
         color: color.surface,
-        image: _imageBytes == null ? DecorationImage(
+        image: _imageBytes != null ? DecorationImage(
           image: MemoryImage(_imageBytes),
           fit: BoxFit.cover,
         ) : null,
