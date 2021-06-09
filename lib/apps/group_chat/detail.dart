@@ -343,7 +343,7 @@ class _GroupChatDetailState extends State<GroupChatDetail> {
                     message: message,
                   ) : ChatMessage(
                     fgid: member.mid,
-                    avatar: member.showAvatar(),
+                    avatar: member.showAvatar(isOnline: isOnline),
                     name: member.name,
                     message: message,
                   );
@@ -583,11 +583,11 @@ class _MemberDrawerWidget extends StatelessWidget {
     );
   }
 
-  Widget _item(context, Member member, bool isOwner, bool meOwner, bool meManager, Color color, lang) {
+  Widget _item(context, bool isOnline, Member member, bool isOwner, bool meOwner, bool meManager, Color color, lang) {
     return Container(
       height: 55.0,
       child: ListTile(
-        leading: member.showAvatar(colorSurface: false),
+        leading: member.showAvatar(colorSurface: false, isOnline: isOnline),
         title: Text(member.name, textAlign: TextAlign.left, style: TextStyle(fontSize: 16.0)),
         trailing: Text(member.isBlock
           ? lang.blocked : (isOwner
@@ -623,7 +623,9 @@ class _MemberDrawerWidget extends StatelessWidget {
     final lang = AppLocalizations.of(context);
     final isLight = color.brightness == Brightness.light;
     final isDesktop = isDisplayDesktop(context);
-    final myId = context.read<AccountProvider>().activedAccountId;
+    final accountProvider = context.read<AccountProvider>();
+    final myId = accountProvider.activedAccountId;
+    final isOnline = accountProvider.activedSession.isActive();
 
     final provider = context.watch<GroupChatProvider>();
     final members = provider.activedMembers;
@@ -676,7 +678,7 @@ class _MemberDrawerWidget extends StatelessWidget {
                   child: ListView.builder(
                     itemCount: allKeys.length,
                     itemBuilder: (BuildContext ctx, int index) => _item(
-                      context, members[allKeys[index]],
+                      context, isOnline, members[allKeys[index]],
                       index == 0 && !meOwner, meOwner, meManager, color.primary, lang
                     ),
                   )

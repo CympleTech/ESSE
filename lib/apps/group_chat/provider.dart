@@ -22,7 +22,7 @@ class GroupChatProvider extends ChangeNotifier {
   SplayTreeMap<int, Member> activedMembers = SplayTreeMap();
 
   GroupChat get activedGroup => this.groups[this.actived];
-  bool get isActivedGroupOwner => this.activedGroup.owner == Global.gid;
+  bool get isActivedGroupOwner => this.activedGroup != null ? this.activedGroup.owner == Global.gid : false;
   bool get isActivedGroupManager {
     this.activedMembers.values.forEach((m) {
         if (m.mid == Global.gid) {
@@ -164,7 +164,9 @@ class GroupChatProvider extends ChangeNotifier {
   }
 
   memberUpdate(int id, bool isBlock) {
+    this.activedMembers[id].isBlock = isBlock;
     rpc.send('group-chat-member-update', [id, isBlock]);
+    notifyListeners();
   }
 
   _list(List params) {

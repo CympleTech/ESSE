@@ -237,6 +237,7 @@ class DrawerWidget extends StatelessWidget {
                 Provider.of<AccountProvider>(context, listen: false).updateActivedAccount(account.gid);
                 Provider.of<DeviceProvider>(context, listen: false).updateActived();
                 Provider.of<ChatProvider>(context, listen: false).updateActived();
+                Provider.of<GroupChatProvider>(context, listen: false).updateActived();
               }
             : null,
         child: Padding(

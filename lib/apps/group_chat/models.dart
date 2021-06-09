@@ -182,13 +182,13 @@ class Member {
     this.isBlock = params[6];
   }
 
-  Avatar showAvatar({double width = 45.0, colorSurface = true}) {
+  Avatar showAvatar({double width = 45.0, bool colorSurface = true, bool isOnline = true}) {
     final avatar = Global.avatarPath + this.mid + '.png';
     return Avatar(
       width: width,
       name: this.name,
       avatarPath: avatar,
-      online: this.online,
+      online: isOnline && this.online,
       onlineColor: Color(0xFF0EE50A),
       colorSurface: colorSurface,
     );
