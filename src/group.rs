@@ -19,7 +19,7 @@ use crate::consensus::Event;
 use crate::event::{InnerEvent, StatusEvent, SyncEvent};
 use crate::layer::Layer;
 use crate::rpc;
-use crate::storage::{account_db, account_init, consensus_db};
+use crate::storage::{account_db, account_init, consensus_db, write_avatar};
 use crate::utils::device_status::device_status as local_device_status;
 
 pub(crate) mod running;
@@ -445,6 +445,7 @@ impl Group {
         let account_db = account_db(&self.base)?;
         account.insert(&account_db)?;
         account_db.close()?;
+        let _ = write_avatar(&self.base, &account_id, &account_id, &account.avatar).await;
         self.accounts.insert(account.gid, account);
 
         let mut device = Device::new(device_name.to_owned(), device_info.to_owned(), self.addr);

@@ -12,7 +12,7 @@ use group_chat_types::{CheckType, Event, GroupType, JoinProof, LayerEvent};
 use crate::apps::chat::{Friend, MessageType};
 use crate::rpc::{session_close, session_delete, RpcState};
 use crate::session::{Session, SessionType};
-use crate::storage::{chat_db, group_chat_db, session_db, write_avatar};
+use crate::storage::{chat_db, group_chat_db, read_avatar, session_db, write_avatar};
 
 use super::add_layer;
 use super::models::{to_network_message, GroupChat, GroupChatKey, Member, Message, Request};
@@ -194,7 +194,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             let mut results = HandleResult::new();
             // add to rpcs.
             results.rpcs.push(json!(gc.to_rpc()));
-            let info = gc.to_group_info(my_name, avatar_bytes);
+            let info = gc.to_group_info(my_name, avatar_bytes, me.avatar);
 
             // TODO create proof.
             let proof: Proof = Default::default();
@@ -216,10 +216,11 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             let gc = GroupChat::get_id(&db, &id)??;
             drop(db);
 
-            // TODO load avatar
-            let avatar = vec![];
+            // load avatar
+            let avatar = read_avatar(state.group.read().await.base(), &gid, &gc.g_id).await?;
+            let owner_avatar = state.group.read().await.clone_user(&gid)?.avatar;
             let addr = gc.g_addr;
-            let info = gc.to_group_info(mname, avatar);
+            let info = gc.to_group_info(mname, avatar, owner_avatar);
 
             // TODO create proof.
             let proof: Proof = Default::default();

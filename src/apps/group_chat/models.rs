@@ -168,13 +168,13 @@ impl GroupChat {
         mgid: &GroupId,
     ) -> Result<Self> {
         match info {
-            GroupInfo::Common(owner, _, g_id, g_type, agree, name, g_bio, avatar) => {
+            GroupInfo::Common(owner, _, _, g_id, g_type, agree, name, g_bio, avatar) => {
                 write_avatar_sync(base, &mgid, &g_id, avatar)?;
                 Ok(Self::new_from(
                     g_id, height, owner, g_type, addr, name, g_bio, agree, key,
                 ))
             }
-            GroupInfo::Encrypted(owner, _, g_id, agree, _hash, _name, _bio, avatar) => {
+            GroupInfo::Encrypted(owner, _, _, g_id, agree, _hash, _name, _bio, avatar) => {
                 // TODO decrypted.
 
                 let g_type = GroupType::Encrypted;
@@ -201,11 +201,12 @@ impl GroupChat {
         )
     }
 
-    pub fn to_group_info(self, name: String, avatar: Vec<u8>) -> GroupInfo {
+    pub fn to_group_info(self, name: String, avatar: Vec<u8>, owner_avatar: Vec<u8>) -> GroupInfo {
         match self.g_type {
             GroupType::Private | GroupType::Open => GroupInfo::Common(
                 self.owner,
                 name,
+                owner_avatar,
                 self.g_id,
                 self.g_type,
                 self.is_need_agree,
@@ -217,6 +218,7 @@ impl GroupChat {
                 // TODO encrypted
                 self.owner,
                 name,
+                owner_avatar,
                 self.g_id,
                 self.g_type,
                 self.is_need_agree,
