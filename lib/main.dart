@@ -11,6 +11,7 @@ import 'package:esse/security.dart';
 import 'package:esse/rpc.dart';
 
 import 'package:esse/provider.dart';
+import 'package:esse/pages/home.dart';
 import 'package:esse/apps/device/provider.dart';
 import 'package:esse/apps/chat/provider.dart';
 import 'package:esse/apps/assistant/provider.dart';
@@ -63,7 +64,11 @@ class MyApp extends StatelessWidget {
       locale: options.locale,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
-      home: SecurityPage(),
+      initialRoute: '/security',
+      routes: <String, WidgetBuilder>{
+        '/': (BuildContext context) => const HomePage(),
+        '/security': (BuildContext context) => const SecurityPage(),
+      },
     );
   }
 }

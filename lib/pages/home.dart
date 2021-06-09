@@ -469,7 +469,7 @@ class DrawerWidget extends StatelessWidget {
                         context.read<AccountProvider>().logout();
                         context.read<DeviceProvider>().clear();
                         context.read<ChatProvider>().clear();
-                        Navigator.of(context).pushReplacementNamed('/');
+                        Navigator.of(context).pushReplacementNamed('/security');
                       }),
                   SizedBox(height: 20.0),
                 ],

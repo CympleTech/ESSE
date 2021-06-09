@@ -12,7 +12,6 @@ import 'package:esse/widgets/button_text.dart';
 import 'package:esse/widgets/shadow_dialog.dart';
 import 'package:esse/widgets/show_pin.dart';
 import 'package:esse/widgets/select_avatar.dart';
-import 'package:esse/pages/home.dart';
 import 'package:esse/account.dart';
 import 'package:esse/global.dart';
 import 'package:esse/rpc.dart';
@@ -104,7 +103,7 @@ class _AccountGeneratePageState extends State<AccountGeneratePage> {
             Provider.of<ChatProvider>(context, listen: false).updateActived();
             Provider.of<GroupChatProvider>(context, listen: false).updateActived();
 
-            Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => HomePage()));
+            Navigator.of(context).pushNamedAndRemoveUntil('/', ModalRoute.withName('/'));
           } else {
             // TODO tostor error
             print(res.error);

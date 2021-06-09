@@ -6,7 +6,6 @@ import 'package:esse/l10n/localizations.dart';
 import 'package:esse/widgets/button_text.dart';
 import 'package:esse/widgets/shadow_dialog.dart';
 import 'package:esse/widgets/show_pin.dart';
-import 'package:esse/pages/home.dart';
 import 'package:esse/pages/account_generate.dart';
 import 'package:esse/pages/account_restore.dart';
 import 'package:esse/utils/logined_cache.dart';
@@ -170,7 +169,7 @@ class _SecurityPageState extends State<SecurityPage> {
         Provider.of<ChatProvider>(context, listen: false).updateActived();
         Provider.of<GroupChatProvider>(context, listen: false).updateActived();
 
-        Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => HomePage()));
+        Navigator.of(context).pushNamedAndRemoveUntil('/', ModalRoute.withName('/'));
         return;
       } else {
         // TODO tostor error
@@ -221,7 +220,7 @@ class _SecurityPageState extends State<SecurityPage> {
             Provider.of<ChatProvider>(context, listen: false).updateActived();
             Provider.of<GroupChatProvider>(context, listen: false).updateActived();
 
-            Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => HomePage()));
+            Navigator.of(context).pushNamedAndRemoveUntil('/', ModalRoute.withName('/'));
           } else {
             // TODO tostor error
             print(res.error);
