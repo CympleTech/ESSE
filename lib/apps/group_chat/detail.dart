@@ -25,8 +25,6 @@ import 'package:esse/apps/group_chat/models.dart';
 import 'package:esse/apps/group_chat/provider.dart';
 
 class GroupChatDetail extends StatefulWidget {
-  static GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<ScaffoldState>();
-
   const GroupChatDetail({Key key}) : super(key: key);
 
   @override
@@ -181,9 +179,6 @@ class _GroupChatDetailState extends State<GroupChatDetail> {
     final isOnline = session.isActive();
 
     return Scaffold(
-      key: GroupChatDetail._scaffoldKey,
-      endDrawer: _MemberDrawerWidget(id: this.group.id, gid: this.group.gid, title: lang.members),
-      drawerScrimColor: color.background,
       body: SafeArea(
         child: Column(
           children: [
@@ -240,7 +235,10 @@ class _GroupChatDetailState extends State<GroupChatDetail> {
                   const SizedBox(width: 20.0),
                   GestureDetector(
                     onTap: () {
-                      GroupChatDetail._scaffoldKey.currentState.openEndDrawer();
+                      showShadowDialog(context, Icons.groups, this.group.name,
+                        _MemberWidget(id: this.group.id, gid: this.group.gid),
+                        0.0,
+                      );
                     },
                     child: Container(
                       width: 20.0,
@@ -564,17 +562,16 @@ Widget _menuItem(Color color, int value, IconData icon, String text) {
   );
 }
 
-class _MemberDrawerWidget extends StatelessWidget {
+class _MemberWidget extends StatelessWidget {
   final int id;
   final String gid;
-  final String title;
-  const _MemberDrawerWidget({Key key, this.id, this.gid, this.title}) : super(key: key);
+  const _MemberWidget({Key key, this.id, this.gid}) : super(key: key);
 
   Widget _meItem(Member member, bool meOwner, bool meManager, Color color, lang) {
     return Container(
       height: 55.0,
       child: ListTile(
-        leading: member.showAvatar(colorSurface: false),
+        leading: member.showAvatar(),
         title: Text(lang.me, textAlign: TextAlign.left,
           style: TextStyle(fontSize: 16.0, fontStyle: FontStyle.italic)),
         trailing: Text(meOwner ? lang.groupOwner : (meManager ? lang.manager : ''),
@@ -587,7 +584,7 @@ class _MemberDrawerWidget extends StatelessWidget {
     return Container(
       height: 55.0,
       child: ListTile(
-        leading: member.showAvatar(colorSurface: false, isOnline: isOnline),
+        leading: member.showAvatar(isOnline: isOnline),
         title: Text(member.name, textAlign: TextAlign.left, style: TextStyle(fontSize: 16.0)),
         trailing: Text(member.isBlock
           ? lang.blocked : (isOwner
@@ -595,8 +592,7 @@ class _MemberDrawerWidget extends StatelessWidget {
               ? lang.manager : '')),
           style: TextStyle(color: color)),
         onTap: () {
-          Navigator.pop(context);
-          showShadowDialog(context, Icons.group_rounded, title,
+          showShadowDialog(context, Icons.group_rounded, lang.members,
             MemberDetail(member: member, isGroupOwner: meOwner, isGroupManager: meManager),
             10.0,
           );
@@ -635,60 +631,46 @@ class _MemberDrawerWidget extends StatelessWidget {
     final meOwner = all[2];
     final meManager = all[3];
 
-    return Drawer(
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 4.0, sigmaY: 4.0),
-        child: SafeArea(
-          child: Container(
-            decoration: BoxDecoration(color: color.surface),
-            padding: const EdgeInsets.symmetric(vertical: 10.0),
-            child: Column(
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.only(left: 20.0),
-                      child: Text("${lang.members} (${allKeys.length + 1})",
-                        style: Theme.of(context).textTheme.title),
-                    ),
-                    Container(
-                      height: 36.0,
-                      margin: const EdgeInsets.only(right: 10.0),
-                      padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Color(0xFF6174FF)),
-                        borderRadius: BorderRadius.circular(25.0)),
-                      child: TextButton(child: Row(
-                          children: [
-                            Icon(Icons.add, size: 16.0),
-                            Text(lang.invite, style: TextStyle(fontSize: 14.0)),
-                          ]
-                        ),
-                        onPressed: () => _invite(context, lang.contact),
-                      ),
-                    )
-                  ]
+    double maxHeight = MediaQuery.of(context).size.height - 400;
+    if (maxHeight < 100.0) {
+      maxHeight = 100.0;
+    }
+
+    return Column(
+      children: [
+        Container(
+          alignment: Alignment.centerRight,
+          child: Text("${lang.members} (${allKeys.length + 1})",
+            style: Theme.of(context).textTheme.title),
+        ),
+        const SizedBox(height: 10.0),
+        const Divider(height: 1.0, color: Color(0x40ADB0BB)),
+        const SizedBox(height: 10.0),
+        _meItem(members[meId], meOwner, meManager, color.primary, lang),
+        Container(
+          height: maxHeight,
+          child: SingleChildScrollView(
+            child: Column(children: List<Widget>.generate(allKeys.length, (i) =>
+                _item(
+                  context, isOnline, members[allKeys[i]],
+                  i == 0 && !meOwner, meOwner, meManager, color.primary, lang
                 ),
-                const SizedBox(height: 10.0),
-                const Divider(height: 1.0, color: Color(0x40ADB0BB)),
-                const SizedBox(height: 10.0),
-                _meItem(members[meId], meOwner, meManager, color.primary, lang),
-                Expanded(
-                  child: ListView.builder(
-                    itemCount: allKeys.length,
-                    itemBuilder: (BuildContext ctx, int index) => _item(
-                      context, isOnline, members[allKeys[index]],
-                      index == 0 && !meOwner, meOwner, meManager, color.primary, lang
-                    ),
-                  )
-                )
-              ]
-            ),
+            ))
           )
-        )
-      )
-    );
+        ),
+        const SizedBox(height: 10.0),
+        const Divider(height: 1.0, color: Color(0x40ADB0BB)),
+        const SizedBox(height: 10.0),
+        TextButton(child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.add, size: 16.0),
+              Text(lang.invite, style: TextStyle(fontSize: 14.0)),
+            ]
+          ),
+          onPressed: () => _invite(context, lang.contact)
+        ),
+    ]);
   }
 }
 

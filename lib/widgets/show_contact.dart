@@ -96,6 +96,7 @@ class _ContactListState extends State<ContactList> {
             ))
           )
         ),
+        const SizedBox(height: 10.0),
         const Divider(height: 1.0, color: Color(0x40ADB0BB)),
         const SizedBox(height: 10.0),
         if (widget.multiple)

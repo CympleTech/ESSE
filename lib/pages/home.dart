@@ -39,8 +39,6 @@ import 'package:esse/apps/group_chat/detail.dart';
 import 'package:esse/apps/group_chat/provider.dart';
 
 class HomePage extends StatelessWidget {
-  static GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<ScaffoldState>();
-
   //final Account account;
   const HomePage({Key key}) : super(key: key);
 
@@ -50,50 +48,38 @@ class HomePage extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final isLight = colorScheme.brightness == Brightness.light;
 
-    if (isDesktop) {
-      return WillPopScope(
-        onWillPop: () => SystemChannels.platform.invokeMethod('SystemNavigator.pop'),
-        child: Scaffold(
-          key: _scaffoldKey,
-          drawer: const DrawerWidget(),
-          drawerScrimColor: const Color(0x26ADB0BB),
-          body: SafeArea(
-            child: Row(
+    SystemUiOverlayStyle style = SystemUiOverlayStyle.light;
+    if (isLight) {
+      style = SystemUiOverlayStyle.dark;
+    }
+
+    return WillPopScope(
+      onWillPop: () => SystemChannels.platform.invokeMethod('SystemNavigator.pop'),
+      child: Scaffold(
+        drawer: const DrawerWidget(),
+        drawerScrimColor: const Color(0x26ADB0BB),
+        body: AnnotatedRegion<SystemUiOverlayStyle>(
+          value: style.copyWith(statusBarColor: colorScheme.background),
+          child: SafeArea(
+            child: isDesktop
+            ? Row(
               children: [
                 Container(width: 375.0,
-                  child: HomeList(scaffoldKey: _scaffoldKey),
+                  child: HomeList(),
                 ),
                 const SizedBox(width: 20.0),
                 Expanded(child: context.watch<AccountProvider>().coreShowWidget),
-          ])),
-      ));
-    } else {
-      var style;
-      if (isLight) {
-        style = SystemUiOverlayStyle.dark;
-      } else {
-        style = SystemUiOverlayStyle.light;
-      }
-
-      return WillPopScope(
-        onWillPop: () => SystemChannels.platform.invokeMethod('SystemNavigator.pop'),
-        child: Scaffold(
-          key: _scaffoldKey,
-          drawer: const DrawerWidget(),
-          drawerScrimColor: const Color(0x26ADB0BB),
-          body: AnnotatedRegion<SystemUiOverlayStyle>(
-            value: style.copyWith(statusBarColor: colorScheme.background),
-            child: SafeArea(
-              child: HomeList(scaffoldKey: _scaffoldKey),
-          )),
-      ));
-    }
+            ])
+            : HomeList()
+          )
+        )
+      )
+    );
   }
 }
 
 class HomeList extends StatefulWidget {
-  final GlobalKey<ScaffoldState> scaffoldKey;
-  const HomeList({Key key, this.scaffoldKey}) : super(key: key);
+  const HomeList({Key key}) : super(key: key);
 
   @override
   _HomeListState createState() => _HomeListState();
@@ -143,7 +129,7 @@ class _HomeListState extends State<HomeList> {
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.menu),
-          onPressed: () => widget.scaffoldKey.currentState.openDrawer(),
+          onPressed: () => Scaffold.of(context).openDrawer(),
         ),
         bottom: PreferredSize(
           child: Container(color: const Color(0x40ADB0BB), height: 1.0),
