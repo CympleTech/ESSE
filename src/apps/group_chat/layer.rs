@@ -103,6 +103,9 @@ fn handle_connect(
         // 1.4 sync group height.
         if group.height < height {
             add_layer(results, mgid, sync(gcd, addr, group.height));
+        } else {
+            // sync online members.
+            add_layer(results, mgid, sync_online(gcd, addr));
         }
         Ok(true)
     } else {
@@ -212,6 +215,12 @@ async fn handle_event(
             let (_sid, gid) = layer.read().await.get_running_remote_id(&mgid, &gcd)?;
             results.rpcs.push(rpc::member_offline(mgid, gid, mid));
         }
+        LayerEvent::MemberOnlineSyncResult(gcd, onlines) => {
+            let (_sid, gid) = layer.read().await.get_running_remote_id(&mgid, &gcd)?;
+            for (mid, maddr) in onlines {
+                results.rpcs.push(rpc::member_online(mgid, gid, mid, maddr));
+            }
+        }
         LayerEvent::Sync(gcd, height, event) => {
             let (_sid, gid) = layer.read().await.get_running_remote_id(&mgid, &gcd)?;
 
@@ -281,6 +290,11 @@ async fn handle_event(
         LayerEvent::Packed(gcd, height, from, to, events) => {
             let (_sid, gid) = layer.read().await.get_running_remote_id(&mgid, &gcd)?;
 
+            if to >= height {
+                // when last packed sync, start sync online members.
+                add_layer(results, mgid, sync_online(gcd, addr));
+            }
+
             println!("Start handle sync packed... {}, {}, {}", height, from, to);
             let base = layer.read().await.base().clone();
             handle_sync(
@@ -314,10 +328,11 @@ async fn handle_event(
             let id = Request::over_rid(&db, &gcd, &rid, ok)?;
             results.rpcs.push(rpc::request_handle(mgid, id, ok, false));
         }
-        LayerEvent::Request(..) => {} // nerver here.
-        LayerEvent::Check => {}       // nerver here.
-        LayerEvent::Create(..) => {}  // nerver here.
-        LayerEvent::SyncReq(..) => {} // Nerver here.
+        LayerEvent::MemberOnlineSync(..) => {} // nerver here.
+        LayerEvent::Request(..) => {}          // nerver here.
+        LayerEvent::Check => {}                // nerver here.
+        LayerEvent::Create(..) => {}           // nerver here.
+        LayerEvent::SyncReq(..) => {}          // Nerver here.
     }
 
     Ok(())
@@ -338,6 +353,11 @@ pub(crate) fn group_chat_conn(proof: Proof, addr: PeerAddr, gid: GroupId) -> Sen
 fn sync(gcd: GroupId, addr: PeerAddr, height: i64) -> SendType {
     println!("Send sync request...");
     let data = postcard::to_allocvec(&LayerEvent::SyncReq(gcd, height + 1)).unwrap_or(vec![]);
+    SendType::Event(0, addr, data)
+}
+
+fn sync_online(gcd: GroupId, addr: PeerAddr) -> SendType {
+    let data = postcard::to_allocvec(&LayerEvent::MemberOnlineSync(gcd)).unwrap_or(vec![]);
     SendType::Event(0, addr, data)
 }
 
