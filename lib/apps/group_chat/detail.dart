@@ -318,7 +318,6 @@ class _GroupChatDetailState extends State<GroupChatDetail> {
                         _menuItem(Color(0xFF6174FF), 1, Icons.qr_code_rounded, lang.info),
                         if (!this.group.isClosed && isOnline)
                         _menuItem(Colors.orange, 2, Icons.block_rounded, lang.exit),
-                        if (isOnline)
                         _menuItem(Colors.red, 3, Icons.delete_rounded, lang.delete),
                       ];
                     },
