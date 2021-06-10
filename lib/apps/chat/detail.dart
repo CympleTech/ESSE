@@ -356,6 +356,8 @@ class _ChatDetailState extends State<ChatDetail> {
                 child: Center(child: Text(lang.reconnect, style: TextStyle(color: color.primary))),
               )
             ),
+            if (friend.isClosed)
+            const SizedBox(height: 20.0),
             if (!friend.isClosed && session.online != OnlineType.Lost)
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),

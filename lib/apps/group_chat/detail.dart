@@ -351,8 +351,9 @@ class _GroupChatDetailState extends State<GroupChatDetail> {
                   );
                 }
             )),
-            if (!this.group.isClosed)
-            Container(
+            this.group.isClosed
+            ? const SizedBox(height: 20.0)
+            : Container(
               padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
               child: Row(
                 children: [
