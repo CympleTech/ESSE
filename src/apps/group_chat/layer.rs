@@ -277,6 +277,7 @@ async fn handle_event(
                         if let Some(f) = GroupChat::get_id(&c_db, &gid)? {
                             let mut session = f.to_session();
                             session.last_content = scontent;
+                            session.last_datetime = msg.datetime;
                             session.insert(&s_db)?;
                             results.rpcs.push(session_create(mgid, &session));
                         }
@@ -375,8 +376,12 @@ fn handle_sync(
 ) -> Result<()> {
     let db = group_chat_db(&base, &mgid)?;
 
+    let mut last_scontent: Option<(String, i64)> = None;
+
     for event in events {
-        let _ = handle_sync_event(&mgid, &fid, from, event, &base, &db, results);
+        if let Ok(scontent) = handle_sync_event(&mgid, &fid, from, event, &base, &db, results) {
+            last_scontent = scontent;
+        }
         from += 1;
     }
 
@@ -386,6 +391,23 @@ fn handle_sync(
 
     // update group chat height.
     GroupChat::add_height(&db, fid, to)?;
+
+    // UPDATE SESSION.
+    if let Some((sc, t)) = last_scontent {
+        let s_db = session_db(&base, &mgid)?;
+        if let Ok(id) = Session::last(&s_db, &fid, &SessionType::Group, &t, &sc, true) {
+            results.rpcs.push(session_last(mgid, &id, &t, &sc, false));
+        } else {
+            let c_db = group_chat_db(&base, &mgid)?;
+            if let Some(f) = GroupChat::get_id(&c_db, &fid)? {
+                let mut session = f.to_session();
+                session.last_content = sc;
+                session.last_datetime = t;
+                session.insert(&s_db)?;
+                results.rpcs.push(session_create(mgid, &session));
+            }
+        }
+    }
 
     Ok(())
 }
@@ -398,25 +420,31 @@ fn handle_sync_event(
     base: &PathBuf,
     db: &DStorage,
     results: &mut HandleResult,
-) -> Result<()> {
-    match event {
+) -> Result<Option<(String, i64)>> {
+    let scontent = match event {
         PackedEvent::GroupInfo => {
             // TODO
+            None
         }
         PackedEvent::GroupTransfer => {
             // TODO
+            None
         }
         PackedEvent::GroupManagerAdd => {
             // TODO
+            None
         }
         PackedEvent::GroupManagerDel => {
             // TODO
+            None
         }
         PackedEvent::GroupClose => {
             // TOOD
+            None
         }
         PackedEvent::MemberInfo(_mid, _maddr, _mname, _mavatar) => {
             // TODO
+            None
         }
         PackedEvent::MemberJoin(mid, maddr, mname, mavatar, mtime) => {
             if mavatar.len() > 0 {
@@ -425,16 +453,19 @@ fn handle_sync_event(
             let mut member = Member::new(*fid, mid, maddr, mname, false, mtime);
             member.insert(&db)?;
             results.rpcs.push(rpc::member_join(*mgid, member));
+            None
         }
         PackedEvent::MemberLeave(_mid) => {
             // TODO
+            None
         }
         PackedEvent::MessageCreate(mid, nmsg, time) => {
-            let (msg, _) = from_network_message(height, *fid, mid, mgid, nmsg, time, base)?;
+            let (msg, scontent) = from_network_message(height, *fid, mid, mgid, nmsg, time, base)?;
             results.rpcs.push(rpc::message_create(*mgid, &msg));
+            Some((scontent, time))
         }
-        PackedEvent::None => {}
-    }
+        PackedEvent::None => None,
+    };
 
-    Ok(())
+    Ok(scontent)
 }
