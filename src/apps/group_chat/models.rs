@@ -714,6 +714,11 @@ impl Member {
         db.update(&sql)
     }
 
+    pub fn leave(db: &DStorage, id: &i64) -> Result<usize> {
+        let sql = format!("UPDATE members SET is_deleted = 1 WHERE id = {}", id);
+        db.update(&sql)
+    }
+
     pub fn block(db: &DStorage, id: &i64, block: bool) -> Result<usize> {
         let sql = format!("UPDATE members SET is_block={} WHERE id = {}", block, id,);
         db.update(&sql)

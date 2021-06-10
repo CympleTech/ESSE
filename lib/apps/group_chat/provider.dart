@@ -81,7 +81,7 @@ class GroupChatProvider extends ChangeNotifier {
     rpc.addListener('group-chat-request-handle', _requestHandle, false);
     rpc.addListener('group-chat-member-join', _memberJoin, false);
     rpc.addListener('group-chat-member-info', _memberInfo, false);
-    // rpc.addListener('group-chat-member-leave', _memberLeave, false);
+    rpc.addListener('group-chat-member-leave', _memberLeave, false);
     rpc.addListener('group-chat-member-online', _memberOnline, false);
     rpc.addListener('group-chat-member-offline', _memberOffline, false);
     rpc.addListener('group-chat-message-create', _messageCreate, true);
@@ -255,6 +255,14 @@ class GroupChatProvider extends ChangeNotifier {
     if (this.actived == member.fid) {
       this.activedMembers[member.id] = member;
       // TODO Better add UI member joined.
+      notifyListeners();
+    }
+  }
+
+  _memberLeave(List params) {
+    final id = params[0];
+    if (this.activedMembers.containsKey(id)) {
+      this.activedMembers.remove(id);
       notifyListeners();
     }
   }

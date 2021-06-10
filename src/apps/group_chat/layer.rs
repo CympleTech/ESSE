@@ -15,10 +15,11 @@ use group_chat_types::{
 use tdn_did::Proof;
 use tdn_storage::local::DStorage;
 
+use crate::apps::chat::Friend;
 use crate::layer::{Layer, Online};
 use crate::rpc::{session_connect, session_create, session_last, session_lost, session_suspend};
 use crate::session::{connect_session, Session, SessionType};
-use crate::storage::{group_chat_db, session_db, write_avatar_sync};
+use crate::storage::{chat_db, delete_avatar, group_chat_db, session_db, write_avatar_sync};
 
 use super::models::{from_network_message, GroupChat, Member, Request};
 use super::{add_layer, rpc};
@@ -243,14 +244,25 @@ async fn handle_event(
                     results.rpcs.push(rpc::member_info(mgid, id, maddr, mname));
                 }
                 Event::MemberJoin(mid, maddr, mname, mavatar, mtime) => {
-                    let mut member = Member::new(gid, mid, maddr, mname, false, mtime);
-                    member.insert(&db)?;
-                    if mavatar.len() > 0 {
-                        write_avatar_sync(&base, &mgid, &mid, mavatar)?;
+                    if Member::get_id(&db, &gid, &mid).is_err() {
+                        let mut member = Member::new(gid, mid, maddr, mname, false, mtime);
+                        member.insert(&db)?;
+                        if mavatar.len() > 0 {
+                            write_avatar_sync(&base, &mgid, &mid, mavatar)?;
+                        }
+                        results.rpcs.push(rpc::member_join(mgid, member));
                     }
-                    results.rpcs.push(rpc::member_join(mgid, member));
                 }
-                Event::MemberLeave(_mid) => {}
+                Event::MemberLeave(mid) => {
+                    let id = Member::get_id(&db, &gid, &mid)?;
+                    Member::leave(&db, &id)?;
+                    // check mid is my chat friend. if not, delete avatar.
+                    let s_db = chat_db(&base, &mgid)?;
+                    if Friend::get(&s_db, &mid)?.is_none() {
+                        let _ = delete_avatar(&base, &mgid, &mid).await;
+                    }
+                    results.rpcs.push(rpc::member_leave(mgid, id));
+                }
                 Event::MessageCreate(mid, nmsg, mtime) => {
                     println!("Sync: create message start");
                     let base = layer.read().await.base.clone();
@@ -447,12 +459,14 @@ fn handle_sync_event(
             None
         }
         PackedEvent::MemberJoin(mid, maddr, mname, mavatar, mtime) => {
-            if mavatar.len() > 0 {
-                write_avatar_sync(&base, &mgid, &mid, mavatar)?;
+            if Member::get_id(db, fid, &mid).is_err() {
+                if mavatar.len() > 0 {
+                    write_avatar_sync(&base, &mgid, &mid, mavatar)?;
+                }
+                let mut member = Member::new(*fid, mid, maddr, mname, false, mtime);
+                member.insert(&db)?;
+                results.rpcs.push(rpc::member_join(*mgid, member));
             }
-            let mut member = Member::new(*fid, mid, maddr, mname, false, mtime);
-            member.insert(&db)?;
-            results.rpcs.push(rpc::member_join(*mgid, member));
             None
         }
         PackedEvent::MemberLeave(_mid) => {

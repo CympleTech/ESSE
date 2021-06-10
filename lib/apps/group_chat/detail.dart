@@ -9,6 +9,7 @@ import 'package:esse/utils/toast.dart';
 import 'package:esse/utils/pick_image.dart';
 import 'package:esse/utils/pick_file.dart';
 import 'package:esse/l10n/localizations.dart';
+import 'package:esse/widgets/avatar.dart';
 import 'package:esse/widgets/emoji.dart';
 import 'package:esse/widgets/shadow_dialog.dart';
 import 'package:esse/widgets/audio_recorder.dart';
@@ -305,6 +306,9 @@ class _GroupChatDetailState extends State<GroupChatDetail> {
                                     context.read<AccountProvider>().clearActivedSession(
                                       SessionType.Group
                                     );
+                                    if (!isDesktop) {
+                                      Navigator.pop(context);
+                                    }
                                   },
                                 ),
                               ]
@@ -336,6 +340,7 @@ class _GroupChatDetailState extends State<GroupChatDetail> {
                   final member = members[message.mid];
                   return member == null ? ChatMessage(
                     fgid: "",
+                    avatar: Avatar(name: lang.delete),
                     name: lang.delete,
                     message: message,
                   ) : ChatMessage(

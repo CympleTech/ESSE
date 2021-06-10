@@ -49,6 +49,11 @@ pub(crate) fn member_join(mgid: GroupId, member: Member) -> RpcParam {
 }
 
 #[inline]
+pub(crate) fn member_leave(mgid: GroupId, id: i64) -> RpcParam {
+    rpc_response(0, "group-chat-member-leave", json!([id]), mgid)
+}
+
+#[inline]
 pub(crate) fn member_info(mgid: GroupId, id: i64, addr: PeerAddr, name: String) -> RpcParam {
     rpc_response(
         0,
@@ -298,7 +303,6 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
                 .filter_map(|v| v.as_i64())
                 .collect();
 
-            //
             let group_lock = state.group.read().await;
             let base = group_lock.base().clone();
 
@@ -306,8 +310,8 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             let group_db = group_chat_db(&base, &gid)?;
 
             let mut invites = vec![];
-            for id in ids {
-                let friend = Friend::get_id(&chat, id)??;
+            for fid in ids {
+                let friend = Friend::get_id(&chat, fid)??;
                 if Member::get_id(&group_db, &id, &friend.gid).is_err() {
                     let proof = group_lock.prove_addr(&gid, &friend.gid.into())?;
                     invites.push((friend.id, friend.gid, friend.addr, proof));
