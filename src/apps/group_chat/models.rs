@@ -669,7 +669,7 @@ impl Member {
 
     pub fn get_id(db: &DStorage, fid: &i64, mid: &GroupId) -> Result<i64> {
         let mut matrix = db.query(&format!(
-            "SELECT id FROM members WHERE fid = {} AND mid = '{}'",
+            "SELECT id FROM members WHERE fid = {} AND mid = '{}' AND is_delete = false",
             fid,
             mid.to_hex()
         ))?;

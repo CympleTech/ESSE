@@ -10,7 +10,7 @@ use tdn_did::Proof;
 use group_chat_types::{CheckType, Event, GroupType, JoinProof, LayerEvent};
 
 use crate::apps::chat::{Friend, MessageType};
-use crate::rpc::{session_close, session_delete, RpcState};
+use crate::rpc::{session_close, session_create, session_delete, session_last, RpcState};
 use crate::session::{Session, SessionType};
 use crate::storage::{chat_db, group_chat_db, read_avatar, session_db, write_avatar};
 
@@ -322,6 +322,8 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             let gc = GroupChat::get_id(&group_db, &id)??;
             let tmp_name = gc.g_name.replace(";", "-;");
 
+            let s_db = session_db(&base, &gid)?;
+
             let mut results = HandleResult::new();
             let mut layer_lock = state.layer.write().await;
             for (fid, fgid, mut faddr, proof) in invites {
@@ -344,7 +346,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
                     }
                 }
 
-                let (msg, nw, _) = crate::apps::chat::LayerEvent::from_message(
+                let (msg, nw, sc) = crate::apps::chat::LayerEvent::from_message(
                     &base,
                     gid,
                     fid,
@@ -356,6 +358,23 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
                 let s =
                     crate::apps::chat::event_message(&mut layer_lock, msg.id, gid, faddr, &event);
                 results.layers.push((gid, fgid, s));
+
+                if let Ok(id) =
+                    Session::last(&s_db, &fid, &SessionType::Chat, &msg.datetime, &sc, true)
+                {
+                    results
+                        .rpcs
+                        .push(session_last(gid, &id, &msg.datetime, &sc, false));
+                } else {
+                    let c_db = group_chat_db(&base, &gid)?;
+                    if let Some(f) = GroupChat::get_id(&c_db, &fid)? {
+                        let mut session = f.to_session();
+                        session.last_content = sc;
+                        session.last_datetime = msg.datetime;
+                        session.insert(&s_db)?;
+                        results.rpcs.push(session_create(gid, &session));
+                    }
+                }
             }
             Ok(results)
         },
