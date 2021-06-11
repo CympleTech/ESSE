@@ -187,7 +187,16 @@ impl Account {
     }
 
     pub fn insert(&mut self, db: &DStorage) -> Result<()> {
-        let sql = format!("INSERT INTO accounts (gid, name, lock, mnemonic, secret, avatar, height,event, datetime) VALUES ('{}', '{}', '{}', '{}', '{}', '{}', {}, '{}', {})",
+        let mut unique_check = db.query(&format!(
+            "SELECT id from accounts WHERE gid = '{}'",
+            self.gid.to_hex()
+        ))?;
+        if unique_check.len() > 0 {
+            let id = unique_check.pop().unwrap().pop().unwrap().as_i64();
+            self.id = id;
+            self.update(db)?;
+        } else {
+            let sql = format!("INSERT INTO accounts (gid, name, lock, mnemonic, secret, avatar, height,event, datetime) VALUES ('{}', '{}', '{}', '{}', '{}', '{}', {}, '{}', {})",
             self.gid.to_hex(),
             self.name,
             self.lock,
@@ -198,8 +207,9 @@ impl Account {
             self.event.to_hex(),
             self.datetime,
         );
-        let id = db.insert(&sql)?;
-        self.id = id;
+            let id = db.insert(&sql)?;
+            self.id = id;
+        }
         Ok(())
     }
 

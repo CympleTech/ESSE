@@ -284,15 +284,6 @@ async fn handle_event(
                         results
                             .rpcs
                             .push(session_last(mgid, &id, &msg.datetime, &scontent, false));
-                    } else {
-                        let c_db = group_chat_db(&base, &mgid)?;
-                        if let Some(f) = GroupChat::get_id(&c_db, &gid)? {
-                            let mut session = f.to_session();
-                            session.last_content = scontent;
-                            session.last_datetime = msg.datetime;
-                            session.insert(&s_db)?;
-                            results.rpcs.push(session_create(mgid, &session));
-                        }
                     }
                 }
             }
@@ -409,15 +400,6 @@ fn handle_sync(
         let s_db = session_db(&base, &mgid)?;
         if let Ok(id) = Session::last(&s_db, &fid, &SessionType::Group, &t, &sc, true) {
             results.rpcs.push(session_last(mgid, &id, &t, &sc, false));
-        } else {
-            let c_db = group_chat_db(&base, &mgid)?;
-            if let Some(f) = GroupChat::get_id(&c_db, &fid)? {
-                let mut session = f.to_session();
-                session.last_content = sc;
-                session.last_datetime = t;
-                session.insert(&s_db)?;
-                results.rpcs.push(session_create(mgid, &session));
-            }
         }
     }
 

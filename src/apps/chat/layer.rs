@@ -324,14 +324,6 @@ impl LayerEvent {
                         results
                             .rpcs
                             .push(session_last(mgid, &id, &msg.datetime, &scontent, false));
-                    } else {
-                        let c_db = chat_db(&layer.base, &mgid)?;
-                        if let Some(f) = Friend::get_id(&c_db, fid)? {
-                            let mut session = f.to_session();
-                            session.last_content = scontent;
-                            session.insert(&s_db)?;
-                            results.rpcs.push(session_create(mgid, &session));
-                        }
                     }
                 }
             }

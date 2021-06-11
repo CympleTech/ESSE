@@ -116,7 +116,25 @@ impl Session {
     }
 
     pub fn insert(&mut self, db: &DStorage) -> Result<()> {
-        let sql = format!("INSERT INTO sessions (fid, gid, addr, s_type, name, is_top, is_close, last_datetime, last_content, last_readed) VALUES ({}, '{}', '{}', {}, '{}', {}, {}, {}, '{}', {})",
+        let mut unique_check = db.query(&format!(
+            "SELECT id from sessions WHERE fid = {} AND s_type = {}",
+            self.fid,
+            self.s_type.to_int()
+        ))?;
+        if unique_check.len() > 0 {
+            let id = unique_check.pop().unwrap().pop().unwrap().as_i64();
+            self.id = id;
+
+            let sql = format!("UPDATE sessions SET gid = '{}', addr='{}', name = '{}', is_top = '{}', is_close = false WHERE id = {}",
+                self.gid.to_hex(),
+                self.addr.to_hex(),
+                self.name,
+                self.is_top,
+                self.id,
+            );
+            db.update(&sql)?;
+        } else {
+            let sql = format!("INSERT INTO sessions (fid, gid, addr, s_type, name, is_top, is_close, last_datetime, last_content, last_readed) VALUES ({}, '{}', '{}', {}, '{}', {}, {}, {}, '{}', {})",
             self.fid,
             self.gid.to_hex(),
             self.addr.to_hex(),
@@ -128,8 +146,10 @@ impl Session {
             self.last_content,
             self.last_readed,
         );
-        let id = db.insert(&sql)?;
-        self.id = id;
+            let id = db.insert(&sql)?;
+            self.id = id;
+        }
+
         Ok(())
     }
 
@@ -209,7 +229,7 @@ impl Session {
 
         if let Some(mut values) = matrix.pop() {
             let id = values.pop().unwrap().as_i64();
-            db.update(&format!("UPDATE sessions SET is_close = 0, last_datetime = {}, last_content = '{}', last_readed = {} WHERE id = {}", datetime, content, if readed { 1 } else { 0 }, id))?;
+            db.update(&format!("UPDATE sessions SET is_close = false, last_datetime = {}, last_content = '{}', last_readed = {} WHERE id = {}", datetime, content, if readed { 1 } else { 0 }, id))?;
             Ok(id)
         } else {
             Err(new_io_error("session missing"))

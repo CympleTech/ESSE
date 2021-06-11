@@ -10,7 +10,7 @@ use tdn_did::Proof;
 use group_chat_types::{CheckType, Event, GroupType, JoinProof, LayerEvent};
 
 use crate::apps::chat::{Friend, MessageType};
-use crate::rpc::{session_close, session_create, session_delete, session_last, RpcState};
+use crate::rpc::{session_close, session_delete, session_last, RpcState};
 use crate::session::{Session, SessionType};
 use crate::storage::{chat_db, group_chat_db, read_avatar, session_db, write_avatar};
 
@@ -365,15 +365,6 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
                     results
                         .rpcs
                         .push(session_last(gid, &id, &msg.datetime, &sc, false));
-                } else {
-                    let c_db = group_chat_db(&base, &gid)?;
-                    if let Some(f) = GroupChat::get_id(&c_db, &fid)? {
-                        let mut session = f.to_session();
-                        session.last_content = sc;
-                        session.last_datetime = msg.datetime;
-                        session.insert(&s_db)?;
-                        results.rpcs.push(session_create(gid, &session));
-                    }
                 }
             }
             Ok(results)

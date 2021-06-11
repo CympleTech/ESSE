@@ -446,14 +446,6 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
                 results
                     .rpcs
                     .push(session_last(gid, &id, &msg.datetime, &scontent, true));
-            } else {
-                let c_db = chat_db(&layer_lock.base, &gid)?;
-                let f = Friend::get_id(&c_db, fid)??;
-                let mut session =
-                    Session::new(f.id, f.gid, f.addr, SessionType::Chat, f.name, f.datetime);
-                session.last_content = scontent;
-                session.insert(&s_db)?;
-                results.rpcs.push(session_create(gid, &session));
             }
             drop(layer_lock);
 

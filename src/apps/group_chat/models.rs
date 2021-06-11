@@ -311,22 +311,46 @@ impl GroupChat {
     }
 
     pub fn insert(&mut self, db: &DStorage) -> Result<()> {
-        let sql = format!("INSERT INTO groups (height, owner, gcd, gtype, addr, name, bio, is_ok, is_need_agree, is_closed, key, datetime, is_deleted) VALUES ({}, '{}', '{}', {}, '{}', '{}', '{}', {}, {}, {}, '{}', {}, false)",
-            self.height,
-            self.owner.to_hex(),
-            self.g_id.to_hex(),
-            self.g_type.to_u32(),
-            self.g_addr.to_hex(),
-            self.g_name,
-            self.g_bio,
-            self.is_ok,
-            self.is_need_agree,
-            self.is_closed,
-            self.key.to_hex(),
-            self.datetime,
-        );
-        let id = db.insert(&sql)?;
-        self.id = id;
+        let mut unique_check = db.query(&format!(
+            "SELECT id from groups WHERE gcd = '{}'",
+            self.g_id.to_hex()
+        ))?;
+        if unique_check.len() > 0 {
+            let id = unique_check.pop().unwrap().pop().unwrap().as_i64();
+            self.id = id;
+            let sql = format!("UPDATE groups SET height = {}, owner = '{}', gtype = {}, addr='{}', name = '{}', bio = '{}', is_ok = {}, is_need_agree = {}, is_closed = {}, key = '{}', datetime = {}, is_deleted = false WHERE id = {}",
+                self.height,
+                self.owner.to_hex(),
+                self.g_type.to_u32(),
+                self.g_addr.to_hex(),
+                self.g_name,
+                self.g_bio,
+                self.is_ok,
+                self.is_need_agree,
+                self.is_closed,
+                self.key.to_hex(),
+                self.datetime,
+                self.id
+            );
+            db.update(&sql)?;
+        } else {
+            let sql = format!("INSERT INTO groups (height, owner, gcd, gtype, addr, name, bio, is_ok, is_need_agree, is_closed, key, datetime, is_deleted) VALUES ({}, '{}', '{}', {}, '{}', '{}', '{}', {}, {}, {}, '{}', {}, false)",
+                self.height,
+                self.owner.to_hex(),
+                self.g_id.to_hex(),
+                self.g_type.to_u32(),
+                self.g_addr.to_hex(),
+                self.g_name,
+                self.g_bio,
+                self.is_ok,
+                self.is_need_agree,
+                self.is_closed,
+                self.key.to_hex(),
+                self.datetime,
+            );
+            let id = db.insert(&sql)?;
+            self.id = id;
+        }
         Ok(())
     }
 
@@ -653,7 +677,24 @@ impl Member {
     }
 
     pub fn insert(&mut self, db: &DStorage) -> Result<()> {
-        let sql = format!("INSERT INTO members (fid, mid, addr, name, is_manager, is_block, datetime, is_deleted) VALUES ({}, '{}', '{}', '{}', {}, {}, {}, false)",
+        let mut unique_check = db.query(&format!(
+            "SELECT id from members WHERE fid = {} AND mid = '{}'",
+            self.fid,
+            self.m_id.to_hex()
+        ))?;
+        if unique_check.len() > 0 {
+            let id = unique_check.pop().unwrap().pop().unwrap().as_i64();
+            self.id = id;
+            let sql = format!("UPDATE members SET addr='{}', name = '{}', is_manager = {}, datetime = {}, is_delete = false WHERE id = {}",
+                self.m_addr.to_hex(),
+                self.m_name,
+                self.is_manager,
+                self.datetime,
+                self.id,
+            );
+            db.update(&sql)?;
+        } else {
+            let sql = format!("INSERT INTO members (fid, mid, addr, name, is_manager, is_block, datetime, is_deleted) VALUES ({}, '{}', '{}', '{}', {}, {}, {}, false)",
             self.fid,
             self.m_id.to_hex(),
             self.m_addr.to_hex(),
@@ -662,8 +703,9 @@ impl Member {
             self.is_block,
             self.datetime,
         );
-        let id = db.insert(&sql)?;
-        self.id = id;
+            let id = db.insert(&sql)?;
+            self.id = id;
+        }
         Ok(())
     }
 
@@ -824,18 +866,27 @@ impl Message {
     }
 
     pub fn insert(&mut self, db: &DStorage) -> Result<()> {
-        let sql = format!("INSERT INTO messages (height, fid, mid, is_me, m_type, content, is_delivery, datetime, is_deleted) VALUES ({}, {}, {}, {}, {}, '{}', {}, {}, false)",
-            self.height,
-            self.fid,
-            self.mid,
-            self.is_me,
-            self.m_type.to_int(),
-            self.content,
-            self.is_delivery,
-            self.datetime,
-        );
-        let id = db.insert(&sql)?;
-        self.id = id;
+        let mut unique_check = db.query(&format!(
+            "SELECT id from messages WHERE fid = {} AND height = {}",
+            self.fid, self.height
+        ))?;
+        if unique_check.len() > 0 {
+            let id = unique_check.pop().unwrap().pop().unwrap().as_i64();
+            self.id = id;
+        } else {
+            let sql = format!("INSERT INTO messages (height, fid, mid, is_me, m_type, content, is_delivery, datetime, is_deleted) VALUES ({}, {}, {}, {}, {}, '{}', {}, {}, false)",
+                self.height,
+                self.fid,
+                self.mid,
+                self.is_me,
+                self.m_type.to_int(),
+                self.content,
+                self.is_delivery,
+                self.datetime,
+            );
+            let id = db.insert(&sql)?;
+            self.id = id;
+        }
         Ok(())
     }
 }
