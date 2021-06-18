@@ -103,7 +103,7 @@ class _AccountGeneratePageState extends State<AccountGeneratePage> {
             Provider.of<ChatProvider>(context, listen: false).updateActived();
             Provider.of<GroupChatProvider>(context, listen: false).updateActived();
 
-            Navigator.of(context).pushNamedAndRemoveUntil('/', ModalRoute.withName('/'));
+            Navigator.of(context).pushNamedAndRemoveUntil("/", (Route<dynamic> route) => false);
           } else {
             // TODO tostor error
             print(res.error);

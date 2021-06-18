@@ -169,7 +169,7 @@ class _SecurityPageState extends State<SecurityPage> {
         Provider.of<ChatProvider>(context, listen: false).updateActived();
         Provider.of<GroupChatProvider>(context, listen: false).updateActived();
 
-        Navigator.of(context).pushNamedAndRemoveUntil('/', ModalRoute.withName('/'));
+        Navigator.of(context).pushNamedAndRemoveUntil("/", (Route<dynamic> route) => false);
         return;
       } else {
         // TODO tostor error
@@ -220,7 +220,7 @@ class _SecurityPageState extends State<SecurityPage> {
             Provider.of<ChatProvider>(context, listen: false).updateActived();
             Provider.of<GroupChatProvider>(context, listen: false).updateActived();
 
-            Navigator.of(context).pushNamedAndRemoveUntil('/', ModalRoute.withName('/'));
+            Navigator.of(context).pushNamedAndRemoveUntil("/", (Route<dynamic> route) => false);
           } else {
             // TODO tostor error
             print(res.error);
