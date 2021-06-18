@@ -79,12 +79,12 @@ class AccountProvider extends ChangeNotifier {
     this.accounts = accounts;
 
     this.activedAccount.online = true;
-    rpc.send('account-login', [gid, this.activedAccount.lock]);
     rpc.send('session-list', []);
 
     new Future.delayed(Duration(seconds: DEFAULT_ONLINE_INIT),
       () => rpc.send('account-online', [gid]));
 
+    // online other keep-online account.
     this.accounts.forEach((k, v) {
       if (k != gid && v.online) {
         rpc.send('account-login', [v.gid, v.lock]);
