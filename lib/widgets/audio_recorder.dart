@@ -19,6 +19,7 @@ class AudioRecorder extends StatefulWidget {
 
 class _AudioRecorderState extends State<AudioRecorder> {
   final player = AudioPlayer();
+  final _record = Record();
 
   bool _isRecording = false;
   bool _isPlaying = false;
@@ -55,10 +56,10 @@ class _AudioRecorderState extends State<AudioRecorder> {
 
   Future<void> _start() async {
     try {
-      if (await Record.hasPermission()) {
-        await Record.start(path: widget.path);
+      if (await _record.hasPermission()) {
+        await _record.start(path: widget.path);
 
-        bool isRecording = await Record.isRecording();
+        bool isRecording = await _record.isRecording();
         setState(() {
           _isRecording = isRecording;
           _remainingDuration = 0;
@@ -73,7 +74,7 @@ class _AudioRecorderState extends State<AudioRecorder> {
 
   Future<void> _stop() async {
     _timer?.cancel();
-    await Record.stop();
+    await _record.stop();
     print(widget.path);
 
     setState(() {
