@@ -110,7 +110,7 @@ class ListChat extends StatelessWidget {
                         if (this.friend.isClosed)
                         Container(
                           margin: const EdgeInsets.only(left: 15.0, right: 20.0),
-                          child: Text(lang.unfriended,
+                          child: Text(lang.closed,
                             style: TextStyle(color: color.primary, fontSize: 12.0),
                           ),
                         )

@@ -221,7 +221,7 @@ class _GroupAddPageState extends State<GroupAddPage> {
         length: 2,
         child: Scaffold(
           appBar: AppBar(
-            title: Text(lang.addFriend),
+            title: Text(lang.groupChatAdd),
             leading: isDesktop
             ? IconButton(
               onPressed: () {

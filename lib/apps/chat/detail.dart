@@ -204,7 +204,7 @@ class _ChatDetailState extends State<ChatDetail> {
                         ),
                         SizedBox(height: 6.0),
                         Text(friend.isClosed
-                          ? lang.unfriended
+                          ? lang.closed
                           : session.onlineLang(lang),
                           style: TextStyle(
                             color: color.onPrimary.withOpacity(0.5),

@@ -133,7 +133,6 @@ abstract class AppLocalizations {
   String fromContactCard(String name);
   String get setTop;
   String get cancelTop;
-  String get unfriended;
   String get unfriend;
   String get waitingRecord;
 

@@ -181,8 +181,6 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String get cancelTop => '取消首页';
   @override
-  String get unfriended => '已解除好友';
-  @override
   String get unfriend => '解除好友';
   @override
   String get waitingRecord => '等待录音';

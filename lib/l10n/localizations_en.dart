@@ -181,8 +181,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get cancelTop => 'Cancal';
   @override
-  String get unfriended => 'Unfriended';
-  @override
   String get unfriend => 'Unfriend';
   @override
   String get waitingRecord => 'Waiting to record';
@@ -263,7 +261,7 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get groupChats => 'Groups';
   @override
-  String get groupChatAdd => 'Add Group Chat';
+  String get groupChatAdd => 'Add Group';
   @override
   String get groupChatIntro => 'Multiple group chats';
   @override

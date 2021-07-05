@@ -34,6 +34,7 @@ import 'package:esse/apps/file/list.dart';
 import 'package:esse/apps/service/list.dart';
 import 'package:esse/apps/service/add.dart';
 import 'package:esse/apps/assistant/page.dart';
+import 'package:esse/apps/group_chat/add.dart';
 import 'package:esse/apps/group_chat/list.dart';
 import 'package:esse/apps/group_chat/detail.dart';
 import 'package:esse/apps/group_chat/provider.dart';
@@ -162,6 +163,14 @@ class _HomeListState extends State<HomeList> {
                         Navigator.push(context, MaterialPageRoute(builder: (_) => widget));
                       }
                     } else if (value == 2) {
+                      final widget = GroupAddPage();
+                      if (isDesktop) {
+                        provider.updateActivedWidget(widget);
+                      } else {
+                        setState(() {});
+                        Navigator.push(context, MaterialPageRoute(builder: (_) => widget));
+                      }
+                    } else if (value == 3) {
                       showShadowDialog(
                         context,
                         Icons.info,
@@ -179,7 +188,8 @@ class _HomeListState extends State<HomeList> {
                       _menuItem(0, Icons.qr_code_scanner_rounded, lang.scan),
                       _menuItem(1, Icons.person_add_rounded, lang.addFriend,
                         provider.systemAppFriendAddNew),
-                      _menuItem(2, Icons.qr_code_rounded, lang.myQrcode),
+                      _menuItem(2, Icons.group_add_rounded, lang.groupChatAdd),
+                      _menuItem(3, Icons.qr_code_rounded, lang.myQrcode),
                     ];
                   },
                 ),
