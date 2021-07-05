@@ -82,39 +82,39 @@ class _FilesListState extends State<FilesList> {
       ),
       body: Padding(
         padding: const EdgeInsets.all(10.0),
-        child: ListView(
+        child: Column(
           children: [
             const SizedBox(height: 10.0),
             Wrap(
-              spacing: 8.0,
-              runSpacing: 8.0,
-              alignment: WrapAlignment.start,
-              children: widgets
+              spacing: 10.0,
+              runSpacing: 10.0,
+              children: widgets,
             ),
             const SizedBox(height: 36.0),
-            Text('Recents', style: Theme.of(context).textTheme.title),
+            Text('Recents', style: Theme.of(context).textTheme.title, textAlign: TextAlign.left),
             const SizedBox(height: 16.0),
-            Wrap(
-              spacing: 4.0,
-              runSpacing: 8.0,
-              alignment: WrapAlignment.start,
-              children: <Widget> [
-                FileItem(name: 'myworks.dir'),
-                FileItem(name: 'ESSE-infos-public.dir'),
-                FileItem(name: 'personal.dir'),
-                FileItem(name: 'others.dir'),
-                FileItem(name: 'logo.jpg'),
-                FileItem(name: 'cat.png'),
-                FileItem(name: 'what-is-esse_en.doc'),
-                FileItem(name: '20210101-customers.xls'),
-                FileItem(name: 'product.pdf'),
-                FileItem(name: 'deck.ppt'),
-                FileItem(name: 'coder.md'),
-                FileItem(name: 'how-to-live-in-happy.mp4'),
-                FileItem(name: 'something_important'),
-                FileItem(name: 'car.json'),
-              ],
-            ),
+            Expanded(
+              child: GridView.extent(
+                maxCrossAxisExtent: 80.0,
+                childAspectRatio: 0.8,
+                children: <Widget> [
+                  FileItem(name: 'myworks.dir'),
+                  FileItem(name: 'ESSE-infos-public.dir'),
+                  FileItem(name: 'personal.dir'),
+                  FileItem(name: 'others.dir'),
+                  FileItem(name: 'logo.jpg'),
+                  FileItem(name: 'cat.png'),
+                  FileItem(name: 'what-is-esse_en.doc'),
+                  FileItem(name: '20210101-customers.xls'),
+                  FileItem(name: 'product.pdf'),
+                  FileItem(name: 'deck.ppt'),
+                  FileItem(name: 'coder.md'),
+                  FileItem(name: 'how-to-live-in-happy.mp4'),
+                  FileItem(name: 'something_important'),
+                  FileItem(name: 'car.json'),
+                ],
+              ),
+            )
           ]
         )
       ),
@@ -137,24 +137,21 @@ class FileItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final trueName = remove_dir(name);
-    return Container(
-      width: 80.0,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Container(
-            height: 60.0,
-            width: 60.0,
-            child: fileIcon(name, 48.0),
-          ),
-          Tooltip(
-            message: trueName,
-            child: Text(trueName,
-              style: TextStyle(fontSize: 14.0), maxLines: 1, overflow: TextOverflow.ellipsis),
-          )
-        ]
-      )
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Container(
+          height: 60.0,
+          width: 60.0,
+          child: fileIcon(name, 48.0),
+        ),
+        Tooltip(
+          message: trueName,
+          child: Text(trueName,
+            style: TextStyle(fontSize: 14.0), maxLines: 1, overflow: TextOverflow.ellipsis),
+        )
+      ]
     );
   }
 }
