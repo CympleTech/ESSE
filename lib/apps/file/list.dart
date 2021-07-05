@@ -83,6 +83,7 @@ class _FilesListState extends State<FilesList> {
       body: Padding(
         padding: const EdgeInsets.all(10.0),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             const SizedBox(height: 10.0),
             Wrap(
@@ -90,9 +91,11 @@ class _FilesListState extends State<FilesList> {
               runSpacing: 10.0,
               children: widgets,
             ),
-            const SizedBox(height: 36.0),
-            Text('Recents', style: Theme.of(context).textTheme.title, textAlign: TextAlign.left),
-            const SizedBox(height: 16.0),
+            const SizedBox(height: 20.0),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text('Recents', style: Theme.of(context).textTheme.title)
+            ),
             Expanded(
               child: GridView.extent(
                 maxCrossAxisExtent: 80.0,
