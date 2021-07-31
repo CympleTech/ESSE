@@ -94,7 +94,7 @@ class _FilesListState extends State<FilesList> {
             const SizedBox(height: 20.0),
             Align(
               alignment: Alignment.centerLeft,
-              child: Text('Recents', style: Theme.of(context).textTheme.title)
+              child: Text('Recents', style: Theme.of(context).textTheme.caption)
             ),
             Expanded(
               child: GridView.extent(

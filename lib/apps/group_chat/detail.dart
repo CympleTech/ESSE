@@ -646,7 +646,7 @@ class _MemberWidget extends StatelessWidget {
         Container(
           alignment: Alignment.centerRight,
           child: Text("${lang.members} (${allKeys.length + 1})",
-            style: Theme.of(context).textTheme.title),
+            style: Theme.of(context).textTheme.headline6),
         ),
         const SizedBox(height: 10.0),
         const Divider(height: 1.0, color: Color(0x40ADB0BB)),

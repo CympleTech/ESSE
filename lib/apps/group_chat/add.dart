@@ -323,7 +323,7 @@ class _GroupAddPageState extends State<GroupAddPage> {
                         padding: const EdgeInsets.all(10.0),
                         alignment: Alignment.centerLeft,
                         child: Text('1. ' + lang.groupChatAddr, textAlign: TextAlign.left,
-                          style: Theme.of(context).textTheme.title),
+                          style: Theme.of(context).textTheme.headline6),
                       ),
                       Container(
                         padding: EdgeInsets.only(bottom: 10.0),
@@ -410,7 +410,7 @@ class _GroupAddPageState extends State<GroupAddPage> {
                         padding: const EdgeInsets.all(10.0),
                         alignment: Alignment.centerLeft,
                         child: Text('2. ' + lang.groupChatInfo, textAlign: TextAlign.left,
-                          style: Theme.of(context).textTheme.title),
+                          style: Theme.of(context).textTheme.headline6),
                       ),
                       Container(
                         width: 100.0,
