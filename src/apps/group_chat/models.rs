@@ -95,6 +95,7 @@ impl GroupChat {
         g_name: String,
         g_bio: String,
         is_need_agree: bool,
+        is_ok: bool,
     ) -> Self {
         let g_id = GroupId(rand::thread_rng().gen::<[u8; 32]>());
 
@@ -116,9 +117,9 @@ impl GroupChat {
             is_need_agree,
             key,
             datetime,
+            is_ok,
             id: 0,
             height: 0,
-            is_ok: false,
             is_closed: false,
             is_deleted: false,
         }

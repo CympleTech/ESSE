@@ -492,6 +492,10 @@ fn new_rpc_handler(
             let s = Session::get(&db, &id)?;
             drop(db);
 
+            if s.addr == state.layer.read().await.addr {
+                return Ok(HandleResult::rpc(json!([id, s.addr.to_hex()])));
+            }
+
             let mut results = HandleResult::new();
             match s.s_type {
                 SessionType::Chat => {

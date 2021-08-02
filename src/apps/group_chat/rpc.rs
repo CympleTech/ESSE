@@ -7,10 +7,10 @@ use tdn::types::{
 };
 use tdn_did::Proof;
 
-use group_chat_types::{CheckType, Event, GroupType, JoinProof, LayerEvent};
+use group_chat_types::{CheckType, Event, GroupLocation, GroupType, JoinProof, LayerEvent};
 
 use crate::apps::chat::{Friend, MessageType};
-use crate::rpc::{session_close, session_delete, session_last, RpcState};
+use crate::rpc::{session_close, session_create, session_delete, session_last, RpcState};
 use crate::session::{Session, SessionType};
 use crate::storage::{chat_db, group_chat_db, read_avatar, session_db, write_avatar};
 
@@ -174,18 +174,30 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
     handler.add_method(
         "group-chat-create",
         |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
-            let gtype = GroupType::from_u32(params[0].as_i64()? as u32);
-            let my_name = params[1].as_str()?.to_owned();
-            let addr = PeerAddr::from_hex(params[2].as_str()?)?;
-            let name = params[3].as_str()?.to_owned();
-            let bio = params[4].as_str()?.to_owned();
-            let need_agree = params[5].as_bool()?;
-            let avatar = params[6].as_str()?;
+            let glocation = GroupLocation::from_u32(params[0].as_i64()? as u32);
+            let gtype = GroupType::from_u32(params[1].as_i64()? as u32);
+            let my_name = params[2].as_str()?.to_owned();
+            let name = params[4].as_str()?.to_owned();
+            let bio = params[5].as_str()?.to_owned();
+            let need_agree = params[6].as_bool()?;
+            let avatar = params[7].as_str()?;
             let avatar_bytes = base64::decode(avatar).unwrap_or(vec![]);
 
             let base = state.layer.read().await.base().clone();
             let db = group_chat_db(&base, &gid)?;
-            let mut gc = GroupChat::new(gid, gtype, addr, name, bio, need_agree);
+            let addr = match glocation {
+                GroupLocation::Remote => PeerAddr::from_hex(params[3].as_str()?)?,
+                GroupLocation::Local => state.layer.read().await.addr.clone(),
+            };
+            let mut gc = GroupChat::new(
+                gid,
+                gtype,
+                addr,
+                name,
+                bio,
+                need_agree,
+                glocation == GroupLocation::Local,
+            );
             let gcd = gc.g_id;
 
             // save db
@@ -199,14 +211,24 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             let mut results = HandleResult::new();
             // add to rpcs.
             results.rpcs.push(json!(gc.to_rpc()));
-            let info = gc.to_group_info(my_name, avatar_bytes, me.avatar);
 
-            // TODO create proof.
-            let proof: Proof = Default::default();
+            if glocation == GroupLocation::Remote {
+                let info = gc.to_group_info(my_name, avatar_bytes, me.avatar);
+                // TODO create proof.
+                let proof: Proof = Default::default();
 
-            let data = postcard::to_allocvec(&LayerEvent::Create(info, proof)).unwrap_or(vec![]);
-            let s = SendType::Event(0, addr, data);
-            add_layer(&mut results, gid, s);
+                let data =
+                    postcard::to_allocvec(&LayerEvent::Create(info, proof)).unwrap_or(vec![]);
+                let s = SendType::Event(0, addr, data);
+                add_layer(&mut results, gid, s);
+            } else {
+                // ADD NEW SESSION.
+                let s_db = session_db(state.layer.read().await.base(), &gid)?;
+                let mut session = gc.to_session();
+                session.insert(&s_db)?;
+                results.rpcs.push(session_create(gid, &session));
+            }
+
             Ok(results)
         },
     );

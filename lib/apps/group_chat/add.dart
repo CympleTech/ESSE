@@ -51,7 +51,7 @@ class _GroupAddPageState extends State<GroupAddPage> {
   FocusNode _createKeyFocus = FocusNode();
   Uint8List _createAvatarBytes;
 
-  int _groupAddr = 0;
+  int _groupLocation = 0;
   int _groupType = 1;
   bool _groupNeedAgree = false;
   bool _addrOnline = false;
@@ -60,18 +60,18 @@ class _GroupAddPageState extends State<GroupAddPage> {
 
   bool _requestsLoadMore = true;
 
-  // 0 => encrypted, 1 => common, 2 => open.
-  Widget _groupAddrWidget(String text, int value, ColorScheme color, bool disabled) {
+  // 0 => remote, 1 => local.
+  Widget _groupLocationWidget(String text, int value, ColorScheme color, bool disabled) {
     return Row(
       children: [
         Radio(
           value: value,
-          groupValue: _groupAddr,
+          groupValue: _groupLocation,
           onChanged: disabled ? null : (n) => setState(() {
-              _groupAddr = n;
+              _groupLocation = n;
           }),
         ),
-        _groupAddr == value
+        _groupLocation == value
         ? Text(text, style: TextStyle(color: color.primary))
         : (disabled ? Text(text, style: TextStyle(color: Color(0xFFADB0BB)))
           : Text(text)),
@@ -149,13 +149,13 @@ class _GroupAddPageState extends State<GroupAddPage> {
   _create() {
     var addr = _createAddrController.text.trim();
     // if has 0x, need remove
-    if (addr.substring(0, 2) == '0x') {
+    if (addr.length > 2 && addr.substring(0, 2) == '0x') {
       addr = addr.substring(2);
     }
     final name = _createNameController.text.trim();
     final bio = _createBioController.text.trim();
     final avatar = _createAvatarBytes != null ? base64.encode(_createAvatarBytes) : "";
-    rpc.send('group-chat-create', [_groupType, _myName, addr, name, bio, _groupNeedAgree, avatar]);
+    rpc.send('group-chat-create', [_groupLocation, _groupType, _myName, addr, name, bio, _groupNeedAgree, avatar]);
     setState(() {
         _createNameController.text = '';
         _createBioController.text = '';
@@ -332,12 +332,12 @@ class _GroupAddPageState extends State<GroupAddPage> {
                           mainAxisSize: MainAxisSize.max,
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
-                            _groupAddrWidget(lang.deviceRemote, 0, color, false),
-                            _groupAddrWidget(lang.deviceLocal, 1, color, true),
+                            _groupLocationWidget(lang.deviceRemote, 0, color, false),
+                            _groupLocationWidget(lang.deviceLocal, 1, color, false),
                           ]
                         )
                       ),
-                      if (_groupAddr == 0)
+                      if (_groupLocation == 0)
                       Container(
                         height: 50.0,
                         width: 600.0,
