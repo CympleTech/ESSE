@@ -220,7 +220,7 @@ fn new_rpc_handler(
     handler.add_method(
         "add-bootstrap",
         |_gid, params: Vec<RpcParam>, _| async move {
-            let socket = params[0].as_str()?;
+            let socket = params[0].as_str().ok_or(RpcError::ParseError)?;
             if let Ok(addr) = socket.parse::<SocketAddr>() {
                 Ok(HandleResult::network(NetworkType::Connect(addr)))
             } else {
@@ -251,12 +251,12 @@ fn new_rpc_handler(
     handler.add_method(
         "account-create",
         |_gid, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
-            let name = params[0].as_str()?;
-            let lock = params[1].as_str()?;
-            let seed = params[2].as_str()?;
-            let avatar = params[3].as_str()?;
-            let device_name = params[4].as_str()?;
-            let device_info = params[5].as_str()?;
+            let name = params[0].as_str().ok_or(RpcError::ParseError)?;
+            let lock = params[1].as_str().ok_or(RpcError::ParseError)?;
+            let seed = params[2].as_str().ok_or(RpcError::ParseError)?;
+            let avatar = params[3].as_str().ok_or(RpcError::ParseError)?;
+            let device_name = params[4].as_str().ok_or(RpcError::ParseError)?;
+            let device_info = params[5].as_str().ok_or(RpcError::ParseError)?;
             let avatar_bytes = base64::decode(avatar).unwrap_or(vec![]);
 
             let gid = state
@@ -277,12 +277,13 @@ fn new_rpc_handler(
     handler.add_method(
         "account-restore",
         |_gid, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
-            let name = params[0].as_str()?;
-            let lock = params[1].as_str()?;
-            let seed = params[2].as_str()?;
-            let some_addr = PeerAddr::from_hex(params[3].as_str()?).ok();
-            let device_name = params[4].as_str()?;
-            let device_info = params[5].as_str()?;
+            let name = params[0].as_str().ok_or(RpcError::ParseError)?;
+            let lock = params[1].as_str().ok_or(RpcError::ParseError)?;
+            let seed = params[2].as_str().ok_or(RpcError::ParseError)?;
+            let some_addr =
+                PeerAddr::from_hex(params[3].as_str().ok_or(RpcError::ParseError)?).ok();
+            let device_name = params[4].as_str().ok_or(RpcError::ParseError)?;
+            let device_info = params[5].as_str().ok_or(RpcError::ParseError)?;
 
             let gid = state
                 .group
@@ -314,8 +315,8 @@ fn new_rpc_handler(
     handler.add_method(
         "account-update",
         |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
-            let name = params[0].as_str()?;
-            let avatar = params[1].as_str()?;
+            let name = params[0].as_str().ok_or(RpcError::ParseError)?;
+            let avatar = params[1].as_str().ok_or(RpcError::ParseError)?;
 
             let avatar_bytes = base64::decode(avatar).unwrap_or(vec![]);
 
@@ -339,8 +340,8 @@ fn new_rpc_handler(
     handler.add_method(
         "account-pin",
         |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
-            let old = params[0].as_str()?;
-            let new = params[1].as_str()?;
+            let old = params[0].as_str().ok_or(RpcError::ParseError)?;
+            let new = params[1].as_str().ok_or(RpcError::ParseError)?;
             let result = HandleResult::rpc(json!([new]));
             state.group.write().await.pin(&gid, old, new)?;
             Ok(result)
@@ -350,7 +351,7 @@ fn new_rpc_handler(
     handler.add_method(
         "account-mnemonic",
         |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
-            let lock = params[0].as_str()?;
+            let lock = params[0].as_str().ok_or(RpcError::ParseError)?;
 
             let mnemonic = state.group.read().await.mnemonic(&gid, lock)?;
             Ok(HandleResult::rpc(json!([mnemonic])))
@@ -360,8 +361,8 @@ fn new_rpc_handler(
     handler.add_method(
         "account-login",
         |_gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
-            let gid = GroupId::from_hex(params[0].as_str()?)?;
-            let me_lock = params[1].as_str()?;
+            let gid = GroupId::from_hex(params[0].as_str().ok_or(RpcError::ParseError)?)?;
+            let me_lock = params[1].as_str().ok_or(RpcError::ParseError)?;
 
             state.group.write().await.add_running(&gid, me_lock)?;
             state.layer.write().await.add_running(&gid)?;
@@ -417,7 +418,7 @@ fn new_rpc_handler(
     handler.add_method(
         "account-online",
         |_gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
-            let gid = GroupId::from_hex(params[0].as_str()?)?;
+            let gid = GroupId::from_hex(params[0].as_str().ok_or(RpcError::ParseError)?)?;
 
             let mut results = HandleResult::new();
 
@@ -437,7 +438,7 @@ fn new_rpc_handler(
     handler.add_method(
         "account-offline",
         |_gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
-            let gid = GroupId::from_hex(params[0].as_str()?)?;
+            let gid = GroupId::from_hex(params[0].as_str().ok_or(RpcError::ParseError)?)?;
 
             let mut results = HandleResult::new();
             let layer_lock = state.layer.read().await;
@@ -475,8 +476,8 @@ fn new_rpc_handler(
     handler.add_method(
         "session-connect",
         |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
-            let id = params[0].as_i64()?;
-            let remote = GroupId::from_hex(params[1].as_str()?)?;
+            let id = params[0].as_i64().ok_or(RpcError::ParseError)?;
+            let remote = GroupId::from_hex(params[1].as_str().ok_or(RpcError::ParseError)?)?;
 
             let group_lock = state.group.read().await;
             let db = session_db(group_lock.base(), &gid)?;
@@ -515,9 +516,9 @@ fn new_rpc_handler(
     handler.add_method(
         "session-suspend",
         |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
-            let id = params[0].as_i64()?;
-            let remote = GroupId::from_hex(params[1].as_str()?)?;
-            let must = params[2].as_bool()?; // if need must suspend.
+            let id = params[0].as_i64().ok_or(RpcError::ParseError)?;
+            let remote = GroupId::from_hex(params[1].as_str().ok_or(RpcError::ParseError)?)?;
+            let must = params[2].as_bool().ok_or(RpcError::ParseError)?; // if need must suspend.
 
             let db = session_db(state.group.read().await.base(), &gid)?;
             let s = Session::get(&db, &id)?;
@@ -560,7 +561,7 @@ fn new_rpc_handler(
     handler.add_method(
         "session-readed",
         |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
-            let id = params[0].as_i64()?;
+            let id = params[0].as_i64().ok_or(RpcError::ParseError)?;
             let db = session_db(state.group.read().await.base(), &gid)?;
             Session::readed(&db, &id)?;
             Ok(HandleResult::new())
@@ -570,9 +571,9 @@ fn new_rpc_handler(
     handler.add_method(
         "session-update",
         |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
-            let id = params[0].as_i64()?;
-            let is_top = params[1].as_bool()?;
-            let is_close = params[2].as_bool()?;
+            let id = params[0].as_i64().ok_or(RpcError::ParseError)?;
+            let is_top = params[1].as_bool().ok_or(RpcError::ParseError)?;
+            let is_close = params[2].as_bool().ok_or(RpcError::ParseError)?;
 
             let db = session_db(state.group.read().await.base(), &gid)?;
             Session::update(&db, &id, is_top, is_close)?;

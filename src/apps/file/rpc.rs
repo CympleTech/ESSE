@@ -2,7 +2,7 @@ use std::sync::Arc;
 use tdn::types::{
     group::GroupId,
     primitive::HandleResult,
-    rpc::{json, RpcHandler, RpcParam},
+    rpc::{json, RpcError, RpcHandler, RpcParam},
 };
 
 use crate::rpc::RpcState;
@@ -15,7 +15,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
     handler.add_method(
         "files-folder",
         |_gid: GroupId, params: Vec<RpcParam>, _state: Arc<RpcState>| async move {
-            let _path = params[0].as_str()?;
+            let _path = params[0].as_str().ok_or(RpcError::ParseError)?;
             Ok(HandleResult::new())
         },
     );

@@ -7,6 +7,7 @@ use tdn::{
         group::{EventId, GroupId},
         message::{RecvType, SendType},
         primitive::{new_io_error, DeliveryType, HandleResult, PeerAddr, Result},
+        rpc::RpcError,
     },
 };
 use tdn_did::{user::User, Proof};
@@ -392,13 +393,17 @@ impl LayerEvent {
             MessageType::File => {
                 let file_path = PathBuf::from(content);
                 let bytes = read_file(&file_path).await?;
-                let old_name = file_path.file_name()?.to_str()?;
+                let old_name = file_path
+                    .file_name()
+                    .ok_or(RpcError::ParseError)?
+                    .to_str()
+                    .ok_or(RpcError::ParseError)?;
                 let filename = write_file(base, &mgid, old_name, &bytes).await?;
                 (NetworkMessage::File(filename.clone(), bytes), filename)
             }
             MessageType::Contact => {
                 let cid: i64 = content.parse().map_err(|_e| new_io_error("id error"))?;
-                let contact = Friend::get_id(&db, cid)??;
+                let contact = Friend::get_id(&db, cid)?.ok_or(RpcError::ParseError)?;
                 let avatar_bytes = read_avatar(base, &mgid, &contact.gid).await?;
                 let tmp_name = contact.name.replace(";", "-;");
                 let contact_values = format!(

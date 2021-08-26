@@ -4,7 +4,7 @@ use tdn::types::{
     group::GroupId,
     message::SendType,
     primitive::{HandleResult, PeerAddr},
-    rpc::{json, rpc_response, RpcHandler, RpcParam},
+    rpc::{json, rpc_response, RpcError, RpcHandler, RpcParam},
 };
 use tdn_did::user::User;
 
@@ -122,8 +122,8 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
     handler.add_method(
         "chat-friend-update",
         |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
-            let id = params[0].as_i64()?;
-            let remark = params[1].as_str()?;
+            let id = params[0].as_i64().ok_or(RpcError::ParseError)?;
+            let remark = params[1].as_str().ok_or(RpcError::ParseError)?;
 
             let mut results = HandleResult::new();
             let db = chat_db(state.layer.read().await.base(), &gid)?;
@@ -149,13 +149,13 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
     handler.add_method(
         "chat-friend-close",
         |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
-            let id = params[0].as_i64()?;
+            let id = params[0].as_i64().ok_or(RpcError::ParseError)?;
 
             let mut results = HandleResult::new();
             let mut layer_lock = state.layer.write().await;
 
             let db = chat_db(layer_lock.base(), &gid)?;
-            let friend = Friend::get_id(&db, id)??;
+            let friend = Friend::get_id(&db, id)?.ok_or(RpcError::ParseError)?;
             friend.close(&db)?;
             drop(db);
 
@@ -189,13 +189,13 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
     handler.add_method(
         "chat-friend-delete",
         |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
-            let id = params[0].as_i64()?;
+            let id = params[0].as_i64().ok_or(RpcError::ParseError)?;
 
             let mut results = HandleResult::new();
             let mut layer_lock = state.layer.write().await;
 
             let db = chat_db(layer_lock.base(), &gid)?;
-            let friend = Friend::get_id(&db, id)??;
+            let friend = Friend::get_id(&db, id)?.ok_or(RpcError::ParseError)?;
             friend.delete(&db)?;
             drop(db);
 
@@ -242,10 +242,10 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
     handler.add_method(
         "chat-request-create",
         |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
-            let remote_gid = GroupId::from_hex(params[0].as_str()?)?;
-            let remote_addr = PeerAddr::from_hex(params[1].as_str()?)?;
-            let remote_name = params[2].as_str()?.to_string();
-            let remark = params[3].as_str()?.to_string();
+            let remote_gid = GroupId::from_hex(params[0].as_str().ok_or(RpcError::ParseError)?)?;
+            let remote_addr = PeerAddr::from_hex(params[1].as_str().ok_or(RpcError::ParseError)?)?;
+            let remote_name = params[2].as_str().ok_or(RpcError::ParseError)?.to_string();
+            let remark = params[3].as_str().ok_or(RpcError::ParseError)?.to_string();
 
             let mut request = Request::new(
                 remote_gid,
@@ -302,7 +302,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
     handler.add_method(
         "chat-request-agree",
         |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
-            let id = params[0].as_i64()?;
+            let id = params[0].as_i64().ok_or(RpcError::ParseError)?;
 
             let mut group_lock = state.group.write().await;
             let me = group_lock.clone_user(&gid)?;
@@ -342,11 +342,11 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
     handler.add_method(
         "chat-request-reject",
         |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
-            let id = params[0].as_i64()?;
+            let id = params[0].as_i64().ok_or(RpcError::ParseError)?;
 
             let mut layer_lock = state.layer.write().await;
             let db = chat_db(layer_lock.base(), &gid)?;
-            let mut req = Request::get_id(&db, id)??;
+            let mut req = Request::get_id(&db, id)?.ok_or(RpcError::ParseError)?;
             req.is_ok = false;
             req.is_over = true;
             req.update(&db)?;
@@ -369,13 +369,13 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
     handler.add_method(
         "chat-request-delete",
         |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
-            let id = params[0].as_i64()?;
+            let id = params[0].as_i64().ok_or(RpcError::ParseError)?;
 
             let layer_lock = state.layer.read().await;
             let db = chat_db(layer_lock.base(), &gid)?;
             let base = layer_lock.base().clone();
             drop(layer_lock);
-            let req = Request::get_id(&db, id)??;
+            let req = Request::get_id(&db, id)?.ok_or(RpcError::ParseError)?;
             req.delete(&db)?;
 
             // delete avatar. check had friend.
@@ -399,7 +399,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
     handler.add_method(
         "chat-message-list",
         |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
-            let fid = params[0].as_i64()?;
+            let fid = params[0].as_i64().ok_or(RpcError::ParseError)?;
 
             let layer_lock = state.layer.read().await;
             let db = chat_db(layer_lock.base(), &gid)?;
@@ -414,10 +414,10 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
     handler.add_method(
         "chat-message-create",
         |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
-            let fid = params[0].as_i64()?;
-            let fgid = GroupId::from_hex(params[1].as_str()?)?;
-            let m_type = MessageType::from_int(params[2].as_i64()?);
-            let content = params[3].as_str()?.to_string();
+            let fid = params[0].as_i64().ok_or(RpcError::ParseError)?;
+            let fgid = GroupId::from_hex(params[1].as_str().ok_or(RpcError::ParseError)?)?;
+            let m_type = MessageType::from_int(params[2].as_i64().ok_or(RpcError::ParseError)?);
+            let content = params[3].as_str().ok_or(RpcError::ParseError)?.to_string();
 
             let mut layer_lock = state.layer.write().await;
             let base = layer_lock.base();
@@ -469,13 +469,13 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
     handler.add_method(
         "chat-message-delete",
         |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
-            let id = params[0].as_i64()?;
+            let id = params[0].as_i64().ok_or(RpcError::ParseError)?;
 
             let layer_lock = state.layer.read().await;
             let db = chat_db(&layer_lock.base(), &gid)?;
             drop(layer_lock);
 
-            let msg = Message::get_id(&db, id)??;
+            let msg = Message::get_id(&db, id)?.ok_or(RpcError::ParseError)?;
             msg.delete(&db)?;
             drop(db);
             let mut results = HandleResult::new();

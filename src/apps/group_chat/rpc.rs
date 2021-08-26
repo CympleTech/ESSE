@@ -3,7 +3,7 @@ use tdn::types::{
     group::GroupId,
     message::SendType,
     primitive::{HandleResult, PeerAddr},
-    rpc::{json, rpc_response, RpcHandler, RpcParam},
+    rpc::{json, rpc_response, RpcError, RpcHandler, RpcParam},
 };
 use tdn_did::Proof;
 
@@ -140,7 +140,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
     handler.add_method(
         "group-chat-request-list",
         |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
-            let is_all = params[0].as_bool()?;
+            let is_all = params[0].as_bool().ok_or(RpcError::ParseError)?;
             let layer_lock = state.layer.read().await;
             let db = group_chat_db(&layer_lock.base, &gid)?;
             Ok(HandleResult::rpc(request_list(Request::list(&db, is_all)?)))
@@ -150,7 +150,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
     handler.add_method(
         "group-chat-detail",
         |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
-            let g_did = params[0].as_i64()?;
+            let g_did = params[0].as_i64().ok_or(RpcError::ParseError)?;
             let db = group_chat_db(state.layer.read().await.base(), &gid)?;
             let members = Member::all(&db, &g_did)?;
             let messages = Message::all(&db, &g_did)?;
@@ -161,7 +161,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
     handler.add_method(
         "group-chat-check",
         |gid: GroupId, params: Vec<RpcParam>, _state: Arc<RpcState>| async move {
-            let addr = PeerAddr::from_hex(params[0].as_str()?)?;
+            let addr = PeerAddr::from_hex(params[0].as_str().ok_or(RpcError::ParseError)?)?;
 
             let mut results = HandleResult::new();
             let data = postcard::to_allocvec(&LayerEvent::Check).unwrap_or(vec![]);
@@ -174,19 +174,22 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
     handler.add_method(
         "group-chat-create",
         |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
-            let glocation = GroupLocation::from_u32(params[0].as_i64()? as u32);
-            let gtype = GroupType::from_u32(params[1].as_i64()? as u32);
-            let my_name = params[2].as_str()?.to_owned();
-            let name = params[4].as_str()?.to_owned();
-            let bio = params[5].as_str()?.to_owned();
-            let need_agree = params[6].as_bool()?;
-            let avatar = params[7].as_str()?;
+            let glocation =
+                GroupLocation::from_u32(params[0].as_i64().ok_or(RpcError::ParseError)? as u32);
+            let gtype = GroupType::from_u32(params[1].as_i64().ok_or(RpcError::ParseError)? as u32);
+            let my_name = params[2].as_str().ok_or(RpcError::ParseError)?.to_owned();
+            let name = params[4].as_str().ok_or(RpcError::ParseError)?.to_owned();
+            let bio = params[5].as_str().ok_or(RpcError::ParseError)?.to_owned();
+            let need_agree = params[6].as_bool().ok_or(RpcError::ParseError)?;
+            let avatar = params[7].as_str().ok_or(RpcError::ParseError)?;
             let avatar_bytes = base64::decode(avatar).unwrap_or(vec![]);
 
             let base = state.layer.read().await.base().clone();
             let db = group_chat_db(&base, &gid)?;
             let addr = match glocation {
-                GroupLocation::Remote => PeerAddr::from_hex(params[3].as_str()?)?,
+                GroupLocation::Remote => {
+                    PeerAddr::from_hex(params[3].as_str().ok_or(RpcError::ParseError)?)?
+                }
                 GroupLocation::Local => state.layer.read().await.addr.clone(),
             };
             let mut gc = GroupChat::new(
@@ -236,11 +239,11 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
     handler.add_method(
         "group-chat-resend",
         |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
-            let id = params[0].as_i64()?;
-            let mname = params[1].as_str()?.to_owned();
+            let id = params[0].as_i64().ok_or(RpcError::ParseError)?;
+            let mname = params[1].as_str().ok_or(RpcError::ParseError)?.to_owned();
 
             let db = group_chat_db(state.layer.read().await.base(), &gid)?;
-            let gc = GroupChat::get_id(&db, &id)??;
+            let gc = GroupChat::get_id(&db, &id)?.ok_or(RpcError::ParseError)?;
             drop(db);
 
             // load avatar
@@ -263,14 +266,14 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
     handler.add_method(
         "group-chat-join",
         |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
-            let gtype = GroupType::from_u32(params[0].as_i64()? as u32);
-            let gcd = GroupId::from_hex(params[1].as_str()?)?;
-            let gaddr = PeerAddr::from_hex(params[2].as_str()?)?;
-            let gname = params[3].as_str()?.to_owned();
-            let gremark = params[4].as_str()?;
-            let gproof = params[5].as_str()?;
+            let gtype = GroupType::from_u32(params[0].as_i64().ok_or(RpcError::ParseError)? as u32);
+            let gcd = GroupId::from_hex(params[1].as_str().ok_or(RpcError::ParseError)?)?;
+            let gaddr = PeerAddr::from_hex(params[2].as_str().ok_or(RpcError::ParseError)?)?;
+            let gname = params[3].as_str().ok_or(RpcError::ParseError)?.to_owned();
+            let gremark = params[4].as_str().ok_or(RpcError::ParseError)?;
+            let gproof = params[5].as_str().ok_or(RpcError::ParseError)?;
             let proof = Proof::from_hex(gproof).unwrap_or(Proof::default());
-            let gkey = params[6].as_str()?;
+            let gkey = params[6].as_str().ok_or(RpcError::ParseError)?;
             let key = GroupChatKey::from_hex(gkey).unwrap_or(GroupChatKey::new(vec![]));
 
             let db = group_chat_db(state.layer.read().await.base(), &gid)?;
@@ -317,10 +320,11 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
     handler.add_method(
         "group-chat-invite",
         |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
-            let id = params[0].as_i64()?;
-            let gcd = GroupId::from_hex(params[1].as_str()?)?;
+            let id = params[0].as_i64().ok_or(RpcError::ParseError)?;
+            let gcd = GroupId::from_hex(params[1].as_str().ok_or(RpcError::ParseError)?)?;
             let ids: Vec<i64> = params[2]
-                .as_array()?
+                .as_array()
+                .ok_or(RpcError::ParseError)?
                 .iter()
                 .filter_map(|v| v.as_i64())
                 .collect();
@@ -333,7 +337,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
 
             let mut invites = vec![];
             for fid in ids {
-                let friend = Friend::get_id(&chat, fid)??;
+                let friend = Friend::get_id(&chat, fid)?.ok_or(RpcError::ParseError)?;
                 if Member::get_id(&group_db, &id, &friend.gid).is_err() {
                     let proof = group_lock.prove_addr(&gid, &friend.gid.into())?;
                     invites.push((friend.id, friend.gid, friend.addr, proof));
@@ -341,7 +345,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             }
             drop(chat);
 
-            let gc = GroupChat::get_id(&group_db, &id)??;
+            let gc = GroupChat::get_id(&group_db, &id)?.ok_or(RpcError::ParseError)?;
             let tmp_name = gc.g_name.replace(";", "-;");
 
             let s_db = session_db(&base, &gid)?;
@@ -396,13 +400,13 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
     handler.add_method(
         "group-chat-request-handle",
         |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
-            let gcd = GroupId::from_hex(params[0].as_str()?)?;
-            let id = params[1].as_i64()?;
-            let rid = params[2].as_i64()?;
-            let ok = params[3].as_bool()?;
+            let gcd = GroupId::from_hex(params[0].as_str().ok_or(RpcError::ParseError)?)?;
+            let id = params[1].as_i64().ok_or(RpcError::ParseError)?;
+            let rid = params[2].as_i64().ok_or(RpcError::ParseError)?;
+            let ok = params[3].as_bool().ok_or(RpcError::ParseError)?;
 
             let db = group_chat_db(state.layer.read().await.base(), &gid)?;
-            let gc = GroupChat::get_id(&db, &id)??;
+            let gc = GroupChat::get_id(&db, &id)?.ok_or(RpcError::ParseError)?;
 
             let mut results = HandleResult::new();
             let data =
@@ -416,8 +420,8 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
     handler.add_method(
         "group-chat-member-update",
         |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
-            let id = params[0].as_i64()?;
-            let is_block = params[1].as_bool()?;
+            let id = params[0].as_i64().ok_or(RpcError::ParseError)?;
+            let is_block = params[1].as_bool().ok_or(RpcError::ParseError)?;
 
             let db = group_chat_db(state.layer.read().await.base(), &gid)?;
             Member::block(&db, &id, is_block)?;
@@ -428,9 +432,9 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
     handler.add_method(
         "group-chat-message-create",
         |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
-            let gcd = GroupId::from_hex(params[0].as_str()?)?;
-            let m_type = MessageType::from_int(params[1].as_i64()?);
-            let m_content = params[2].as_str()?;
+            let gcd = GroupId::from_hex(params[0].as_str().ok_or(RpcError::ParseError)?)?;
+            let m_type = MessageType::from_int(params[1].as_i64().ok_or(RpcError::ParseError)?);
+            let m_content = params[2].as_str().ok_or(RpcError::ParseError)?;
 
             let addr = state.layer.read().await.running(&gid)?.online(&gcd)?;
 
@@ -448,10 +452,15 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
     handler.add_method(
         "group-chat-close",
         |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
-            let gcd = GroupId::from_hex(params[0].as_str()?)?;
-            let id = params[1].as_i64()?;
+            let gcd = GroupId::from_hex(params[0].as_str().ok_or(RpcError::ParseError)?)?;
+            let id = params[1].as_i64().ok_or(RpcError::ParseError)?;
 
-            let addr = state.layer.write().await.remove_online(&gid, &gcd)?;
+            let addr = state
+                .layer
+                .write()
+                .await
+                .remove_online(&gid, &gcd)
+                .ok_or(RpcError::ParseError)?;
 
             let mut results = HandleResult::new();
             let base = state.layer.read().await.base().clone();
@@ -472,8 +481,8 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
     handler.add_method(
         "group-chat-delete",
         |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
-            let gcd = GroupId::from_hex(params[0].as_str()?)?;
-            let id = params[1].as_i64()?;
+            let gcd = GroupId::from_hex(params[0].as_str().ok_or(RpcError::ParseError)?)?;
+            let id = params[1].as_i64().ok_or(RpcError::ParseError)?;
 
             let mut results = HandleResult::new();
             let base = state.layer.read().await.base().clone();
@@ -481,7 +490,12 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             results.rpcs.push(session_delete(gid, &sid));
             let db = group_chat_db(&base, &gid)?;
             if GroupChat::delete(&db, &id)? {
-                let addr = state.layer.write().await.remove_online(&gid, &gcd)?;
+                let addr = state
+                    .layer
+                    .write()
+                    .await
+                    .remove_online(&gid, &gcd)
+                    .ok_or(RpcError::ParseError)?;
                 let event = Event::MemberLeave(gid);
                 let data =
                     postcard::to_allocvec(&LayerEvent::Sync(gcd, 0, event)).unwrap_or(vec![]);

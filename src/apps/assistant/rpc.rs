@@ -2,7 +2,7 @@ use std::sync::Arc;
 use tdn::types::{
     group::GroupId,
     primitive::HandleResult,
-    rpc::{json, rpc_response, RpcHandler, RpcParam},
+    rpc::{json, rpc_response, RpcError, RpcHandler, RpcParam},
 };
 
 use crate::rpc::RpcState;
@@ -52,8 +52,8 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
     handler.add_method(
         "assistant-create",
         |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
-            let q_type = MessageType::from_int(params[0].as_i64()?);
-            let q_content = params[1].as_str()?.to_string();
+            let q_type = MessageType::from_int(params[0].as_i64().ok_or(RpcError::ParseError)?);
+            let q_content = params[1].as_str().ok_or(RpcError::ParseError)?.to_string();
 
             let base = state.layer.read().await.base().clone();
             let mut msg = q_type.handle(&base, &gid, q_content).await?;
@@ -69,7 +69,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
     handler.add_method(
         "assistant-delete",
         |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
-            let id = params[0].as_i64()?;
+            let id = params[0].as_i64().ok_or(RpcError::ParseError)?;
             let db = assistant_db(state.layer.read().await.base(), &gid)?;
             Message::delete(&db, id)?;
             db.close()?;

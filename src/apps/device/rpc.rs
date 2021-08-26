@@ -2,7 +2,7 @@ use std::sync::Arc;
 use tdn::types::{
     group::GroupId,
     primitive::{new_io_error, HandleResult, PeerAddr},
-    rpc::{json, rpc_response, RpcHandler, RpcParam},
+    rpc::{json, rpc_response, RpcError, RpcHandler, RpcParam},
 };
 
 use crate::group::GroupEvent;
@@ -81,7 +81,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
     handler.add_method(
         "device-status",
         |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
-            let addr = PeerAddr::from_hex(params[0].as_str()?)
+            let addr = PeerAddr::from_hex(params[0].as_str().ok_or(RpcError::ParseError)?)
                 .map_err(|_e| new_io_error("PeerAddr invalid!"))?;
 
             let group_lock = state.group.read().await;
@@ -108,7 +108,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
     handler.add_method(
         "device-create",
         |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
-            let addr = PeerAddr::from_hex(params[0].as_str()?)
+            let addr = PeerAddr::from_hex(params[0].as_str().ok_or(RpcError::ParseError)?)
                 .map_err(|_e| new_io_error("PeerAddr invalid!"))?;
 
             let msg = state.group.read().await.create_message(&gid, addr)?;
@@ -119,7 +119,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
     handler.add_method(
         "device-connect",
         |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
-            let addr = PeerAddr::from_hex(params[0].as_str()?)
+            let addr = PeerAddr::from_hex(params[0].as_str().ok_or(RpcError::ParseError)?)
                 .map_err(|_e| new_io_error("PeerAddr invalid!"))?;
 
             let msg = state.group.read().await.connect_message(&gid, addr)?;
@@ -130,7 +130,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
     handler.add_method(
         "device-delete",
         |_gid: GroupId, params: Vec<RpcParam>, _state: Arc<RpcState>| async move {
-            let _id = params[0].as_i64()?;
+            let _id = params[0].as_i64().ok_or(RpcError::ParseError)?;
             // TODO delete a device.
             Ok(HandleResult::new())
         },
