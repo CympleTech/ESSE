@@ -3,7 +3,6 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
-use tdn::smol::{channel::Sender, lock::RwLock};
 use tdn::types::{
     group::{EventId, GroupId},
     message::{SendMessage, SendType},
@@ -11,12 +10,13 @@ use tdn::types::{
 };
 use tdn_did::user::User;
 use tdn_storage::local::DStorage;
+use tokio::sync::{mpsc::Sender, RwLock};
 
 use crate::account::Account;
 use crate::apps::chat::LayerEvent;
 use crate::consensus::Event;
 use crate::group::{Group, GroupEvent};
-use crate::layer::{Layer, Online};
+use crate::layer::Layer;
 use crate::migrate::consensus::{
     ACCOUNT_TABLE_PATH, FILE_TABLE_PATH, FRIEND_TABLE_PATH, MESSAGE_TABLE_PATH, REQUEST_TABLE_PATH,
 };
@@ -323,14 +323,13 @@ impl InnerEvent {
                         let fgid = f.gid;
                         let sender = group.sender();
                         let layer_event = LayerEvent::Message(hash, m.clone());
-                        tdn::smol::spawn(InnerEvent::direct_layer_session(
+                        tokio::spawn(InnerEvent::direct_layer_session(
                             sender,
                             layer_lock,
                             ggid,
                             fgid,
                             layer_event,
-                        ))
-                        .detach();
+                        ));
                     }
 
                     let (msg, _) = m.handle(is_me, gid, group.base(), &db, f.id, hash)?;
@@ -388,20 +387,18 @@ impl InnerEvent {
                     let layer_lock = layer.clone();
                     let ggid = gid.clone();
                     let sender = group.sender();
-                    tdn::smol::spawn(async move {
+                    tokio::spawn(async move {
                         let online = layer_lock.write().await.remove_online(&ggid, &f.gid);
                         if let Some(faddr) = online {
                             let mut addrs: HashMap<PeerAddr, GroupId> = HashMap::new();
                             addrs.insert(faddr, f.gid);
-                            tdn::smol::spawn(rpc::sleep_waiting_close_stable(
+                            tokio::spawn(rpc::sleep_waiting_close_stable(
                                 sender,
                                 HashMap::new(),
                                 addrs,
-                            ))
-                            .detach();
+                            ));
                         }
-                    })
-                    .detach();
+                    });
                     (FRIEND_TABLE_PATH, rfid)
                 } else {
                     return Ok(());
@@ -418,20 +415,18 @@ impl InnerEvent {
                     let layer_lock = layer.clone();
                     let ggid = gid.clone();
                     let sender = group.sender();
-                    tdn::smol::spawn(async move {
+                    tokio::spawn(async move {
                         let online = layer_lock.write().await.remove_online(&ggid, &f.gid);
                         if let Some(faddr) = online {
                             let mut addrs: HashMap<PeerAddr, GroupId> = HashMap::new();
                             addrs.insert(faddr, f.gid);
-                            tdn::smol::spawn(rpc::sleep_waiting_close_stable(
+                            tokio::spawn(rpc::sleep_waiting_close_stable(
                                 sender,
                                 HashMap::new(),
                                 addrs,
-                            ))
-                            .detach();
+                            ));
                         }
-                    })
-                    .detach();
+                    });
 
                     (FRIEND_TABLE_PATH, rfid)
                 } else {
@@ -498,14 +493,13 @@ impl StatusEvent {
                     let rid = f.id;
                     let ggid = gid.clone();
                     let sender = group.sender();
-                    tdn::smol::spawn(async move {
+                    tokio::spawn(async move {
                         if let Ok(running) = layer_lock.write().await.running_mut(&ggid) {
                             if running.check_offline(&rgid, &addr) {
                                 // TODO
                             }
                         }
-                    })
-                    .detach();
+                    });
                 }
             }
         }
@@ -814,20 +808,18 @@ impl SyncEvent {
                             let ggid = gid.clone();
                             let fgid = friend.gid;
                             let sender = group.sender();
-                            tdn::smol::spawn(async move {
+                            tokio::spawn(async move {
                                 let online = layer_lock.write().await.remove_online(&ggid, &fgid);
                                 if let Some(faddr) = online {
                                     let mut addrs: HashMap<PeerAddr, GroupId> = HashMap::new();
                                     addrs.insert(faddr, fgid);
-                                    tdn::smol::spawn(rpc::sleep_waiting_close_stable(
+                                    tokio::spawn(rpc::sleep_waiting_close_stable(
                                         sender,
                                         HashMap::new(),
                                         addrs,
-                                    ))
-                                    .detach();
+                                    ));
                                 }
-                            })
-                            .detach();
+                            });
                         }
 
                         if friend.is_deleted {

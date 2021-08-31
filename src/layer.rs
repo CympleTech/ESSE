@@ -2,14 +2,12 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Arc;
-use tdn::{
-    smol::lock::RwLock,
-    types::{
-        group::GroupId,
-        message::SendType,
-        primitive::{new_io_error, PeerAddr, Result},
-    },
+use tdn::types::{
+    group::GroupId,
+    message::SendType,
+    primitive::{new_io_error, PeerAddr, Result},
 };
+use tokio::sync::RwLock;
 
 use crate::apps::chat::chat_conn;
 use crate::apps::group_chat::{group_chat_conn, GROUP_ID};

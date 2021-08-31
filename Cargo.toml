@@ -23,19 +23,17 @@ panic = 'abort'
 log = "0.4"
 rand = "0.8"
 once_cell = "1.7"
-simplelog = "0.8"
+simplelog = "0.10"
 image = "0.23"
 base64 = "0.13"
 sha2 = "0.9"
 blake3 = "0.3"
 aes-gcm = "0.8"
-async-lock = "2.3"
-async-channel = "1.4"
-async-fs = "1.5"
 serde = { version = "1", features = ["derive"] }
 postcard = { version = "0.5", default-features = false, features = ["alloc"] }
 sysinfo = "0.16"
-tdn = { version = "0.4", default-features = false, features = ["full"] }
+tokio = { version = "1", features = ["full"] }
+tdn = { version = "0.5", default-features = false, features = ["full"] }
 tdn_did = { git = "https://github.com/cypherlink/tdn_did", branch="main" }
 tdn_storage = { git = "https://github.com/cypherlink/tdn_storage", branch="main" }
 group-chat_types = { git = "https://github.com/cympletech/group-chat", branch="main" }

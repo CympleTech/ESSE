@@ -2,15 +2,13 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Arc;
-use tdn::{
-    smol::{channel::Sender, lock::RwLock},
-    types::{
-        group::{EventId, GroupId},
-        message::{RecvType, SendMessage, SendType},
-        primitive::{new_io_error, HandleResult, PeerAddr, Result},
-    },
+use tdn::types::{
+    group::{EventId, GroupId},
+    message::{RecvType, SendMessage, SendType},
+    primitive::{new_io_error, HandleResult, PeerAddr, Result},
 };
 use tdn_did::{user::User, Proof};
+use tokio::sync::{mpsc::Sender, RwLock};
 
 use crate::account::Account;
 use crate::apps::device::rpc as device_rpc;

@@ -3,7 +3,6 @@ extern crate log;
 
 use std::ffi::CStr;
 use std::os::raw::c_char;
-use tdn::smol;
 
 mod account;
 mod apps;
@@ -46,5 +45,7 @@ pub mod android {
 pub extern "C" fn start(db_path: *const c_char) {
     let c_str = unsafe { CStr::from_ptr(db_path) };
     let s_path = c_str.to_str().unwrap_or("./tdn").to_owned();
-    let _ = smol::block_on(server::start(s_path));
+
+    let rt = tokio::runtime::Runtime::new().unwrap();
+    let _ = rt.block_on(server::start(s_path));
 }

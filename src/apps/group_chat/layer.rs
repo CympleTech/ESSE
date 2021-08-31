@@ -1,13 +1,11 @@
 use std::path::PathBuf;
 use std::sync::Arc;
-use tdn::{
-    smol::lock::RwLock,
-    types::{
-        group::GroupId,
-        message::{RecvType, SendType},
-        primitive::{new_io_error, HandleResult, PeerAddr, Result},
-    },
+use tdn::types::{
+    group::GroupId,
+    message::{RecvType, SendType},
+    primitive::{new_io_error, HandleResult, PeerAddr, Result},
 };
+use tokio::sync::RwLock;
 
 use group_chat_types::{
     ConnectProof, Event, JoinProof, LayerConnect, LayerEvent, LayerResult, PackedEvent,

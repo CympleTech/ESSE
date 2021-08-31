@@ -3,14 +3,11 @@ use simplelog::{CombinedLogger, Config as LogConfig, LevelFilter};
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Arc;
-use tdn::{
-    prelude::*,
-    smol::{
-        channel::{SendError, Sender},
-        io::Result,
-        lock::RwLock,
-    },
-    types::primitive::HandleResult,
+use tdn::{prelude::*, types::primitive::HandleResult};
+use tokio::{
+    io::Result,
+    sync::mpsc::{error::SendError, Sender},
+    sync::RwLock,
 };
 
 use crate::account::Account;
@@ -30,7 +27,7 @@ pub static RPC_WS_UID: OnceCell<u64> = OnceCell::new();
 pub async fn start(db_path: String) -> Result<()> {
     let db_path = PathBuf::from(db_path);
     if !db_path.exists() {
-        tdn::smol::fs::create_dir_all(&db_path).await?;
+        tokio::fs::create_dir_all(&db_path).await?;
     }
 
     init_log(db_path.clone());
@@ -61,7 +58,7 @@ pub async fn start(db_path: String) -> Result<()> {
     }
     config.group_ids = me.keys().cloned().collect();
 
-    let (peer_id, sender, recver) = start_with_config(config).await.unwrap();
+    let (peer_id, sender, mut recver) = start_with_config(config).await.unwrap();
     info!("Network Peer id : {}", peer_id.to_hex());
 
     let group = Arc::new(RwLock::new(
@@ -76,9 +73,9 @@ pub async fn start(db_path: String) -> Result<()> {
     let mut now_rpc_uid = 0;
 
     // running session remain task.
-    tdn::smol::spawn(session_remain(layer.clone(), sender.clone())).detach();
+    tokio::spawn(session_remain(layer.clone(), sender.clone()));
 
-    while let Ok(message) = recver.recv().await {
+    while let Some(message) = recver.recv().await {
         match message {
             ReceiveMessage::Group(fgid, g_msg) => {
                 if let Ok(handle_result) =
@@ -124,7 +121,7 @@ pub async fn start(db_path: String) -> Result<()> {
                     .all_layer_conns()
                     .await
                     .unwrap_or(HashMap::new());
-                tdn::smol::spawn(sleep_waiting_reboot(t_sender, g_conns, l_conns)).detach();
+                tokio::spawn(sleep_waiting_reboot(t_sender, g_conns, l_conns));
             }
         }
     }
@@ -138,7 +135,8 @@ async fn sleep_waiting_reboot(
     groups: HashMap<GroupId, Vec<SendType>>,
     layers: HashMap<GroupId, Vec<(GroupId, SendType)>>,
 ) -> std::result::Result<(), SendError<SendMessage>> {
-    tdn::smol::Timer::after(std::time::Duration::from_secs(10)).await;
+    tokio::time::sleep(std::time::Duration::from_secs(10)).await;
+
     for (gid, conns) in groups {
         for conn in conns {
             sender.send(SendMessage::Group(gid, conn)).await?;
@@ -156,7 +154,7 @@ async fn sleep_waiting_reboot(
 
 async fn session_remain(layer: Arc<RwLock<Layer>>, sender: Sender<SendMessage>) -> Result<()> {
     loop {
-        tdn::smol::Timer::after(std::time::Duration::from_secs(120)).await;
+        tokio::time::sleep(std::time::Duration::from_secs(120)).await;
         if let Some(uid) = RPC_WS_UID.get() {
             let mut layer_lock = layer.write().await;
             let mut rpcs = vec![];
@@ -267,6 +265,7 @@ pub fn init_log(mut db_path: PathBuf) {
         LevelFilter::Debug,
         LogConfig::default(),
         simplelog::TerminalMode::Mixed,
+        simplelog::ColorChoice::Auto,
     )])
     .unwrap();
 

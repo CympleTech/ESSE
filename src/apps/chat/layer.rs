@@ -1,16 +1,14 @@
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use std::sync::Arc;
-use tdn::{
-    smol::lock::RwLock,
-    types::{
-        group::{EventId, GroupId},
-        message::{RecvType, SendType},
-        primitive::{new_io_error, DeliveryType, HandleResult, PeerAddr, Result},
-        rpc::RpcError,
-    },
+use tdn::types::{
+    group::{EventId, GroupId},
+    message::{RecvType, SendType},
+    primitive::{new_io_error, DeliveryType, HandleResult, PeerAddr, Result},
+    rpc::RpcError,
 };
 use tdn_did::{user::User, Proof};
+use tokio::sync::RwLock;
 
 use crate::event::InnerEvent;
 use crate::layer::{Layer, Online};

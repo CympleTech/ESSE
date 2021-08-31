@@ -1,8 +1,8 @@
-use async_fs as fs;
 use image::{load_from_memory, DynamicImage, GenericImageView};
 use rand::{distributions::Alphanumeric, thread_rng, Rng};
 use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
+use tokio::fs;
 
 use tdn::types::{
     group::GroupId,
@@ -84,7 +84,7 @@ pub(crate) fn write_file_sync(
     path.push(gid.to_hex());
     path.push(FILES_DIR);
     path.push(name);
-    tdn::smol::spawn(async move { fs::write(path, bytes).await }).detach();
+    tokio::spawn(async move { fs::write(path, bytes).await });
 
     Ok(name.to_owned())
 }
@@ -130,14 +130,13 @@ pub(crate) fn write_image_sync(base: &PathBuf, gid: &GroupId, bytes: Vec<u8>) ->
     let mut thumb_path = path.clone();
     thumb_path.push(THUMB_DIR);
     thumb_path.push(name.clone());
-    tdn::smol::spawn(async move {
+    tokio::spawn(async move {
         let _ = thumb.save(thumb_path);
-    })
-    .detach();
+    });
 
     path.push(IMAGE_DIR);
     path.push(name.clone());
-    tdn::smol::spawn(async move { fs::write(path, bytes).await }).detach();
+    tokio::spawn(async move { fs::write(path, bytes).await });
 
     Ok(name)
 }
@@ -152,10 +151,9 @@ pub(crate) async fn write_image(base: &PathBuf, gid: &GroupId, bytes: &[u8]) -> 
     let mut thumb_path = path.clone();
     thumb_path.push(THUMB_DIR);
     thumb_path.push(name.clone());
-    tdn::smol::spawn(async move {
+    tokio::spawn(async move {
         let _ = thumb.save(thumb_path);
-    })
-    .detach();
+    });
 
     path.push(IMAGE_DIR);
     path.push(name.clone());
@@ -236,7 +234,7 @@ pub(crate) fn write_avatar_sync(
     path.push(gid.to_hex());
     path.push(AVATAR_DIR);
     path.push(avatar_png(remote));
-    tdn::smol::spawn(async move { fs::write(path, bytes).await }).detach();
+    tokio::spawn(async move { fs::write(path, bytes).await });
     Ok(())
 }
 
@@ -258,7 +256,7 @@ pub(crate) fn delete_avatar_sync(base: &PathBuf, gid: &GroupId, remote: &GroupId
     path.push(AVATAR_DIR);
     path.push(avatar_png(remote));
     if path.exists() {
-        tdn::smol::spawn(async move { fs::remove_file(path).await }).detach();
+        tokio::spawn(async move { fs::remove_file(path).await });
     }
     Ok(())
 }
@@ -300,7 +298,7 @@ pub(crate) fn write_record_sync(
     path.push(gid.to_hex());
     path.push(RECORD_DIR);
     path.push(format!("{}_{}.m4a", fid, datetime));
-    tdn::smol::spawn(async move { fs::write(path, bytes).await }).detach();
+    tokio::spawn(async move { fs::write(path, bytes).await });
 
     Ok(format!("{}-{}_{}.m4a", t, fid, datetime))
 }

@@ -166,8 +166,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
                 let mut addrs: HashMap<PeerAddr, GroupId> = HashMap::new();
                 addrs.insert(faddr, friend.gid);
                 let sender = state.group.read().await.sender();
-                tdn::smol::spawn(sleep_waiting_close_stable(sender, HashMap::new(), addrs))
-                    .detach();
+                tokio::spawn(sleep_waiting_close_stable(sender, HashMap::new(), addrs));
             }
 
             let data = postcard::to_allocvec(&LayerEvent::Close).unwrap_or(vec![]);
@@ -207,8 +206,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
                 let mut addrs: HashMap<PeerAddr, GroupId> = HashMap::new();
                 addrs.insert(faddr, friend.gid);
                 let sender = state.group.read().await.sender();
-                tdn::smol::spawn(sleep_waiting_close_stable(sender, HashMap::new(), addrs))
-                    .detach();
+                tokio::spawn(sleep_waiting_close_stable(sender, HashMap::new(), addrs));
             }
 
             let data = postcard::to_allocvec(&LayerEvent::Close).unwrap_or(vec![]);

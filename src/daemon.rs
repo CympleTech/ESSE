@@ -2,7 +2,6 @@
 extern crate log;
 
 use std::env::args;
-use tdn::smol::{self, io::Result};
 
 mod account;
 mod apps;
@@ -18,12 +17,13 @@ mod session;
 mod storage;
 mod utils;
 
-fn main() -> Result<()> {
+#[tokio::main]
+async fn main() {
     let db_path = args().nth(1).unwrap_or("./.tdn".to_owned());
 
     if std::fs::metadata(&db_path).is_err() {
         std::fs::create_dir(&db_path).unwrap();
     }
 
-    smol::block_on(server::start(db_path))
+    let _ = server::start(db_path).await;
 }

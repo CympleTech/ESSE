@@ -1,13 +1,11 @@
 use std::sync::Arc;
-use tdn::{
-    smol::lock::RwLock,
-    types::{
-        group::GroupId,
-        message::RecvType,
-        primitive::{HandleResult, Result},
-        rpc::RpcHandler,
-    },
+use tdn::types::{
+    group::GroupId,
+    message::RecvType,
+    primitive::{HandleResult, Result},
+    rpc::RpcHandler,
 };
+use tokio::sync::RwLock;
 
 use crate::layer::Layer;
 use crate::rpc::RpcState;
