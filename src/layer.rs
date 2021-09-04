@@ -15,7 +15,7 @@ use crate::group::Group;
 use crate::session::{Session, SessionType};
 use crate::storage::session_db;
 
-/// ESSE app's BaseLayerEvent.
+/// ESSE app's `BaseLayerEvent`.
 /// EVERY LAYER APP MUST EQUAL THE FIRST THREE FIELDS.
 #[derive(Serialize, Deserialize)]
 pub(crate) enum LayerEvent {
@@ -29,8 +29,8 @@ pub(crate) enum LayerEvent {
 
 /// ESSE layers.
 pub(crate) struct Layer {
-    /// account_gid => running_account.
-    pub runnings: HashMap<GroupId, RunningAccount>,
+    /// layer_gid (include account id, group chat id) => running_layer.
+    pub runnings: HashMap<GroupId, RunningLayer>,
     /// message delivery tracking. uuid, me_gid, db_id.
     pub delivery: HashMap<u64, (GroupId, i64)>,
     /// storage base path.
@@ -56,17 +56,17 @@ impl Layer {
         &self.base
     }
 
-    pub fn running(&self, gid: &GroupId) -> Result<&RunningAccount> {
+    pub fn running(&self, gid: &GroupId) -> Result<&RunningLayer> {
         self.runnings.get(gid).ok_or(new_io_error("not online"))
     }
 
-    pub fn running_mut(&mut self, gid: &GroupId) -> Result<&mut RunningAccount> {
+    pub fn running_mut(&mut self, gid: &GroupId) -> Result<&mut RunningLayer> {
         self.runnings.get_mut(gid).ok_or(new_io_error("not online"))
     }
 
-    pub fn add_running(&mut self, gid: &GroupId) -> Result<()> {
+    pub fn add_running(&mut self, gid: &GroupId, consensus: i64) -> Result<()> {
         if !self.runnings.contains_key(gid) {
-            self.runnings.insert(*gid, RunningAccount::init());
+            self.runnings.insert(*gid, RunningLayer::init(consensus));
         }
 
         Ok(())
@@ -203,16 +203,24 @@ impl OnlineSession {
     }
 }
 
-pub(crate) struct RunningAccount {
+pub(crate) struct RunningLayer {
     /// online group (friends/services) => (group's address, group's db id)
     sessions: HashMap<GroupId, OnlineSession>,
+    /// layer current consensus height.
+    consensus: i64,
 }
 
-impl RunningAccount {
-    pub fn init() -> Self {
-        RunningAccount {
+impl RunningLayer {
+    pub fn init(consensus: i64) -> Self {
+        RunningLayer {
+            consensus,
             sessions: HashMap::new(),
         }
+    }
+
+    pub fn increased(&mut self) -> i64 {
+        self.consensus += 1;
+        self.consensus
     }
 
     pub fn active(&mut self, gid: &GroupId, is_me: bool) -> Option<PeerAddr> {

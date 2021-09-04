@@ -14,12 +14,12 @@ use tokio::sync::{
 
 use crate::apps::app_rpc_inject;
 use crate::apps::chat::chat_conn;
-use crate::apps::group_chat::{add_layer, group_chat_conn};
+use crate::apps::group_chat::{add_layer, group_chat_conn, GroupChat};
 use crate::event::InnerEvent;
 use crate::group::Group;
 use crate::layer::{Layer, LayerEvent};
 use crate::session::{Session, SessionType};
-use crate::storage::session_db;
+use crate::storage::{group_chat_db, session_db};
 
 pub(crate) fn init_rpc(
     addr: PeerAddr,
@@ -261,7 +261,7 @@ fn new_rpc_handler(
                 .await
                 .add_account(name, seed, lock, avatar_bytes, device_name, device_info)
                 .await?;
-            state.layer.write().await.add_running(&gid)?;
+            state.layer.write().await.add_running(&gid, 0)?;
 
             let mut results = HandleResult::rpc(json!(vec![gid.to_hex()]));
             results.networks.push(NetworkType::AddGroup(gid)); // add AddGroup to TDN.
@@ -287,7 +287,7 @@ fn new_rpc_handler(
                 .await
                 .add_account(name, seed, lock, vec![], device_name, device_info)
                 .await?;
-            state.layer.write().await.add_running(&gid)?;
+            state.layer.write().await.add_running(&gid, 0)?;
 
             let mut results = HandleResult::rpc(json!(vec![gid.to_hex()]));
             results.networks.push(NetworkType::AddGroup(gid)); // add AddGroup to TDN.
@@ -359,14 +359,26 @@ fn new_rpc_handler(
             let gid = GroupId::from_hex(params[0].as_str().ok_or(RpcError::ParseError)?)?;
             let me_lock = params[1].as_str().ok_or(RpcError::ParseError)?;
 
-            state.group.write().await.add_running(&gid, me_lock)?;
-            state.layer.write().await.add_running(&gid)?;
-
             let mut results = HandleResult::rpc(json!([gid.to_hex()]));
 
-            debug!("Account Logined: {}.", gid.to_hex());
+            state.group.write().await.add_running(&gid, me_lock)?;
             // add AddGroup to TDN.
             results.networks.push(NetworkType::AddGroup(gid));
+
+            let mut layer_lock = state.layer.write().await;
+            layer_lock.add_running(&gid, 0)?; // TODO account current state height.
+
+            // load all services layer created by this account.
+            // 1. group chat.
+            let group_db = group_chat_db(&layer_lock.base, &gid)?;
+            let group_chats = GroupChat::all_local(&group_db, &gid)?;
+            for (gcd, gheight) in group_chats {
+                layer_lock.add_running(&gcd, gheight)?;
+                results.networks.push(NetworkType::AddGroup(gcd));
+            }
+            drop(layer_lock);
+
+            debug!("Account Logined: {}.", gid.to_hex());
 
             Ok(results)
         },

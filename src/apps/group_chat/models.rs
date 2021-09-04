@@ -85,6 +85,8 @@ pub(crate) struct GroupChat {
     pub datetime: i64,
     /// is deleted.
     is_deleted: bool,
+    /// is remote.
+    pub is_remote: bool,
 }
 
 impl GroupChat {
@@ -96,6 +98,7 @@ impl GroupChat {
         g_bio: String,
         is_need_agree: bool,
         is_ok: bool,
+        is_remote: bool,
     ) -> Self {
         let g_id = GroupId(rand::thread_rng().gen::<[u8; 32]>());
 
@@ -118,6 +121,7 @@ impl GroupChat {
             key,
             datetime,
             is_ok,
+            is_remote,
             id: 0,
             height: 0,
             is_closed: false,
@@ -135,6 +139,7 @@ impl GroupChat {
         g_bio: String,
         is_need_agree: bool,
         key: GroupChatKey,
+        is_remote: bool,
     ) -> Self {
         let start = SystemTime::now();
         let datetime = start
@@ -154,6 +159,7 @@ impl GroupChat {
             datetime,
             id: 0,
             height,
+            is_remote,
             is_ok: true,
             is_closed: false,
             is_deleted: false,
@@ -167,12 +173,13 @@ impl GroupChat {
         addr: PeerAddr,
         base: &PathBuf,
         mgid: &GroupId,
+        is_remote: bool,
     ) -> Result<Self> {
         match info {
             GroupInfo::Common(owner, _, _, g_id, g_type, agree, name, g_bio, avatar) => {
                 write_avatar_sync(base, &mgid, &g_id, avatar)?;
                 Ok(Self::new_from(
-                    g_id, height, owner, g_type, addr, name, g_bio, agree, key,
+                    g_id, height, owner, g_type, addr, name, g_bio, agree, key, is_remote,
                 ))
             }
             GroupInfo::Encrypted(owner, _, _, g_id, agree, _hash, _name, _bio, avatar) => {
@@ -185,7 +192,7 @@ impl GroupChat {
                 write_avatar_sync(base, &mgid, &g_id, avatar)?;
 
                 Ok(Self::new_from(
-                    g_id, height, owner, g_type, addr, name, bio, agree, key,
+                    g_id, height, owner, g_type, addr, name, bio, agree, key, is_remote,
                 ))
             }
         }
@@ -254,6 +261,7 @@ impl GroupChat {
 
         Self {
             is_deleted,
+            is_remote: v.pop().unwrap().as_bool(),
             datetime: v.pop().unwrap().as_i64(),
             key: GroupChatKey::from_hex(v.pop().unwrap().as_string())
                 .unwrap_or(GroupChatKey::new(vec![])),
@@ -273,7 +281,7 @@ impl GroupChat {
 
     /// use in rpc when load account friends.
     pub fn all(db: &DStorage) -> Result<Vec<GroupChat>> {
-        let matrix = db.query("SELECT id, height, owner, gcd, gtype, addr, name, bio, is_ok, is_need_agree, is_closed, key, datetime FROM groups WHERE is_deleted = false")?;
+        let matrix = db.query("SELECT id, height, owner, gcd, gtype, addr, name, bio, is_ok, is_need_agree, is_closed, key, datetime, is_remote FROM groups WHERE is_deleted = false")?;
         let mut groups = vec![];
         for values in matrix {
             groups.push(GroupChat::from_values(values, false));
@@ -283,7 +291,7 @@ impl GroupChat {
 
     /// use in rpc when load account groups.
     pub fn all_ok(db: &DStorage) -> Result<Vec<GroupChat>> {
-        let matrix = db.query("SELECT id, height, owner, gcd, gtype, addr, name, bio, is_ok, is_need_agree, is_closed, key, datetime FROM groups WHERE is_closed = false")?;
+        let matrix = db.query("SELECT id, height, owner, gcd, gtype, addr, name, bio, is_ok, is_need_agree, is_closed, key, datetime, is_remote FROM groups WHERE is_closed = false")?;
         let mut groups = vec![];
         for values in matrix {
             groups.push(GroupChat::from_values(values, false));
@@ -291,8 +299,21 @@ impl GroupChat {
         Ok(groups)
     }
 
+    /// list all local group chat as running layer.
+    pub fn all_local(db: &DStorage, owner: &GroupId) -> Result<Vec<(GroupId, i64)>> {
+        let matrix = db.query(&format!("SELECT gcd, height FROM groups WHERE owner = '{}' and is_remote = false and is_closed = false", owner.to_hex()))?;
+        let mut groups = vec![];
+        for mut values in matrix {
+            let height = values.pop().unwrap().as_i64();
+            let gcd =
+                GroupId::from_hex(values.pop().unwrap().as_string()).unwrap_or(Default::default());
+            groups.push((gcd, height));
+        }
+        Ok(groups)
+    }
+
     pub fn get(db: &DStorage, gid: &GroupId) -> Result<Option<GroupChat>> {
-        let sql = format!("SELECT id, height, owner, gcd, gtype, addr, name, bio, is_ok, is_need_agree, is_closed, key, datetime FROM groups WHERE gcd = '{}' AND is_deleted = false", gid.to_hex());
+        let sql = format!("SELECT id, height, owner, gcd, gtype, addr, name, bio, is_ok, is_need_agree, is_closed, key, datetime, is_remote FROM groups WHERE gcd = '{}' AND is_deleted = false", gid.to_hex());
         let mut matrix = db.query(&sql)?;
         if matrix.len() > 0 {
             let values = matrix.pop().unwrap(); // safe unwrap()
@@ -302,7 +323,7 @@ impl GroupChat {
     }
 
     pub fn get_id(db: &DStorage, id: &i64) -> Result<Option<GroupChat>> {
-        let sql = format!("SELECT id, height, owner, gcd, gtype, addr, name, bio, is_ok, is_need_agree, is_closed, key, datetime FROM groups WHERE id = {} AND is_deleted = false", id);
+        let sql = format!("SELECT id, height, owner, gcd, gtype, addr, name, bio, is_ok, is_need_agree, is_closed, key, datetime, is_remote FROM groups WHERE id = {} AND is_deleted = false", id);
         let mut matrix = db.query(&sql)?;
         if matrix.len() > 0 {
             let values = matrix.pop().unwrap(); // safe unwrap()
@@ -319,7 +340,7 @@ impl GroupChat {
         if unique_check.len() > 0 {
             let id = unique_check.pop().unwrap().pop().unwrap().as_i64();
             self.id = id;
-            let sql = format!("UPDATE groups SET height = {}, owner = '{}', gtype = {}, addr='{}', name = '{}', bio = '{}', is_ok = {}, is_need_agree = {}, is_closed = {}, key = '{}', datetime = {}, is_deleted = false WHERE id = {}",
+            let sql = format!("UPDATE groups SET height = {}, owner = '{}', gtype = {}, addr='{}', name = '{}', bio = '{}', is_ok = {}, is_need_agree = {}, is_closed = {}, key = '{}', datetime = {},is_remote = {}, is_deleted = false WHERE id = {}",
                 self.height,
                 self.owner.to_hex(),
                 self.g_type.to_u32(),
@@ -331,11 +352,12 @@ impl GroupChat {
                 self.is_closed,
                 self.key.to_hex(),
                 self.datetime,
+                self.is_remote,
                 self.id
             );
             db.update(&sql)?;
         } else {
-            let sql = format!("INSERT INTO groups (height, owner, gcd, gtype, addr, name, bio, is_ok, is_need_agree, is_closed, key, datetime, is_deleted) VALUES ({}, '{}', '{}', {}, '{}', '{}', '{}', {}, {}, {}, '{}', {}, false)",
+            let sql = format!("INSERT INTO groups (height, owner, gcd, gtype, addr, name, bio, is_ok, is_need_agree, is_closed, key, datetime, is_deleted) VALUES ({}, '{}', '{}', {}, '{}', '{}', '{}', {}, {}, {}, '{}', {}, {}, false)",
                 self.height,
                 self.owner.to_hex(),
                 self.g_id.to_hex(),
@@ -348,6 +370,7 @@ impl GroupChat {
                 self.is_closed,
                 self.key.to_hex(),
                 self.datetime,
+                self.is_remote,
             );
             let id = db.insert(&sql)?;
             self.id = id;

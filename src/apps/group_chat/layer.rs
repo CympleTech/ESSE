@@ -171,7 +171,7 @@ async fn handle_event(
             let (rid, key) = Request::over(&db, &gcd, true)?;
 
             // 1. add group chat.
-            let mut group = GroupChat::from_info(key, info, 0, addr, &base, &mgid)?;
+            let mut group = GroupChat::from_info(key, info, 0, addr, &base, &mgid, true)?;
             group.insert(&db)?;
 
             // 2. ADD NEW SESSION.

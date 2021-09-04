@@ -142,7 +142,7 @@ class GroupChatProvider extends ChangeNotifier {
 
   messageCreate(MessageType mtype, String content) {
     final gcd = this.activedGroup!.gid;
-    rpc.send('group-chat-message-create', [gcd, mtype.toInt(), content]);
+    rpc.send('group-chat-message-create', [gcd, this.actived!, mtype.toInt(), content]);
   }
 
   close(int id) {

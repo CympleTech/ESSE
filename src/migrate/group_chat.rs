@@ -14,6 +14,7 @@ pub(super) const GROUP_CHAT_VERSIONS: [&str; 4] = [
     is_closed INTEGER NOT NULL,
     key TEXT NOT NULL,
     datetime INTEGER NOT NULL,
+    is_remote INTEGER NOT NULL,
     is_deleted INTEGER NOT NULL);",
   "CREATE TABLE IF NOT EXISTS requests(
     id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,

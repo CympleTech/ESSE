@@ -2,7 +2,7 @@ use std::sync::Arc;
 use tdn::types::{
     group::GroupId,
     message::SendType,
-    primitive::{HandleResult, PeerAddr},
+    primitive::{new_io_error, HandleResult, PeerAddr},
     rpc::{json, rpc_response, RpcError, RpcHandler, RpcParam},
 };
 use tdn_did::Proof;
@@ -15,6 +15,7 @@ use crate::session::{Session, SessionType};
 use crate::storage::{chat_db, group_chat_db, read_avatar, session_db, write_avatar};
 
 use super::add_layer;
+use super::common::handle_event;
 use super::models::{to_network_message, GroupChat, GroupChatKey, Member, Message, Request};
 
 #[inline]
@@ -200,6 +201,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
                 bio,
                 need_agree,
                 glocation == GroupLocation::Local,
+                glocation == GroupLocation::Remote,
             );
             let gcd = gc.g_id;
 
@@ -433,18 +435,45 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
         "group-chat-message-create",
         |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
             let gcd = GroupId::from_hex(params[0].as_str().ok_or(RpcError::ParseError)?)?;
-            let m_type = MessageType::from_int(params[1].as_i64().ok_or(RpcError::ParseError)?);
-            let m_content = params[2].as_str().ok_or(RpcError::ParseError)?;
+            let id = params[1].as_i64().ok_or(RpcError::ParseError)?;
+            let m_type = MessageType::from_int(params[2].as_i64().ok_or(RpcError::ParseError)?);
+            let m_content = params[3].as_str().ok_or(RpcError::ParseError)?;
 
-            let addr = state.layer.read().await.running(&gid)?.online(&gcd)?;
-
-            let mut results = HandleResult::new();
+            let db = group_chat_db(state.layer.read().await.base(), &gid)?;
+            let gc = GroupChat::get_id(&db, &id)?.ok_or(RpcError::ParseError)?;
             let base = state.group.read().await.base().clone();
             let (nmsg, datetime) = to_network_message(&base, &gid, m_type, m_content).await?;
             let event = Event::MessageCreate(gid, nmsg, datetime);
-            let data = postcard::to_allocvec(&LayerEvent::Sync(gcd, 0, event)).unwrap_or(vec![]);
-            let msg = SendType::Event(0, addr, data);
-            add_layer(&mut results, gid, msg);
+
+            let mut results = HandleResult::new();
+            if gc.is_remote {
+                let addr = state.layer.read().await.running(&gid)?.online(&gcd)?;
+                let data =
+                    postcard::to_allocvec(&LayerEvent::Sync(gcd, 0, event)).unwrap_or(vec![]);
+                let msg = SendType::Event(0, addr, data);
+                add_layer(&mut results, gid, msg);
+            } else {
+                // 1. increase the consensus height in running layer.
+                let height = state.layer.write().await.running_mut(&gcd)?.increased();
+
+                // 2. update group chat height.
+                GroupChat::add_height(&db, id, height)?;
+
+                // 3. broadcast event bytes.
+                let event = LayerEvent::Sync(gcd, height, event);
+                let new_data = postcard::to_allocvec(&event)
+                    .map_err(|_| new_io_error("serialize event error."))?;
+
+                // 4. handle event.
+                handle_event(db, base, id, gid, event, &mut results).await?;
+
+                // 5. broadcast event.
+                for (mid, maddr) in state.layer.read().await.running(&gcd)?.onlines() {
+                    let s = SendType::Event(0, *maddr, new_data.clone());
+                    add_layer(&mut results, *mid, s);
+                }
+            }
+
             Ok(results)
         },
     );
