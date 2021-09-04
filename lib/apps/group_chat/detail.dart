@@ -5,7 +5,6 @@ import 'package:provider/provider.dart';
 
 import 'package:esse/utils/adaptive.dart';
 import 'package:esse/utils/better_print.dart';
-import 'package:esse/utils/toast.dart';
 import 'package:esse/utils/pick_image.dart';
 import 'package:esse/utils/pick_file.dart';
 import 'package:esse/l10n/localizations.dart';
@@ -26,7 +25,7 @@ import 'package:esse/apps/group_chat/models.dart';
 import 'package:esse/apps/group_chat/provider.dart';
 
 class GroupChatDetail extends StatefulWidget {
-  const GroupChatDetail({Key key}) : super(key: key);
+  const GroupChatDetail({Key? key}) : super(key: key);
 
   @override
   _GroupChatDetailState createState() => _GroupChatDetailState();
@@ -39,9 +38,9 @@ class _GroupChatDetailState extends State<GroupChatDetail> {
   bool sendShow = false;
   bool menuShow = false;
   bool recordShow = false;
-  String _recordName;
+  String _recordName = '';
 
-  GroupChat group;
+  GroupChat? group;
 
   @override
   initState() {
@@ -68,7 +67,7 @@ class _GroupChatDetailState extends State<GroupChatDetail> {
   _generateRecordPath() {
     this._recordName = DateTime.now().millisecondsSinceEpoch.toString() +
     '_' +
-    this.group.id.toString() +
+    this.group!.id.toString() +
     '.m4a';
   }
 
@@ -120,7 +119,7 @@ class _GroupChatDetailState extends State<GroupChatDetail> {
 
   void _sendRecord(int time) async {
     final raw = BaseMessage.rawRecordName(time, _recordName);
-    if (raw != null) {
+    if (raw != '') {
       context.read<GroupChatProvider>().messageCreate(MessageType.Record, raw);
     }
     setState(() {
@@ -131,9 +130,9 @@ class _GroupChatDetailState extends State<GroupChatDetail> {
     });
   }
 
-  _callback(int id) {
+  _callback(int? id) {
     if (id != null) {
-      context.read<GroupChatProvider>().messageCreate(MessageType.Contact, "${id}");
+      context.read<GroupChatProvider>().messageCreate(MessageType.Contact, id.toString());
     }
     setState(() {
         emojiShow = false;
@@ -164,8 +163,8 @@ class _GroupChatDetailState extends State<GroupChatDetail> {
     final recentMessageKeys = recentMessages.keys.toList().reversed.toList();
 
     this.group = provider.activedGroup;
-    final isGroupOwner = provider.isActivedGroupOwner;
-    final isGroupManager = provider.isActivedGroupManager;
+    //final isGroupOwner = provider.isActivedGroupOwner;
+    //final isGroupManager = provider.isActivedGroupManager;
 
     if (this.group == null) {
       return Container(
@@ -176,7 +175,7 @@ class _GroupChatDetailState extends State<GroupChatDetail> {
 
     final accountProvider = context.watch<AccountProvider>();
     final session = accountProvider.activedSession;
-    final meName = accountProvider.activedAccount.name;
+    //final meName = accountProvider.activedAccount.name;
     final isOnline = session.isActive();
 
     return Scaffold(
@@ -204,11 +203,11 @@ class _GroupChatDetailState extends State<GroupChatDetail> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          this.group.name,
+                          this.group!.name,
                           style: TextStyle(fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(height: 6.0),
-                        Text(this.group.isClosed
+                        Text(this.group!.isClosed
                           ? lang.closed
                           : session.onlineLang(lang),
                           style: TextStyle(
@@ -236,8 +235,8 @@ class _GroupChatDetailState extends State<GroupChatDetail> {
                   const SizedBox(width: 20.0),
                   GestureDetector(
                     onTap: () {
-                      showShadowDialog(context, Icons.groups, this.group.name,
-                        _MemberWidget(id: this.group.id, gid: this.group.gid),
+                      showShadowDialog(context, Icons.groups, this.group!.name,
+                        _MemberWidget(id: this.group!.id, gid: this.group!.gid),
                         0.0,
                       );
                     },
@@ -257,11 +256,11 @@ class _GroupChatDetailState extends State<GroupChatDetail> {
                         showShadowDialog(context, Icons.info, lang.groupChat,
                           UserInfo(
                             app: 'add-group',
-                            id: 'EG' + this.group.gid.toUpperCase(),
-                            name: this.group.name,
-                            addr: '0x' + this.group.addr,
-                            title: this.group.type.lang(lang),
-                            bio: this.group.bio,
+                            id: 'EG' + this.group!.gid.toUpperCase(),
+                            name: this.group!.name,
+                            addr: '0x' + this.group!.addr,
+                            title: this.group!.type.lang(lang),
+                            bio: this.group!.bio,
                           ),
                           0.0,
                         );
@@ -270,7 +269,7 @@ class _GroupChatDetailState extends State<GroupChatDetail> {
                           context: context, builder: (BuildContext context) {
                             return AlertDialog(
                               title: Text(lang.exit),
-                              content: Text(this.group.name,
+                              content: Text(this.group!.name,
                                 style: TextStyle(color: color.primary)),
                               actions: [
                                 TextButton(child: Text(lang.cancel),
@@ -279,7 +278,7 @@ class _GroupChatDetailState extends State<GroupChatDetail> {
                                 TextButton(child: Text(lang.ok),
                                   onPressed:  () {
                                     Navigator.pop(context);
-                                    provider.close(this.group.id);
+                                    provider.close(this.group!.id);
                                   },
                                 ),
                               ]
@@ -291,7 +290,7 @@ class _GroupChatDetailState extends State<GroupChatDetail> {
                           context: context, builder: (BuildContext context) {
                             return AlertDialog(
                               title: Text(lang.delete + ' ' + lang.groupChat),
-                              content: Text(this.group.name,
+                              content: Text(this.group!.name,
                                 style: TextStyle(color: Colors.red)),
                               actions: [
                                 TextButton(
@@ -302,7 +301,7 @@ class _GroupChatDetailState extends State<GroupChatDetail> {
                                   child: Text(lang.ok),
                                   onPressed:  () {
                                     Navigator.pop(context);
-                                    provider.delete(this.group.id);
+                                    provider.delete(this.group!.id);
                                     context.read<AccountProvider>().clearActivedSession(
                                       SessionType.Group
                                     );
@@ -320,7 +319,7 @@ class _GroupChatDetailState extends State<GroupChatDetail> {
                     itemBuilder: (context) {
                       return <PopupMenuEntry<int>>[
                         _menuItem(Color(0xFF6174FF), 1, Icons.qr_code_rounded, lang.info),
-                        if (!this.group.isClosed && isOnline)
+                        if (!this.group!.isClosed && isOnline)
                         _menuItem(Colors.orange, 2, Icons.block_rounded, lang.exit),
                         _menuItem(Colors.red, 3, Icons.delete_rounded, lang.delete),
                       ];
@@ -336,7 +335,7 @@ class _GroupChatDetailState extends State<GroupChatDetail> {
                 itemCount: recentMessageKeys.length,
                 reverse: true,
                 itemBuilder: (BuildContext context, index) {
-                  final message = recentMessages[recentMessageKeys[index]];
+                  final message = recentMessages[recentMessageKeys[index]]!;
                   final member = members[message.mid];
                   return member == null ? ChatMessage(
                     fgid: "",
@@ -351,7 +350,7 @@ class _GroupChatDetailState extends State<GroupChatDetail> {
                   );
                 }
             )),
-            this.group.isClosed
+            this.group!.isClosed
             ? const SizedBox(height: 20.0)
             : Container(
               padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
@@ -517,17 +516,17 @@ class _GroupChatDetailState extends State<GroupChatDetail> {
 class ExtensionButton extends StatelessWidget {
   final String text;
   final IconData icon;
-  final Function action;
+  final VoidCallback action;
   final Color bgColor;
   final Color iconColor;
 
   const ExtensionButton({
-      Key key,
-      this.icon,
-      this.text,
-      this.action,
-      this.bgColor,
-      this.iconColor,
+      Key? key,
+      required this.icon,
+      required this.text,
+      required this.action,
+      required this.bgColor,
+      required this.iconColor,
   }) : super(key: key);
 
   @override
@@ -552,7 +551,7 @@ class ExtensionButton extends StatelessWidget {
   }
 }
 
-Widget _menuItem(Color color, int value, IconData icon, String text) {
+PopupMenuEntry<int> _menuItem(Color color, int value, IconData icon, String text) {
   return PopupMenuItem<int>(
     value: value,
     child: Row(
@@ -570,7 +569,7 @@ Widget _menuItem(Color color, int value, IconData icon, String text) {
 class _MemberWidget extends StatelessWidget {
   final int id;
   final String gid;
-  const _MemberWidget({Key key, this.id, this.gid}) : super(key: key);
+  const _MemberWidget({Key? key, required this.id, required this.gid}) : super(key: key);
 
   Widget _meItem(Member member, bool meOwner, bool meManager, Color color, lang) {
     return Container(
@@ -622,8 +621,8 @@ class _MemberWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = Theme.of(context).colorScheme;
     final lang = AppLocalizations.of(context);
-    final isLight = color.brightness == Brightness.light;
-    final isDesktop = isDisplayDesktop(context);
+    //final isLight = color.brightness == Brightness.light;
+    //final isDesktop = isDisplayDesktop(context);
     final accountProvider = context.read<AccountProvider>();
     final myId = accountProvider.activedAccountId;
     final isOnline = accountProvider.activedSession.isActive();
@@ -651,13 +650,13 @@ class _MemberWidget extends StatelessWidget {
         const SizedBox(height: 10.0),
         const Divider(height: 1.0, color: Color(0x40ADB0BB)),
         const SizedBox(height: 10.0),
-        _meItem(members[meId], meOwner, meManager, color.primary, lang),
+        _meItem(members[meId]!, meOwner, meManager, color.primary, lang),
         Container(
           height: maxHeight,
           child: SingleChildScrollView(
             child: Column(children: List<Widget>.generate(allKeys.length, (i) =>
                 _item(
-                  context, isOnline, members[allKeys[i]],
+                  context, isOnline, members[allKeys[i]]!,
                   i == 0 && !meOwner, meOwner, meManager, color.primary, lang
                 ),
             ))
@@ -684,7 +683,7 @@ class MemberDetail extends StatefulWidget {
   bool isGroupManager;
   bool isGroupOwner;
 
-  MemberDetail({Key key, this.member, this.isGroupManager, this.isGroupOwner}) : super(key: key);
+  MemberDetail({Key? key, required this.member, required this.isGroupManager, required this.isGroupOwner}) : super(key: key);
 
   @override
   _MemberDetailState createState() => _MemberDetailState();

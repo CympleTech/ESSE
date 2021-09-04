@@ -11,7 +11,6 @@ import 'package:esse/pages/account_restore.dart';
 import 'package:esse/utils/logined_cache.dart';
 import 'package:esse/account.dart';
 import 'package:esse/global.dart';
-import 'package:esse/options.dart';
 import 'package:esse/rpc.dart';
 import 'package:esse/provider.dart';
 
@@ -20,7 +19,7 @@ import 'package:esse/apps/chat/provider.dart';
 import 'package:esse/apps/group_chat/provider.dart';
 
 class SecurityPage extends StatefulWidget {
-  const SecurityPage({Key key}) : super(key: key);
+  const SecurityPage({Key? key}) : super(key: key);
 
   @override
   _SecurityPageState createState() => _SecurityPageState();
@@ -30,8 +29,8 @@ class _SecurityPageState extends State<SecurityPage> {
   Map<String, Account> _accounts = {};
   bool _accountsLoaded = false;
 
-  String _selectedUserId;
-  String _selectedUserLock;
+  String _selectedUserId = '';
+  String _selectedUserLock = '';
 
   SystemUiOverlayStyle style = SystemUiOverlayStyle.dark;
 
@@ -188,8 +187,8 @@ class _SecurityPageState extends State<SecurityPage> {
 
       if (this._accounts.length > 0) {
         final accountId = this._accounts.keys.first;
-        this._selectedUserId = this._accounts[accountId].gid;
-        this._selectedUserLock = this._accounts[accountId].lock;
+        this._selectedUserId = this._accounts[accountId]!.gid;
+        this._selectedUserLock = this._accounts[accountId]!.lock;
         this._accountsLoaded = true;
       }
 
@@ -213,7 +212,7 @@ class _SecurityPageState extends State<SecurityPage> {
             [this._selectedUserId, lock]);
 
           if (res.isOk) {
-            final mainAccount = this._accounts[this._selectedUserId];
+            final mainAccount = this._accounts[this._selectedUserId]!;
 
             Provider.of<AccountProvider>(context, listen: false).updateActivedAccount(mainAccount.gid);
             Provider.of<DeviceProvider>(context, listen: false).updateActived();
@@ -245,11 +244,13 @@ class _SecurityPageState extends State<SecurityPage> {
             iconEnabledColor: Color(0xFFADB0BB),
             isExpanded: true,
             value: this._selectedUserId,
-            onChanged: (String gid) {
-              setState(() {
-                  this._selectedUserId = gid;
-                  this._selectedUserLock = this._accounts[gid].lock;
-              });
+            onChanged: (String? gid) {
+              if (gid != null) {
+                setState(() {
+                    this._selectedUserId = gid;
+                    this._selectedUserLock = this._accounts[gid]!.lock;
+                  });
+              }
             },
             items: this._accounts.values.map((Account account) {
                 return DropdownMenuItem<String>(

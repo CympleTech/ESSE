@@ -23,12 +23,12 @@ import 'package:esse/apps/chat/provider.dart';
 import 'package:esse/apps/group_chat/provider.dart';
 
 class ChatMessage extends StatelessWidget {
-  final Widget avatar;
+  final Widget? avatar;
   final String fgid;
   final String name;
   final BaseMessage message;
 
-  const ChatMessage({Key key, this.fgid, this.name, this.message, this.avatar}): super(key: key);
+  const ChatMessage({Key? key, required this.fgid, required this.name, required this.message, this.avatar}): super(key: key);
 
   Widget _showContactCard(Widget avatar, String gid, String name, String title, ColorScheme color) {
     return Container(
@@ -278,27 +278,9 @@ class ChatMessage extends StatelessWidget {
     }
   }
 
-  Widget _infoListTooltip(icon, color, text) {
-    return Container(
-      width: 300.0,
-      padding: const EdgeInsets.symmetric(vertical: 10.0),
-      child: Row(
-        children: [
-          Icon(icon, size: 20.0, color: color),
-          const SizedBox(width: 20.0),
-          Expanded(
-            child: Tooltip(
-              message: text,
-              child: Text(betterPrint(text)),
-            )
-          )
-        ]
-      ),
-    );
-  }
 
   Widget _show(context, color, lang, isDesktop, maxWidth) {
-    final width = MediaQuery.of(context).size.width * 0.6;
+    //final width = MediaQuery.of(context).size.width * 0.6;
 
     if (message.type == MessageType.String) {
       return _showText(context, color, maxWidth);
@@ -343,10 +325,10 @@ class ChatMessage extends StatelessWidget {
           const SizedBox(width: 4.0),
           Icon(
             message.isDelivery == null ? Icons.hourglass_top
-            : (message.isDelivery ? Icons.done : Icons.error),
+            : (message.isDelivery! ? Icons.done : Icons.error),
             size: 12.0,
             color: message.isDelivery == null ? color.primaryVariant
-            : (message.isDelivery ? color.primary : Colors.red)
+            : (message.isDelivery! ? color.primary : Colors.red)
           ),
     ]));
 
@@ -366,7 +348,7 @@ class ChatMessage extends StatelessWidget {
       ? Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          avatar,
+          avatar!,
           const SizedBox(width: 4.0),
           Expanded(
             child: Column(

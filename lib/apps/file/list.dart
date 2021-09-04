@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+//import 'package:provider/provider.dart';
 
 import 'package:esse/utils/adaptive.dart';
 import 'package:esse/utils/file_image.dart';
 import 'package:esse/l10n/localizations.dart';
-import 'package:esse/provider.dart';
+//import 'package:esse/provider.dart';
 
 class FilesList extends StatefulWidget {
+  const FilesList({Key? key}) : super(key: key);
+
   @override
   _FilesListState createState() => _FilesListState();
 }
@@ -127,7 +129,7 @@ class _FilesListState extends State<FilesList> {
 
 class FileItem extends StatelessWidget {
   final String name;
-  const FileItem({Key key, this.name}) : super(key: key);
+  const FileItem({Key? key, required this.name}) : super(key: key);
 
   String remove_dir(String name) {
     if (name.endsWith('.dir')) {
@@ -161,7 +163,7 @@ class FileItem extends StatelessWidget {
 
 class FilePage extends StatelessWidget {
   final String title;
-  const FilePage({Key key, this.title}) : super(key: key);
+  const FilePage({Key? key, required this.title}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {

@@ -5,9 +5,8 @@ class InputText extends StatelessWidget {
   final String text;
   final TextEditingController controller;
   final FocusNode focus;
-  final Function action;
 
-  const InputText({Key key, this.icon, this.text, this.action, this.controller, this.focus})
+  const InputText({Key? key, required this.icon, required this.text, required this.controller, required this.focus})
   : super(key: key);
   @override
   Widget build(BuildContext context) {

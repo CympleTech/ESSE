@@ -43,7 +43,7 @@ Widget fileIcon(String name, double size) {
   if (i > 0) {
     final suffix = name.substring(i + 1);
     if (FILE_TYPES.containsKey(suffix)) {
-      final index = FILE_TYPES[suffix];
+      final index = FILE_TYPES[suffix]!;
       return Icon(FILE_IMAGES[index][0], color: FILE_IMAGES[index][1], size: size);
     }
   }

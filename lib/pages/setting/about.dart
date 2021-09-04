@@ -4,7 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:esse/l10n/localizations.dart';
 
 class AboutDetail extends StatefulWidget {
-  AboutDetail({Key key}) : super(key: key);
+  AboutDetail({Key? key}) : super(key: key);
 
   @override
   _AboutDetailState createState() => _AboutDetailState();

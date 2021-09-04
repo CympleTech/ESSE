@@ -1,15 +1,14 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:flutter/services.dart' show rootBundle;
 
-import 'package:convert/convert.dart';
 import 'package:crypto/crypto.dart';
 import 'package:unorm_dart/unorm_dart.dart';
 
 enum MnemonicLang {
+  NONE,
   CHINESE_SIMPLIFIED,
   CHINESE_TRADITIONAL,
   ENGLISH,
@@ -25,42 +24,51 @@ final MNEMONIC_LANGS = [
   MnemonicLang.CHINESE_SIMPLIFIED,
 ];
 
+final MNEMONIC_LANGS_NO_DEFAULT = [
+  MnemonicLang.NONE,
+  MnemonicLang.ENGLISH,
+  MnemonicLang.CHINESE_SIMPLIFIED,
+];
+
+
 extension MnemonicLangExtension on MnemonicLang {
   String localizations() {
     switch (this) {
+      case MnemonicLang.NONE:
+      return '—';
       case MnemonicLang.CHINESE_SIMPLIFIED:
       return '简体中文';
       case MnemonicLang.ENGLISH:
-        return 'English';
+      return 'English';
       default:
-        return 'English';
+      return 'English';
     }
   }
 
   int toInt() {
     switch (this) {
       case MnemonicLang.ENGLISH:
-        return 0;
+      return 1;
       case MnemonicLang.CHINESE_SIMPLIFIED:
-        return 1;
+      return 2;
       default:
-        return 0;
+      return 0;
     }
   }
 
   static MnemonicLang fromInt(int a) {
     switch (a) {
-      case 0:
-        return MnemonicLang.ENGLISH;
       case 1:
-        return MnemonicLang.CHINESE_SIMPLIFIED;
+      return MnemonicLang.ENGLISH;
+      case 2:
+      return MnemonicLang.CHINESE_SIMPLIFIED;
       default:
-        return MnemonicLang.ENGLISH;
+      return MnemonicLang.NONE;
     }
   }
 }
 
-final _langCache = Map<MnemonicLang, List<dynamic>>();
+final _langCache = Map<MnemonicLang, List<String>>();
 
 const MnemonicLang _DEFAULT_LANG = MnemonicLang.ENGLISH;
 
@@ -72,23 +80,23 @@ const String _INVALID_CHECKSUM = 'Invalid checksum';
 String _getMnemonicLangName(MnemonicLang lang) {
   switch (lang) {
     case MnemonicLang.CHINESE_SIMPLIFIED:
-      return 'chinese_simplified';
+    return 'chinese_simplified';
     case MnemonicLang.CHINESE_TRADITIONAL:
-      return 'chinese_traditional';
+    return 'chinese_traditional';
     case MnemonicLang.ENGLISH:
-      return 'english';
+    return 'english';
     case MnemonicLang.FRENCH:
-      return 'french';
+    return 'french';
     case MnemonicLang.ITALIAN:
-      return 'italian';
+    return 'italian';
     case MnemonicLang.JAPANESE:
-      return 'japanese';
+    return 'japanese';
     case MnemonicLang.KOREAN:
-      return 'korean';
+    return 'korean';
     case MnemonicLang.SPANISH:
-      return 'spanish';
+    return 'spanish';
     default:
-      return 'english';
+    return 'english';
   }
 }
 
@@ -98,10 +106,6 @@ int _binaryToByte(String binary) {
 
 String _bytesToBinary(Uint8List bytes) {
   return bytes.map((byte) => byte.toRadixString(2).padLeft(8, '0')).join('');
-}
-
-String _salt(String password) {
-  return 'mnemonic${password ?? ""}';
 }
 
 String _deriveChecksumBits(Uint8List entropy) {
@@ -124,8 +128,11 @@ Uint8List _nextBytes(int size) {
 }
 
 /// Converts [mnemonic] code to entropy.
-Future<Uint8List> mnemonicToEntropy(String mnemonic,
-    [MnemonicLang lang = _DEFAULT_LANG]) async {
+Future<Uint8List> mnemonicToEntropy(String mnemonic, [MnemonicLang lang = _DEFAULT_LANG]) async {
+  if (lang == MnemonicLang.NONE) {
+    return Uint8List(0);
+  }
+
   final wordRes = await _loadMnemonicLang(lang);
   final words = nfkd(mnemonic).split(' ');
 
@@ -135,12 +142,12 @@ Future<Uint8List> mnemonicToEntropy(String mnemonic,
 
   // convert word indices to 11bit binary strings
   final bits = words.map((word) {
-    final index = wordRes.indexOf(word);
-    if (index == -1) {
-      throw ArgumentError(_INVALID_MNEMONIC);
-    }
+      final index = wordRes.indexOf(word);
+      if (index == -1) {
+        throw ArgumentError(_INVALID_MNEMONIC);
+      }
 
-    return index.toRadixString(2).padLeft(11, '0');
+      return index.toRadixString(2).padLeft(11, '0');
   }).join('');
 
   // split the binary string into ENT/CS
@@ -151,9 +158,9 @@ Future<Uint8List> mnemonicToEntropy(String mnemonic,
   final regex = RegExp(r".{1,8}");
 
   final entropyBytes = Uint8List.fromList(regex
-      .allMatches(entropyBits)
-      .map((match) => _binaryToByte(match.group(0)))
-      .toList(growable: false));
+    .allMatches(entropyBits)
+    .map((match) => _binaryToByte(match.group(0)!))
+    .toList(growable: false));
   if (entropyBytes.length < 16) {
     throw StateError(_INVALID_ENTROPY);
   }
@@ -174,7 +181,11 @@ Future<Uint8List> mnemonicToEntropy(String mnemonic,
 
 /// Converts [entropy] to mnemonic code.
 Future<String> entropyToMnemonic(Uint8List entropy,
-    [MnemonicLang lang = _DEFAULT_LANG]) async {
+  [MnemonicLang lang = _DEFAULT_LANG]) async {
+  if (lang == MnemonicLang.NONE) {
+    return "";
+  }
+
   if (entropy.length < 16) {
     throw ArgumentError(_INVALID_ENTROPY);
   }
@@ -192,22 +203,17 @@ Future<String> entropyToMnemonic(Uint8List entropy,
 
   final regex = new RegExp(r".{1,11}", caseSensitive: false, multiLine: false);
   final chunks = regex
-      .allMatches(bits)
-      .map((match) => match.group(0))
-      .toList(growable: false);
+  .allMatches(bits)
+  .map((match) => match.group(0))
+  .toList(growable: false);
 
   final wordRes = await _loadMnemonicLang(lang);
 
   return chunks
-      .map((binary) => wordRes[_binaryToByte(binary)])
-      .join(lang == MnemonicLang.JAPANESE ? '\u3000' : ' ');
+  .map((binary) => wordRes[_binaryToByte(binary!)])
+  .join(lang == MnemonicLang.JAPANESE ? '\u3000' : ' ');
 }
 
-/// Converts HEX string [entropy] to mnemonic code
-Future<String> entropyHexToMnemonic(String entropy,
-    [MnemonicLang lang = _DEFAULT_LANG]) {
-  return entropyToMnemonic(hex.decode(entropy), lang);
-}
 
 /// Generates a random mnemonic.
 ///
@@ -216,10 +222,14 @@ Future<String> entropyHexToMnemonic(String entropy,
 /// but you can swap RNG by providing [randomBytes].
 /// Default lang is English, but you can use different lang by providing [lang].
 Future<String> generateMnemonic({
-  int strength = 128,
-  RandomBytes randomBytes = _nextBytes,
-  MnemonicLang lang = _DEFAULT_LANG,
+    int strength = 128,
+    RandomBytes randomBytes = _nextBytes,
+    MnemonicLang lang = _DEFAULT_LANG,
 }) async {
+  if (lang == MnemonicLang.NONE) {
+    return "";
+  }
+
   assert(strength % 32 == 0);
 
   final entropy = randomBytes(strength ~/ 8);
@@ -227,28 +237,17 @@ Future<String> generateMnemonic({
   return await entropyToMnemonic(entropy, lang);
 }
 
-/// Check if [mnemonic] code is valid.
-Future<bool> validateMnemonic(String mnemonic,
-    [MnemonicLang lang = _DEFAULT_LANG]) async {
-  try {
-    await mnemonicToEntropy(mnemonic, lang);
-  } catch (e) {
-    return false;
-  }
-  return true;
-}
-
 Future<List<String>> _loadMnemonicLang(MnemonicLang lang) async {
   if (_langCache.containsKey(lang)) {
-    return _langCache[lang];
+    return _langCache[lang]!;
   } else {
     final rawWords = await rootBundle
-        .loadString('assets/mnemonic/${_getMnemonicLangName(lang)}.txt');
+    .loadString('assets/mnemonic/${_getMnemonicLangName(lang)}.txt');
     final result = rawWords
-        .split('\n')
-        .map((s) => s.trim())
-        .where((s) => s.isNotEmpty)
-        .toList(growable: false);
+    .split('\n')
+    .map((s) => s.trim())
+    .where((s) => s.isNotEmpty)
+    .toList(growable: false);
     _langCache[lang] = result;
     return result;
   }

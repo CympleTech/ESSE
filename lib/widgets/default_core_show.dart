@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-
-import 'package:esse/options.dart';
 
 class DefaultCoreShow extends StatelessWidget {
-  const DefaultCoreShow({Key key}): super(key: key);
+  const DefaultCoreShow({Key? key}): super(key: key);
 
   @override
   Widget build(BuildContext context) {

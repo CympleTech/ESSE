@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:esse/utils/adaptive.dart';
-import 'package:esse/utils/toast.dart';
 import 'package:esse/utils/pick_image.dart';
 import 'package:esse/utils/pick_file.dart';
 import 'package:esse/l10n/localizations.dart';
@@ -21,7 +20,7 @@ import 'package:esse/apps/chat/models.dart';
 import 'package:esse/apps/chat/provider.dart';
 
 class ChatDetail extends StatefulWidget {
-  const ChatDetail({Key key}) : super(key: key);
+  const ChatDetail({Key? key}) : super(key: key);
 
   @override
   _ChatDetailState createState() => _ChatDetailState();
@@ -34,9 +33,9 @@ class _ChatDetailState extends State<ChatDetail> {
   bool sendShow = false;
   bool menuShow = false;
   bool recordShow = false;
-  String _recordName;
+  String _recordName = '';
 
-  int _actived;
+  int? _actived;
 
   @override
   initState() {
@@ -73,7 +72,7 @@ class _ChatDetailState extends State<ChatDetail> {
       return;
     }
 
-    context.read<ChatProvider>().messageCreate(Message(_actived, MessageType.String, textController.text));
+    context.read<ChatProvider>().messageCreate(Message(_actived!, MessageType.String, textController.text));
     setState(() {
         textController.text = '';
         textFocus.requestFocus();
@@ -92,7 +91,7 @@ class _ChatDetailState extends State<ChatDetail> {
   void _sendImage() async {
     final image = await pickImage();
     if (image != null) {
-      context.read<ChatProvider>().messageCreate(Message(_actived, MessageType.Image, image));
+      context.read<ChatProvider>().messageCreate(Message(_actived!, MessageType.Image, image));
     }
     setState(() {
         textFocus.requestFocus();
@@ -106,7 +105,7 @@ class _ChatDetailState extends State<ChatDetail> {
   void _sendFile() async {
     final file = await pickFile();
     if (file != null) {
-      context.read<ChatProvider>().messageCreate(Message(_actived, MessageType.File, file));
+      context.read<ChatProvider>().messageCreate(Message(_actived!, MessageType.File, file));
     }
     setState(() {
         textFocus.requestFocus();
@@ -119,7 +118,7 @@ class _ChatDetailState extends State<ChatDetail> {
 
   void _sendRecord(int time) async {
     final raw = BaseMessage.rawRecordName(time, _recordName);
-    context.read<ChatProvider>().messageCreate(Message(_actived, MessageType.Record, raw));
+    context.read<ChatProvider>().messageCreate(Message(_actived!, MessageType.Record, raw));
 
     setState(() {
         textFocus.requestFocus();
@@ -131,7 +130,7 @@ class _ChatDetailState extends State<ChatDetail> {
   }
 
   _callback(int id) {
-    context.read<ChatProvider>().messageCreate(Message(_actived, MessageType.Contact, "${id}"));
+    context.read<ChatProvider>().messageCreate(Message(_actived!, MessageType.Contact, id.toString()));
     setState(() {
         textFocus.requestFocus();
         emojiShow = false;
@@ -160,7 +159,7 @@ class _ChatDetailState extends State<ChatDetail> {
     final recentMessages = provider.activedMessages;
     final recentMessageKeys = recentMessages.keys.toList().reversed.toList();
     final friend = provider.activedFriend;
-    this._actived = friend.id;
+    this._actived = friend?.id;
 
     final accountProvider = context.watch<AccountProvider>();
     final session = accountProvider.activedSession;
@@ -337,7 +336,7 @@ class _ChatDetailState extends State<ChatDetail> {
                 itemBuilder: (BuildContext context, index) => ChatMessage(
                   fgid: friend.gid,
                   name: friend.name,
-                  message: recentMessages[recentMessageKeys[index]],
+                  message: recentMessages[recentMessageKeys[index]]!,
                 )
             )),
             if (session.online == OnlineType.Lost)
@@ -523,17 +522,17 @@ class _ChatDetailState extends State<ChatDetail> {
 class ExtensionButton extends StatelessWidget {
   final String text;
   final IconData icon;
-  final Function action;
+  final VoidCallback action;
   final Color bgColor;
   final Color iconColor;
 
   const ExtensionButton({
-      Key key,
-      this.icon,
-      this.text,
-      this.action,
-      this.bgColor,
-      this.iconColor,
+      Key? key,
+      required this.icon,
+      required this.text,
+      required this.action,
+      required this.bgColor,
+      required this.iconColor,
   }) : super(key: key);
 
   @override
@@ -558,7 +557,7 @@ class ExtensionButton extends StatelessWidget {
   }
 }
 
-Widget _menuItem(Color color, int value, IconData icon, String text) {
+PopupMenuEntry<int> _menuItem(Color color, int value, IconData icon, String text) {
   return PopupMenuItem<int>(
     value: value,
     child: Row(

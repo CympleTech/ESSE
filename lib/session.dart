@@ -89,18 +89,20 @@ class Session {
     }
   }
 
-  bool isActive()  {
-    return this.online == OnlineType.Active || this.online == OnlineType.Suspend;
+  bool isActive() {
+    return this.online == OnlineType.Active ||
+        this.online == OnlineType.Suspend;
   }
 
   String content(AppLocalizations lang) {
     MessageType type = MessageType.String;
     String raw = this.lastContent;
 
-    final i_type = this.lastContent.indexOf(':');
-    if (i_type > 0) {
-      type = MessageTypeExtension.fromInt(int.parse(this.lastContent.substring(0, i_type)));
-      raw = this.lastContent.substring(i_type + 1);
+    final msgType = this.lastContent.indexOf(':');
+    if (msgType > 0) {
+      type = MessageTypeExtension.fromInt(
+          int.parse(this.lastContent.substring(0, msgType)));
+      raw = this.lastContent.substring(msgType + 1);
     }
 
     switch (type) {
@@ -128,15 +130,29 @@ class Session {
   List parse(AppLocalizations lang) {
     switch (this.type) {
       case SessionType.Chat:
-        return [showAvatar(), this.name, content(lang), this.lastTime.toString(), null];
+        return [
+          showAvatar(),
+          this.name,
+          content(lang),
+          this.lastTime.toString(),
+          null
+        ];
       case SessionType.Group:
-        return [showAvatar(), this.name, content(lang), this.lastTime.toString(), Icons.groups];
+        return [
+          showAvatar(),
+          this.name,
+          content(lang),
+          this.lastTime.toString(),
+          Icons.groups
+        ];
       case SessionType.Assistant:
         final params = Session.innerService(InnerService.Assistant, lang);
         return [params[0], params[1], params[2], '', Icons.campaign];
       case SessionType.Files:
         final params = Session.innerService(InnerService.Files, lang);
         return [params[0], params[1], params[2], '', Icons.campaign];
+      default:
+        return [];
     }
   }
 
@@ -150,6 +166,9 @@ class Session {
         break;
       case OnlineType.Suspend:
         color = Colors.blue;
+        break;
+      default:
+        color = Color(0xFFADB0BB);
         break;
     }
 
@@ -180,18 +199,17 @@ class Session {
     this.isTop = params[3];
   }
 
-  Session.fromList(List params) {
-    this.id = params[0];
-    this.fid = params[1];
-    this.gid = params[2];
-    this.addr = params[3];
-    this.type = SessionTypeExtension.fromInt(params[4]);
-    this.name = params[5];
-    this.isTop = params[6];
-    this.isClose = params[7];
-    this.lastTime = RelativeTime.fromInt(params[8]);
-    this.lastContent = params[9];
-    this.lastReaded = params[10];
-    this.online = OnlineType.Lost;
-  }
+  Session.fromList(List params)
+      : this.id = params[0],
+        this.fid = params[1],
+        this.gid = params[2],
+        this.addr = params[3],
+        this.type = SessionTypeExtension.fromInt(params[4]),
+        this.name = params[5],
+        this.isTop = params[6],
+        this.isClose = params[7],
+        this.lastTime = RelativeTime.fromInt(params[8]),
+        this.lastContent = params[9],
+        this.lastReaded = params[10],
+        this.online = OnlineType.Lost;
 }

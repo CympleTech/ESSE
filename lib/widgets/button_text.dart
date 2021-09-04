@@ -6,14 +6,14 @@ class ButtonText extends StatelessWidget {
   final double width;
   final double height;
   final bool enable;
-  final Function action;
+  final VoidCallback action;
 
   const ButtonText({
-      Key key,
-      this.action,
-      this.text = null,
+      Key? key,
+      required this.action,
+      this.text = '',
       this.width = 450.0,
-      this.height = 60.0,
+      this.height = 50.0,
       this.enable = true,
   }) : super(key: key);
 

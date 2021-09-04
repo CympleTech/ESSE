@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:image_gallery_saver/image_gallery_saver.dart';
-import 'package:provider/provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:open_file/open_file.dart';
 
@@ -22,7 +21,7 @@ class AssistantMessage extends StatelessWidget {
   final Message message;
   final List<String> answers;
 
-  const AssistantMessage({Key key, this.name, this.message, this.answers}): super(key: key);
+  const AssistantMessage({Key? key, required this.name, required this.message, required this.answers}): super(key: key);
 
   Widget _showText(context, color, isDesktop, content, isMe) {
     final width = MediaQuery.of(context).size.width * 0.6;
@@ -185,13 +184,12 @@ class AssistantMessage extends StatelessWidget {
     final infos = Message.showContact(content);
     final gid = 'EH' + infos[1].toUpperCase();
 
-    if (infos != null) {
-      return GestureDetector(
+    return GestureDetector(
         onTap: () => showShadowDialog(
-          context,
-          Icons.person_rounded,
-          lang.contact,
-          Column(children: [
+            context,
+            Icons.person_rounded,
+            lang.contact,
+            Column(children: [
               Avatar(width: 100.0, name: infos[0], avatarPath: infos[3]),
               const SizedBox(height: 10.0),
               Text(infos[0]),
@@ -199,106 +197,65 @@ class AssistantMessage extends StatelessWidget {
               const Divider(height: 1.0, color: Color(0x40ADB0BB)),
               const SizedBox(height: 10.0),
               _infoListTooltip(Icons.person, color.primary, gid),
-              _infoListTooltip(Icons.location_on, color.primary, "0x" + infos[2]),
+              _infoListTooltip(
+                  Icons.location_on, color.primary, "0x" + infos[2]),
               Container(
                 width: 300.0,
                 padding: const EdgeInsets.symmetric(vertical: 10.0),
-                child: Row(
-                  children: [
-                    Icon(Icons.turned_in, size: 20.0, color: color.primary),
-                    const SizedBox(width: 20.0),
-                    Expanded(child: Text(lang.fromContactCard(name))),
-                  ]
-                ),
+                child: Row(children: [
+                  Icon(Icons.turned_in, size: 20.0, color: color.primary),
+                  const SizedBox(width: 20.0),
+                  Expanded(child: Text(lang.fromContactCard(name))),
+                ]),
               ),
               const SizedBox(height: 20.0),
               InkWell(
-                onTap: () => Navigator.pop(context),
-                hoverColor: Colors.transparent,
-                child: Container(
-                  width: 200.0,
-                  padding: const EdgeInsets.symmetric(vertical: 10.0),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: color.primary),
-                    borderRadius: BorderRadius.circular(10.0)),
-                  child: Center(child: Text(lang.ok,
-                      style: TextStyle(fontSize: 14.0, color: color.primary))),
-                )
-              ),
-            ]
-          )
-        ),
+                  onTap: () => Navigator.pop(context),
+                  hoverColor: Colors.transparent,
+                  child: Container(
+                    width: 200.0,
+                    padding: const EdgeInsets.symmetric(vertical: 10.0),
+                    decoration: BoxDecoration(
+                        border: Border.all(color: color.primary),
+                        borderRadius: BorderRadius.circular(10.0)),
+                    child: Center(
+                        child: Text(lang.ok,
+                            style: TextStyle(
+                                fontSize: 14.0, color: color.primary))),
+                  )),
+            ])),
         child: Container(
-          padding: const EdgeInsets.symmetric(
-            vertical: 10.0, horizontal: 10.0),
-          width: 200.0,
-          decoration: BoxDecoration(
-            color: const Color(0x40ADB0BB),
-            borderRadius: BorderRadius.circular(15.0),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+            padding:
+                const EdgeInsets.symmetric(vertical: 10.0, horizontal: 10.0),
+            width: 200.0,
+            decoration: BoxDecoration(
+              color: const Color(0x40ADB0BB),
+              borderRadius: BorderRadius.circular(15.0),
+            ),
+            child:
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Row(children: [
-                  Avatar(width: 40.0, name: infos[0], avatarPath: infos[3]),
-                  Container(
+                Avatar(width: 40.0, name: infos[0], avatarPath: infos[3]),
+                Container(
                     width: 135.0,
                     padding: const EdgeInsets.only(left: 10.0),
                     child: Column(children: [
-                        Text(infos[0],
+                      Text(infos[0],
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
-                            color: color.onPrimary, fontSize: 16.0)),
-                        SizedBox(height: 5.0),
-                        Text(betterPrint(gid),
-                          style: TextStyle(
-                            color: Colors.grey, fontSize: 12.0)),
-                  ])),
+                              color: color.onPrimary, fontSize: 16.0)),
+                      SizedBox(height: 5.0),
+                      Text(betterPrint(gid),
+                          style: TextStyle(color: Colors.grey, fontSize: 12.0)),
+                    ])),
               ]),
               SizedBox(height: 5.0),
               const Divider(height: 1.0, color: Color(0x40ADB0BB)),
               SizedBox(height: 3.0),
               Text(lang.contactCard,
-                style: TextStyle(color: Colors.grey, fontSize: 10.0)),
-      ])));
-    } else {
-      return Container(
-        padding:
-        const EdgeInsets.symmetric(vertical: 10.0, horizontal: 10.0),
-        width: 200.0,
-        decoration: BoxDecoration(
-          color: const Color(0x40ADB0BB),
-          borderRadius: BorderRadius.circular(15.0),
-        ),
-        child:
-        Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Row(children: [
-                Container(
-                  height: 35.0,
-                  child: Image(
-                    image: AssetImage('assets/images/image_missing.png'),
-                    fit: BoxFit.cover),
-                ),
-                Container(
-                  width: 130.0,
-                  padding: const EdgeInsets.only(left: 10.0),
-                  child: Text(content,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: color.onPrimary.withOpacity(0.5),
-                      decoration: TextDecoration.lineThrough,
-                      fontSize: 16.0)),
-                ),
-            ]),
-            SizedBox(height: 5.0),
-            const Divider(height: 1.0, color: Color(0x40ADB0BB)),
-            SizedBox(height: 3.0),
-            Text(lang.contactCard,
-              style: TextStyle(color: Colors.grey, fontSize: 10.0)),
-      ]));
-    }
+                  style: TextStyle(color: Colors.grey, fontSize: 10.0)),
+            ])));
   }
 
   Widget _infoListTooltip(icon, color, text) {
@@ -333,7 +290,7 @@ class AssistantMessage extends StatelessWidget {
       return  _showRecord(content);
     } else if (type == MessageType.Answer) {
       final index = int.parse(content);
-      final value = this.answers != null && this.answers.length > index ? this.answers[index] : content;
+      final value = this.answers.length > index ? this.answers[index] : content;
       return _showText(context, color, isDesktop, value, isMe);
     }
     return _showText(context, color, isDesktop, content, isMe);
@@ -344,8 +301,8 @@ class AssistantMessage extends StatelessWidget {
     final color = Theme.of(context).colorScheme;
     final lang = AppLocalizations.of(context);
     final isDesktop = isDisplayDesktop(context);
-    final qShow = _show(context, color, lang, isDesktop, message.q_type, message.q_content, true);
-    final aShow = _show(context, color, lang, isDesktop, message.a_type, message.a_content, false);
+    final qShow = _show(context, color, lang, isDesktop, message.qType, message.qContent, true);
+    final aShow = _show(context, color, lang, isDesktop, message.aType, message.aContent, false);
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 5.0),
@@ -368,7 +325,7 @@ class AssistantMessage extends StatelessWidget {
                     fontSize: 12.0)),
                 SizedBox(width: 4.0),
                 Icon(
-                  message.a_content.length == 0 ? Icons.hourglass_top : Icons.done,
+                  message.aContent.length == 0 ? Icons.hourglass_top : Icons.done,
                   size: 12.0,
                   color: color.primary
                 ),

@@ -8,28 +8,28 @@ import 'package:esse/l10n/localizations.dart';
 import 'package:esse/utils/better_print.dart';
 
 class UserInfo extends StatefulWidget {
-  final String app;
+  final String? app;
   final String id;
   final String name;
   final String addr;
-  final String title;
-  final String remark;
-  final String bio;
-  final Function callback;
+  final String? title;
+  final String? remark;
+  final String? bio;
+  final VoidCallback? callback;
   final bool showQr;
-  final Widget avatar;
-  Map qrInfo;
+  final Widget? avatar;
+  Map? qrInfo;
 
-  UserInfo({Key key,
+  UserInfo({Key? key,
+      required this.id,
+      required this.addr,
+      required this.name,
       this.app,
-      this.id,
-      this.addr,
-      this.name,
-      this.title,
       this.remark,
       this.bio,
       this.callback,
       this.avatar,
+      this.title,
       this.showQr = true
   }) : super(key: key) {
     if (this.showQr) {
@@ -62,7 +62,7 @@ class _UserInfoState extends State<UserInfo> {
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         if (widget.avatar != null)
-        widget.avatar,
+        widget.avatar!,
         const SizedBox(height: 10.0),
         Text(widget.name, style: TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold)),
         const SizedBox(height: 10),
@@ -80,7 +80,7 @@ class _UserInfoState extends State<UserInfo> {
             alignment:Alignment.center,
             children: [
               QrImage(
-                data: json.encode(widget.qrInfo),
+                data: json.encode(widget.qrInfo!),
                 version: QrVersions.auto,
                 foregroundColor: Colors.black,
               ),
@@ -106,7 +106,7 @@ class _UserInfoState extends State<UserInfo> {
           )
         ),
         if (widget.title != null)
-        Text(widget.title, style: TextStyle(fontSize: 16.0, fontStyle: FontStyle.italic)),
+        Text(widget.title!, style: TextStyle(fontSize: 16.0, fontStyle: FontStyle.italic)),
         const SizedBox(height: 10),
         const Divider(height: 1.0, color: Color(0x40ADB0BB)),
         const SizedBox(height: 20),
@@ -162,7 +162,7 @@ class _UserInfoState extends State<UserInfo> {
               Icon(Icons.turned_in, size: 20.0, color: color.primary),
               const SizedBox(width: 16.0),
               Expanded(
-                child: Center(child: Text(widget.remark, style: TextStyle(fontSize: 14))),
+                child: Center(child: Text(widget.remark!, style: TextStyle(fontSize: 14))),
               )
             ]
           ),
@@ -176,7 +176,7 @@ class _UserInfoState extends State<UserInfo> {
               Icon(Icons.campaign, size: 20.0, color: color.primary),
               const SizedBox(width: 16.0),
               Expanded(
-                child: Center(child: Text(widget.bio, style: TextStyle(fontSize: 14))),
+                child: Center(child: Text(widget.bio!, style: TextStyle(fontSize: 14))),
               )
             ]
           ),
@@ -187,7 +187,7 @@ class _UserInfoState extends State<UserInfo> {
           width: 250.0,
           padding: const EdgeInsets.symmetric(vertical: 10.0),
           child: InkWell(
-            onTap: widget.callback,
+            onTap: widget.callback!,
             hoverColor: Colors.transparent,
             child: Container(
               padding: const EdgeInsets.symmetric(vertical: 10.0),

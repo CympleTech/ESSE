@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:io' show File;
 import 'dart:ui' show ImageByteFormat, ImageFilter;
 
@@ -7,13 +6,12 @@ import 'package:flutter/material.dart';
 
 import 'package:esse/l10n/localizations.dart';
 import 'package:esse/utils/pick_image.dart';
-import 'package:esse/widgets/shadow_dialog.dart';
 
 class _CropAvatar extends StatefulWidget {
   final Function callback;
   final File image;
 
-  _CropAvatar({Key key, this.callback, this.image}) : super(key: key);
+  _CropAvatar({Key? key, required this.callback, required this.image}) : super(key: key);
 
   @override
   _CropAvatarState createState() => _CropAvatarState();
@@ -90,7 +88,7 @@ class _CropAvatarState extends State<_CropAvatar> {
               final cropped = await _imageController.crop(pixelRatio: pixelRatio);
               final byteData = await cropped.toByteData(format: ImageByteFormat.png);
               Navigator.of(context).pop();
-              widget.callback(byteData.buffer.asUint8List());
+              widget.callback(byteData!.buffer.asUint8List());
             },
             child: Text(lang.ok,
               style: TextStyle(color: color.primary)))),

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:esse/utils/adaptive.dart';
-import 'package:esse/utils/toast.dart';
 import 'package:esse/utils/pick_image.dart';
 import 'package:esse/utils/pick_file.dart';
 import 'package:esse/l10n/localizations.dart';
@@ -19,7 +18,7 @@ import 'package:esse/apps/assistant/message.dart';
 import 'package:esse/apps/assistant/answer.dart';
 
 class AssistantDetail extends StatefulWidget {
-  const AssistantDetail({Key key}) : super(key: key);
+  const AssistantDetail({Key? key}) : super(key: key);
 
   @override
   _AssistantDetailState createState() => _AssistantDetailState();
@@ -32,8 +31,8 @@ class _AssistantDetailState extends State<AssistantDetail> {
   bool sendShow = false;
   bool menuShow = false;
   bool recordShow = false;
-  String _recordName;
-  List<String> answers;
+  String _recordName = '';
+  List<String> answers = [];
 
   @override
   initState() {
@@ -71,8 +70,8 @@ class _AssistantDetailState extends State<AssistantDetail> {
     }
 
     final value = textController.text.trim();
-    final a_type = (value.endsWith('?') || value.endsWith('？')) ? MessageType.Answer : MessageType.String;
-    context.read<AssistantProvider>().create(a_type, textController.text);
+    final aType = (value.endsWith('?') || value.endsWith('？')) ? MessageType.Answer : MessageType.String;
+    context.read<AssistantProvider>().create(aType, textController.text);
 
     setState(() {
         textController.text = '';
@@ -131,7 +130,7 @@ class _AssistantDetailState extends State<AssistantDetail> {
   }
 
   _callback(int id) {
-    context.read<AssistantProvider>().create(MessageType.Contact, "${id}");
+    context.read<AssistantProvider>().create(MessageType.Contact, id.toString());
     setState(() {
         textFocus.requestFocus();
         emojiShow = false;
@@ -235,7 +234,7 @@ class _AssistantDetailState extends State<AssistantDetail> {
                 reverse: true,
                 itemBuilder: (BuildContext context, index) => AssistantMessage(
                   name: 'Jarvis',
-                  message: recentMessages[recentMessageKeys[index]],
+                  message: recentMessages[recentMessageKeys[index]]!,
                   answers: this.answers,
                 )
             )),
@@ -399,17 +398,17 @@ class _AssistantDetailState extends State<AssistantDetail> {
 class ExtensionButton extends StatelessWidget {
   final String text;
   final IconData icon;
-  final Function action;
+  final VoidCallback action;
   final Color bgColor;
   final Color iconColor;
 
   const ExtensionButton({
-      Key key,
-      this.icon,
-      this.text,
-      this.action,
-      this.bgColor,
-      this.iconColor,
+      Key? key,
+      required this.icon,
+      required this.text,
+      required this.action,
+      required this.bgColor,
+      required this.iconColor,
   }) : super(key: key);
 
   @override
@@ -432,19 +431,4 @@ class ExtensionButton extends StatelessWidget {
         ],
     ));
   }
-}
-
-Widget _menuItem(Color color, int value, IconData icon, String text) {
-  return PopupMenuItem<int>(
-    value: value,
-    child: Row(
-      children: [
-        Icon(icon, color: color),
-        Padding(
-          padding: const EdgeInsets.only(left: 20.0, right: 10.0),
-          child: Text(text, style: TextStyle(color: Colors.black, fontSize: 16.0)),
-        )
-      ]
-    ),
-  );
 }

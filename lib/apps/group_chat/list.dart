@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:esse/utils/adaptive.dart';
-import 'package:esse/utils/file_image.dart';
 import 'package:esse/l10n/localizations.dart';
 import 'package:esse/provider.dart';
 import 'package:esse/session.dart';
@@ -13,6 +12,8 @@ import 'package:esse/apps/group_chat/models.dart';
 import 'package:esse/apps/group_chat/provider.dart';
 
 class GroupChatList extends StatefulWidget {
+  const GroupChatList({Key? key}) : super(key: key);
+
   @override
   _GroupChatListState createState() => _GroupChatListState();
 }
@@ -20,7 +21,7 @@ class GroupChatList extends StatefulWidget {
 class _GroupChatListState extends State<GroupChatList> {
   @override
   Widget build(BuildContext context) {
-    final color = Theme.of(context).colorScheme;
+    //final color = Theme.of(context).colorScheme;
     final lang = AppLocalizations.of(context);
     final isDesktop = isDisplayDesktop(context);
     final provider = context.watch<GroupChatProvider>();
@@ -39,7 +40,7 @@ class _GroupChatListState extends State<GroupChatList> {
         padding: const EdgeInsets.symmetric(vertical: 10.0),
         child: ListView.builder(
           itemCount: orderKeys.length,
-          itemBuilder: (BuildContext ctx, int index) => ListChat(group: groups[orderKeys[index]]),
+          itemBuilder: (BuildContext ctx, int index) => ListChat(group: groups[orderKeys[index]]!),
         )
       ),
       floatingActionButton: FloatingActionButton(
@@ -60,7 +61,7 @@ class _GroupChatListState extends State<GroupChatList> {
 
 class ListChat extends StatelessWidget {
   final GroupChat group;
-  const ListChat({Key key, this.group}) : super(key: key);
+  const ListChat({Key? key, required this.group}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {

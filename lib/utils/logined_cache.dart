@@ -11,18 +11,18 @@ Future<List<Account>> getLogined() async {
   final ids = prefs.getStringList(LOGINED_CACHE_NAME);
   if (ids != null) {
     ids.forEach((id) {
-        final fields = prefs.getStringList(id);
-        if (fields != null && fields.length == 5) {
-          accounts.add(Account(
-              fields[0], // gid
-              fields[1], // name
-              fields[2], // lock
-              fields[3], // avatar
-              fields[4] == "1", // online
-          ));
-        } else {
-          prefs.remove(id);
-        }
+      final fields = prefs.getStringList(id);
+      if (fields != null && fields.length == 5) {
+        accounts.add(Account(
+          fields[0], // gid
+          fields[1], // name
+          fields[2], // lock
+          fields[3], // avatar
+          fields[4] == "1", // online
+        ));
+      } else {
+        prefs.remove(id);
+      }
     });
   }
 
@@ -34,22 +34,22 @@ initLogined(List<Account> accounts) async {
   final ids = prefs.getStringList(LOGINED_CACHE_NAME);
   if (ids != null) {
     ids.forEach((id) {
-        prefs.remove(id);
+      prefs.remove(id);
     });
   }
 
   List<String> newIds = [];
   accounts.forEach((account) {
-      final List<String> fields = [
-        account.gid,
-        account.name,
-        account.lock,
-        account.encodeAvatar(),
-        account.online ? "1" : "0",
-      ];
+    final List<String> fields = [
+      account.gid,
+      account.name,
+      account.lock,
+      account.encodeAvatar(),
+      account.online ? "1" : "0",
+    ];
 
-      newIds.add(account.gid);
-      prefs.setStringList(account.gid, fields);
+    newIds.add(account.gid);
+    prefs.setStringList(account.gid, fields);
   });
 
   prefs.setStringList(LOGINED_CACHE_NAME, newIds);
@@ -58,7 +58,11 @@ initLogined(List<Account> accounts) async {
 /// update auto-logined account.
 updateLogined(Account account) async {
   SharedPreferences prefs = await SharedPreferences.getInstance();
-  List<String> ids = prefs.getStringList(LOGINED_CACHE_NAME);
+  List<String>? ids = prefs.getStringList(LOGINED_CACHE_NAME);
+  if (ids == null) {
+    ids = [];
+  }
+
 
   if (!ids.contains(account.gid)) {
     ids.add(account.gid);
@@ -79,7 +83,10 @@ updateLogined(Account account) async {
 /// change main logined account.
 mainLogined(String gid) async {
   SharedPreferences prefs = await SharedPreferences.getInstance();
-  List<String> ids = prefs.getStringList(LOGINED_CACHE_NAME);
+  List<String>? ids = prefs.getStringList(LOGINED_CACHE_NAME);
+  if (ids == null) {
+    ids = [];
+  }
 
   ids.remove(gid);
   ids.insert(0, gid);
@@ -90,7 +97,11 @@ mainLogined(String gid) async {
 removeLogined(String gid) async {
   SharedPreferences prefs = await SharedPreferences.getInstance();
   prefs.remove(gid);
-  List<String> ids = prefs.getStringList(LOGINED_CACHE_NAME);
+  List<String>? ids = prefs.getStringList(LOGINED_CACHE_NAME);
+  if (ids == null) {
+    ids = [];
+  }
+
   if (ids.contains(gid)) {
     ids.remove(gid);
     prefs.setStringList(LOGINED_CACHE_NAME, ids);
@@ -100,9 +111,13 @@ removeLogined(String gid) async {
 /// when logout clear all
 clearLogined() async {
   SharedPreferences prefs = await SharedPreferences.getInstance();
-  final ids = prefs.getStringList(LOGINED_CACHE_NAME);
+  List<String>? ids = prefs.getStringList(LOGINED_CACHE_NAME);
+  if (ids == null) {
+    ids = [];
+  }
+
   ids.forEach((id) {
-      prefs.remove(id);
+    prefs.remove(id);
   });
   prefs.remove(LOGINED_CACHE_NAME);
 }

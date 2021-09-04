@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 
-import 'package:esse/utils/adaptive.dart';
+//import 'package:esse/utils/adaptive.dart';
 import 'package:esse/l10n/localizations.dart';
 
 class ServiceAddPage extends StatelessWidget {
-  const ServiceAddPage({Key key}) : super(key: key);
+  const ServiceAddPage({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    final isDesktop = isDisplayDesktop(context);
-    final color = Theme.of(context).colorScheme;
+    //final isDesktop = isDisplayDesktop(context);
+    //final color = Theme.of(context).colorScheme;
     final lang = AppLocalizations.of(context);
 
     return Scaffold(

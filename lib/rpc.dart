@@ -20,7 +20,7 @@ class Response {
   final List params;
   final String error;
 
-  const Response({this.isOk, this.params, this.error});
+  const Response({required this.isOk, required this.params, required this.error});
 }
 
 Future<Response> httpPost(String addr, String method, List params) async {
@@ -55,13 +55,13 @@ class WebSocketsNotifications {
 
   WebSocketsNotifications._internal();
 
-  WebSocketChannel _channel;
+  WebSocketChannel? _channel;
 
   bool _closed = true;
 
   Map<String, List> _listeners = new Map<String, List>();
-  Function _notice;
-  Function _requestNotice;
+  Function? _notice;
+  Function? _requestNotice;
 
   bool isLinked() {
     return !_closed;
@@ -76,13 +76,13 @@ class WebSocketsNotifications {
       try {
         _channel = await MyWsChannel.connect(Uri.parse('ws://' + addr));
         _closed = false;
-        _channel.stream.listen(
+        _channel!.stream.listen(
           _onReceptionOfMessageFromServer,
           cancelOnError: true,
           onDone: () {
             String closeReason = "";
             try {
-              closeReason = _channel.closeReason.toString();
+              closeReason = _channel!.closeReason.toString();
             } catch (_) {}
             print("WebSocket done… " + closeReason);
             _closed = true;
@@ -104,9 +104,7 @@ class WebSocketsNotifications {
 
   reset() {
     if (_channel != null) {
-      if (_channel.sink != null) {
-        _channel.sink.close();
-      }
+      _channel!.sink.close();
     }
     _closed = true;
   }
@@ -117,9 +115,7 @@ class WebSocketsNotifications {
     jsonrpc["gid"] = Global.gid;
 
     if (_channel != null) {
-      if (_channel.sink != null) {
-        _channel.sink.add(json.encode(jsonrpc));
-      }
+      _channel!.sink.add(json.encode(jsonrpc));
     }
   }
 
@@ -128,7 +124,7 @@ class WebSocketsNotifications {
     _requestNotice = requestCallback;
   }
 
-  addListener(String method, Function callback, bool notice, [bool request]) {
+  addListener(String method, Function callback, bool notice, [bool request = false]) {
     _listeners[method] = [callback, notice, request];
   }
 
@@ -149,15 +145,15 @@ class WebSocketsNotifications {
         List params = response["result"];
         String gid = response["gid"];
       if (_listeners[method] != null) {
-        final callbacks = _listeners[method];
+        final callbacks = _listeners[method]!;
         if (callbacks[2] != null && callbacks[2]) {
-          _requestNotice(gid);
+          _requestNotice!(gid);
         }
 
         if (gid == Global.gid || method.startsWith('account')) {
           callbacks[0](params);
         } else if (callbacks[1] != null && callbacks[1]) {
-          _notice(gid);
+          _notice!(gid);
         }
       } else {
         print("has no this " + method);

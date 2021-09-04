@@ -18,7 +18,7 @@ import 'package:esse/apps/chat/provider.dart';
 import 'package:esse/apps/group_chat/provider.dart';
 
 class AccountRestorePage extends StatefulWidget {
-  const AccountRestorePage({Key key}) : super(key: key);
+  const AccountRestorePage({Key? key}) : super(key: key);
 
   @override
   _AccountRestorePageState createState() => _AccountRestorePageState();
@@ -26,7 +26,7 @@ class AccountRestorePage extends StatefulWidget {
 
 class _AccountRestorePageState extends State<AccountRestorePage> {
   bool _statusChecked = false;
-  String _name;
+  String _name = '';
 
   TextEditingController _addrController = new TextEditingController();
   FocusNode _addrFocus = new FocusNode();
@@ -293,7 +293,7 @@ class _AccountRestorePageState extends State<AccountRestorePage> {
             Navigator.of(context).pop();
             if (app == 'distribute' && params.length == 4) {
               final name = params[0];
-              final id = params[1];
+              //final id = params[1];
               final addr = params[2];
               final mnemonicWords = params[3];
               setState(() {
@@ -352,7 +352,7 @@ class _AccountRestorePageState extends State<AccountRestorePage> {
     }
 
     final mnemonic = this._mnemoicWords.join(' ');
-    if (this._name == null) {
+    if (this._name == '') {
       this._name = defaultName;
     }
     var addr = this._addrController.text;
@@ -393,7 +393,7 @@ class _AccountRestorePageState extends State<AccountRestorePage> {
   }
 }
 
-Widget _footer(String text1, Function callback) {
+Widget _footer(String text1, VoidCallback callback) {
   return Padding(
     padding: const EdgeInsets.only(top: 20),
     child: Center(

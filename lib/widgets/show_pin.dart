@@ -59,7 +59,7 @@ class PinWords extends StatefulWidget {
   final Function callback;
   final String hashPin;
 
-  PinWords({Key key, this.hashPin, this.callback}) : super(key: key);
+  PinWords({Key? key, required this.hashPin, required this.callback}) : super(key: key);
 
   @override
   _PinWordsState createState() => _PinWordsState();
@@ -111,7 +111,7 @@ class _PinWordsState extends State<PinWords> {
   @override
   Widget build(BuildContext context) {
     final color = Theme.of(context).colorScheme;
-    final lang = AppLocalizations.of(context);
+    //final lang = AppLocalizations.of(context);
 
     return Column(children: [
       Container(
@@ -178,7 +178,7 @@ class _PinWordsState extends State<PinWords> {
 class SetPinWords extends StatefulWidget {
   final Function callback;
 
-  SetPinWords({Key key, this.callback}) : super(key: key);
+  SetPinWords({Key? key, required this.callback}) : super(key: key);
 
   @override
   _SetPinWordsState createState() => _SetPinWordsState();

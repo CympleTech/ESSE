@@ -1,20 +1,17 @@
-import 'dart:async';
 import "dart:collection";
-import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 
-import 'package:esse/utils/relative_time.dart';
 import 'package:esse/rpc.dart';
-
 import 'package:esse/apps/primitives.dart';
 import 'package:esse/apps/chat/models.dart';
-import 'package:esse/apps/chat/detail.dart';
+
 
 class ChatProvider extends ChangeNotifier {
   Map<int, Friend> friends = {}; // all friends. friends need Re-order.
 
-  int activedFriendId; // actived friend's id.
-  Friend get activedFriend => this.friends[this.activedFriendId];
+  int activedFriendId = 0; // actived friend's id.
+  Friend? get activedFriend => this.friends[this.activedFriendId];
 
   List<int> orderKeys = []; // ordered chat friends with last message.
 
@@ -50,7 +47,7 @@ class ChatProvider extends ChangeNotifier {
   }
 
   clear() {
-    this.activedFriendId = null;
+    this.activedFriendId = 0;
     this.friends.clear();
     this.orderKeys.clear();
     this.requests.clear();
@@ -74,20 +71,20 @@ class ChatProvider extends ChangeNotifier {
   }
 
   clearActivedFriend() {
-    this.activedFriendId = null;
+    this.activedFriendId = 0;
     this.activedMessages.clear();
   }
 
   /// delete a friend.
   friendUpdate(int id, String remark) {
-    this.friends[id].remark = remark;
+    this.friends[id]!.remark = remark;
     rpc.send('chat-friend-update', [id, remark]);
     notifyListeners();
   }
 
   /// delete a friend.
   friendClose(int id) {
-    this.friends[id].isClosed = true;
+    this.friends[id]!.isClosed = true;
 
     rpc.send('chat-friend-close', [id]);
     notifyListeners();
@@ -96,7 +93,7 @@ class ChatProvider extends ChangeNotifier {
   /// delete a friend.
   friendDelete(int id) {
     if (id == this.activedFriendId) {
-      this.activedFriendId = null;
+      this.activedFriendId = 0;
       this.activedMessages.clear();
     }
 
@@ -127,7 +124,7 @@ class ChatProvider extends ChangeNotifier {
 
   /// agree a request for friend.
   requestAgree(int id) {
-    this.requests[id].overIt(true);
+    this.requests[id]!.overIt(true);
 
     rpc.send('chat-request-agree', [id]);
     notifyListeners();
@@ -135,7 +132,7 @@ class ChatProvider extends ChangeNotifier {
 
   /// reject a request for friend.
   requestReject(int id) {
-    this.requests[id].overIt(false);
+    this.requests[id]!.overIt(false);
 
     rpc.send('chat-request-reject', [id]);
     notifyListeners();
@@ -152,7 +149,7 @@ class ChatProvider extends ChangeNotifier {
   /// create a message. need core server handle this message.
   /// and then this message will show in message list.
   messageCreate(Message msg) {
-    final fgid = this.friends[msg.fid].gid;
+    final fgid = this.friends[msg.fid]!.gid;
     rpc.send('chat-message-create', [msg.fid, fgid, msg.type.toInt(), msg.content]);
   }
 
@@ -186,7 +183,7 @@ class ChatProvider extends ChangeNotifier {
   _friendUpdate(List params) {
     final id = params[0];
     if (this.friends.containsKey(id)) {
-      this.friends[id].remark = params[2];
+      this.friends[id]!.remark = params[2];
       notifyListeners();
     }
   }
@@ -194,7 +191,7 @@ class ChatProvider extends ChangeNotifier {
   _friendClose(List params) {
     final id = params[0];
     if (this.friends.containsKey(id)) {
-      this.friends[id].isClosed = true;
+      this.friends[id]!.isClosed = true;
       notifyListeners();
     }
   }
@@ -221,7 +218,7 @@ class ChatProvider extends ChangeNotifier {
     final id = params[0];
     final isDelivery = params[1];
     if (this.requests.containsKey(id)) {
-      this.requests[id].isDelivery = isDelivery;
+      this.requests[id]!.isDelivery = isDelivery;
       notifyListeners();
     }
   }
@@ -230,7 +227,7 @@ class ChatProvider extends ChangeNotifier {
   _requestAgree(List params) {
     final id = params[0]; // request's id.
     if (this.requests.containsKey(id)) {
-      this.requests[id].overIt(true);
+      this.requests[id]!.overIt(true);
     }
     var friend = Friend.fromList(params[1]);
     this.friends[friend.id] = friend;
@@ -242,7 +239,7 @@ class ChatProvider extends ChangeNotifier {
   _requestReject(List params) {
     final id = params[0];
     if (this.requests.containsKey(id)) {
-      this.requests[id].overIt(false);
+      this.requests[id]!.overIt(false);
       notifyListeners();
     }
   }
@@ -266,7 +263,7 @@ class ChatProvider extends ChangeNotifier {
   _messageCreate(List params) {
     final msg = Message.fromList(params);
     if (msg.fid == this.activedFriendId) {
-      if (!msg.isDelivery) {
+      if (!msg.isDelivery!) {
         msg.isDelivery = null; // When message create, set is is none;
       }
       this.activedMessages[msg.id] = msg;
@@ -285,7 +282,7 @@ class ChatProvider extends ChangeNotifier {
     final id = params[0];
     final isDelivery = params[1];
     if (this.activedMessages.containsKey(id)) {
-      this.activedMessages[id].isDelivery = isDelivery;
+      this.activedMessages[id]!.isDelivery = isDelivery;
       notifyListeners();
     }
   }

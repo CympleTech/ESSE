@@ -1,4 +1,4 @@
-String betterPrint(String info) {
+String betterPrint(String? info) {
   if (info == null) {
     return '';
   }

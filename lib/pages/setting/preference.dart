@@ -5,7 +5,7 @@ import 'package:esse/l10n/localizations.dart';
 import 'package:esse/options.dart';
 
 class PreferenceDetail extends StatefulWidget {
-  PreferenceDetail({Key key}) : super(key: key);
+  PreferenceDetail({Key? key}) : super(key: key);
 
   @override
   _PreferenceDetailState createState() => _PreferenceDetailState();
@@ -37,9 +37,9 @@ class _PreferenceDetailState extends State<PreferenceDetail> {
                 child: DropdownButton<Locale>(
                   iconEnabledColor: Color(0xFFADB0BB),
                   value: options.locale,
-                  onChanged: (Locale t) {
+                  onChanged: (Locale? t) {
                     if (t != options.locale) {
-                      options.changeLocale(t);
+                      options.changeLocale(t!);
                     }
                   },
                   items: AppLocalizations.supportedLocales.map((Locale locale) {

@@ -7,8 +7,8 @@ import 'package:flutter/cupertino.dart' show CupertinoActivityIndicator;
 class Avatar extends StatelessWidget {
   final double width;
   final String name;
-  final Uint8List avatar;
-  final String avatarPath;
+  final Uint8List? avatar;
+  final String? avatarPath;
   final bool online;
   final Color onlineColor;
   final bool hasNew;
@@ -17,11 +17,11 @@ class Avatar extends StatelessWidget {
   final bool colorSurface;
 
   const Avatar(
-    {Key key,
-      this.width = 45.0,
-      this.name,
+    {Key? key,
+      required this.name,
       this.avatar,
       this.avatarPath,
+      this.width = 45.0,
       this.online = false,
       this.onlineColor = Colors.grey,
       this.hasNew = false,
@@ -36,12 +36,12 @@ class Avatar extends StatelessWidget {
     final color = Theme.of(context).colorScheme;
     var showAvatar;
     if (this.avatarPath != null) {
-      if (FileSystemEntity.typeSync(this.avatarPath) !=
+      if (FileSystemEntity.typeSync(this.avatarPath!) !=
         FileSystemEntityType.notFound) {
-        showAvatar = FileImage(File(this.avatarPath));
+        showAvatar = FileImage(File(this.avatarPath!));
       }
     } else if (this.avatar != null) {
-      showAvatar = MemoryImage(this.avatar);
+      showAvatar = MemoryImage(this.avatar!);
     }
 
     return Container(

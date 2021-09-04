@@ -17,18 +17,18 @@ class GroupChatProvider extends ChangeNotifier {
   List<int> orderKeys = [];
   SplayTreeMap<int, Request> requests = SplayTreeMap();
 
-  int actived;
+  int? actived;
   SplayTreeMap<int, Message> activedMessages = SplayTreeMap();
   SplayTreeMap<int, Member> activedMembers = SplayTreeMap();
 
-  GroupChat get activedGroup => this.groups[this.actived];
-  bool get isActivedGroupOwner => this.activedGroup != null ? this.activedGroup.owner == Global.gid : false;
+  GroupChat? get activedGroup => this.groups[this.actived];
+  bool get isActivedGroupOwner => this.activedGroup != null ? this.activedGroup!.owner == Global.gid : false;
   bool get isActivedGroupManager {
-    this.activedMembers.values.forEach((m) {
-        if (m.mid == Global.gid) {
-          return m.isManager;
-        }
-    });
+    for (var m in this.activedMembers.values) {
+      if (m.mid == Global.gid) {
+        return m.isManager;
+      }
+    }
     return false;
   }
 
@@ -45,7 +45,7 @@ class GroupChatProvider extends ChangeNotifier {
           meId = i;
           if (m.isManager) {
             meManager = true;
-            if (m.mid == this.activedGroup.owner) {
+            if (m.mid == this.activedGroup!.owner) {
               meOwner = true;
             }
           }
@@ -54,7 +54,7 @@ class GroupChatProvider extends ChangeNotifier {
             blocks.add(i);
           } else {
             if (m.isManager) {
-              if (m.mid == this.activedGroup.owner) {
+              if (m.mid == this.activedGroup!.owner) {
                 allKeys.add(i);
               } else {
                 managers.add(i);
@@ -141,20 +141,20 @@ class GroupChatProvider extends ChangeNotifier {
   }
 
   messageCreate(MessageType mtype, String content) {
-    final gcd = this.activedGroup.gid;
+    final gcd = this.activedGroup!.gid;
     rpc.send('group-chat-message-create', [gcd, mtype.toInt(), content]);
   }
 
   close(int id) {
-    final gcd = this.activedGroup.gid;
+    final gcd = this.activedGroup!.gid;
     rpc.send('group-chat-close', [gcd, id]);
 
-    this.activedGroup.isClosed = true;
+    this.activedGroup!.isClosed = true;
     notifyListeners();
   }
 
   delete(int id) {
-    final gcd = this.activedGroup.gid;
+    final gcd = this.activedGroup!.gid;
     rpc.send('group-chat-delete', [gcd, id]);
 
     this.actived = 0;
@@ -164,7 +164,7 @@ class GroupChatProvider extends ChangeNotifier {
   }
 
   memberUpdate(int id, bool isBlock) {
-    this.activedMembers[id].isBlock = isBlock;
+    this.activedMembers[id]!.isBlock = isBlock;
     rpc.send('group-chat-member-update', [id, isBlock]);
     notifyListeners();
   }
@@ -208,7 +208,7 @@ class GroupChatProvider extends ChangeNotifier {
 
   _result(List params) {
     final id = params[0];
-    this.groups[id].isOk = params[1];
+    this.groups[id]!.isOk = params[1];
     if (params[1]) {
       //this.createKeys.remove(id);
       this.orderKeys.add(id);
@@ -235,9 +235,9 @@ class GroupChatProvider extends ChangeNotifier {
   _requestHandle(List params) {
     final id = params[0];
     final ok = params[1];
-    final _efficacy = params[2];
+    //final _efficacy = params[2];
     if (this.requests.containsKey(id)) {
-      this.requests[id].overIt(ok);
+      this.requests[id]!.overIt(ok);
       notifyListeners();
     }
   }
@@ -270,8 +270,8 @@ class GroupChatProvider extends ChangeNotifier {
   _memberInfo(List params) {
     final id = params[0];
     if (this.activedMembers.containsKey(id)) {
-      this.activedMembers[id].addr = params[1];
-      this.activedMembers[id].name = params[2];
+      this.activedMembers[id]!.addr = params[1];
+      this.activedMembers[id]!.name = params[2];
       notifyListeners();
     }
   }
@@ -282,15 +282,15 @@ class GroupChatProvider extends ChangeNotifier {
     final maddr = params[2];
 
     if (this.actived == id) {
-      int mid;
+      int mid = 0;
       this.activedMembers.forEach((i, m) {
           if (m.mid == mgid) {
             mid = i;
           }
       });
-      if (mid != null) {
-        this.activedMembers[mid].addr = maddr;
-        this.activedMembers[mid].online = true;
+      if (mid > 0) {
+        this.activedMembers[mid]!.addr = maddr;
+        this.activedMembers[mid]!.online = true;
         notifyListeners();
       }
     }
@@ -300,14 +300,14 @@ class GroupChatProvider extends ChangeNotifier {
     final id = params[0];
     final mgid = params[1];
     if (this.actived == id) {
-      int mid;
+      int mid = 0;
       this.activedMembers.forEach((i, m) {
           if (m.mid == mgid) {
             mid = i;
           }
       });
-      if (mid != null) {
-        this.activedMembers[mid].online = false;
+      if (mid > 0) {
+        this.activedMembers[mid]!.online = false;
         notifyListeners();
       }
     }
@@ -316,7 +316,7 @@ class GroupChatProvider extends ChangeNotifier {
   _messageCreate(List params) {
     final msg = Message.fromList(params);
     if (msg.fid == this.actived) {
-      if (!msg.isDelivery) {
+      if (!msg.isDelivery!) {
         msg.isDelivery = null; // When message create, set is is none;
       }
       this.activedMessages[msg.id] = msg;

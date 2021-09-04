@@ -26,8 +26,8 @@ class AssistantProvider extends ChangeNotifier {
     this.isActived = false;
   }
 
-  create(MessageType q_type, String q_content) {
-    rpc.send('assistant-create', [q_type.toInt(), q_content]);
+  create(MessageType qType, String qContent) {
+    rpc.send('assistant-create', [qType.toInt(), qContent]);
   }
 
   /// delete a message.
@@ -60,7 +60,7 @@ class AssistantProvider extends ChangeNotifier {
     if (this.isActived) {
       final id = params[0];
       if (this.messages.containsKey(id)) {
-        this.messages[id].update(params);
+        this.messages[id]!.update(params);
         notifyListeners();
       }
     }

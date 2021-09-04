@@ -25,7 +25,7 @@ class ChatAddPage extends StatefulWidget {
   final String addr;
   final String name;
 
-  ChatAddPage({Key key, this.id = '', this.addr = '', this.name = ''}) : super(key: key);
+  ChatAddPage({Key? key, this.id = '', this.addr = '', this.name = ''}) : super(key: key);
 
   @override
   _ChatAddPageState createState() => _ChatAddPageState();
@@ -56,7 +56,7 @@ class _ChatAddPageState extends State<ChatAddPage> {
 
   send() {
     var id = userIdEditingController.text;
-    if (id == '' || id == null) {
+    if (id == '') {
       return;
     }
 
@@ -202,7 +202,7 @@ class _ChatAddPageState extends State<ChatAddPage> {
                   physics: ClampingScrollPhysics(),
                   scrollDirection: Axis.vertical,
                   itemBuilder: (BuildContext context, int index) =>
-                  _RequestItem(request: requests[requestKeys[index]]),
+                  _RequestItem(request: requests[requestKeys[index]]!),
                 ),
               ],
             ),
@@ -216,7 +216,7 @@ class _ChatAddPageState extends State<ChatAddPage> {
 class _RequestItem extends StatelessWidget {
   final Request request;
 
-  const _RequestItem({Key key, this.request}) : super(key: key);
+  const _RequestItem({Key? key, required this.request}) : super(key: key);
 
   Widget _infoList(icon, color, text) {
     return Container(

@@ -11,7 +11,7 @@ Future<List<String>> deviceInfo() async {
       final data = await deviceInfoPlugin.webBrowserInfo;
       return [
         "Web",
-        data.platform
+        data.platform!
       ];
     } on PlatformException {
       return ["Web", "Web Unknown"];
@@ -21,8 +21,8 @@ Future<List<String>> deviceInfo() async {
       try {
         final data = await deviceInfoPlugin.androidInfo;
         return [
-          data.brand,
-          data.id,
+          data.brand!,
+          data.id!,
         ];
       } on PlatformException {
         return ["Android", "Android Unknown"];
@@ -31,8 +31,8 @@ Future<List<String>> deviceInfo() async {
       try {
         final data = await deviceInfoPlugin.iosInfo;
         return [
-          data.name,
-          data.utsname.machine,
+          data.name!,
+          data.utsname.machine!,
         ];
       } on PlatformException {
         return ["IOS", "IOS Unknown"];

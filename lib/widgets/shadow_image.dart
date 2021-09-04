@@ -6,8 +6,8 @@ class ShadowImage extends StatelessWidget {
   final double width;
 
   const ShadowImage({
-      Key key,
-      this.image,
+      Key? key,
+      required this.image,
       this.width = 85.0,
   }) : super(key: key);
 

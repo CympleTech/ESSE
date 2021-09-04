@@ -3,17 +3,13 @@ import 'package:intl/intl.dart';
 class RelativeTime {
   DateTime time;
 
-  RelativeTime() {
-    this.time = new DateTime.now();
-  }
+  RelativeTime(): this.time = new DateTime.now();
 
-  RelativeTime.fromString(String datetime) {
-    this.time = DateFormat('yyyy-MM-dd H:mm').parse(datetime);
-  }
+  RelativeTime.fromString(String datetime):
+  this.time = DateFormat('yyyy-MM-dd H:mm').parse(datetime);
 
-  RelativeTime.fromInt(int datetime) {
+  RelativeTime.fromInt(int datetime):
     this.time = DateTime.fromMillisecondsSinceEpoch(datetime * 1000);
-  }
 
   String rawString() {
     var formatter = new DateFormat('yyyy-MM-dd H:mm:ss');

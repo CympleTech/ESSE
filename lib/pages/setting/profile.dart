@@ -11,7 +11,7 @@ import 'package:esse/rpc.dart';
 import 'package:esse/provider.dart';
 
 class ProfileDetail extends StatefulWidget {
-  ProfileDetail({Key key}) : super(key: key);
+  ProfileDetail({Key? key}) : super(key: key);
 
   @override
   _ProfileDetailState createState() => _ProfileDetailState();
@@ -61,7 +61,7 @@ class _ProfileDetailState extends State<ProfileDetail> {
                   : BoxDecoration(
                       color: color.surface,
                       image: DecorationImage(
-                        image: MemoryImage(account.avatar),
+                        image: MemoryImage(account.avatar!),
                         fit: BoxFit.cover,
                       ),
                       borderRadius: BorderRadius.circular(15.0)),

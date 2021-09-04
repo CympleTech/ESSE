@@ -32,7 +32,7 @@ class DeviceProvider extends ChangeNotifier {
     this.clear();
 
     // load status.
-    rpc.send('device-status', [this.devices[id].addr]);
+    rpc.send('device-status', [this.devices[id]!.addr]);
   }
 
   connect(String addr) {
@@ -73,7 +73,7 @@ class DeviceProvider extends ChangeNotifier {
   _online(List params) {
     final id = params[0];
     if (this.devices.containsKey(id)) {
-      this.devices[id].online = true;
+      this.devices[id]!.online = true;
       notifyListeners();
     }
   }
@@ -81,7 +81,7 @@ class DeviceProvider extends ChangeNotifier {
   _offline(List params) {
     final id = params[0];
     if (this.devices.containsKey(id)) {
-      this.devices[id].online = false;
+      this.devices[id]!.online = false;
       notifyListeners();
     }
   }

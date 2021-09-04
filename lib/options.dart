@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:esse/l10n/localizations.dart';
-import 'package:esse/theme.dart';
 
 class Options extends ChangeNotifier {
   Locale locale = Locale('en');
@@ -96,10 +95,10 @@ extension ThemeTypeExtension on ThemeMode {
 
 extension LocaleTypeExtension on Locale {
   String localizations() {
-    switch (this) {
-      case Locale('en'):
+    switch (this.languageCode) {
+      case 'en':
         return 'English';
-      case Locale('zh'):
+      case 'zh':
         return '简体中文';
       default:
         return 'English';
@@ -107,10 +106,10 @@ extension LocaleTypeExtension on Locale {
   }
 
   int toInt() {
-    switch (this) {
-      case Locale('en'):
+    switch (this.languageCode) {
+      case 'en':
         return 0;
-        case Locale('zh'):
+      case 'zh':
         return 1;
       default:
         return 0;

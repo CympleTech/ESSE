@@ -12,7 +12,7 @@ import 'package:esse/apps/chat/detail.dart';
 import 'package:esse/apps/chat/add.dart';
 
 class ChatList extends StatefulWidget {
-  const ChatList({Key key}) : super(key: key);
+  const ChatList({Key? key}) : super(key: key);
 
   @override
   _ChatListState createState() => _ChatListState();
@@ -24,7 +24,7 @@ class _ChatListState extends State<ChatList> {
     final provider = context.watch<ChatProvider>();
     final isDesktop = isDisplayDesktop(context);
     final lang = AppLocalizations.of(context);
-    final color = Theme.of(context).colorScheme;
+    //final color = Theme.of(context).colorScheme;
     final friends = provider.friends;
     final chatKeys = provider.orderKeys;
 
@@ -40,7 +40,7 @@ class _ChatListState extends State<ChatList> {
         padding: const EdgeInsets.symmetric(vertical: 10.0),
         child: ListView.builder(
           itemCount: chatKeys.length,
-          itemBuilder: (BuildContext ctx, int index) => ListChat(friend: friends[chatKeys[index]]),
+          itemBuilder: (BuildContext ctx, int index) => ListChat(friend: friends[chatKeys[index]]!),
         )
       ),
       floatingActionButton: FloatingActionButton(
@@ -62,7 +62,7 @@ class _ChatListState extends State<ChatList> {
 
 class ListChat extends StatelessWidget {
   final Friend friend;
-  const ListChat({Key key, this.friend}) : super(key: key);
+  const ListChat({Key? key, required this.friend}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {

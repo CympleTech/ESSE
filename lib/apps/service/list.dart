@@ -15,7 +15,7 @@ const List<InnerService> INNER_SERVICES = [
 ];
 
 class ServiceList extends StatefulWidget {
-  const ServiceList({Key key}) : super(key: key);
+  const ServiceList({Key? key}) : super(key: key);
 
   @override
   _ServiceListState createState() => _ServiceListState();
@@ -69,13 +69,13 @@ class _ServiceListState extends State<ServiceList> {
 
 class ListInnerService extends StatelessWidget {
   final String name;
-  final String bio;
+  final String? bio;
   final String logo;
   final Function callback;
   final bool isDesktop;
 
-  const ListInnerService({Key key,
-      this.name, this.bio, this.logo, this.callback, this.isDesktop
+  const ListInnerService({Key? key,
+      required this.name, this.bio, required this.logo, required this.callback, required this.isDesktop
   }) : super(key: key);
 
   @override
@@ -127,7 +127,7 @@ class ListInnerService extends StatelessWidget {
                     Row(
                       children: [
                         Expanded(
-                          child: Text(this.bio, maxLines: 1,
+                          child: Text(this.bio!, maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(color: Color(0xFFADB0BB), fontSize: 12.0)),
                         ),

@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 
 class SocketInputText extends StatefulWidget {
   final TextEditingController controller;
-  final Function action;
+  final VoidCallback action;
   final bool state;
   bool changeState = false;
 
-  SocketInputText({Key key, this.controller, this.action, this.state})
+  SocketInputText({Key? key, required this.controller, required this.action, required this.state})
       : super(key: key);
 
   @override

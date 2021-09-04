@@ -7,15 +7,15 @@ class ShadowButton extends StatelessWidget {
   final double width;
   final bool isOn;
   final ColorScheme color;
-  final Function action;
+  final VoidCallback action;
 
   const ShadowButton({
-      Key key,
-      this.icon,
-      this.text,
+      Key? key,
+      required this.icon,
+      required this.text,
+      required this.action,
+      required this.color,
       this.width = 120.0,
-      this.action,
-      this.color,
       this.isOn = false,
   }) : super(key: key);
 

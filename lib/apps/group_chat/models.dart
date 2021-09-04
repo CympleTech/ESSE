@@ -105,18 +105,17 @@ class GroupChat {
   bool isClosed;
   bool isNeedAgree;
 
-  GroupChat.fromList(List params) {
-    this.id = params[0];
-    this.owner = params[1];
-    this.gid = params[2];
-    this.type = GroupTypeExtension.fromInt(params[3]);
-    this.addr = params[4];
-    this.name = params[5];
-    this.bio = params[6];
-    this.isOk = params[7];
-    this.isClosed = params[8];
+  GroupChat.fromList(List params):
+    this.id = params[0],
+    this.owner = params[1],
+    this.gid = params[2],
+    this.type = GroupTypeExtension.fromInt(params[3]),
+    this.addr = params[4],
+    this.name = params[5],
+    this.bio = params[6],
+    this.isOk = params[7],
+    this.isClosed = params[8],
     this.isNeedAgree = params[9];
-  }
 
   Avatar showAvatar({double width = 45.0}) {
     final avatar = Global.avatarPath + this.gid + '.png';
@@ -148,18 +147,17 @@ class Request {
     return Avatar(width: width, name: this.name, avatarPath: avatar);
   }
 
-  Request.fromList(List params) {
-    this.id = params[0];
-    this.fid = params[1];
-    this.rid = params[2];
-    this.gid = params[3];
-    this.addr = params[4];
-    this.name = params[5];
-    this.remark = params[6];
-    this.ok = params[7];
-    this.over = params[8];
+  Request.fromList(List params):
+    this.id = params[0],
+    this.fid = params[1],
+    this.rid = params[2],
+    this.gid = params[3],
+    this.addr = params[4],
+    this.name = params[5],
+    this.remark = params[6],
+    this.ok = params[7],
+    this.over = params[8],
     this.time = RelativeTime.fromInt(params[9]);
-  }
 }
 
 class Member {
@@ -172,15 +170,14 @@ class Member {
   bool isBlock;
   bool online = false;
 
-  Member.fromList(List params) {
-    this.id = params[0];
-    this.fid = params[1];
-    this.mid = params[2];
-    this.addr = params[3];
-    this.name = params[4];
-    this.isManager = params[5];
+  Member.fromList(List params):
+    this.id = params[0],
+    this.fid = params[1],
+    this.mid = params[2],
+    this.addr = params[3],
+    this.name = params[4],
+    this.isManager = params[5],
     this.isBlock = params[6];
-  }
 
   Avatar showAvatar({double width = 45.0, bool isOnline = true}) {
     final avatar = Global.avatarPath + this.mid + '.png';
@@ -195,9 +192,9 @@ class Member {
 }
 
 class Message extends BaseMessage {
-  int height;
-  int fid;
-  int mid;
+  int height = 0;
+  int fid = 0;
+  int mid = 0;
 
   Message(int fid, MessageType type, String content) {
     this.fid = fid;

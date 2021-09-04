@@ -57,30 +57,30 @@ extension MessageTypeExtension on MessageType {
 }
 
 class Message {
-  int id;
-  MessageType q_type;
-  String q_content;
-  MessageType a_type;
-  String a_content;
+  int id = 0;
+  MessageType qType = MessageType.String;
+  String qContent = '';
+  MessageType aType = MessageType.String;
+  String aContent = '';
   RelativeTime time = RelativeTime();
 
-  Message(this.q_type, this.q_content);
+  Message(this.qType, this.qContent);
 
   static List showContact(String content) {
     var name = '';
     var did = '';
     var addr = '';
 
-    var i_name = content.indexOf(';;');
-    if (i_name > 0) {
-      name = content.substring(0, i_name).replaceAll('-;', ';');
+    var iName = content.indexOf(';;');
+    if (iName > 0) {
+      name = content.substring(0, iName).replaceAll('-;', ';');
     }
-    var raw = content.substring(i_name + 2);
-    var i_did = raw.indexOf(';;');
-    if (i_did > 0) {
-      did = raw.substring(0, i_did);
+    var raw = content.substring(iName + 2);
+    var iDid = raw.indexOf(';;');
+    if (iDid > 0) {
+      did = raw.substring(0, iDid);
     }
-    addr = raw.substring(i_did + 2);
+    addr = raw.substring(iDid + 2);
 
     return [name, did, addr, Global.avatarPath + did + '.png'];
   }
@@ -100,18 +100,17 @@ class Message {
     }
   }
 
-  Message.fromList(List params) {
-    this.id = params[0];
-    this.q_type = MessageTypeExtension.fromInt(params[1]);
-    this.q_content = params[2];
-    this.a_type = MessageTypeExtension.fromInt(params[3]);
-    this.a_content = params[4];
+  Message.fromList(List params):
+    this.id = params[0],
+    this.qType = MessageTypeExtension.fromInt(params[1]),
+    this.qContent = params[2],
+    this.aType = MessageTypeExtension.fromInt(params[3]),
+    this.aContent = params[4],
     this.time = RelativeTime.fromInt(params[5]);
-  }
 
   update(List params) {
     // params[0] is id.
-    this.a_type = MessageTypeExtension.fromInt(params[1]);
-    this.a_content = params[2];
+    this.aType = MessageTypeExtension.fromInt(params[1]);
+    this.aContent = params[2];
   }
 }

@@ -6,12 +6,12 @@ import 'dart:typed_data';
 import 'package:esse/widgets/avatar.dart';
 
 class Account {
-  String gid;
-  String name;
-  String lock;
-  Uint8List avatar;
-  bool online;
-  bool hasNew;
+  String gid = '';
+  String name = '';
+  String lock = '';
+  Uint8List? avatar;
+  bool online = false;
+  bool hasNew = false;
 
   Account(String gid, String name, [String lock = "", String avatar = "", bool online = false]) {
     this.gid = gid;
@@ -25,8 +25,8 @@ class Account {
   String get id => 'EH' + this.gid.toUpperCase();
 
   String encodeAvatar() {
-    if (this.avatar != null && this.avatar.length > 1) {
-      return base64.encode(this.avatar);
+    if (this.avatar != null && this.avatar!.length > 1) {
+      return base64.encode(this.avatar!);
     } else {
       return '';
     }

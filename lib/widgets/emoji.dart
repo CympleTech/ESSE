@@ -8,8 +8,8 @@ class Emoji extends StatelessWidget {
   final Function action;
 
   const Emoji({
-      Key key,
-      this.action,
+      Key? key,
+      required this.action,
   }) : super(key: key);
 
   @override
@@ -25,7 +25,7 @@ class Emoji extends StatelessWidget {
       child: SingleChildScrollView(
         child: EmojiPicker(
           rows: 3,
-          columns: (maxWidth / 32).toInt(),
+          columns: maxWidth ~/ 32,
           maxWidth: maxWidth,
           bgColor: color.background,
           onEmojiSelected: (emoji, category) {

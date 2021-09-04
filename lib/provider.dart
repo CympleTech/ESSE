@@ -1,5 +1,4 @@
 import 'dart:async';
-import "dart:collection";
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -16,8 +15,8 @@ const DEFAULT_ONLINE_DELAY = 5;
 
 class AccountProvider extends ChangeNotifier {
   Map<String, Account> accounts = {}; // account's gid and account.
-  String activedAccountId; // actived account gid.
-  Account get activedAccount => this.accounts[activedAccountId];
+  String activedAccountId = ''; // actived account gid.
+  Account get activedAccount => this.accounts[activedAccountId]!;
 
   /// current user's did.
   String get id => this.activedAccount.id;
@@ -32,7 +31,7 @@ class AccountProvider extends ChangeNotifier {
 
   /// actived session.
   int actived = 0;
-  Session get activedSession => this.sessions[actived];
+  Session get activedSession => this.sessions[actived]!;
 
   /// right main screen show session details.
   Widget coreShowWidget = DefaultCoreShow();
@@ -67,13 +66,13 @@ class AccountProvider extends ChangeNotifier {
   }
 
   /// when security load accounts from rpc.
-  initAccounts(Map accounts) {
+  initAccounts(Map<String, Account> accounts) {
     this.accounts = accounts;
     initLogined(this.accounts.values.toList());
   }
 
   /// when security load accounts from cache.
-  autoAccounts(String gid, Map accounts) {
+  autoAccounts(String gid, Map<String, Account> accounts) {
     Global.changeGid(gid);
     this.activedAccountId = gid;
     this.accounts = accounts;
@@ -145,8 +144,8 @@ class AccountProvider extends ChangeNotifier {
   }
 
   onlineAccount(String gid, String lock) {
-    this.accounts[gid].online = true;
-    updateLogined(this.accounts[gid]);
+    this.accounts[gid]!.online = true;
+    updateLogined(this.accounts[gid]!);
 
     rpc.send('account-login', [gid, lock]);
 
@@ -156,8 +155,8 @@ class AccountProvider extends ChangeNotifier {
   }
 
   offlineAccount(String gid) {
-    this.accounts[gid].online = false;
-    updateLogined(this.accounts[gid]);
+    this.accounts[gid]!.online = false;
+    updateLogined(this.accounts[gid]!);
 
     if (gid == this.activedAccountId) {
       this.clearActivedAccount();
@@ -171,7 +170,7 @@ class AccountProvider extends ChangeNotifier {
     this.topKeys.clear();
   }
 
-  accountUpdate(String name, [Uint8List avatar]) {
+  accountUpdate(String name, [Uint8List? avatar]) {
     this.activedAccount.name = name;
 
     if (avatar != null && avatar.length > 0) {
@@ -205,17 +204,16 @@ class AccountProvider extends ChangeNotifier {
     }
   }
 
-  updateActivedSession(int id, [SessionType type, int fid]) {
-    if (fid != null && fid > 0) {
+  updateActivedSession(int id, [SessionType type = SessionType.Chat, int fid = 0]) {
+    if (fid > 0) {
       for (int k in this.sessions.keys) {
-        final v = this.sessions[k];
+        final v = this.sessions[k]!;
         if (v.type == type && v.fid == fid) {
           id = k;
           break;
         }
       }
     }
-    print("New session: ${id}");
 
     if (id > 0) {
       if (this.actived != id && this.actived > 0) {
@@ -230,8 +228,8 @@ class AccountProvider extends ChangeNotifier {
         if (online == OnlineType.Lost) {
           this.activedSession.online = OnlineType.Waiting;
           Timer(Duration(seconds: 10), () {
-              if (this.sessions[id] != null && this.sessions[id].online == OnlineType.Waiting) {
-                this.sessions[id].online = OnlineType.Lost;
+              if (this.sessions[id] != null && this.sessions[id]!.online == OnlineType.Waiting) {
+                this.sessions[id]!.online = OnlineType.Lost;
                 notifyListeners();
               }
           });
@@ -242,7 +240,7 @@ class AccountProvider extends ChangeNotifier {
     }
   }
 
-  updateActivedWidget(Widget coreWidget) {
+  updateActivedWidget(Widget? coreWidget) {
     if (coreWidget != null) {
       print("update actived widget");
       this.coreShowWidget = coreWidget;
@@ -261,7 +259,7 @@ class AccountProvider extends ChangeNotifier {
 
   _accountNotice(String gid) {
     if (this.accounts.containsKey(gid)) {
-      this.accounts[gid].hasNew = true;
+      this.accounts[gid]!.hasNew = true;
       notifyListeners();
     }
   }
@@ -275,9 +273,9 @@ class AccountProvider extends ChangeNotifier {
 
   _accountUpdate(List params) {
     final gid = params[0];
-    this.accounts[gid].name = params[1];
+    this.accounts[gid]!.name = params[1];
     if (params[2].length > 1) {
-      this.accounts[gid].updateAvatar(params[2]);
+      this.accounts[gid]!.updateAvatar(params[2]);
     }
     notifyListeners();
   }
@@ -290,8 +288,8 @@ class AccountProvider extends ChangeNotifier {
     params.forEach((params) {
         final id = params[0];
         this.sessions[id] = Session.fromList(params);
-        if (!this.sessions[id].isClose) {
-          if (this.sessions[id].isTop) {
+        if (!this.sessions[id]!.isClose) {
+          if (this.sessions[id]!.isTop) {
             this.topKeys.add(id);
           } else {
             this.orderKeys.add(id);
@@ -310,10 +308,10 @@ class AccountProvider extends ChangeNotifier {
 
   _sessionLast(List params) {
     final id = params[0];
-    this.sessions[id].last(params);
-    if (id == this.actived && !this.sessions[id].lastReaded) {
+    this.sessions[id]!.last(params);
+    if (id == this.actived && !this.sessions[id]!.lastReaded) {
       rpc.send('session-readed', [id]);
-      this.sessions[id].lastReaded = true;
+      this.sessions[id]!.lastReaded = true;
     }
     orderSessions(id);
     notifyListeners();
@@ -321,8 +319,8 @@ class AccountProvider extends ChangeNotifier {
 
   _sessionUpdate(List params) {
     final id = params[0];
-    this.sessions[id].update(params);
-    if (this.sessions[id].isTop) {
+    this.sessions[id]!.update(params);
+    if (this.sessions[id]!.isTop) {
       this.topKeys.add(id);
       this.orderKeys.remove(id);
     } else {
@@ -334,7 +332,7 @@ class AccountProvider extends ChangeNotifier {
 
   _sessionClose(List params) {
     final id = params[0];
-    this.sessions[id].isClose = true;
+    this.sessions[id]!.isClose = true;
     notifyListeners();
   }
 
@@ -353,20 +351,20 @@ class AccountProvider extends ChangeNotifier {
   _sessionConnect(List params) {
     final id = params[0];
     final addr = params[1];
-    this.sessions[id].addr = addr;
-    this.sessions[id].online = OnlineType.Active;
+    this.sessions[id]!.addr = addr;
+    this.sessions[id]!.online = OnlineType.Active;
     notifyListeners();
   }
 
   _sessionSuspend(List params) {
     final id = params[0];
-    this.sessions[id].online = OnlineType.Suspend;
+    this.sessions[id]!.online = OnlineType.Suspend;
     notifyListeners();
   }
 
   _sessionLost(List params) {
     final id = params[0];
-    this.sessions[id].online = OnlineType.Lost;
+    this.sessions[id]!.online = OnlineType.Lost;
     notifyListeners();
   }
 }

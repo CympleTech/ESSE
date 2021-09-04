@@ -7,7 +7,7 @@ import 'package:esse/global.dart';
 import 'package:esse/rpc.dart';
 
 class NetworkDetail extends StatefulWidget {
-  NetworkDetail({Key key}) : super(key: key);
+  NetworkDetail({Key? key}) : super(key: key);
 
   @override
   _NetworkDetailState createState() => _NetworkDetailState();

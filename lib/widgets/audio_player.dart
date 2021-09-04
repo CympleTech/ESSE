@@ -7,7 +7,7 @@ class RecordPlayer extends StatefulWidget {
   final String path;
   final int time;
 
-  const RecordPlayer({Key key, this.path, this.time}) : super(key: key);
+  const RecordPlayer({Key? key, required this.path, required this.time}) : super(key: key);
 
   @override
   _RecordPlayerState createState() => _RecordPlayerState();
@@ -18,9 +18,9 @@ class _RecordPlayerState extends State<RecordPlayer> {
 
   bool _isPlaying = false;
   bool _isPlayPause = false;
-  Timer _timer;
+  Timer? _timer;
   double _value = 0;
-  double _valueStep;
+  double _valueStep = 0;
 
   void _startTimer() {
     const tick = const Duration(milliseconds: 500);

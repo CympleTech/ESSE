@@ -13,7 +13,7 @@ final ANSWER_LANGS = [
   AnswerLang.CHINESE_SIMPLIFIED,
 ];
 
-final _langCache = Map<AnswerLang, List<dynamic>>();
+final _langCache = Map<AnswerLang, List<String>>();
 
 String _getAnswerLangName(AnswerLang lang) {
   switch (lang) {
@@ -28,11 +28,11 @@ String _getAnswerLangName(AnswerLang lang) {
 
 Future<List<String>> loadAnswers(Locale locale) async {
   AnswerLang lang = AnswerLang.ENGLISH;
-  switch (locale) {
-    case Locale('en'):
+  switch (locale.languageCode) {
+    case 'en':
       lang = AnswerLang.ENGLISH;
       break;
-    case Locale('zh'):
+    case 'zh':
       lang = AnswerLang.CHINESE_SIMPLIFIED;
       break;
     default:
@@ -41,7 +41,7 @@ Future<List<String>> loadAnswers(Locale locale) async {
   }
 
   if (_langCache.containsKey(lang)) {
-    return _langCache[lang];
+    return _langCache[lang]!;
   } else {
     final rawWords = await rootBundle.loadString('assets/answers/${_getAnswerLangName(lang)}.txt');
     final result = rawWords.split('\n').map((s) => s.trim()).where((s) => s.isNotEmpty).toList(growable: false);

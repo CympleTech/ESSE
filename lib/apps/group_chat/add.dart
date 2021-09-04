@@ -10,12 +10,9 @@ import 'package:esse/utils/adaptive.dart';
 import 'package:esse/utils/better_print.dart';
 import 'package:esse/widgets/button_text.dart';
 import 'package:esse/widgets/input_text.dart';
-import 'package:esse/widgets/user_info.dart';
-import 'package:esse/widgets/shadow_button.dart';
 import 'package:esse/widgets/shadow_dialog.dart';
 import 'package:esse/widgets/qr_scan.dart';
 import 'package:esse/widgets/select_avatar.dart';
-import 'package:esse/global.dart';
 import 'package:esse/rpc.dart';
 import 'package:esse/provider.dart';
 
@@ -28,7 +25,7 @@ class GroupAddPage extends StatefulWidget {
   final String addr;
   final String name;
 
-  GroupAddPage({Key key, this.id = '', this.addr = '', this.name = ''}) : super(key: key);
+  GroupAddPage({Key? key, this.id = '', this.addr = '', this.name = ''}) : super(key: key);
 
   @override
   _GroupAddPageState createState() => _GroupAddPageState();
@@ -49,12 +46,12 @@ class _GroupAddPageState extends State<GroupAddPage> {
   FocusNode _createNameFocus = FocusNode();
   FocusNode _createBioFocus = FocusNode();
   FocusNode _createKeyFocus = FocusNode();
-  Uint8List _createAvatarBytes;
+  Uint8List? _createAvatarBytes;
 
   int _groupLocation = 0;
   int _groupType = 1;
   bool _groupNeedAgree = false;
-  bool _addrOnline = false;
+  //bool _addrOnline = false;
   bool _addrChecked = false;
   String _myName = '';
 
@@ -67,8 +64,8 @@ class _GroupAddPageState extends State<GroupAddPage> {
         Radio(
           value: value,
           groupValue: _groupLocation,
-          onChanged: disabled ? null : (n) => setState(() {
-              _groupLocation = n;
+          onChanged: disabled ? null : (int? n) => setState(() {
+              _groupLocation = n!;
           }),
         ),
         _groupLocation == value
@@ -86,8 +83,8 @@ class _GroupAddPageState extends State<GroupAddPage> {
         Radio(
           value: value,
           groupValue: _groupType,
-          onChanged: disabled ? null : (n) => setState(() {
-              _groupType = n;
+          onChanged: disabled ? null : (int? n) => setState(() {
+              _groupType = n!;
           }),
         ),
         _groupType == value
@@ -124,7 +121,7 @@ class _GroupAddPageState extends State<GroupAddPage> {
 
   _join() {
     var id = _joinIdController.text;
-    if (id == '' || id == null) {
+    if (id == '') {
       return;
     }
 
@@ -154,7 +151,7 @@ class _GroupAddPageState extends State<GroupAddPage> {
     }
     final name = _createNameController.text.trim();
     final bio = _createBioController.text.trim();
-    final avatar = _createAvatarBytes != null ? base64.encode(_createAvatarBytes) : "";
+    final avatar = _createAvatarBytes != null ? base64.encode(_createAvatarBytes!) : "";
     rpc.send('group-chat-create', [_groupLocation, _groupType, _myName, addr, name, bio, _groupNeedAgree, avatar]);
     setState(() {
         _createNameController.text = '';
@@ -208,7 +205,6 @@ class _GroupAddPageState extends State<GroupAddPage> {
     final checks = provider.createCheckType.lang(lang);
     final checkLang = checks[0];
     final checkOk = checks[1];
-    provider.createSupported;
 
     final groups = provider.groups;
     final createKeys = provider.createKeys;
@@ -295,7 +291,7 @@ class _GroupAddPageState extends State<GroupAddPage> {
                           physics: ClampingScrollPhysics(),
                           scrollDirection: Axis.vertical,
                           itemBuilder: (BuildContext context, int index) =>
-                          _RequestItem(request: requests[requestKeys[index]]),
+                          _RequestItem(request: requests[requestKeys[index]]!),
                         ),
                       ),
                       if (_requestsLoadMore)
@@ -419,7 +415,7 @@ class _GroupAddPageState extends State<GroupAddPage> {
                         decoration: BoxDecoration(
                           color: color.surface,
                           image: _createAvatarBytes != null ? DecorationImage(
-                            image: MemoryImage(_createAvatarBytes),
+                            image: MemoryImage(_createAvatarBytes!),
                             fit: BoxFit.cover,
                           ) : null,
                           borderRadius: BorderRadius.circular(15.0)),
@@ -533,7 +529,7 @@ class _GroupAddPageState extends State<GroupAddPage> {
                           physics: ClampingScrollPhysics(),
                           scrollDirection: Axis.vertical,
                           itemBuilder: (BuildContext context, int index) =>
-                          _CreateItem(group: groups[createKeys[index]], name: _myName),
+                          _CreateItem(group: groups[createKeys[index]]!, name: _myName),
                         ),
                       )
                     ],
@@ -549,7 +545,7 @@ class _GroupAddPageState extends State<GroupAddPage> {
 class _RequestItem extends StatelessWidget {
   final Request request;
 
-  const _RequestItem({Key key, this.request}) : super(key: key);
+  const _RequestItem({Key? key, required this.request}) : super(key: key);
 
   Widget _infoList(icon, color, text) {
     return Container(
@@ -768,7 +764,7 @@ class _RequestItem extends StatelessWidget {
 class _CreateItem extends StatelessWidget {
   final GroupChat group;
   final String name;
-  const _CreateItem({Key key, this.group, this.name}) : super(key: key);
+  const _CreateItem({Key? key, required this.group, required this.name}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {

@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 class ListSystemApp extends StatelessWidget {
   final String name;
   final IconData icon;
-  final Function callback;
+  final VoidCallback callback;
 
-  const ListSystemApp({Key key, this.name, this.icon, this.callback}) : super(key: key);
+  const ListSystemApp({Key? key, required this.name, required this.icon, required this.callback}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {

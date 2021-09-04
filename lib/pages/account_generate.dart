@@ -22,7 +22,7 @@ import 'package:esse/apps/chat/provider.dart';
 import 'package:esse/apps/group_chat/provider.dart';
 
 class AccountGeneratePage extends StatefulWidget {
-  const AccountGeneratePage({Key key}) : super(key: key);
+  const AccountGeneratePage({Key? key}) : super(key: key);
 
   @override
   _AccountGeneratePageState createState() => _AccountGeneratePageState();
@@ -39,7 +39,7 @@ class _AccountGeneratePageState extends State<AccountGeneratePage> {
   TextEditingController _nameController = new TextEditingController();
   FocusNode _nameFocus = new FocusNode();
 
-  Uint8List _imageBytes;
+  Uint8List? _imageBytes;
 
   @override
   initState() {
@@ -76,7 +76,7 @@ class _AccountGeneratePageState extends State<AccountGeneratePage> {
   void registerNewAction(String title) async {
     final mnemonic = _mnemoicWords;
     final name = _nameController.text;
-    final avatar = _imageBytes != null ? base64.encode(_imageBytes) : "";
+    final avatar = _imageBytes != null ? base64.encode(_imageBytes!) : "";
     final info = await deviceInfo();
 
     if (!_registerChecked) {
@@ -161,10 +161,12 @@ class _AccountGeneratePageState extends State<AccountGeneratePage> {
                               style: TextStyle(fontSize: 16)),
                             iconEnabledColor: Color(0xFFADB0BB),
                             value: _selectedMnemonicLang,
-                            onChanged: (int m) {
-                              setState(() {
-                                  _selectedMnemonicLang = m;
-                              });
+                            onChanged: (int? m) {
+                               if (m != null) {
+                                 setState(() {
+                                     _selectedMnemonicLang = m;
+                                 });
+                               }
                             },
                             items: MNEMONIC_LANGS.map((MnemonicLang m) {
                                 return DropdownMenuItem<int>(
@@ -282,7 +284,7 @@ class _AccountGeneratePageState extends State<AccountGeneratePage> {
       decoration: BoxDecoration(
         color: color.surface,
         image: _imageBytes != null ? DecorationImage(
-          image: MemoryImage(_imageBytes),
+          image: MemoryImage(_imageBytes!),
           fit: BoxFit.cover,
         ) : null,
         borderRadius: BorderRadius.circular(15.0)),
@@ -322,7 +324,7 @@ Widget _header(String value, Function callback) {
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         GestureDetector(
-          onTap: callback,
+          onTap: () => callback,
           child: Container(
             width: 40.0,
             height: 40.0,
@@ -342,7 +344,7 @@ Widget _header(String value, Function callback) {
   ]));
 }
 
-Widget _footer(String text1, Function callback) {
+Widget _footer(String text1, VoidCallback callback) {
   return Padding(
     padding: const EdgeInsets.only(top: 20),
     child: Center(

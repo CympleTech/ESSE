@@ -11,7 +11,7 @@ class AudioRecorder extends StatefulWidget {
   final String path;
   final Function onStop;
 
-  const AudioRecorder({Key key, this.path, this.onStop}) : super(key: key);
+  const AudioRecorder({Key? key, required this.path, required this.onStop}) : super(key: key);
 
   @override
   _AudioRecorderState createState() => _AudioRecorderState();
@@ -25,7 +25,7 @@ class _AudioRecorderState extends State<AudioRecorder> {
   bool _isPlaying = false;
   bool _isPlayPause = false;
   int _remainingDuration = -1;
-  Timer _timer;
+  Timer? _timer;
 
   Widget _buildText(color, lang) {
     if (_remainingDuration >= 0) {
@@ -136,7 +136,7 @@ class _AudioRecorderState extends State<AudioRecorder> {
     _remainingDuration = -1;
     print(widget.path);
     await player.setFilePath(widget.path);
-    final time = player.duration.inSeconds + 1;
+    final time = player.duration!.inSeconds + 1;
     player.dispose();
     widget.onStop(time);
   }

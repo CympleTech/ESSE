@@ -5,18 +5,16 @@ import 'package:esse/global.dart';
 import 'package:esse/apps/primitives.dart';
 
 class Friend {
-  int id;
-  String gid;
-  String name;
-  String addr;
-  String remark;
-  bool isClosed;
-  RelativeTime time;
+  int id = 0;
+  String gid = '';
+  String name = '';
+  String addr = '';
+  String remark = '';
+  bool isClosed = false;
+  RelativeTime time = RelativeTime();
 
   // new friend from network
-  Friend(this.gid, this.name, this.addr) {
-    this.isClosed = false;
-  }
+  Friend(this.gid, this.name, this.addr);
 
   Avatar showAvatar({double width = 45.0}) {
     final avatar = Global.avatarPath + this.gid + '.png';
@@ -35,11 +33,11 @@ class Friend {
 }
 
 class Request {
-  int id;
-  String gid;
-  String addr;
-  String name;
-  String remark;
+  int id = 0;
+  String gid = '';
+  String addr = '';
+  String name = '';
+  String remark = '';
   bool isMe = true;
   bool ok = false;
   bool over = false;
@@ -77,8 +75,8 @@ class Request {
 }
 
 class Message extends BaseMessage {
-  String hash;
-  int fid;
+  String hash = '';
+  int fid = 0;
 
   Message(int fid, MessageType type, String content) {
     this.fid = fid;
