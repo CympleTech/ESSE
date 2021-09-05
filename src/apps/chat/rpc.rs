@@ -169,7 +169,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
                 tokio::spawn(sleep_waiting_close_stable(sender, HashMap::new(), addrs));
             }
 
-            let data = postcard::to_allocvec(&LayerEvent::Close).unwrap_or(vec![]);
+            let data = bincode::serialize(&LayerEvent::Close)?;
             let msg = SendType::Event(0, friend.addr, data);
             results.layers.push((gid, friend.gid, msg));
 
@@ -209,7 +209,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
                 tokio::spawn(sleep_waiting_close_stable(sender, HashMap::new(), addrs));
             }
 
-            let data = postcard::to_allocvec(&LayerEvent::Close).unwrap_or(vec![]);
+            let data = bincode::serialize(&LayerEvent::Close)?;
             let msg = SendType::Event(0, friend.addr, data);
             results.layers.push((gid, friend.gid, msg));
 

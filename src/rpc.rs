@@ -396,7 +396,7 @@ fn new_rpc_handler(
             for gid in keys {
                 for (fgid, addr) in layer_lock.running(&gid)?.onlines() {
                     // send a event that is offline.
-                    let data = postcard::to_allocvec(&LayerEvent::Offline(*fgid)).unwrap_or(vec![]);
+                    let data = bincode::serialize(&LayerEvent::Offline(*fgid))?;
                     let msg = SendType::Event(0, *addr, data);
                     results.layers.push((gid, *fgid, msg));
                 }
@@ -451,7 +451,7 @@ fn new_rpc_handler(
             let layer_lock = state.layer.read().await;
             for (fgid, addr) in layer_lock.running(&gid)?.onlines() {
                 // send a event that is offline.
-                let data = postcard::to_allocvec(&LayerEvent::Offline(*fgid)).unwrap_or(vec![]);
+                let data = bincode::serialize(&LayerEvent::Offline(*fgid))?;
                 let msg = SendType::Event(0, *addr, data);
                 results.layers.push((gid, *fgid, msg));
             }
@@ -534,7 +534,7 @@ fn new_rpc_handler(
             let msg = match s.s_type {
                 SessionType::Chat | SessionType::Group => {
                     let event = LayerEvent::Suspend(s.gid);
-                    let data = postcard::to_allocvec(&event).unwrap_or(vec![]);
+                    let data = bincode::serialize(&event)?;
                     SendType::Event(0, s.addr, data)
                 }
                 _ => {

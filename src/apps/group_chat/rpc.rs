@@ -2,7 +2,7 @@ use std::sync::Arc;
 use tdn::types::{
     group::GroupId,
     message::SendType,
-    primitive::{new_io_error, HandleResult, PeerAddr},
+    primitive::{HandleResult, PeerAddr},
     rpc::{json, rpc_response, RpcError, RpcHandler, RpcParam},
 };
 use tdn_did::Proof;
@@ -165,7 +165,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             let addr = PeerAddr::from_hex(params[0].as_str().ok_or(RpcError::ParseError)?)?;
 
             let mut results = HandleResult::new();
-            let data = postcard::to_allocvec(&LayerEvent::Check).unwrap_or(vec![]);
+            let data = bincode::serialize(&LayerEvent::Check)?;
             let s = SendType::Event(0, addr, data);
             add_layer(&mut results, gid, s);
             Ok(results)
@@ -222,8 +222,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
                 // TODO create proof.
                 let proof: Proof = Default::default();
 
-                let data =
-                    postcard::to_allocvec(&LayerEvent::Create(info, proof)).unwrap_or(vec![]);
+                let data = bincode::serialize(&LayerEvent::Create(info, proof))?;
                 let s = SendType::Event(0, addr, data);
                 add_layer(&mut results, gid, s);
             } else {
@@ -257,7 +256,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             // TODO create proof.
             let proof: Proof = Default::default();
 
-            let data = postcard::to_allocvec(&LayerEvent::Create(info, proof)).unwrap_or(vec![]);
+            let data = bincode::serialize(&LayerEvent::Create(info, proof))?;
             let s = SendType::Event(0, addr, data);
             let mut results = HandleResult::new();
             add_layer(&mut results, gid, s);
@@ -311,8 +310,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
                 GroupType::Open => JoinProof::Open(me.name, me.avatar),
             };
 
-            let data =
-                postcard::to_allocvec(&LayerEvent::Request(gcd, join_proof)).unwrap_or(vec![]);
+            let data = bincode::serialize(&LayerEvent::Request(gcd, join_proof))?;
             let s = SendType::Event(0, gaddr, data);
             add_layer(&mut results, gid, s);
             Ok(results)
@@ -411,8 +409,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             let gc = GroupChat::get_id(&db, &id)?.ok_or(RpcError::ParseError)?;
 
             let mut results = HandleResult::new();
-            let data =
-                postcard::to_allocvec(&LayerEvent::RequestResult(gcd, rid, ok)).unwrap_or(vec![]);
+            let data = bincode::serialize(&LayerEvent::RequestResult(gcd, rid, ok))?;
             let s = SendType::Event(0, gc.g_addr, data);
             add_layer(&mut results, gid, s);
             Ok(results)
@@ -436,23 +433,23 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
         |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
             let gcd = GroupId::from_hex(params[0].as_str().ok_or(RpcError::ParseError)?)?;
             let id = params[1].as_i64().ok_or(RpcError::ParseError)?;
-            let m_type = MessageType::from_int(params[2].as_i64().ok_or(RpcError::ParseError)?);
-            let m_content = params[3].as_str().ok_or(RpcError::ParseError)?;
+            let is_remote = params[2].as_bool().ok_or(RpcError::ParseError)?;
+            let m_type = MessageType::from_int(params[3].as_i64().ok_or(RpcError::ParseError)?);
+            let m_content = params[4].as_str().ok_or(RpcError::ParseError)?;
 
-            let db = group_chat_db(state.layer.read().await.base(), &gid)?;
-            let gc = GroupChat::get_id(&db, &id)?.ok_or(RpcError::ParseError)?;
             let base = state.group.read().await.base().clone();
             let (nmsg, datetime) = to_network_message(&base, &gid, m_type, m_content).await?;
             let event = Event::MessageCreate(gid, nmsg, datetime);
 
             let mut results = HandleResult::new();
-            if gc.is_remote {
+            if is_remote {
                 let addr = state.layer.read().await.running(&gid)?.online(&gcd)?;
-                let data =
-                    postcard::to_allocvec(&LayerEvent::Sync(gcd, 0, event)).unwrap_or(vec![]);
+                let data = bincode::serialize(&LayerEvent::Sync(gcd, 0, event))?;
                 let msg = SendType::Event(0, addr, data);
                 add_layer(&mut results, gid, msg);
             } else {
+                let db = group_chat_db(&base, &gid)?;
+
                 // 1. increase the consensus height in running layer.
                 let height = state.layer.write().await.running_mut(&gcd)?.increased();
 
@@ -461,8 +458,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
 
                 // 3. broadcast event bytes.
                 let event = LayerEvent::Sync(gcd, height, event);
-                let new_data = postcard::to_allocvec(&event)
-                    .map_err(|_| new_io_error("serialize event error."))?;
+                let new_data = bincode::serialize(&event)?;
 
                 // 4. handle event.
                 handle_event(db, base, id, gid, event, &mut results).await?;
@@ -500,7 +496,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             GroupChat::close(&db, &id)?;
 
             let event = Event::MemberLeave(gid);
-            let data = postcard::to_allocvec(&LayerEvent::Sync(gcd, 0, event)).unwrap_or(vec![]);
+            let data = bincode::serialize(&LayerEvent::Sync(gcd, 0, event))?;
             let msg = SendType::Event(0, addr, data);
             add_layer(&mut results, gid, msg);
             Ok(results)
@@ -526,11 +522,11 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
                     .remove_online(&gid, &gcd)
                     .ok_or(RpcError::ParseError)?;
                 let event = Event::MemberLeave(gid);
-                let data =
-                    postcard::to_allocvec(&LayerEvent::Sync(gcd, 0, event)).unwrap_or(vec![]);
+                let data = bincode::serialize(&LayerEvent::Sync(gcd, 0, event))?;
                 let msg = SendType::Event(0, addr, data);
                 add_layer(&mut results, gid, msg);
             }
+
             Ok(results)
         },
     );

@@ -50,7 +50,7 @@ pub(crate) async fn handle(
         }
         RecvType::Event(addr, bytes) => {
             let event: LayerEvent =
-                postcard::from_bytes(&bytes).map_err(|_| new_io_error("serialize event error."))?;
+                bincode::deserialize(&bytes).map_err(|_| new_io_error("serialize event error."))?;
             handle_event(mgid, addr, event, layer, &mut results).await?;
         }
         RecvType::Stream(_uid, _stream, _bytes) => {
@@ -73,7 +73,7 @@ fn handle_connect(
 ) -> Result<bool> {
     // 0. deserialize result.
     let LayerResult(gcd, height) =
-        postcard::from_bytes(&data).map_err(|_e| new_io_error("Deseralize result failure"))?;
+        bincode::deserialize(&data).map_err(|_e| new_io_error("Deseralize result failure"))?;
 
     // 1. check group.
     if let Some(group) = load_group(layer.base(), &mgid, &gcd)? {
@@ -348,18 +348,18 @@ fn load_group(base: &PathBuf, mgid: &GroupId, gcd: &GroupId) -> Result<Option<Gr
 
 pub(crate) fn group_chat_conn(proof: Proof, addr: PeerAddr, gid: GroupId) -> SendType {
     let data =
-        postcard::to_allocvec(&LayerConnect(gid, ConnectProof::Common(proof))).unwrap_or(vec![]);
+        bincode::serialize(&LayerConnect(gid, ConnectProof::Common(proof))).unwrap_or(vec![]);
     SendType::Connect(0, addr, None, None, data)
 }
 
 fn sync(gcd: GroupId, addr: PeerAddr, height: i64) -> SendType {
     println!("Send sync request...");
-    let data = postcard::to_allocvec(&LayerEvent::SyncReq(gcd, height + 1)).unwrap_or(vec![]);
+    let data = bincode::serialize(&LayerEvent::SyncReq(gcd, height + 1)).unwrap_or(vec![]);
     SendType::Event(0, addr, data)
 }
 
 fn sync_online(gcd: GroupId, addr: PeerAddr) -> SendType {
-    let data = postcard::to_allocvec(&LayerEvent::MemberOnlineSync(gcd)).unwrap_or(vec![]);
+    let data = bincode::serialize(&LayerEvent::MemberOnlineSync(gcd)).unwrap_or(vec![]);
     SendType::Event(0, addr, data)
 }
 

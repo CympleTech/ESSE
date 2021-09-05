@@ -111,7 +111,7 @@ impl Group {
                 self.hanlde_connect(&mut results, &gid, addr, data, true)?;
             }
             RecvType::Event(addr, bytes) => {
-                let event: GroupEvent = postcard::from_bytes(&bytes)
+                let event: GroupEvent = bincode::deserialize(&bytes)
                     .map_err(|_| new_io_error("serialize event error."))?;
                 return GroupEvent::handle(self, event, gid, addr, layer, uid);
             }
@@ -133,7 +133,7 @@ impl Group {
         data: Vec<u8>,
         is_connect: bool,
     ) -> Result<()> {
-        let connect = postcard::from_bytes(&data)
+        let connect = bincode::deserialize(&data)
             .map_err(|_e| new_io_error("Deserialize group connect failure"))?;
 
         let (remote_height, remote_event, others) = match connect {
@@ -502,7 +502,7 @@ impl Group {
             addr,
             None,
             None,
-            postcard::to_allocvec(&GroupConnect::Create(
+            bincode::serialize(&GroupConnect::Create(
                 proof,
                 user,
                 height,
@@ -519,7 +519,7 @@ impl Group {
         let account = self.account(gid)?;
         let height = account.height;
         let event = account.event;
-        let data = postcard::to_allocvec(&GroupConnect::Connect(height, event)).unwrap_or(vec![]);
+        let data = bincode::serialize(&GroupConnect::Connect(height, event)).unwrap_or(vec![]);
         Ok(SendType::Connect(0, addr, None, None, data))
     }
 
@@ -527,7 +527,7 @@ impl Group {
         let account = self.account(gid)?;
         let height = account.height;
         let event = account.event;
-        let data = postcard::to_allocvec(&GroupConnect::Connect(height, event)).unwrap_or(vec![]);
+        let data = bincode::serialize(&GroupConnect::Connect(height, event)).unwrap_or(vec![]);
         Ok(SendType::Result(0, addr, true, false, data))
     }
 
@@ -544,7 +544,7 @@ impl Group {
             addr,
             true,
             false,
-            postcard::to_allocvec(&GroupConnect::Create(
+            bincode::serialize(&GroupConnect::Create(
                 proof,
                 me,
                 height,
@@ -587,12 +587,12 @@ impl Group {
         };
 
         let event = GroupEvent::SyncCheck(ancestors, hashes, is_min);
-        let data = postcard::to_allocvec(&event).unwrap_or(vec![]);
+        let data = bincode::serialize(&event).unwrap_or(vec![]);
         Ok(SendType::Event(0, addr, data))
     }
 
     pub fn event_message(&self, addr: PeerAddr, event: &GroupEvent) -> Result<SendType> {
-        let data = postcard::to_allocvec(event).unwrap_or(vec![]);
+        let data = bincode::serialize(event).unwrap_or(vec![]);
         Ok(SendType::Event(0, addr, data))
     }
 
@@ -620,7 +620,7 @@ impl Group {
         drop(account);
 
         let e = GroupEvent::Event(eheight, eid, pre_event, event);
-        let data = postcard::to_allocvec(&e).unwrap_or(vec![]);
+        let data = bincode::serialize(&e).unwrap_or(vec![]);
         let running = self.running(gid)?;
         for (addr, (_id, online)) in &running.distributes {
             if *online {
@@ -638,7 +638,7 @@ impl Group {
         results: &mut HandleResult,
     ) -> Result<()> {
         let running = self.running(gid)?;
-        let data = postcard::to_allocvec(&GroupEvent::Status(event)).unwrap_or(vec![]);
+        let data = bincode::serialize(&GroupEvent::Status(event)).unwrap_or(vec![]);
         for (addr, (_id, online)) in &running.distributes {
             if *online {
                 let msg = SendType::Event(0, *addr, data.clone());
@@ -679,7 +679,7 @@ impl GroupEvent {
                     SendType::Event(
                         0,
                         addr,
-                        postcard::to_allocvec(&GroupEvent::StatusResponse(
+                        bincode::serialize(&GroupEvent::StatusResponse(
                             cpu_n,
                             mem_s,
                             swap_s,
@@ -735,7 +735,7 @@ impl GroupEvent {
 
                     if ours.len() == 0 {
                         let event = GroupEvent::SyncRequest(1, remote_height);
-                        let data = postcard::to_allocvec(&event).unwrap_or(vec![]);
+                        let data = bincode::serialize(&event).unwrap_or(vec![]);
                         results.groups.push((gid, SendType::Event(0, addr, data)));
                         return Ok(results);
                     }
@@ -773,7 +773,7 @@ impl GroupEvent {
 
                     if ancestor != 0 {
                         let event = GroupEvent::SyncRequest(ancestor, remote_height);
-                        let data = postcard::to_allocvec(&event).unwrap_or(vec![]);
+                        let data = bincode::serialize(&event).unwrap_or(vec![]);
                         results.groups.push((gid, SendType::Event(0, addr, data)));
                     } else {
                         results.groups.push((
@@ -790,7 +790,7 @@ impl GroupEvent {
                 let sync_events =
                     SyncEvent::sync(&group.base, &gid, group.account(&gid)?, from, last_to)?;
                 let event = GroupEvent::SyncResponse(from, last_to, to, sync_events);
-                let data = postcard::to_allocvec(&event).unwrap_or(vec![]);
+                let data = bincode::serialize(&event).unwrap_or(vec![]);
                 results.groups.push((gid, SendType::Event(0, addr, data)));
             }
             GroupEvent::SyncResponse(from, last_to, to, events) => {
@@ -800,7 +800,7 @@ impl GroupEvent {
                 );
                 if last_to < to {
                     let event = GroupEvent::SyncRequest(last_to + 1, to);
-                    let data = postcard::to_allocvec(&event).unwrap_or(vec![]);
+                    let data = bincode::serialize(&event).unwrap_or(vec![]);
                     results.groups.push((gid, SendType::Event(0, addr, data)));
                 }
                 SyncEvent::handle(gid, from, last_to, events, group, layer, &mut results, addr)?;

@@ -67,7 +67,7 @@ pub(crate) async fn handle(
             // ESSE chat layer connect date structure.
             if handle_connect(&mgid, &fgid, &addr, data, &mut layer, &mut results)? {
                 let proof = layer.group.read().await.prove_addr(&mgid, &addr)?;
-                let data = postcard::to_allocvec(&proof).unwrap_or(vec![]);
+                let data = bincode::serialize(&proof).unwrap_or(vec![]);
                 let msg = SendType::Result(0, addr, true, false, data);
                 results.layers.push((mgid, fgid, msg));
             } else {
@@ -139,7 +139,7 @@ fn handle_connect(
     results: &mut HandleResult,
 ) -> Result<bool> {
     // 0. deserialize connect data.
-    let proof: Proof = postcard::from_bytes(&data)
+    let proof: Proof = bincode::deserialize(&data)
         .map_err(|_e| new_io_error("Deseralize chat layer connect failure"))?;
 
     // 1. check verify.
@@ -178,7 +178,7 @@ impl LayerEvent {
         bytes: Vec<u8>,
     ) -> Result<HandleResult> {
         let event: LayerEvent =
-            postcard::from_bytes(&bytes).map_err(|_| new_io_error("serialize event error."))?;
+            bincode::deserialize(&bytes).map_err(|_| new_io_error("serialize event error."))?;
 
         let mut results = HandleResult::new();
 
@@ -483,7 +483,7 @@ pub(super) fn req_message(layer: &mut Layer, me: User, request: Request) -> Send
     let uid = layer.delivery.len() as u64 + 1;
     layer.delivery.insert(uid, (me.id, request.id));
     let req = LayerEvent::Request(me, request.remark);
-    let data = postcard::to_allocvec(&req).unwrap_or(vec![]);
+    let data = bincode::serialize(&req).unwrap_or(vec![]);
     SendType::Event(uid, request.addr, data)
 }
 
@@ -493,7 +493,7 @@ pub(super) fn reject_message(
     addr: PeerAddr,
     me_id: GroupId,
 ) -> SendType {
-    let data = postcard::to_allocvec(&LayerEvent::Reject).unwrap_or(vec![]);
+    let data = bincode::serialize(&LayerEvent::Reject).unwrap_or(vec![]);
     let uid = layer.delivery.len() as u64 + 1;
     layer.delivery.insert(uid, (me_id, tid));
     SendType::Event(uid, addr, data)
@@ -506,23 +506,23 @@ pub(crate) fn event_message(
     addr: PeerAddr,
     event: &LayerEvent,
 ) -> SendType {
-    let data = postcard::to_allocvec(event).unwrap_or(vec![]);
+    let data = bincode::serialize(event).unwrap_or(vec![]);
     let uid = layer.delivery.len() as u64 + 1;
     layer.delivery.insert(uid, (me_id, tid));
     SendType::Event(uid, addr, data)
 }
 
 pub(crate) fn chat_conn(proof: Proof, addr: PeerAddr) -> SendType {
-    let data = postcard::to_allocvec(&proof).unwrap_or(vec![]);
+    let data = bincode::serialize(&proof).unwrap_or(vec![]);
     SendType::Connect(0, addr, None, None, data)
 }
 
 pub(super) fn agree_message(proof: Proof, me: User, addr: PeerAddr) -> Result<SendType> {
-    let data = postcard::to_allocvec(&LayerEvent::Agree(me, proof)).unwrap_or(vec![]);
+    let data = bincode::serialize(&LayerEvent::Agree(me, proof)).unwrap_or(vec![]);
     Ok(SendType::Event(0, addr, data))
 }
 
 // maybe need if gid or addr in blocklist.
 fn _res_reject() -> Vec<u8> {
-    postcard::to_allocvec(&LayerEvent::Reject).unwrap_or(vec![])
+    bincode::serialize(&LayerEvent::Reject).unwrap_or(vec![])
 }

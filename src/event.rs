@@ -132,7 +132,7 @@ impl InnerEvent {
             .map(|s| s.as_nanos())
             .unwrap_or(0);
         bytes[0..16].copy_from_slice(&datetime.to_le_bytes());
-        let data = postcard::to_allocvec(self).unwrap_or(vec![]);
+        let data = bincode::serialize(self).unwrap_or(vec![]);
         bytes[16..32].copy_from_slice(&blake3::hash(&data).as_bytes()[0..16]);
         EventId(bytes)
     }
@@ -145,7 +145,7 @@ impl InnerEvent {
         event: LayerEvent,
     ) -> Result<()> {
         let addr = layer.read().await.running(&gid)?.online_direct(&fgid)?;
-        let data = postcard::to_allocvec(&event).unwrap_or(vec![]);
+        let data = bincode::serialize(&event).unwrap_or(vec![]);
         let msg = SendType::Event(0, addr, data);
         let _ = sender.send(SendMessage::Layer(gid, fgid, msg)).await;
         Ok(())
@@ -165,7 +165,7 @@ impl InnerEvent {
             // TODO request for sync self_height + 1.
             if let Some(gid) = need_sync {
                 let event = GroupEvent::SyncRequest(our_height + 1, event_height);
-                let data = postcard::to_allocvec(&event).unwrap_or(vec![]);
+                let data = bincode::serialize(&event).unwrap_or(vec![]);
                 results.groups.push((gid, SendType::Event(0, *addr, data)));
                 return Ok((event_height, our_height, our_event));
             } else {
