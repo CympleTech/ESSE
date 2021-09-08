@@ -29,7 +29,7 @@ class AccountGeneratePage extends StatefulWidget {
 }
 
 class _AccountGeneratePageState extends State<AccountGeneratePage> {
-  int _selectedMnemonicLang = 0;
+  int _selectedMnemonicLang = 1;
   String _mnemoicWords = "";
 
   bool _mnemonicChecked = false;
@@ -316,7 +316,7 @@ class _AccountGeneratePageState extends State<AccountGeneratePage> {
   }
 }
 
-Widget _header(String value, Function callback) {
+Widget _header(String value, VoidCallback callback) {
   return Container(
     width: 700.0,
     child: Row(
@@ -324,7 +324,7 @@ Widget _header(String value, Function callback) {
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         GestureDetector(
-          onTap: () => callback,
+          onTap: callback,
           child: Container(
             width: 40.0,
             height: 40.0,

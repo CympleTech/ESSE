@@ -245,7 +245,7 @@ class _DevicesPageState extends State<DevicesPage> {
                                 padding: const EdgeInsets.only(right: 10.0),
                                 width: 30.0,
                                 height: 30.0,
-                                child: Icon(Icons.add_rounded, color: color.primary),
+                                child: Icon(Icons.add_rounded, color: Color(0xFF6174FF)),
                               ),
                               Text(lang.addDevice, style: TextStyle(color: Colors.black)),
                             ]
@@ -258,7 +258,7 @@ class _DevicesPageState extends State<DevicesPage> {
                                 padding: const EdgeInsets.only(right: 10.0),
                                 width: 30.0,
                                 height: 30.0,
-                                child: Icon(Icons.qr_code_rounded, color: color.primary),
+                                child: Icon(Icons.qr_code_rounded, color: Color(0xFF6174FF)),
                               ),
                               Text(lang.deviceQrcode, style: TextStyle(color: Colors.black)),
                             ]
