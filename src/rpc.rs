@@ -255,13 +255,13 @@ fn new_rpc_handler(
             let device_info = params[5].as_str().ok_or(RpcError::ParseError)?;
             let avatar_bytes = base64::decode(avatar).unwrap_or(vec![]);
 
-            let gid = state
+            let (id, gid) = state
                 .group
                 .write()
                 .await
                 .add_account(name, seed, lock, avatar_bytes, device_name, device_info)
                 .await?;
-            state.layer.write().await.add_running(&gid, 0)?;
+            state.layer.write().await.add_running(&gid, gid, id, 0)?;
 
             let mut results = HandleResult::rpc(json!(vec![gid.to_hex()]));
             results.networks.push(NetworkType::AddGroup(gid)); // add AddGroup to TDN.
@@ -281,13 +281,13 @@ fn new_rpc_handler(
             let device_name = params[4].as_str().ok_or(RpcError::ParseError)?;
             let device_info = params[5].as_str().ok_or(RpcError::ParseError)?;
 
-            let gid = state
+            let (id, gid) = state
                 .group
                 .write()
                 .await
                 .add_account(name, seed, lock, vec![], device_name, device_info)
                 .await?;
-            state.layer.write().await.add_running(&gid, 0)?;
+            state.layer.write().await.add_running(&gid, gid, id, 0)?;
 
             let mut results = HandleResult::rpc(json!(vec![gid.to_hex()]));
             results.networks.push(NetworkType::AddGroup(gid)); // add AddGroup to TDN.
@@ -361,19 +361,19 @@ fn new_rpc_handler(
 
             let mut results = HandleResult::rpc(json!([gid.to_hex()]));
 
-            state.group.write().await.add_running(&gid, me_lock)?;
+            let id = state.group.write().await.add_running(&gid, me_lock)?;
             // add AddGroup to TDN.
             results.networks.push(NetworkType::AddGroup(gid));
 
             let mut layer_lock = state.layer.write().await;
-            layer_lock.add_running(&gid, 0)?; // TODO account current state height.
+            layer_lock.add_running(&gid, gid, id, 0)?; // TODO account current state height.
 
             // load all services layer created by this account.
             // 1. group chat.
             let group_db = group_chat_db(&layer_lock.base, &gid)?;
             let group_chats = GroupChat::all_local(&group_db, &gid)?;
-            for (gcd, gheight) in group_chats {
-                layer_lock.add_running(&gcd, gheight)?;
+            for (id, gcd, gheight) in group_chats {
+                layer_lock.add_running(&gcd, gid, id, gheight)?;
                 results.networks.push(NetworkType::AddGroup(gcd));
             }
             drop(layer_lock);

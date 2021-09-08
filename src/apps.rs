@@ -32,8 +32,9 @@ pub(crate) async fn app_layer_handle(
     mgid: GroupId,
     msg: RecvType,
 ) -> Result<HandleResult> {
-    match fgid {
-        group_chat::GROUP_ID => group_chat::layer_handle(layer, mgid, msg).await,
+    match (fgid, mgid) {
+        (group_chat::GROUP_ID, _) => group_chat::layer_handle(layer, fgid, mgid, false, msg).await,
+        (_, group_chat::GROUP_ID) => group_chat::layer_handle(layer, fgid, mgid, true, msg).await,
         _ => chat::layer_handle(layer, fgid, mgid, msg).await,
     }
 }

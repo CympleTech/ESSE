@@ -300,14 +300,15 @@ impl GroupChat {
     }
 
     /// list all local group chat as running layer.
-    pub fn all_local(db: &DStorage, owner: &GroupId) -> Result<Vec<(GroupId, i64)>> {
-        let matrix = db.query(&format!("SELECT gcd, height FROM groups WHERE owner = '{}' and is_remote = false and is_closed = false", owner.to_hex()))?;
+    pub fn all_local(db: &DStorage, owner: &GroupId) -> Result<Vec<(i64, GroupId, i64)>> {
+        let matrix = db.query(&format!("SELECT id, gcd, height FROM groups WHERE owner = '{}' and is_remote = false and is_closed = false", owner.to_hex()))?;
         let mut groups = vec![];
         for mut values in matrix {
             let height = values.pop().unwrap().as_i64();
             let gcd =
                 GroupId::from_hex(values.pop().unwrap().as_string()).unwrap_or(Default::default());
-            groups.push((gcd, height));
+            let id = values.pop().unwrap().as_i64();
+            groups.push((id, gcd, height));
         }
         Ok(groups)
     }

@@ -395,17 +395,18 @@ impl Group {
         addrs
     }
 
-    pub fn add_running(&mut self, gid: &GroupId, lock: &str) -> Result<()> {
+    pub fn add_running(&mut self, gid: &GroupId, lock: &str) -> Result<i64> {
         if let Some(u) = self.accounts.get(gid) {
             let keypair = u.secret(&self.secret, lock)?;
             if !self.runnings.contains_key(gid) {
                 // load devices to runnings.
                 let running = RunningAccount::init(keypair, &self.base, gid)?;
                 self.runnings.insert(gid.clone(), running);
+                return Ok(u.id);
             }
         }
 
-        Ok(())
+        Err(new_io_error("user missing."))
     }
 
     pub fn clone_user(&self, gid: &GroupId) -> Result<User> {
@@ -428,14 +429,14 @@ impl Group {
         avatar_bytes: Vec<u8>,
         device_name: &str,
         device_info: &str,
-    ) -> Result<GroupId> {
+    ) -> Result<(i64, GroupId)> {
         let (mut account, sk) = Account::generate(&self.secret, name, seed, lock, avatar_bytes)?;
         let account_id = account.gid;
 
-        if self.accounts.contains_key(&account_id) {
+        if let Some(u) = self.accounts.get(&account_id) {
             let running = RunningAccount::init(sk, &self.base, &account_id)?;
             self.runnings.insert(account_id, running);
-            return Ok(account_id);
+            return Ok((u.id, account_id));
         }
 
         account_init(&self.base, &account.gid).await?;
@@ -443,6 +444,7 @@ impl Group {
         let account_db = account_db(&self.base)?;
         account.insert(&account_db)?;
         account_db.close()?;
+        let account_did = account.id;
         let _ = write_avatar(&self.base, &account_id, &account_id, &account.avatar).await;
         self.accounts.insert(account.gid, account);
 
@@ -456,7 +458,7 @@ impl Group {
             RunningAccount::init(sk, &self.base, &account_id)?,
         );
 
-        Ok(account_id)
+        Ok((account_did, account_id))
     }
 
     pub fn update_account(&mut self, gid: GroupId, name: &str, avatar: Vec<u8>) -> Result<()> {

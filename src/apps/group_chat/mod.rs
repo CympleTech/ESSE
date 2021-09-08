@@ -11,6 +11,12 @@ pub(crate) fn add_layer(results: &mut HandleResult, gid: GroupId, msg: SendType)
     results.layers.push((gid, GROUP_ID, msg));
 }
 
+/// Group chat server to ESSE.
+#[inline]
+pub fn add_server_layer(results: &mut HandleResult, gid: GroupId, msg: SendType) {
+    results.layers.push((GROUP_ID, gid, msg));
+}
+
 pub(crate) mod rpc;
 pub(crate) use layer::group_chat_conn;
 pub(crate) use layer::handle as layer_handle;

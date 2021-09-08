@@ -64,9 +64,16 @@ impl Layer {
         self.runnings.get_mut(gid).ok_or(new_io_error("not online"))
     }
 
-    pub fn add_running(&mut self, gid: &GroupId, consensus: i64) -> Result<()> {
+    pub fn add_running(
+        &mut self,
+        gid: &GroupId,
+        owner: GroupId,
+        id: i64,
+        consensus: i64,
+    ) -> Result<()> {
         if !self.runnings.contains_key(gid) {
-            self.runnings.insert(*gid, RunningLayer::init(consensus));
+            self.runnings
+                .insert(*gid, RunningLayer::init(owner, id, consensus));
         }
 
         Ok(())
@@ -170,7 +177,9 @@ impl Online {
 
 pub(crate) struct OnlineSession {
     pub online: Online,
+    /// session database id.
     pub db_id: i64,
+    /// session ref's service(friend/group) database id.
     pub db_fid: i64,
     pub suspend_me: bool,
     pub suspend_remote: bool,
@@ -204,18 +213,27 @@ impl OnlineSession {
 }
 
 pub(crate) struct RunningLayer {
-    /// online group (friends/services) => (group's address, group's db id)
-    sessions: HashMap<GroupId, OnlineSession>,
+    owner: GroupId, // if is service it has owner account.
+    /// layer current database id.
+    id: i64,
     /// layer current consensus height.
     consensus: i64,
+    /// online group (friends/services) => (group's address, group's db id)
+    sessions: HashMap<GroupId, OnlineSession>,
 }
 
 impl RunningLayer {
-    pub fn init(consensus: i64) -> Self {
+    pub fn init(owner: GroupId, id: i64, consensus: i64) -> Self {
         RunningLayer {
+            owner,
+            id,
             consensus,
             sessions: HashMap::new(),
         }
+    }
+
+    pub fn owner_height_id(&self) -> (GroupId, i64, i64) {
+        (self.owner, self.consensus, self.id)
     }
 
     pub fn increased(&mut self) -> i64 {
