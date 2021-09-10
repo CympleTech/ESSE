@@ -1,7 +1,7 @@
 use std::sync::Arc;
 use tdn::types::{
     group::GroupId,
-    primitive::{new_io_error, HandleResult, PeerAddr},
+    primitive::{HandleResult, PeerAddr},
     rpc::{json, rpc_response, RpcError, RpcHandler, RpcParam},
 };
 
@@ -81,8 +81,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
     handler.add_method(
         "device-status",
         |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
-            let addr = PeerAddr::from_hex(params[0].as_str().ok_or(RpcError::ParseError)?)
-                .map_err(|_e| new_io_error("PeerAddr invalid!"))?;
+            let addr = PeerAddr::from_hex(params[0].as_str().ok_or(RpcError::ParseError)?)?;
 
             let group_lock = state.group.read().await;
             if &addr == group_lock.addr() {
@@ -108,8 +107,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
     handler.add_method(
         "device-create",
         |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
-            let addr = PeerAddr::from_hex(params[0].as_str().ok_or(RpcError::ParseError)?)
-                .map_err(|_e| new_io_error("PeerAddr invalid!"))?;
+            let addr = PeerAddr::from_hex(params[0].as_str().ok_or(RpcError::ParseError)?)?;
 
             let msg = state.group.read().await.create_message(&gid, addr)?;
             Ok(HandleResult::group(gid, msg))
@@ -119,8 +117,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
     handler.add_method(
         "device-connect",
         |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
-            let addr = PeerAddr::from_hex(params[0].as_str().ok_or(RpcError::ParseError)?)
-                .map_err(|_e| new_io_error("PeerAddr invalid!"))?;
+            let addr = PeerAddr::from_hex(params[0].as_str().ok_or(RpcError::ParseError)?)?;
 
             let msg = state.group.read().await.connect_message(&gid, addr)?;
             Ok(HandleResult::group(gid, msg))

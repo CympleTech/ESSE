@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
 use tdn::types::{
     group::GroupId,
-    primitive::{new_io_error, PeerAddr, Result},
+    primitive::{PeerAddr, Result},
     rpc::{json, RpcParam},
 };
 use tdn_storage::local::{DStorage, DsValue};
@@ -35,13 +35,13 @@ impl GroupChatKey {
     pub fn from_hex(s: impl ToString) -> Result<Self> {
         let s = s.to_string();
         if s.len() % 2 != 0 {
-            return Err(new_io_error("Hex is invalid"));
+            return Err(anyhow!("Hex is invalid"));
         }
         let mut value = vec![];
 
         for i in 0..(s.len() / 2) {
             let res = u8::from_str_radix(&s[2 * i..2 * i + 2], 16)
-                .map_err(|_e| new_io_error("Hex is invalid"))?;
+                .map_err(|_e| anyhow!("Hex is invalid"))?;
             value.push(res);
         }
 
@@ -576,7 +576,7 @@ impl Request {
             rid
         ))?;
         if matrix.len() == 0 {
-            return Err(new_io_error("request is missing"));
+            return Err(anyhow!("request is missing"));
         }
         let id = matrix.pop().unwrap().pop().unwrap().as_i64(); // safe.
         let sql = format!(
@@ -610,7 +610,7 @@ impl Request {
         if requests.len() > 0 {
             Ok(requests.pop().unwrap()) // safe.
         } else {
-            Err(new_io_error("no requests"))
+            Err(anyhow!("no requests"))
         }
     }
 }
@@ -743,7 +743,7 @@ impl Member {
         if matrix.len() > 0 {
             Ok(matrix.pop().unwrap().pop().unwrap().as_i64()) // safe unwrap.
         } else {
-            Err(new_io_error("missing member"))
+            Err(anyhow!("missing member"))
         }
     }
 
@@ -757,7 +757,7 @@ impl Member {
         if matrix.len() > 0 {
             Ok(matrix.pop().unwrap().pop().unwrap().as_i64()) // safe unwrap.
         } else {
-            Err(new_io_error("missing member"))
+            Err(anyhow!("missing member"))
         }
     }
 
@@ -945,9 +945,9 @@ pub(super) async fn to_network_message(
             NetworkMessage::File(old_name, bytes)
         }
         MessageType::Contact => {
-            let cid: i64 = content.parse().map_err(|_e| new_io_error("id error"))?;
+            let cid: i64 = content.parse()?;
             let db = chat_db(base, gid)?;
-            let contact = Friend::get_id(&db, cid)?.ok_or(new_io_error("contact missind"))?;
+            let contact = Friend::get_id(&db, cid)?.ok_or(anyhow!("contact missind"))?;
             drop(db);
             let avatar_bytes = read_avatar(base, &gid, &contact.gid).await?;
             NetworkMessage::Contact(contact.name, contact.gid, contact.addr, avatar_bytes)

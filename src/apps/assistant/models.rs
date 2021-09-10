@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
 use tdn::types::{
     group::GroupId,
-    primitive::{new_io_error, Result},
+    primitive::Result,
     rpc::{json, RpcError, RpcParam},
 };
 use tdn_storage::local::{DStorage, DsValue};
@@ -72,7 +72,7 @@ impl MessageType {
                 (self, filename.clone(), MessageType::File, filename)
             }
             MessageType::Contact => {
-                let cid: i64 = content.parse().map_err(|_e| new_io_error("id error"))?;
+                let cid: i64 = content.parse().map_err(|_| anyhow!("parse i64 failure!"))?;
                 let db = chat_db(base, mgid)?;
                 let contact = Friend::get_id(&db, cid)?.ok_or(RpcError::ParseError)?;
                 db.close()?;

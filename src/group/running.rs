@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
 use tdn::types::{
     group::GroupId,
-    primitive::{new_io_error, PeerAddr, Result},
+    primitive::{PeerAddr, Result},
 };
 
 use tdn_did::Keypair;
@@ -52,7 +52,7 @@ impl RunningAccount {
             v.1 = true;
             Ok(v.0)
         } else {
-            Err(new_io_error("device missing"))
+            Err(anyhow!("device missing"))
         }
     }
 
@@ -61,7 +61,7 @@ impl RunningAccount {
             v.1 = false;
             Ok(v.0)
         } else {
-            Err(new_io_error("device missing"))
+            Err(anyhow!("device missing"))
         }
     }
 }

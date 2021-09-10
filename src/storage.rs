@@ -4,10 +4,7 @@ use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
 use tokio::fs;
 
-use tdn::types::{
-    group::GroupId,
-    primitive::{new_io_error, Result},
-};
+use tdn::types::{group::GroupId, primitive::Result};
 use tdn_storage::local::DStorage;
 
 use crate::migrate::{
@@ -57,7 +54,7 @@ pub(crate) async fn init_local_files(base: &PathBuf) -> Result<()> {
 }
 
 pub(crate) async fn read_file(base: &PathBuf) -> Result<Vec<u8>> {
-    fs::read(base).await
+    Ok(fs::read(base).await?)
 }
 
 pub(crate) async fn write_file(
@@ -94,7 +91,7 @@ pub(crate) fn read_file_sync(base: &PathBuf, gid: &GroupId, name: &str) -> Resul
     path.push(gid.to_hex());
     path.push(FILES_DIR);
     path.push(name);
-    std::fs::read(base)
+    Ok(std::fs::read(base)?)
 }
 
 #[inline]
@@ -111,7 +108,7 @@ fn image_name() -> String {
 #[inline]
 fn image_thumb(bytes: &[u8]) -> Result<DynamicImage> {
     // thumbnail image. 120*800
-    let img = load_from_memory(&bytes).map_err(|_e| new_io_error("image invalid format."))?;
+    let img = load_from_memory(&bytes)?;
     let (x, _) = img.dimensions();
     if x > 100 {
         Ok(img.thumbnail(120, 800))
@@ -167,7 +164,7 @@ pub(crate) fn read_image_sync(base: &PathBuf, gid: &GroupId, name: &str) -> Resu
     path.push(gid.to_hex());
     path.push(IMAGE_DIR);
     path.push(name);
-    std::fs::read(base)
+    Ok(std::fs::read(base)?)
 }
 
 #[inline]
@@ -187,7 +184,7 @@ pub(crate) async fn read_avatar(
     path.push(AVATAR_DIR);
     path.push(avatar_png(remote));
     if path.exists() {
-        fs::read(path).await
+        Ok(fs::read(path).await?)
     } else {
         Ok(vec![])
     }
@@ -199,7 +196,7 @@ pub(crate) fn read_avatar_sync(base: &PathBuf, gid: &GroupId, remote: &GroupId) 
     path.push(AVATAR_DIR);
     path.push(avatar_png(remote));
     if path.exists() {
-        std::fs::read(path)
+        Ok(std::fs::read(path)?)
     } else {
         Ok(vec![])
     }
@@ -218,7 +215,7 @@ pub(crate) async fn write_avatar(
     path.push(gid.to_hex());
     path.push(AVATAR_DIR);
     path.push(avatar_png(remote));
-    fs::write(path, bytes).await
+    Ok(fs::write(path, bytes).await?)
 }
 
 pub(crate) fn write_avatar_sync(
@@ -244,7 +241,7 @@ pub(crate) async fn delete_avatar(base: &PathBuf, gid: &GroupId, remote: &GroupI
     path.push(AVATAR_DIR);
     path.push(avatar_png(remote));
     if path.exists() {
-        fs::remove_file(path).await
+        Ok(fs::remove_file(path).await?)
     } else {
         Ok(())
     }
@@ -267,7 +264,7 @@ pub(crate) async fn read_record(base: &PathBuf, gid: &GroupId, name: &str) -> Re
     path.push(RECORD_DIR);
     path.push(name);
     if path.exists() {
-        fs::read(path).await
+        Ok(fs::read(path).await?)
     } else {
         Ok(vec![])
     }
@@ -278,7 +275,7 @@ pub(crate) fn read_record_sync(base: &PathBuf, gid: &GroupId, name: &str) -> Res
     path.push(gid.to_hex());
     path.push(RECORD_DIR);
     path.push(name);
-    std::fs::read(path)
+    Ok(std::fs::read(path)?)
 }
 
 pub(crate) fn write_record_sync(
@@ -308,7 +305,7 @@ pub(crate) async fn _delete_record(base: &PathBuf, gid: &GroupId, name: &str) ->
     path.push(gid.to_hex());
     path.push(RECORD_DIR);
     path.push(name);
-    fs::remove_file(path).await
+    Ok(fs::remove_file(path).await?)
 }
 
 pub(crate) fn _write_emoji(base: &PathBuf, gid: &GroupId) -> Result<()> {

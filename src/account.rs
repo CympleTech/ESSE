@@ -3,7 +3,7 @@ use aes_gcm::Aes256Gcm;
 use std::time::{SystemTime, UNIX_EPOCH};
 use tdn::types::{
     group::{EventId, GroupId},
-    primitive::{new_io_error, Result},
+    primitive::Result,
 };
 use tdn_did::{genereate_id, Keypair};
 use tdn_storage::local::{DStorage, DsValue};
@@ -65,11 +65,11 @@ impl Account {
 
         let mnemonic_bytes = cipher
             .encrypt(nonce, mnemonic.as_bytes())
-            .map_err(|_e| new_io_error("mnemonic lock invalid."))?;
+            .map_err(|_e| anyhow!("mnemonic lock invalid."))?;
 
         let sk_bytes = cipher
             .encrypt(nonce, sk.to_bytes().as_ref())
-            .map_err(|_e| new_io_error("secret lock invalid."))?;
+            .map_err(|_e| anyhow!("secret lock invalid."))?;
 
         Ok((
             Account::new(
@@ -101,19 +101,19 @@ impl Account {
 
         let mnemonic = cipher
             .decrypt(old_nonce, self.mnemonic.as_ref())
-            .map_err(|_e| new_io_error("mnemonic unlock invalid."))?;
+            .map_err(|_e| anyhow!("mnemonic unlock invalid."))?;
 
         self.mnemonic = cipher
             .encrypt(new_nonce, mnemonic.as_ref())
-            .map_err(|_e| new_io_error("mnemonic lock invalid."))?;
+            .map_err(|_e| anyhow!("mnemonic lock invalid."))?;
 
         let secret = cipher
             .decrypt(old_nonce, self.secret.as_ref())
-            .map_err(|_e| new_io_error("secret unlock invalid."))?;
+            .map_err(|_e| anyhow!("secret unlock invalid."))?;
 
         self.secret = cipher
             .encrypt(new_nonce, secret.as_ref())
-            .map_err(|_e| new_io_error("secret lock invalid."))?;
+            .map_err(|_e| anyhow!("secret lock invalid."))?;
 
         Ok(())
     }
@@ -125,9 +125,9 @@ impl Account {
 
         let plaintext = cipher
             .decrypt(nonce, self.mnemonic.as_ref())
-            .map_err(|_e| new_io_error("mnemonic unlock invalid."))?;
+            .map_err(|_e| anyhow!("mnemonic unlock invalid."))?;
 
-        String::from_utf8(plaintext).map_err(|_e| new_io_error("mnemonic unlock invalid."))
+        String::from_utf8(plaintext).map_err(|_e| anyhow!("mnemonic unlock invalid."))
     }
 
     pub fn secret(&self, skey: &[u8], lock: &str) -> Result<Keypair> {
@@ -137,9 +137,9 @@ impl Account {
 
         let plaintext = cipher
             .decrypt(nonce, self.secret.as_ref())
-            .map_err(|_e| new_io_error("secret unlock invalid."))?;
+            .map_err(|_e| anyhow!("secret unlock invalid."))?;
 
-        Keypair::from_bytes(&plaintext).map_err(|_e| new_io_error("secret unlock invalid."))
+        Keypair::from_bytes(&plaintext).map_err(|_e| anyhow!("secret unlock invalid."))
     }
 
     /// here is zero-copy and unwrap is safe. checked.

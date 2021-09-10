@@ -4,7 +4,7 @@ use std::sync::Arc;
 use tdn::types::{
     group::{EventId, GroupId},
     message::{RecvType, SendType},
-    primitive::{new_io_error, DeliveryType, HandleResult, PeerAddr, Result},
+    primitive::{DeliveryType, HandleResult, PeerAddr, Result},
     rpc::RpcError,
 };
 use tdn_did::{user::User, Proof};
@@ -139,8 +139,7 @@ fn handle_connect(
     results: &mut HandleResult,
 ) -> Result<bool> {
     // 0. deserialize connect data.
-    let proof: Proof = bincode::deserialize(&data)
-        .map_err(|_e| new_io_error("Deseralize chat layer connect failure"))?;
+    let proof: Proof = bincode::deserialize(&data)?;
 
     // 1. check verify.
     proof.verify(fgid, addr, &layer.addr)?;
@@ -177,8 +176,7 @@ impl LayerEvent {
         addr: PeerAddr,
         bytes: Vec<u8>,
     ) -> Result<HandleResult> {
-        let event: LayerEvent =
-            bincode::deserialize(&bytes).map_err(|_| new_io_error("serialize event error."))?;
+        let event: LayerEvent = bincode::deserialize(&bytes)?;
 
         let mut results = HandleResult::new();
 
@@ -330,7 +328,7 @@ impl LayerEvent {
                 let (_sid, fid) = layer.get_running_remote_id(&mgid, &fgid)?;
                 let avatar = remote.avatar.clone();
                 let db = chat_db(&layer.base, &mgid)?;
-                let mut f = Friend::get_id(&db, fid)?.ok_or(new_io_error(""))?;
+                let mut f = Friend::get_id(&db, fid)?.ok_or(anyhow!("friend not found"))?;
                 f.name = remote.name;
                 f.addr = remote.addr;
                 f.remote_update(&db)?;
@@ -400,7 +398,7 @@ impl LayerEvent {
                 (NetworkMessage::File(filename.clone(), bytes), filename)
             }
             MessageType::Contact => {
-                let cid: i64 = content.parse().map_err(|_e| new_io_error("id error"))?;
+                let cid: i64 = content.parse().map_err(|_| anyhow!("parse i64 failure!"))?;
                 let contact = Friend::get_id(&db, cid)?.ok_or(RpcError::ParseError)?;
                 let avatar_bytes = read_avatar(base, &mgid, &contact.gid).await?;
                 let tmp_name = contact.name.replace(";", "-;");

@@ -6,7 +6,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use tdn::types::{
     group::{EventId, GroupId},
     message::{SendMessage, SendType},
-    primitive::{new_io_error, HandleResult, PeerAddr, Result},
+    primitive::{HandleResult, PeerAddr, Result},
 };
 use tdn_did::user::User;
 use tdn_storage::local::DStorage;
@@ -655,7 +655,7 @@ impl SyncEvent {
         }
 
         if events.len() as u64 != to + 1 - from {
-            return Err(new_io_error("events number not matching."));
+            return Err(anyhow!("events number not matching."));
         }
 
         Ok(events)

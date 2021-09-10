@@ -20,18 +20,18 @@ codegen-units = 1
 panic = 'abort'
 
 [dependencies]
+anyhow = "1.0"
 log = "0.4"
 rand = "0.8"
 once_cell = "1.7"
 simplelog = "0.10"
 image = "0.23"
 base64 = "0.13"
-sha2 = "0.9"
 blake3 = "0.3"
-aes-gcm = "0.8"
 bincode = "1.3"
-serde = { version = "1", features = ["derive"] }
+aes-gcm = "0.8"
 sysinfo = "0.16"
+serde = { version = "1", features = ["derive"] }
 tokio = { version = "1", features = ["full"] }
 tdn = { version = "0.5", default-features = false, features = ["full"] }
 tdn_did = { git = "https://github.com/cypherlink/tdn_did", branch="main" }

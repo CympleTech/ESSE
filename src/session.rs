@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 use tdn::types::{
     group::GroupId,
-    primitive::{new_io_error, PeerAddr, Result},
+    primitive::{PeerAddr, Result},
     rpc::{json, RpcParam},
 };
 use tdn_storage::local::{DStorage, DsValue};
@@ -159,7 +159,7 @@ impl Session {
         if matrix.len() > 0 {
             Ok(Session::from_values(matrix.pop().unwrap())) // safe unwrap()
         } else {
-            Err(new_io_error("session missing."))
+            Err(anyhow!("session missing."))
         }
     }
 
@@ -191,7 +191,7 @@ impl Session {
             db.delete(&format!("DELETE FROM sessions WHERE id = {}", id))?;
             Ok(id)
         } else {
-            Err(new_io_error("session missing"))
+            Err(anyhow!("session missing"))
         }
     }
 
@@ -208,7 +208,7 @@ impl Session {
             db.update(&s)?;
             Ok(id)
         } else {
-            Err(new_io_error("session missing"))
+            Err(anyhow!("session missing"))
         }
     }
 
@@ -232,7 +232,7 @@ impl Session {
             db.update(&format!("UPDATE sessions SET is_close = false, last_datetime = {}, last_content = '{}', last_readed = {} WHERE id = {}", datetime, content, if readed { 1 } else { 0 }, id))?;
             Ok(id)
         } else {
-            Err(new_io_error("session missing"))
+            Err(anyhow!("session missing"))
         }
     }
 

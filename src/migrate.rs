@@ -1,4 +1,5 @@
 use std::path::PathBuf;
+use tdn::types::primitive::Result;
 use tdn_storage::local::DStorage;
 
 pub mod consensus;
@@ -44,7 +45,7 @@ pub(crate) const ASSISTANT_DB: &'static str = "assistant.db";
 /// Account's assistant database name
 pub(crate) const GROUP_CHAT_DB: &'static str = "group_chat.db";
 
-pub(crate) fn main_migrate(path: &PathBuf) -> std::io::Result<()> {
+pub(crate) fn main_migrate(path: &PathBuf) -> Result<()> {
     let mut db_path = path.clone();
     db_path.push(ACCOUNT_DB);
 
@@ -200,7 +201,7 @@ pub(crate) fn main_migrate(path: &PathBuf) -> std::io::Result<()> {
     Ok(())
 }
 
-pub(crate) fn account_init_migrate(path: &PathBuf) -> std::io::Result<()> {
+pub(crate) fn account_init_migrate(path: &PathBuf) -> Result<()> {
     let mut db_path = path.clone();
     db_path.push(CONSENSUS_DB);
     let db = DStorage::open(db_path)?;

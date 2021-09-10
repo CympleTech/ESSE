@@ -3,9 +3,11 @@ use simplelog::{CombinedLogger, Config as LogConfig, LevelFilter};
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Arc;
-use tdn::{prelude::*, types::primitive::HandleResult};
+use tdn::{
+    prelude::*,
+    types::primitive::{HandleResult, Result},
+};
 use tokio::{
-    io::Result,
     sync::mpsc::{error::SendError, Sender},
     sync::RwLock,
 };

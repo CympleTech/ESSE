@@ -5,7 +5,7 @@ use std::sync::Arc;
 use tdn::types::{
     group::GroupId,
     message::SendType,
-    primitive::{new_io_error, PeerAddr, Result},
+    primitive::{PeerAddr, Result},
 };
 use tokio::sync::RwLock;
 
@@ -57,11 +57,11 @@ impl Layer {
     }
 
     pub fn running(&self, gid: &GroupId) -> Result<&RunningLayer> {
-        self.runnings.get(gid).ok_or(new_io_error("not online"))
+        self.runnings.get(gid).ok_or(anyhow!("not online"))
     }
 
     pub fn running_mut(&mut self, gid: &GroupId) -> Result<&mut RunningLayer> {
-        self.runnings.get_mut(gid).ok_or(new_io_error("not online"))
+        self.runnings.get_mut(gid).ok_or(anyhow!("not online"))
     }
 
     pub fn add_running(
@@ -276,7 +276,7 @@ impl RunningLayer {
                 Ok(false)
             }
         } else {
-            Err(new_io_error("remote not online"))
+            Err(anyhow!("remote not online"))
         }
     }
 
@@ -284,7 +284,7 @@ impl RunningLayer {
         self.sessions
             .get(gid)
             .map(|online| (online.db_id, online.db_fid))
-            .ok_or(new_io_error("remote not online"))
+            .ok_or(anyhow!("remote not online"))
     }
 
     /// get online peer's addr.
@@ -292,7 +292,7 @@ impl RunningLayer {
         self.sessions
             .get(gid)
             .map(|online| *online.online.addr())
-            .ok_or(new_io_error("remote not online"))
+            .ok_or(anyhow!("remote not online"))
     }
 
     pub fn online_direct(&self, gid: &GroupId) -> Result<PeerAddr> {
@@ -302,7 +302,7 @@ impl RunningLayer {
                 _ => {}
             }
         }
-        Err(new_io_error("no direct online"))
+        Err(anyhow!("no direct online"))
     }
 
     /// get all online peer.
@@ -328,7 +328,7 @@ impl RunningLayer {
                         .insert(gid, OnlineSession::new(online, id, fid));
                     Ok(())
                 }
-                _ => Err(new_io_error("remote had online")),
+                _ => Err(anyhow!("remote had online")),
             }
         } else {
             self.sessions

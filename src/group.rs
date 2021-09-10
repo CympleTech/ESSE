@@ -5,7 +5,7 @@ use std::sync::Arc;
 use tdn::types::{
     group::{EventId, GroupId},
     message::{RecvType, SendMessage, SendType},
-    primitive::{new_io_error, HandleResult, PeerAddr, Result},
+    primitive::{HandleResult, PeerAddr, Result},
 };
 use tdn_did::{user::User, Proof};
 use tokio::sync::{mpsc::Sender, RwLock};
@@ -111,8 +111,7 @@ impl Group {
                 self.hanlde_connect(&mut results, &gid, addr, data, true)?;
             }
             RecvType::Event(addr, bytes) => {
-                let event: GroupEvent = bincode::deserialize(&bytes)
-                    .map_err(|_| new_io_error("serialize event error."))?;
+                let event: GroupEvent = bincode::deserialize(&bytes)?;
                 return GroupEvent::handle(self, event, gid, addr, layer, uid);
             }
             RecvType::Stream(_uid, _stream, _bytes) => {
@@ -133,8 +132,7 @@ impl Group {
         data: Vec<u8>,
         is_connect: bool,
     ) -> Result<()> {
-        let connect = bincode::deserialize(&data)
-            .map_err(|_e| new_io_error("Deserialize group connect failure"))?;
+        let connect = bincode::deserialize(&data)?;
 
         let (remote_height, remote_event, others) = match connect {
             GroupConnect::Create(
@@ -148,7 +146,7 @@ impl Group {
             ) => {
                 // check remote addr is receive addr.
                 if remote.addr != addr {
-                    return Err(new_io_error("Address is invalid."));
+                    return Err(anyhow!("Address is invalid."));
                 }
                 proof.verify(gid, &addr, &self.addr)?;
                 if is_connect {
@@ -273,7 +271,7 @@ impl Group {
         if let Some(account) = self.accounts.get(gid) {
             Ok(account)
         } else {
-            Err(new_io_error("user missing"))
+            Err(anyhow!("user missing"))
         }
     }
 
@@ -281,7 +279,7 @@ impl Group {
         if let Some(account) = self.accounts.get_mut(gid) {
             Ok(account)
         } else {
-            Err(new_io_error("user missing"))
+            Err(anyhow!("user missing"))
         }
     }
 
@@ -289,7 +287,7 @@ impl Group {
         if let Some(running) = self.runnings.get(gid) {
             Ok(running)
         } else {
-            Err(new_io_error("user missing"))
+            Err(anyhow!("user missing"))
         }
     }
 
@@ -297,7 +295,7 @@ impl Group {
         if let Some(running) = self.runnings.get_mut(gid) {
             Ok(running)
         } else {
-            Err(new_io_error("user missing"))
+            Err(anyhow!("user missing"))
         }
     }
 
@@ -406,14 +404,14 @@ impl Group {
             }
         }
 
-        Err(new_io_error("user missing."))
+        Err(anyhow!("user missing."))
     }
 
     pub fn clone_user(&self, gid: &GroupId) -> Result<User> {
         if let Some(u) = self.accounts.get(gid) {
             User::new(u.gid, self.addr, u.name.clone(), u.avatar.clone())
         } else {
-            Err(new_io_error("user missing."))
+            Err(anyhow!("user missing."))
         }
     }
 
@@ -476,7 +474,7 @@ impl Group {
         if let Some(u) = self.accounts.get(gid) {
             u.mnemonic(&self.secret, lock)
         } else {
-            Err(new_io_error("user missing."))
+            Err(anyhow!("user missing."))
         }
     }
 
@@ -487,7 +485,7 @@ impl Group {
             u.update(&account_db)?;
             account_db.close()
         } else {
-            Err(new_io_error("user missing."))
+            Err(anyhow!("user missing."))
         }
     }
 

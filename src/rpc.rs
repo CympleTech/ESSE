@@ -4,7 +4,7 @@ use std::sync::Arc;
 use tdn::types::{
     group::GroupId,
     message::{NetworkType, SendMessage, SendType, StateRequest, StateResponse},
-    primitive::{new_io_error, HandleResult, PeerAddr, Result},
+    primitive::{HandleResult, PeerAddr, Result},
     rpc::{json, rpc_response, RpcError, RpcHandler, RpcParam},
 };
 use tokio::sync::{
@@ -195,7 +195,7 @@ pub(crate) async fn inner_rpc(uid: u64, method: &str, sender: &Sender<SendMessag
         return Ok(());
     }
 
-    Err(new_io_error("not found"))
+    Err(anyhow!("not found"))
 }
 
 fn new_rpc_handler(
