@@ -249,6 +249,7 @@ impl GroupChat {
             self.is_ok,
             self.is_closed,
             self.is_need_agree,
+            self.is_remote,
         ])
     }
 

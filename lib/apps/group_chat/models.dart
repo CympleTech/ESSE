@@ -104,6 +104,7 @@ class GroupChat {
   bool isOk;
   bool isClosed;
   bool isNeedAgree;
+  bool isRemote;
 
   GroupChat.fromList(List params):
     this.id = params[0],
@@ -115,7 +116,8 @@ class GroupChat {
     this.bio = params[6],
     this.isOk = params[7],
     this.isClosed = params[8],
-    this.isNeedAgree = params[9];
+    this.isNeedAgree = params[9],
+    this.isRemote = params[10];
 
   Avatar showAvatar({double width = 45.0}) {
     final avatar = Global.avatarPath + this.gid + '.png';
