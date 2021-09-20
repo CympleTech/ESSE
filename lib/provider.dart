@@ -61,8 +61,6 @@ class AccountProvider extends ChangeNotifier {
     rpc.addListener('session-connect', _sessionConnect, false);
     rpc.addListener('session-suspend', _sessionSuspend, false);
     rpc.addListener('session-lost', _sessionLost, false);
-
-    systemInfo();
   }
 
   /// when security load accounts from rpc.
@@ -99,11 +97,7 @@ class AccountProvider extends ChangeNotifier {
     this.activedAccountId = account.gid;
     this.accounts[account.gid] = account;
 
-    rpc.send('account-login', [account.gid, account.lock]);
     rpc.send('session-list', []);
-
-    new Future.delayed(Duration(seconds: DEFAULT_ONLINE_DELAY),
-        () => rpc.send('account-online', [account.gid]));
     updateLogined(account);
   }
 
@@ -122,7 +116,6 @@ class AccountProvider extends ChangeNotifier {
 
     if (!this.activedAccount.online) {
       this.activedAccount.online = true;
-      rpc.send('account-login', [gid, this.activedAccount.lock]);
       new Future.delayed(Duration(seconds: DEFAULT_ONLINE_DELAY),
           () => rpc.send('account-online', [gid]));
     }
@@ -188,10 +181,6 @@ class AccountProvider extends ChangeNotifier {
     this.activedAccount.lock = lock;
     updateLogined(this.activedAccount);
     notifyListeners();
-  }
-
-  systemInfo() {
-    rpc.send('account-system-info', []);
   }
 
   clearActivedSession(SessionType type) {

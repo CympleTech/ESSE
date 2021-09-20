@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:image_gallery_saver/image_gallery_saver.dart';
+import 'package:image_save/image_save.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:open_file/open_file.dart';
 
@@ -69,8 +69,12 @@ class AssistantMessage extends StatelessWidget {
                 ].request();
 
                 if (statuses[Permission.storage] == PermissionStatus.granted) {
-                  final result = await ImageGallerySaver.saveFile(imagePath);
-                  print(result);
+
+                  // Save to album.
+                  final data = await File(imagePath).readAsBytes();
+                  final bool? success = await ImageSave.saveImage(data, content, albumName: "ESSE");
+                  print(success);
+
                   Navigator.pop(context);
                 }
               },

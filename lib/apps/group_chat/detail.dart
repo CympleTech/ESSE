@@ -183,7 +183,7 @@ class _GroupChatDetailState extends State<GroupChatDetail> {
         child: Column(
           children: [
             Container(
-              padding: EdgeInsets.only(left: 20.0, right: 20.0, top: 10.0, bottom: 10.0),
+              padding: EdgeInsets.only(left: 20.0, right: 20.0, top: 10.0, bottom: 6.0),
               child: Row(
                 children: [
                   if (!isDesktop)
@@ -206,13 +206,13 @@ class _GroupChatDetailState extends State<GroupChatDetail> {
                           this.group!.name,
                           style: TextStyle(fontWeight: FontWeight.bold),
                         ),
-                        const SizedBox(height: 6.0),
+                        const SizedBox(height: 5.0),
                         Text(this.group!.isClosed
                           ? lang.closed
                           : session.onlineLang(lang),
                           style: TextStyle(
                             color: color.onPrimary.withOpacity(0.5),
-                            fontSize: 14.0))
+                            fontSize: 12.0))
                       ],
                     ),
                   ),

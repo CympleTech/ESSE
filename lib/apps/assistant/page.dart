@@ -162,7 +162,7 @@ class _AssistantDetailState extends State<AssistantDetail> {
         child: Column(
           children: [
             Container(
-              padding: EdgeInsets.only(left: 20.0, right: 20.0, top: 10.0, bottom: 10.0),
+              padding: EdgeInsets.only(left: 20.0, right: 20.0, top: 10.0, bottom: 6.0),
               child: Row(
                 children: [
                   if (!isDesktop)
@@ -183,9 +183,9 @@ class _AssistantDetailState extends State<AssistantDetail> {
                         Text('Jarvis',
                           style: TextStyle(fontWeight: FontWeight.bold),
                         ),
-                        SizedBox(height: 6.0),
+                        SizedBox(height: 5.0),
                         Text(lang.onlineActive,
-                          style: TextStyle(color: color.onPrimary.withOpacity(0.5), fontSize: 14.0))
+                          style: TextStyle(color: color.onPrimary.withOpacity(0.5), fontSize: 12.0))
                       ],
                     ),
                   ),

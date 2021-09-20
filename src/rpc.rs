@@ -266,6 +266,8 @@ fn new_rpc_handler(
             let mut results = HandleResult::rpc(json!(vec![gid.to_hex()]));
             results.networks.push(NetworkType::AddGroup(gid)); // add AddGroup to TDN.
 
+            debug!("Account Logined: {}.", gid.to_hex());
+
             Ok(results)
         },
     );
@@ -291,6 +293,8 @@ fn new_rpc_handler(
 
             let mut results = HandleResult::rpc(json!(vec![gid.to_hex()]));
             results.networks.push(NetworkType::AddGroup(gid)); // add AddGroup to TDN.
+
+            debug!("Account Logined: {}.", gid.to_hex());
 
             if let Some(addr) = some_addr {
                 let group_lock = state.group.read().await;

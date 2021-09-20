@@ -1,7 +1,7 @@
 use std::sync::Arc;
 use tdn::types::{
     group::GroupId,
-    message::SendType,
+    message::{NetworkType, SendType},
     primitive::{HandleResult, PeerAddr},
     rpc::{json, rpc_response, RpcError, RpcHandler, RpcParam},
 };
@@ -179,6 +179,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
                 GroupLocation::from_u32(params[0].as_i64().ok_or(RpcError::ParseError)? as u32);
             let gtype = GroupType::from_u32(params[1].as_i64().ok_or(RpcError::ParseError)? as u32);
             let my_name = params[2].as_str().ok_or(RpcError::ParseError)?.to_owned();
+            // params[3] is remote addr next parse.
             let name = params[4].as_str().ok_or(RpcError::ParseError)?.to_owned();
             let bio = params[5].as_str().ok_or(RpcError::ParseError)?.to_owned();
             let need_agree = params[6].as_bool().ok_or(RpcError::ParseError)?;
@@ -204,6 +205,8 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
                 glocation == GroupLocation::Remote,
             );
             let gcd = gc.g_id;
+            let gdid = gc.id;
+            let gheight = gc.height;
 
             // save db
             let me = state.group.read().await.clone_user(&gid)?;
@@ -231,6 +234,14 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
                 let mut session = gc.to_session();
                 session.insert(&s_db)?;
                 results.rpcs.push(session_create(gid, &session));
+
+                // online local group.
+                state
+                    .layer
+                    .write()
+                    .await
+                    .add_running(&gcd, gid, gdid, gheight)?;
+                results.networks.push(NetworkType::AddGroup(gcd));
             }
 
             Ok(results)

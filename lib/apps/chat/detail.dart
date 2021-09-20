@@ -178,7 +178,7 @@ class _ChatDetailState extends State<ChatDetail> {
         child: Column(
           children: [
             Container(
-              padding: EdgeInsets.only(left: 20.0, right: 20.0, top: 10.0, bottom: 10.0),
+              padding: EdgeInsets.only(left: 20.0, right: 20.0, top: 10.0, bottom: 6.0),
               child: Row(
                 children: [
                   if (!isDesktop)
@@ -201,13 +201,13 @@ class _ChatDetailState extends State<ChatDetail> {
                           friend.name,
                           style: TextStyle(fontWeight: FontWeight.bold),
                         ),
-                        SizedBox(height: 6.0),
+                        SizedBox(height: 5.0),
                         Text(friend.isClosed
                           ? lang.closed
                           : session.onlineLang(lang),
                           style: TextStyle(
                             color: color.onPrimary.withOpacity(0.5),
-                            fontSize: 14.0))
+                            fontSize: 12.0))
                       ],
                     ),
                   ),

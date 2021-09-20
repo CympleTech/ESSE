@@ -16,7 +16,6 @@ class FilesList extends StatefulWidget {
 const List FILE_DIRECTORY = [
     ["Starred", Icons.star],
     ["Documents", Icons.description],
-    ["Pictures", Icons.photo],
     ["Media", Icons.music_video],
     ["Trash", Icons.auto_delete],
   ];

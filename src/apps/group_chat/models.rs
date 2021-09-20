@@ -342,7 +342,7 @@ impl GroupChat {
         if unique_check.len() > 0 {
             let id = unique_check.pop().unwrap().pop().unwrap().as_i64();
             self.id = id;
-            let sql = format!("UPDATE groups SET height = {}, owner = '{}', gtype = {}, addr='{}', name = '{}', bio = '{}', is_ok = {}, is_need_agree = {}, is_closed = {}, key = '{}', datetime = {},is_remote = {}, is_deleted = false WHERE id = {}",
+            let sql = format!("UPDATE groups SET height = {}, owner = '{}', gtype = {}, addr='{}', name = '{}', bio = '{}', is_ok = {}, is_need_agree = {}, is_closed = {}, key = '{}', datetime = {}, is_remote = {}, is_deleted = false WHERE id = {}",
                 self.height,
                 self.owner.to_hex(),
                 self.g_type.to_u32(),
@@ -359,7 +359,7 @@ impl GroupChat {
             );
             db.update(&sql)?;
         } else {
-            let sql = format!("INSERT INTO groups (height, owner, gcd, gtype, addr, name, bio, is_ok, is_need_agree, is_closed, key, datetime, is_deleted) VALUES ({}, '{}', '{}', {}, '{}', '{}', '{}', {}, {}, {}, '{}', {}, {}, false)",
+            let sql = format!("INSERT INTO groups (height, owner, gcd, gtype, addr, name, bio, is_ok, is_need_agree, is_closed, key, datetime, is_remote, is_deleted) VALUES ({}, '{}', '{}', {}, '{}', '{}', '{}', {}, {}, {}, '{}', {}, {}, false)",
                 self.height,
                 self.owner.to_hex(),
                 self.g_id.to_hex(),

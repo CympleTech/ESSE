@@ -149,6 +149,9 @@ class _SecurityPageState extends State<SecurityPage> {
       await rpc.init(Global.wsRpc);
     }
 
+    // init system info.
+    rpc.send('account-system-info', []);
+
     // check if has logined.
     final loginedAccounts = await getLogined();
 
@@ -173,6 +176,7 @@ class _SecurityPageState extends State<SecurityPage> {
       } else {
         // TODO tostor error
         print(res.error);
+        await clearLogined();
       }
     }
 
