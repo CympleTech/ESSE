@@ -180,12 +180,17 @@ class _AssistantDetailState extends State<AssistantDetail> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Jarvis',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
+                        Container(
+                          height: 20.0,
+                          child: Text('Jarvis',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                        )),
                         SizedBox(height: 5.0),
-                        Text(lang.onlineActive,
-                          style: TextStyle(color: color.onPrimary.withOpacity(0.5), fontSize: 12.0))
+                        Container(
+                          height: 15.0,
+                          child: Text(lang.onlineActive,
+                            style: TextStyle(color: color.onPrimary.withOpacity(0.5), fontSize: 12.0))
+                        )
                       ],
                     ),
                   ),

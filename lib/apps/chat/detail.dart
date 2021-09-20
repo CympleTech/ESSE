@@ -197,17 +197,22 @@ class _ChatDetailState extends State<ChatDetail> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          friend.name,
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
+                        Container(
+                          height: 20.0,
+                          child: Text(
+                            friend.name,
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                        )),
                         SizedBox(height: 5.0),
-                        Text(friend.isClosed
-                          ? lang.closed
-                          : session.onlineLang(lang),
-                          style: TextStyle(
-                            color: color.onPrimary.withOpacity(0.5),
-                            fontSize: 12.0))
+                        Container(
+                          height: 15.0,
+                          child: Text(friend.isClosed
+                            ? lang.closed
+                            : session.onlineLang(lang),
+                            style: TextStyle(
+                              color: color.onPrimary.withOpacity(0.5),
+                              fontSize: 12.0))
+                        )
                       ],
                     ),
                   ),

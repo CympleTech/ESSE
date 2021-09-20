@@ -202,17 +202,23 @@ class _GroupChatDetailState extends State<GroupChatDetail> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          this.group!.name,
-                          style: TextStyle(fontWeight: FontWeight.bold),
+                        Container(
+                          height: 20.0,
+                          child: Text(
+                            this.group!.name,
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
                         ),
                         const SizedBox(height: 5.0),
-                        Text(this.group!.isClosed
-                          ? lang.closed
-                          : session.onlineLang(lang),
-                          style: TextStyle(
-                            color: color.onPrimary.withOpacity(0.5),
-                            fontSize: 12.0))
+                        Container(
+                          height: 15.0,
+                          child: Text(this.group!.isClosed
+                            ? lang.closed
+                            : session.onlineLang(lang),
+                            style: TextStyle(
+                              color: color.onPrimary.withOpacity(0.5),
+                              fontSize: 12.0))
+                        )
                       ],
                     ),
                   ),
