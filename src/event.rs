@@ -474,14 +474,14 @@ impl StatusEvent {
         group: &mut Group,
         gid: GroupId,
         addr: PeerAddr,
-        results: &mut HandleResult,
+        _results: &mut HandleResult,
         layer: &Arc<RwLock<Layer>>,
-        uid: u64,
+        _uid: u64,
     ) -> Result<()> {
         match self {
             StatusEvent::SessionFriendOnline(rgid) => {
                 let db = chat_db(group.base(), &gid)?;
-                if let Some(f) = Friend::get_it(&db, &rgid)? {
+                if let Some(_f) = Friend::get_it(&db, &rgid)? {
                     // TODO
                 }
             }
@@ -490,9 +490,9 @@ impl StatusEvent {
                 if let Some(f) = Friend::get_it(&db, &rgid)? {
                     let layer_lock = layer.clone();
                     let rgid = f.gid;
-                    let rid = f.id;
+                    let _rid = f.id;
                     let ggid = gid.clone();
-                    let sender = group.sender();
+                    let _sender = group.sender();
                     tokio::spawn(async move {
                         if let Ok(running) = layer_lock.write().await.running_mut(&ggid) {
                             if running.check_offline(&rgid, &addr) {

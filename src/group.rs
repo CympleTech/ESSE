@@ -631,7 +631,7 @@ impl Group {
         Ok(())
     }
 
-    pub fn status(
+    pub fn _status(
         &mut self,
         gid: &GroupId,
         event: StatusEvent,

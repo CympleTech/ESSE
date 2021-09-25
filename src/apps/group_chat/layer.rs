@@ -536,7 +536,7 @@ async fn handle_event(
                         add_server_layer(results, fgid, reject(gcd, addr, false));
                     }
                 }
-                JoinProof::Invite(invite_gid, proof, mname, mavatar) => {
+                JoinProof::Invite(invite_gid, _proof, mname, mavatar) => {
                     println!("----------- PRINTLN GROUP CHAT: GOT REQUEST INVITE: {}", id);
                     // check is member.
                     if Member::get_id(&db, &id, &fgid).is_ok() {

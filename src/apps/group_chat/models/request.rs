@@ -1,4 +1,3 @@
-use rand::Rng;
 use std::time::{SystemTime, UNIX_EPOCH};
 use tdn::types::{
     group::GroupId,
@@ -23,7 +22,6 @@ pub(crate) struct Request {
     is_ok: bool,
     is_over: bool,
     datetime: i64,
-    is_deleted: bool,
 }
 
 impl Request {
@@ -47,7 +45,6 @@ impl Request {
             key: GroupChatKey(vec![]),
             is_ok: false,
             is_over: false,
-            is_deleted: false,
             id: 0,
         }
     }
@@ -74,7 +71,6 @@ impl Request {
             key,
             is_ok: false,
             is_over: false,
-            is_deleted: false,
             fid: 0,
             rid: 0,
             id: 0,
@@ -96,15 +92,8 @@ impl Request {
         ])
     }
 
-    fn from_values(mut v: Vec<DsValue>, contains_deleted: bool) -> Self {
-        let is_deleted = if contains_deleted {
-            v.pop().unwrap().as_bool()
-        } else {
-            false
-        };
-
+    fn from_values(mut v: Vec<DsValue>) -> Self {
         Self {
-            is_deleted,
             key: GroupChatKey(vec![]),
             datetime: v.pop().unwrap().as_i64(),
             is_over: v.pop().unwrap().as_bool(),
@@ -128,7 +117,7 @@ impl Request {
         let matrix = db.query(&sql)?;
         let mut requests = vec![];
         for values in matrix {
-            requests.push(Request::from_values(values, false));
+            requests.push(Request::from_values(values));
         }
         Ok(requests)
     }

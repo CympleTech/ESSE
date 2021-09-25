@@ -343,7 +343,7 @@ impl Friend {
     }
 
     /// use in rpc when load account friends.
-    pub fn all_ok(db: &DStorage) -> Result<Vec<Friend>> {
+    pub fn _all_ok(db: &DStorage) -> Result<Vec<Friend>> {
         let matrix = db.query("SELECT id, gid, addr, name, remark, is_closed, datetime FROM friends where is_closed = false")?;
         let mut friends = vec![];
         for values in matrix {
@@ -353,7 +353,7 @@ impl Friend {
     }
 
     /// use in layer load friends ids.
-    pub fn all_id(db: &DStorage) -> Result<Vec<(GroupId, i64)>> {
+    pub fn _all_id(db: &DStorage) -> Result<Vec<(GroupId, i64)>> {
         let matrix =
             db.query("SELECT id, gid FROM friends where is_closed = false ORDER BY id DESC")?;
         let mut friends = vec![];

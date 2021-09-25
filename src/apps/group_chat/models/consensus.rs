@@ -54,11 +54,11 @@ impl ConsensusType {
 /// Group Chat Consensus.
 pub(crate) struct Consensus {
     /// db auto-increment id.
-    id: i64,
+    _id: i64,
     /// group's db id.
-    fid: i64,
+    _fid: i64,
     /// group's height.
-    height: i64,
+    _height: i64,
     /// consensus type.
     ctype: ConsensusType,
     /// consensus point value db id.
@@ -70,9 +70,9 @@ impl Consensus {
         Consensus {
             cid: v.pop().unwrap().as_i64(),
             ctype: ConsensusType::from_i64(v.pop().unwrap().as_i64()),
-            height: v.pop().unwrap().as_i64(),
-            fid: v.pop().unwrap().as_i64(),
-            id: v.pop().unwrap().as_i64(),
+            _height: v.pop().unwrap().as_i64(),
+            _fid: v.pop().unwrap().as_i64(),
+            _id: v.pop().unwrap().as_i64(),
         }
     }
 

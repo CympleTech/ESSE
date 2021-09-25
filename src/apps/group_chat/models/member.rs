@@ -1,4 +1,3 @@
-use rand::Rng;
 use std::time::{SystemTime, UNIX_EPOCH};
 use tdn::types::{
     group::GroupId,
@@ -25,8 +24,6 @@ pub(crate) struct Member {
     is_block: bool,
     /// member's joined time.
     pub datetime: i64,
-    /// member is leave or delete.
-    is_deleted: bool,
 }
 
 impl Member {
@@ -52,7 +49,6 @@ impl Member {
             datetime,
             id: 0,
             is_block: false,
-            is_deleted: false,
         }
     }
 
@@ -73,7 +69,6 @@ impl Member {
             datetime,
             id: 0,
             is_block: false,
-            is_deleted: false,
         }
     }
 
@@ -89,15 +84,8 @@ impl Member {
         ])
     }
 
-    fn from_values(mut v: Vec<DsValue>, contains_deleted: bool) -> Self {
-        let is_deleted = if contains_deleted {
-            v.pop().unwrap().as_bool()
-        } else {
-            false
-        };
-
+    fn from_values(mut v: Vec<DsValue>) -> Self {
         Self {
-            is_deleted,
             datetime: v.pop().unwrap().as_i64(),
             is_block: v.pop().unwrap().as_bool(),
             is_manager: v.pop().unwrap().as_bool(),
@@ -114,7 +102,7 @@ impl Member {
             "SELECT id, fid, mid, addr, name, is_manager, is_block, datetime FROM members WHERE is_deleted = false AND fid = {}", fid))?;
         let mut groups = vec![];
         for values in matrix {
-            groups.push(Member::from_values(values, false));
+            groups.push(Member::from_values(values));
         }
         Ok(groups)
     }
@@ -158,7 +146,7 @@ impl Member {
             id,
         ))?;
         if matrix.len() > 0 {
-            Ok(Member::from_values(matrix.pop().unwrap(), false)) // safe unwrap.
+            Ok(Member::from_values(matrix.pop().unwrap())) // safe unwrap.
         } else {
             Err(anyhow!("missing member"))
         }

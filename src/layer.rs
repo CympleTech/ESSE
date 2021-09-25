@@ -165,13 +165,13 @@ pub(crate) enum Online {
     /// connected to this device.
     Direct(PeerAddr),
     /// connected to other device.
-    Relay(PeerAddr),
+    _Relay(PeerAddr),
 }
 
 impl Online {
     fn addr(&self) -> &PeerAddr {
         match self {
-            Online::Direct(ref addr) | Online::Relay(ref addr) => addr,
+            Online::Direct(ref addr) | Online::_Relay(ref addr) => addr,
         }
     }
 }
@@ -325,7 +325,7 @@ impl RunningLayer {
     ) -> Result<()> {
         if let Some(o) = self.sessions.get(&gid) {
             match (&o.online, &online) {
-                (Online::Relay(..), Online::Direct(..)) => {
+                (Online::_Relay(..), Online::Direct(..)) => {
                     self.sessions
                         .insert(gid, OnlineSession::new(online, id, fid));
                     Ok(())

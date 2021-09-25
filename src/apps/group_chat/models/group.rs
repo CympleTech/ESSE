@@ -240,7 +240,7 @@ impl GroupChat {
     }
 
     /// use in rpc when load account groups.
-    pub fn all_ok(db: &DStorage) -> Result<Vec<GroupChat>> {
+    pub fn _all_ok(db: &DStorage) -> Result<Vec<GroupChat>> {
         let matrix = db.query("SELECT id, height, owner, gcd, gtype, addr, name, bio, is_ok, is_need_agree, is_closed, key, datetime, is_remote FROM groups WHERE is_closed = false")?;
         let mut groups = vec![];
         for values in matrix {
