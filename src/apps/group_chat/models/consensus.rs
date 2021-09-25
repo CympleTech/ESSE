@@ -140,20 +140,20 @@ impl Consensus {
         Ok(packed)
     }
 
-    pub async fn insert(
+    pub fn insert(
         db: &DStorage,
         fid: &i64,
         height: &i64,
         cid: &i64,
         ctype: &ConsensusType,
     ) -> Result<()> {
-        let unique_check = db.query(&format!(
+        let mut unique_check = db.query(&format!(
             "SELECT id from consensus WHERE fid = {} AND height = {}",
             fid, height
-        ));
+        ))?;
 
-        if let Ok(mut rec) = unique_check {
-            let id = rec.pop().unwrap().pop().unwrap().as_i64();
+        if unique_check.len() > 0 {
+            let id = unique_check.pop().unwrap().pop().unwrap().as_i64();
             let _ = db.query(&format!(
                 "UPDATE consensus SET ctype = {}, cid = {} WHERE id = {}",
                 ctype.to_i64(),

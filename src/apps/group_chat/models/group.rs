@@ -38,7 +38,7 @@ pub(crate) struct GroupChat {
     /// group chat is closed.
     is_closed: bool,
     /// group chat need manager agree.
-    is_need_agree: bool,
+    pub is_need_agree: bool,
     /// group chat encrypted-key.
     pub key: GroupChatKey,
     /// group chat created time.

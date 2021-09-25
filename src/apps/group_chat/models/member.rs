@@ -1,4 +1,5 @@
 use rand::Rng;
+use std::time::{SystemTime, UNIX_EPOCH};
 use tdn::types::{
     group::GroupId,
     primitive::{PeerAddr, Result},
@@ -9,7 +10,7 @@ use tdn_storage::local::{DStorage, DsValue};
 /// Group Member Model.
 pub(crate) struct Member {
     /// db auto-increment id.
-    id: i64,
+    pub id: i64,
     /// group's db id.
     fid: i64,
     /// member's Did(GroupId)
@@ -29,6 +30,32 @@ pub(crate) struct Member {
 }
 
 impl Member {
+    pub fn new_notime(
+        fid: i64,
+        m_id: GroupId,
+        m_addr: PeerAddr,
+        m_name: String,
+        is_manager: bool,
+    ) -> Self {
+        let start = SystemTime::now();
+        let datetime = start
+            .duration_since(UNIX_EPOCH)
+            .map(|s| s.as_secs())
+            .unwrap_or(0) as i64; // safe for all life.
+
+        Self {
+            fid,
+            m_id,
+            m_addr,
+            m_name,
+            is_manager,
+            datetime,
+            id: 0,
+            is_block: false,
+            is_deleted: false,
+        }
+    }
+
     pub fn new(
         fid: i64,
         m_id: GroupId,
@@ -127,7 +154,7 @@ impl Member {
 
     pub fn get(db: &DStorage, id: &i64) -> Result<Member> {
         let mut matrix = db.query(&format!(
-            "SELECT id, fid, m_id, m_addr, m_name, is_manager, is_block, datetime FROM members WHERE id = {}",
+            "SELECT id, fid, mid, addr, name, is_manager, is_block, datetime FROM members WHERE id = {}",
             id,
         ))?;
         if matrix.len() > 0 {
@@ -137,14 +164,17 @@ impl Member {
         }
     }
 
-    pub fn get_id(db: &DStorage, fid: &i64, mid: &GroupId) -> Result<i64> {
+    pub fn get_id(db: &DStorage, fid: &i64, mid: &GroupId) -> Result<(i64, bool)> {
         let mut matrix = db.query(&format!(
-            "SELECT id FROM members WHERE fid = {} AND mid = '{}' AND is_delete = false",
+            "SELECT id, is_manager FROM members WHERE fid = {} AND mid = '{}' AND is_deleted = false",
             fid,
             mid.to_hex()
         ))?;
         if matrix.len() > 0 {
-            Ok(matrix.pop().unwrap().pop().unwrap().as_i64()) // safe unwrap.
+            let mut values = matrix.pop().unwrap();
+            let is_manager = values.pop().unwrap().as_bool(); // safe unwrap.
+            let id = values.pop().unwrap().as_i64(); // safe unwrap.
+            Ok((id, is_manager)) // safe unwrap.
         } else {
             Err(anyhow!("missing member"))
         }

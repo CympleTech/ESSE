@@ -15,8 +15,9 @@ use crate::session::{Session, SessionType};
 use crate::storage::{chat_db, group_chat_db, read_avatar, session_db, write_avatar};
 
 use super::add_layer;
-use super::common::handle_event;
-use super::models::{to_network_message, GroupChat, GroupChatKey, Member, Message, Request};
+use super::models::{
+    to_network_message, Consensus, ConsensusType, GroupChat, GroupChatKey, Member, Message, Request,
+};
 
 #[inline]
 pub(crate) fn create_check(mgid: GroupId, ct: CheckType, supported: Vec<GroupType>) -> RpcParam {
@@ -40,26 +41,43 @@ pub(crate) fn request_create(mgid: GroupId, req: &Request) -> RpcParam {
 }
 
 #[inline]
-pub(crate) fn request_handle(mgid: GroupId, id: i64, ok: bool, efficacy: bool) -> RpcParam {
-    rpc_response(0, "group-chat-join-handle", json!([id, ok, efficacy]), mgid)
+pub(crate) fn request_handle(
+    mgid: GroupId,
+    id: i64,
+    rid: i64,
+    ok: bool,
+    efficacy: bool,
+) -> RpcParam {
+    rpc_response(
+        0,
+        "group-chat-join-handle",
+        json!([id, rid, ok, efficacy]),
+        mgid,
+    )
 }
 
 #[inline]
-pub(crate) fn member_join(mgid: GroupId, member: Member) -> RpcParam {
+pub(crate) fn member_join(mgid: GroupId, member: &Member) -> RpcParam {
     rpc_response(0, "group-chat-member-join", json!(member.to_rpc()), mgid)
 }
 
 #[inline]
-pub(crate) fn member_leave(mgid: GroupId, id: i64) -> RpcParam {
-    rpc_response(0, "group-chat-member-leave", json!([id]), mgid)
+pub(crate) fn member_leave(mgid: GroupId, id: i64, mid: i64) -> RpcParam {
+    rpc_response(0, "group-chat-member-leave", json!([id, mid]), mgid)
 }
 
 #[inline]
-pub(crate) fn member_info(mgid: GroupId, id: i64, addr: PeerAddr, name: String) -> RpcParam {
+pub(crate) fn member_info(
+    mgid: GroupId,
+    id: i64,
+    mid: i64,
+    addr: PeerAddr,
+    name: String,
+) -> RpcParam {
     rpc_response(
         0,
         "group-chat-member-info",
-        json!([id, addr.to_hex(), name]),
+        json!([id, mid, addr.to_hex(), name]),
         mgid,
     )
 }
@@ -211,7 +229,6 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             // save db
             let me = state.group.read().await.clone_user(&gid)?;
             gc.insert(&db)?;
-            Member::new(gc.id, gid, me.addr, me.name, true, gc.datetime).insert(&db)?;
 
             // save avatar
             let _ = write_avatar(&base, &gid, &gcd, &avatar_bytes).await;
@@ -229,18 +246,25 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
                 let s = SendType::Event(0, addr, data);
                 add_layer(&mut results, gid, s);
             } else {
+                let mut m = Member::new(gc.id, gid, me.addr, me.name, true, gc.datetime);
+                m.insert(&db)?;
+                let _ = write_avatar(&base, &gid, &gid, &me.avatar).await;
+
                 // ADD NEW SESSION.
                 let s_db = session_db(state.layer.read().await.base(), &gid)?;
                 let mut session = gc.to_session();
                 session.insert(&s_db)?;
                 results.rpcs.push(session_create(gid, &session));
 
+                // Add frist member join.
+                let mut layer_lock = state.layer.write().await;
+                layer_lock.add_running(&gcd, gid, gdid, gheight)?;
+                let height = layer_lock.running_mut(&gcd)?.increased();
+                drop(layer_lock);
+                Consensus::insert(&db, &gdid, &height, &m.id, &ConsensusType::MemberJoin)?;
+                GroupChat::add_height(&db, gdid, height)?;
+
                 // online local group.
-                state
-                    .layer
-                    .write()
-                    .await
-                    .add_running(&gcd, gid, gdid, gheight)?;
                 results.networks.push(NetworkType::AddGroup(gcd));
             }
 
@@ -443,43 +467,18 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
         "group-chat-message-create",
         |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
             let gcd = GroupId::from_hex(params[0].as_str().ok_or(RpcError::ParseError)?)?;
-            let id = params[1].as_i64().ok_or(RpcError::ParseError)?;
-            let is_remote = params[2].as_bool().ok_or(RpcError::ParseError)?;
-            let m_type = MessageType::from_int(params[3].as_i64().ok_or(RpcError::ParseError)?);
-            let m_content = params[4].as_str().ok_or(RpcError::ParseError)?;
+            let m_type = MessageType::from_int(params[1].as_i64().ok_or(RpcError::ParseError)?);
+            let m_content = params[2].as_str().ok_or(RpcError::ParseError)?;
+
+            let addr = state.layer.read().await.running(&gid)?.online(&gcd)?;
+            let mut results = HandleResult::new();
 
             let base = state.group.read().await.base().clone();
             let (nmsg, datetime) = to_network_message(&base, &gid, m_type, m_content).await?;
             let event = Event::MessageCreate(gid, nmsg, datetime);
-
-            let mut results = HandleResult::new();
-            if is_remote {
-                let addr = state.layer.read().await.running(&gid)?.online(&gcd)?;
-                let data = bincode::serialize(&LayerEvent::Sync(gcd, 0, event))?;
-                let msg = SendType::Event(0, addr, data);
-                add_layer(&mut results, gid, msg);
-            } else {
-                let db = group_chat_db(&base, &gid)?;
-
-                // 1. increase the consensus height in running layer.
-                let height = state.layer.write().await.running_mut(&gcd)?.increased();
-
-                // 2. update group chat height.
-                GroupChat::add_height(&db, id, height)?;
-
-                // 3. broadcast event bytes.
-                let event = LayerEvent::Sync(gcd, height, event);
-                let new_data = bincode::serialize(&event)?;
-
-                // 4. handle event.
-                handle_event(db, base, id, gid, event, &mut results).await?;
-
-                // 5. broadcast event.
-                for (mid, maddr) in state.layer.read().await.running(&gcd)?.onlines() {
-                    let s = SendType::Event(0, *maddr, new_data.clone());
-                    add_layer(&mut results, *mid, s);
-                }
-            }
+            let data = bincode::serialize(&LayerEvent::Sync(gcd, 0, event))?;
+            let msg = SendType::Event(0, addr, data);
+            add_layer(&mut results, gid, msg);
 
             Ok(results)
         },

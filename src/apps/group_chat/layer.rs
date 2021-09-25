@@ -22,13 +22,20 @@ use crate::storage::{
     chat_db, delete_avatar, group_chat_db, read_avatar, session_db, write_avatar, write_avatar_sync,
 };
 
-use super::models::{from_network_message, GroupChat, Member, Request};
+use super::models::{from_network_message, Consensus, ConsensusType, GroupChat, Member, Request};
 use super::{add_layer, add_server_layer, rpc};
 
+// variable statement:
+// gcd: Group Chat ID.
+// fgid: where is event come from.
+// ogid: my account ID. if server is group owner. if client is my.
+// mgid: member account ID.
+// id: Group Chat database Id.
+// mid: member database Id.
 pub(crate) async fn handle(
     layer: &Arc<RwLock<Layer>>,
     fgid: GroupId, // when as client, `fgid` is GROUP_ID
-    mgid: GroupId, // when as server, `mgid` is GROUP_ID
+    tgid: GroupId, // when as server, `tgid` is GROUP_ID
     is_server: bool,
     msg: RecvType,
 ) -> Result<HandleResult> {
@@ -36,7 +43,7 @@ pub(crate) async fn handle(
 
     match msg {
         RecvType::Connect(addr, data) => {
-            // only server handle it.
+            // only server handle it. IMPORTANT !!! fgid IS mgid.
             if !is_server {
                 let s = SendType::Result(0, addr, false, false, vec![]);
                 add_server_layer(&mut results, fgid, s);
@@ -51,21 +58,21 @@ pub(crate) async fn handle(
                     // check is member.
                     let db = group_chat_db(&layer.read().await.base, &ogid)?;
 
-                    if let Ok(mid) = Member::get_id(&db, &id, &fgid) {
+                    if let Ok((mid, _)) = Member::get_id(&db, &id, &fgid) {
                         let res = LayerResult(gcd, height);
                         let data = bincode::serialize(&res).unwrap_or(vec![]);
                         let s = SendType::Result(0, addr, true, false, data);
                         add_server_layer(&mut results, fgid, s);
 
                         layer.write().await.running_mut(&gcd)?.check_add_online(
-                            mgid,
+                            fgid,
                             Online::Direct(addr),
                             id,
                             mid,
                         )?;
 
                         let _ = Member::addr_update(&db, &id, &fgid, &addr);
-                        results.rpcs.push(rpc::member_online(mgid, id, fgid, addr));
+                        results.rpcs.push(rpc::member_online(ogid, id, fgid, addr));
 
                         let new_data =
                             bincode::serialize(&LayerEvent::MemberOnline(gcd, fgid, addr))?;
@@ -85,36 +92,38 @@ pub(crate) async fn handle(
             }
         }
         RecvType::Leave(_addr) => {
-            // only server handle it.
+            // only server handle it. IMPORTANT !!! fgid IS mgid.
             // TODO
         }
         RecvType::Result(addr, is_ok, data) => {
-            // only client handle it.
+            // only cleint handle it. IMPORTANT !!! tgid IS ogid.
             if !is_server && is_ok {
                 let mut layer_lock = layer.write().await;
-                handle_connect(mgid, addr, data, &mut layer_lock, &mut results)?;
+                handle_connect(tgid, addr, data, &mut layer_lock, &mut results)?;
             } else {
                 let msg = SendType::Result(0, addr, false, false, vec![]);
-                add_layer(&mut results, mgid, msg);
+                add_layer(&mut results, tgid, msg);
             }
         }
         RecvType::ResultConnect(addr, data) => {
-            // only client handle it.
+            // only cleint handle it. IMPORTANT !!! tgid IS ogid.
             if is_server {
                 let msg = SendType::Result(0, addr, false, false, vec![]);
-                add_layer(&mut results, mgid, msg);
+                add_layer(&mut results, tgid, msg);
             }
 
             let mut layer_lock = layer.write().await;
-            if handle_connect(mgid, addr, data, &mut layer_lock, &mut results)? {
+            if handle_connect(tgid, addr, data, &mut layer_lock, &mut results)? {
                 let msg = SendType::Result(0, addr, true, false, vec![]);
-                add_layer(&mut results, mgid, msg);
+                add_layer(&mut results, tgid, msg);
             }
         }
         RecvType::Event(addr, bytes) => {
+            println!("----------- DEBUG GROUP CHAT: GOT LAYER EVENT");
             // server & client handle it.
             let event: LayerEvent = bincode::deserialize(&bytes)?;
-            handle_event(fgid, mgid, is_server, addr, event, layer, &mut results).await?;
+            handle_event(fgid, tgid, is_server, addr, event, layer, &mut results).await?;
+            println!("----------- DEBUG GROUP CHAT: OVER LAYER EVENT");
         }
         RecvType::Stream(_uid, _stream, _bytes) => {
             // TODO stream
@@ -128,7 +137,7 @@ pub(crate) async fn handle(
 }
 
 fn handle_connect(
-    mgid: GroupId,
+    ogid: GroupId,
     addr: PeerAddr,
     data: Vec<u8>,
     layer: &mut Layer,
@@ -138,7 +147,7 @@ fn handle_connect(
     let LayerResult(gcd, height) = bincode::deserialize(&data)?;
 
     // 1. check group.
-    let db = group_chat_db(layer.base(), &mgid)?;
+    let db = group_chat_db(layer.base(), &ogid)?;
     if let Some(group) = GroupChat::get(&db, &gcd)? {
         // 1.0 check address.
         if group.g_addr != addr {
@@ -147,7 +156,7 @@ fn handle_connect(
 
         // 1.1 get session.
         let session_some =
-            connect_session(layer.base(), &mgid, &SessionType::Group, &group.id, &addr)?;
+            connect_session(layer.base(), &ogid, &SessionType::Group, &group.id, &addr)?;
         if session_some.is_none() {
             return Ok(false);
         }
@@ -155,19 +164,19 @@ fn handle_connect(
 
         // 1.2 online this group.
         layer
-            .running_mut(&mgid)?
+            .running_mut(&ogid)?
             .check_add_online(gcd, Online::Direct(addr), sid, group.id)?;
 
         // 1.3 online to UI.
-        results.rpcs.push(session_connect(mgid, &sid, &addr));
+        results.rpcs.push(session_connect(ogid, &sid, &addr));
 
         println!("will sync remote: {}, my: {}", height, group.height);
         // 1.4 sync group height.
         if group.height < height {
-            add_layer(results, mgid, sync(gcd, addr, group.height));
+            add_layer(results, ogid, sync(gcd, addr, group.height));
         } else {
             // sync online members.
-            add_layer(results, mgid, sync_online(gcd, addr));
+            add_layer(results, ogid, sync_online(gcd, addr));
         }
         Ok(true)
     } else {
@@ -175,16 +184,54 @@ fn handle_connect(
     }
 }
 
+// variable statement:
+// gcd: Group Chat ID.
+// fgid: where is event come from.
+// ogid: my account ID. if server is group owner. if client is my.
+// mgid: member account ID.
+// id: Group Chat database Id.
+// mid: member database Id.
+// sid: session Id.
 async fn handle_event(
     fgid: GroupId, // server use fgid is remote account.
-    mgid: GroupId, // client user mgid is my account.
+    tgid: GroupId, // client user tgid is my account.
     is_server: bool,
     addr: PeerAddr,
     event: LayerEvent,
     layer: &Arc<RwLock<Layer>>,
     results: &mut HandleResult,
 ) -> Result<()> {
-    println!("Got event.......");
+    println!("Got event.......is server: {:?}", is_server);
+    let base = layer.read().await.base().clone();
+    let (sid, db, id, height, ogid, fgid) = if let Some(gcd) = event.gcd() {
+        if is_server {
+            let (ogid, height, id) = layer.read().await.running(gcd)?.owner_height_id();
+            println!("--- DEBUG server:--- online info ok");
+            let db = group_chat_db(&base, &ogid)?;
+            println!("--- DEBUG server:--- db ok");
+            (0, db, id, height, ogid, fgid)
+        } else {
+            let (sid, id) = if event.need_online() {
+                println!("--- DEBUG client: --- need online info start");
+                let (sid, id) = layer.read().await.get_running_remote_id(&tgid, gcd)?;
+                (sid, id)
+            } else {
+                println!("--- DEBUG client: --- not need online info");
+                (0, 0)
+            };
+            println!("--- DEBUG client:--- online info ok");
+
+            let db = group_chat_db(&base, &tgid)?;
+            println!("--- DEBUG client:--- db ok");
+            (sid, db, id, 0, tgid, *gcd)
+        }
+    } else {
+        println!("--- DEBUG --- no group id");
+        let db = group_chat_db(&base, &tgid)?;
+        (0, db, 0, 0, tgid, fgid)
+    };
+    println!("Handle variable statement ok.");
+
     match event {
         LayerEvent::Offline(gcd) => {
             if is_server {
@@ -193,82 +240,81 @@ async fn handle_event(
                     return Ok(());
                 }
 
-                // 2. offline this member.
-                let (ogid, _, id) = layer.read().await.running(&gcd)?.owner_height_id();
+                // 2. UI: offline the member.
                 results.rpcs.push(rpc::member_offline(ogid, id, fgid));
 
                 // 3. broadcast offline event.
-                let new_data = bincode::serialize(&LayerEvent::MemberOffline(gcd, fgid))?;
-
-                for (mid, maddr) in layer.read().await.running(&gcd)?.onlines() {
-                    let s = SendType::Event(0, *maddr, new_data.clone());
-                    add_layer(results, *mid, s);
-                }
+                broadcast(&LayerEvent::MemberOffline(gcd, fgid), layer, &gcd, results).await?;
             } else {
-                let mut layer_lock = layer.write().await;
-                let (sid, _gid) = layer_lock.get_running_remote_id(&mgid, &gcd)?;
-                layer_lock.running_mut(&mgid)?.check_offline(&gcd, &addr);
-                drop(layer_lock);
-                results.rpcs.push(session_lost(mgid, &sid));
+                // 1. offline group chat.
+                layer
+                    .write()
+                    .await
+                    .running_mut(&ogid)?
+                    .check_offline(&gcd, &addr);
+
+                // 2. UI: offline the session.
+                results.rpcs.push(session_lost(ogid, &sid));
             }
         }
         LayerEvent::Suspend(gcd) => {
-            let mut layer_lock = layer.write().await;
-            let (sid, _gid) = layer_lock.get_running_remote_id(&mgid, &gcd)?;
-            if layer_lock.running_mut(&mgid)?.suspend(&gcd, false, true)? {
-                results.rpcs.push(session_suspend(mgid, &sid));
+            // TODO if only client handle it ???
+            if layer
+                .write()
+                .await
+                .running_mut(&ogid)?
+                .suspend(&gcd, false, true)?
+            {
+                results.rpcs.push(session_suspend(ogid, &sid));
             }
-            drop(layer_lock);
         }
         LayerEvent::Actived(gcd) => {
-            let mut layer_lock = layer.write().await;
-            let (sid, _gid) = layer_lock.get_running_remote_id(&mgid, &gcd)?;
-            let _ = layer_lock.running_mut(&mgid)?.active(&gcd, false);
-            drop(layer_lock);
-            results.rpcs.push(session_connect(mgid, &sid, &addr));
+            // TODO if only client handle it ???
+            let _ = layer.write().await.running_mut(&ogid)?.active(&gcd, false);
+            results.rpcs.push(session_connect(ogid, &sid, &addr));
         }
         LayerEvent::CheckResult(ct, supported) => {
+            // only client handle it.
             println!("check: {:?}, supported: {:?}", ct, supported);
-            results.rpcs.push(rpc::create_check(mgid, ct, supported))
+            results.rpcs.push(rpc::create_check(ogid, ct, supported))
         }
         LayerEvent::CreateResult(gcd, ok) => {
+            // only client handle it.
             println!("Create result: {}", ok);
             if ok {
                 // get gc by gcd.
-                let db = group_chat_db(layer.read().await.base(), &mgid)?;
                 if let Some(mut gc) = GroupChat::get(&db, &gcd)? {
                     gc.ok(&db)?;
-                    results.rpcs.push(rpc::create_result(mgid, gc.id, ok));
+                    results.rpcs.push(rpc::create_result(ogid, gc.id, ok));
 
                     // ADD NEW SESSION.
-                    let s_db = session_db(layer.read().await.base(), &mgid)?;
+                    let s_db = session_db(&base, &ogid)?;
                     let mut session = gc.to_session();
                     session.insert(&s_db)?;
-                    results.rpcs.push(session_create(mgid, &session));
+                    results.rpcs.push(session_create(ogid, &session));
                 }
             }
         }
         LayerEvent::Agree(gcd, info) => {
+            // only client handle it.
             println!("Agree..........");
-            let base = layer.read().await.base.clone();
-            let db = group_chat_db(&base, &mgid)?;
             let (rid, key) = Request::over(&db, &gcd, true)?;
 
             // 1. add group chat.
-            let mut group = GroupChat::from_info(key, info, 0, addr, &base, &mgid, true)?;
+            let mut group = GroupChat::from_info(key, info, 0, addr, &base, &ogid, true)?;
             group.insert(&db)?;
 
             // 2. ADD NEW SESSION.
-            let s_db = session_db(&base, &mgid)?;
+            let s_db = session_db(&base, &ogid)?;
             let mut session = group.to_session();
             session.insert(&s_db)?;
-            results.rpcs.push(session_create(mgid, &session));
+            results.rpcs.push(session_create(ogid, &session));
 
             // 3. update UI.
             results
                 .rpcs
-                .push(rpc::request_handle(mgid, rid, true, false));
-            results.rpcs.push(rpc::group_create(mgid, group));
+                .push(rpc::request_handle(ogid, id, rid, true, false));
+            results.rpcs.push(rpc::group_create(ogid, group));
 
             // 4. try connect.
             let proof = layer
@@ -277,39 +323,35 @@ async fn handle_event(
                 .group
                 .read()
                 .await
-                .prove_addr(&mgid, &addr)?;
-            add_layer(results, mgid, group_chat_conn(proof, addr, gcd));
+                .prove_addr(&ogid, &addr)?;
+            add_layer(results, ogid, group_chat_conn(proof, addr, gcd));
         }
         LayerEvent::Reject(gcd, efficacy) => {
+            // only client handle it.
             println!("Reject..........");
-            let db = group_chat_db(layer.read().await.base(), &mgid)?;
             let (rid, _key) = Request::over(&db, &gcd, true)?;
             results
                 .rpcs
-                .push(rpc::request_handle(mgid, rid, false, efficacy));
+                .push(rpc::request_handle(ogid, id, rid, false, efficacy));
         }
-        LayerEvent::MemberOnline(gcd, mid, maddr) => {
-            let (_sid, gid) = layer.read().await.get_running_remote_id(&mgid, &gcd)?;
-            let db = group_chat_db(layer.read().await.base(), &mgid)?;
-            let _ = Member::addr_update(&db, &gid, &mid, &maddr);
-            results.rpcs.push(rpc::member_online(mgid, gid, mid, maddr));
+        LayerEvent::MemberOnline(_gcd, mgid, maddr) => {
+            // only client handle it.
+            let _ = Member::addr_update(&db, &id, &mgid, &maddr);
+            results.rpcs.push(rpc::member_online(ogid, id, mgid, maddr));
         }
-        LayerEvent::MemberOffline(gcd, mid) => {
-            let (_sid, gid) = layer.read().await.get_running_remote_id(&mgid, &gcd)?;
-            results.rpcs.push(rpc::member_offline(mgid, gid, mid));
+        LayerEvent::MemberOffline(_gcd, mgid) => {
+            // only client handle it.
+            results.rpcs.push(rpc::member_offline(ogid, id, mgid));
         }
-        LayerEvent::MemberOnlineSyncResult(gcd, onlines) => {
-            let (_sid, gid) = layer.read().await.get_running_remote_id(&mgid, &gcd)?;
-            for (mid, maddr) in onlines {
-                results.rpcs.push(rpc::member_online(mgid, gid, mid, maddr));
+        LayerEvent::MemberOnlineSyncResult(_gcd, onlines) => {
+            // only client handle it.
+            for (mgid, maddr) in onlines {
+                results.rpcs.push(rpc::member_online(ogid, id, mgid, maddr));
             }
         }
         LayerEvent::Sync(gcd, height, event) => {
-            let (_sid, gid) = layer.read().await.get_running_remote_id(&mgid, &gcd)?;
-
-            println!("Sync: height: {}", height);
-            let base = layer.read().await.base().clone();
-            let db = group_chat_db(&base, &mgid)?;
+            // all server & client handle it.
+            println!("Sync: handle height: {}", height);
 
             match event {
                 Event::GroupInfo => {}
@@ -317,90 +359,115 @@ async fn handle_event(
                 Event::GroupManagerAdd => {}
                 Event::GroupManagerDel => {}
                 Event::GroupClose => {}
-                Event::MemberInfo(mid, maddr, mname, mavatar) => {
-                    let id = Member::get_id(&db, &gid, &mid)?;
-                    Member::update(&db, &id, &maddr, &mname)?;
-                    if mavatar.len() > 0 {
-                        write_avatar_sync(&base, &mgid, &mid, mavatar)?;
-                    }
-                    results.rpcs.push(rpc::member_info(mgid, id, maddr, mname));
-                }
-                Event::MemberJoin(mid, maddr, mname, mavatar, mtime) => {
-                    if Member::get_id(&db, &gid, &mid).is_err() {
-                        let mut member = Member::new(gid, mid, maddr, mname, false, mtime);
+                Event::MemberJoin(mgid, maddr, mname, mavatar, mtime) => {
+                    // only client handle it.
+                    if Member::get_id(&db, &id, &mgid).is_err() {
+                        let mut member = Member::new(id, mgid, maddr, mname, false, mtime);
                         member.insert(&db)?;
                         if mavatar.len() > 0 {
-                            write_avatar_sync(&base, &mgid, &mid, mavatar)?;
+                            write_avatar_sync(&base, &ogid, &mgid, mavatar)?;
                         }
-                        results.rpcs.push(rpc::member_join(mgid, member));
+                        results.rpcs.push(rpc::member_join(ogid, &member));
                     }
+
+                    // save consensus.
+                    GroupChat::add_height(&db, id, height)?;
                 }
-                Event::MemberLeave(mid) => {
-                    let id = Member::get_id(&db, &gid, &mid)?;
-                    Member::leave(&db, &id)?;
+                Event::MemberInfo(mgid, maddr, mname, mavatar) => {
+                    // TOOD server & client all handlt it.
+
+                    let (mid, _) = Member::get_id(&db, &id, &mgid)?;
+                    Member::update(&db, &mid, &maddr, &mname)?;
+                    if mavatar.len() > 0 {
+                        write_avatar_sync(&base, &ogid, &mgid, mavatar)?;
+                    }
+                    results
+                        .rpcs
+                        .push(rpc::member_info(ogid, id, mid, maddr, mname));
+
+                    // save consensus.
+                    GroupChat::add_height(&db, id, height)?;
+                }
+                Event::MemberLeave(mgid) => {
+                    // TODO server & client all handle it.
+
+                    let (mid, _) = Member::get_id(&db, &id, &mgid)?;
+                    Member::leave(&db, &mid)?;
                     // check mid is my chat friend. if not, delete avatar.
                     let s_db = chat_db(&base, &mgid)?;
-                    if Friend::get(&s_db, &mid)?.is_none() {
-                        let _ = delete_avatar(&base, &mgid, &mid).await;
+                    if Friend::get(&s_db, &mgid)?.is_none() {
+                        let _ = delete_avatar(&base, &ogid, &mgid).await;
                     }
-                    results.rpcs.push(rpc::member_leave(mgid, id));
+                    results.rpcs.push(rpc::member_leave(ogid, id, mid));
+
+                    // save consensus.
+                    GroupChat::add_height(&db, id, height)?;
                 }
-                Event::MessageCreate(mid, nmsg, mtime) => {
+                Event::MessageCreate(mgid, nmsg, mtime) => {
+                    // server & client all handle it.
                     println!("Sync: create message start");
-                    let base = layer.read().await.base.clone();
+                    let (mid, _) = Member::get_id(&db, &id, &mgid)?;
+                    let new_height = if is_server {
+                        let new_e = Event::MessageCreate(mgid, nmsg.clone(), mtime);
+                        let height = layer.write().await.running_mut(&gcd)?.increased();
+                        Consensus::insert(&db, &id, &height, &mid, &ConsensusType::MessageCreate)?;
+                        broadcast(&LayerEvent::Sync(gcd, height, new_e), layer, &gcd, results)
+                            .await?;
+                        height
+                    } else {
+                        height
+                    };
+                    GroupChat::add_height(&db, id, new_height)?;
+
                     let (msg, scontent) =
-                        from_network_message(height, gid, mid, &mgid, nmsg, mtime, &base)?;
-                    results.rpcs.push(rpc::message_create(mgid, &msg));
+                        from_network_message(new_height, id, mgid, &ogid, nmsg, mtime, &base)?;
+                    results.rpcs.push(rpc::message_create(ogid, &msg));
                     println!("Sync: create message ok");
 
                     // UPDATE SESSION.
-                    let s_db = session_db(&base, &mgid)?;
-                    if let Ok(id) = Session::last(
+                    let s_db = session_db(&base, &ogid)?;
+                    if let Ok(sid) = Session::last(
                         &s_db,
-                        &gid,
+                        &id,
                         &SessionType::Group,
                         &msg.datetime,
                         &scontent,
                         true,
                     ) {
-                        results
-                            .rpcs
-                            .push(session_last(mgid, &id, &msg.datetime, &scontent, false));
+                        results.rpcs.push(session_last(
+                            ogid,
+                            &sid,
+                            &msg.datetime,
+                            &scontent,
+                            false,
+                        ));
                     }
                 }
             }
-
-            // save event.
-            GroupChat::add_height(&db, gid, height)?;
         }
         LayerEvent::Packed(gcd, height, from, to, events) => {
-            let (_sid, gid) = layer.read().await.get_running_remote_id(&mgid, &gcd)?;
-
+            // only client handle it.
             if to >= height {
                 // when last packed sync, start sync online members.
-                add_layer(results, mgid, sync_online(gcd, addr));
+                add_layer(results, ogid, sync_online(gcd, addr));
             }
 
             println!("Start handle sync packed... {}, {}, {}", height, from, to);
-            let base = layer.read().await.base().clone();
             handle_sync(
-                mgid, gid, gcd, addr, height, from, to, events, base, results,
+                &db, ogid, id, gcd, addr, height, from, to, events, base, results,
             )?;
         }
-        LayerEvent::RequestHandle(gcd, rgid, raddr, join_proof, rid, time) => {
-            let (_sid, gid) = layer.read().await.get_running_remote_id(&mgid, &gcd)?;
-
+        LayerEvent::RequestHandle(_gcd, rgid, raddr, join_proof, rid, time) => {
+            // only client handle it.
             match join_proof {
                 JoinProof::Invite(i, _proof, mname, mavatar) => {
                     let mut req =
-                        Request::new_by_remote(gid, rid, rgid, raddr, mname, i.to_hex(), time);
-                    let base = layer.read().await.base().clone();
-                    let db = group_chat_db(&base, &mgid)?;
+                        Request::new_by_remote(id, rid, rgid, raddr, mname, i.to_hex(), time);
                     req.insert(&db)?;
                     if mavatar.len() > 0 {
-                        write_avatar_sync(&base, &mgid, &rgid, mavatar)?;
+                        write_avatar_sync(&base, &ogid, &rgid, mavatar)?;
                     }
-                    results.rpcs.push(rpc::request_create(mgid, &req));
+                    results.rpcs.push(rpc::request_create(ogid, &req));
                 }
                 JoinProof::Zkp(_proof) => {
                     //
@@ -408,19 +475,31 @@ async fn handle_event(
                 JoinProof::Open(..) => {} // nerver here.
             }
         }
-        LayerEvent::RequestResult(gcd, rid, ok) => {
-            let (_sid, _gid) = layer.read().await.get_running_remote_id(&mgid, &gcd)?;
-            let db = group_chat_db(layer.read().await.base(), &mgid)?;
-            let id = Request::over_rid(&db, &gcd, &rid, ok)?;
-            results.rpcs.push(rpc::request_handle(mgid, id, ok, false));
+        LayerEvent::RequestResult(_gcd, rrid, ok) => {
+            // only client handle it.
+            let rid = Request::over_rid(&db, &id, &rrid, ok)?;
+            results
+                .rpcs
+                .push(rpc::request_handle(ogid, id, rid, ok, false));
         }
-        LayerEvent::MemberOnlineSync(..) => {
-            // TODO
+        LayerEvent::MemberOnlineSync(gcd) => {
+            // only server handle it.
+            let onlines = layer
+                .read()
+                .await
+                .running(&gcd)?
+                .onlines()
+                .iter()
+                .map(|(g, a)| (**g, **a))
+                .collect();
+            let event = LayerEvent::MemberOnlineSyncResult(gcd, onlines);
+            let data = bincode::serialize(&event).unwrap_or(vec![]);
+            let s = SendType::Event(0, addr, data);
+            add_server_layer(results, fgid, s);
         }
         LayerEvent::Request(gcd, join_proof) => {
-            let (ogid, height, id) = layer.read().await.running(&gcd)?.owner_height_id();
-            let base = layer.read().await.base.clone();
-            let db = group_chat_db(&base, &ogid)?;
+            // only server handle it.
+            println!("----------- PRINTLN GROUP CHAT: GOT REQUEST: {}", id);
             let group = GroupChat::get_id(&db, &id)?.ok_or(anyhow!("missing group"))?;
 
             // 1. check account is online, if not online, nothing.
@@ -458,61 +537,107 @@ async fn handle_event(
                     }
                 }
                 JoinProof::Invite(invite_gid, proof, mname, mavatar) => {
+                    println!("----------- PRINTLN GROUP CHAT: GOT REQUEST INVITE: {}", id);
                     // check is member.
                     if Member::get_id(&db, &id, &fgid).is_ok() {
                         let s = agree(&base, &ogid, &gcd, group, addr).await;
                         add_server_layer(results, fgid, s);
+                        println!("----------- PRINTLN GROUP CHAT: GOT REQUEST HAD MEMBER");
                         return Ok(());
                     }
 
                     // TODO check if request had or is blocked by manager.
 
                     // check if inviter is member.
-                    if Member::get_id(&db, &id, &invite_gid).is_err() {
+                    let inv_mid = Member::get_id(&db, &id, &invite_gid);
+                    if inv_mid.is_err() {
                         add_server_layer(results, fgid, reject(gcd, addr, false));
+                        println!("----------- PRINTLN GROUP CHAT: Inviter not exists");
                         return Ok(());
                     }
 
                     // TODO check proof.
-                    // proof.verify(&invite_gid, &addr, &layer.addr)?;
+                    //proof.verify(&invite_gid, &addr, &layer.addr)?;
 
-                    // if group.is_need_agree {
-                    //     if !Member::is_manager(fid, &invite_gid).await? {
-                    //         let mut request = Request::new();
-                    //         request.insert().await?;
-                    //         self.broadcast_request(
-                    //             &gcd,
-                    //             request,
-                    //             JoinProof::Invite(invite_gid, proof, mname, mavatar),
-                    //             results,
-                    //         );
-                    //         return Ok(());
-                    //     }
-                    // }
+                    if group.is_need_agree {
+                        let (_inv_id, inv_is_manager) = inv_mid.unwrap();
+                        if !inv_is_manager {
+                            // let mut request = Request::new();
+                            // request.insert().await?;
+                            // self.broadcast_request(
+                            //     &gcd,
+                            //     request,
+                            //     JoinProof::Invite(invite_gid, proof, mname, mavatar),
+                            //     results,
+                            // );
+                            return Ok(());
+                        }
+                    }
 
-                    //let mut m = Member::new(*fid, fmid, addr, mname, false);
-                    //m.insert().await?;
-
+                    let mut m = Member::new_notime(id, fgid, addr, mname, false);
+                    m.insert(&db)?;
                     // save avatar.
-                    //let _ = write_avatar(&self.base, &gcd, &m.m_id, &mavatar).await;
+                    let _ = write_avatar(&base, &ogid, &m.m_id, &mavatar).await;
 
-                    //self.add_member(&gcd, fmid, addr);
-                    //self.broadcast_join(&gcd, m, mavatar, results).await?;
+                    // add consensuse and storage.
+                    let height = layer.write().await.running_mut(&gcd)?.increased();
+                    Consensus::insert(&db, &id, &height, &m.id, &ConsensusType::MemberJoin)?;
+                    GroupChat::add_height(&db, id, height)?;
+
+                    // UI: update.
+                    results.rpcs.push(rpc::member_join(fgid, &m));
+
+                    // broadcast join event.
+                    let event = Event::MemberJoin(m.m_id, m.m_addr, m.m_name, mavatar, m.datetime);
+                    broadcast(&LayerEvent::Sync(gcd, height, event), layer, &gcd, results).await?;
 
                     // return join result.
                     let s = agree(&base, &ogid, &gcd, group, addr).await;
                     add_server_layer(results, fgid, s);
+                    println!("----------- PRINTLN GROUP CHAT: GOT REQUEST INVITE OVER");
                 }
                 JoinProof::Zkp(_proof) => {
                     // TOOD zkp join.
                 }
             }
         }
-        LayerEvent::SyncReq(..) => {
-            // TODO
+        LayerEvent::SyncReq(gcd, from) => {
+            // only server handle it.
+            println!("Got sync request. height: {} from: {}", height, from);
+
+            if height >= from {
+                let to = if height - from > 100 {
+                    from + 100
+                } else {
+                    height
+                };
+                let packed = Consensus::pack(&db, &base, &gcd, &id, &from, &to).await?;
+                let event = LayerEvent::Packed(gcd, height, from, to, packed);
+                let data = bincode::serialize(&event).unwrap_or(vec![]);
+                let s = SendType::Event(0, addr, data);
+                add_server_layer(results, fgid, s);
+                println!("Sended sync request results. from: {}, to: {}", from, to);
+            }
         }
         LayerEvent::Check => {}      // nerver here.
         LayerEvent::Create(..) => {} // nerver here.
+    }
+
+    Ok(())
+}
+
+async fn broadcast(
+    event: &LayerEvent,
+    layer: &Arc<RwLock<Layer>>,
+    gcd: &GroupId,
+    results: &mut HandleResult,
+) -> Result<()> {
+    let new_data = bincode::serialize(&event)?;
+
+    for (mgid, maddr) in layer.read().await.running(&gcd)?.onlines() {
+        let s = SendType::Event(0, *maddr, new_data.clone());
+        add_server_layer(results, *mgid, s);
+        println!("--- DEBUG broadcast to: {:?}", mgid);
     }
 
     Ok(())
@@ -554,42 +679,10 @@ fn reject(gcd: GroupId, addr: PeerAddr, lost: bool) -> SendType {
     SendType::Event(0, addr, d)
 }
 
-// fn broadcast_join(
-//     gcd: &GroupId,
-//     member: Member,
-//     avatar: Vec<u8>,
-//     results: &mut HandleResult,
-// ) -> Result<()> {
-//     println!("start broadcast join...");
-//     let height = self
-//         .add_height(gcd, &member.id, ConsensusType::MemberJoin)
-//         .await?;
-
-//     let datetime = member.datetime;
-//     let event = Event::MemberJoin(
-//         member.m_id,
-//         member.m_addr,
-//         member.m_name,
-//         avatar,
-//         member.datetime,
-//     );
-
-//     let new_data = bincode::serialize(&LayerEvent::Sync(*gcd, height, event)).unwrap_or(vec![]);
-
-//     if let Some((members, _, _)) = self.groups.get(gcd) {
-//         for (mid, maddr, _) in members {
-//             let s = SendType::Event(0, *maddr, new_data.clone());
-//             add_layer(results, *mid, s);
-//         }
-//     }
-//     println!("over broadcast join...");
-
-//     Ok(())
-// }
-
 fn handle_sync(
-    mgid: GroupId,
-    fid: i64,
+    db: &DStorage,
+    ogid: GroupId,
+    id: i64,
     gcd: GroupId,
     addr: PeerAddr,
     height: i64,
@@ -599,29 +692,27 @@ fn handle_sync(
     base: PathBuf,
     results: &mut HandleResult,
 ) -> Result<()> {
-    let db = group_chat_db(&base, &mgid)?;
-
     let mut last_scontent: Option<(String, i64)> = None;
 
     for event in events {
-        if let Ok(scontent) = handle_sync_event(&mgid, &fid, from, event, &base, &db, results) {
+        if let Ok(scontent) = handle_sync_event(&ogid, &id, from, event, &base, db, results) {
             last_scontent = scontent;
         }
         from += 1;
     }
 
     if to < height {
-        add_layer(results, mgid, sync(gcd, addr, to + 1));
+        add_layer(results, ogid, sync(gcd, addr, to + 1));
     }
 
     // update group chat height.
-    GroupChat::add_height(&db, fid, to)?;
+    GroupChat::add_height(db, id, to)?;
 
     // UPDATE SESSION.
     if let Some((sc, t)) = last_scontent {
-        let s_db = session_db(&base, &mgid)?;
-        if let Ok(id) = Session::last(&s_db, &fid, &SessionType::Group, &t, &sc, true) {
-            results.rpcs.push(session_last(mgid, &id, &t, &sc, false));
+        let s_db = session_db(&base, &ogid)?;
+        if let Ok(sid) = Session::last(&s_db, &id, &SessionType::Group, &t, &sc, true) {
+            results.rpcs.push(session_last(ogid, &sid, &t, &sc, false));
         }
     }
 
@@ -629,7 +720,7 @@ fn handle_sync(
 }
 
 fn handle_sync_event(
-    mgid: &GroupId,
+    ogid: &GroupId,
     fid: &i64,
     height: i64,
     event: PackedEvent,
@@ -665,11 +756,11 @@ fn handle_sync_event(
         PackedEvent::MemberJoin(mid, maddr, mname, mavatar, mtime) => {
             if Member::get_id(db, fid, &mid).is_err() {
                 if mavatar.len() > 0 {
-                    write_avatar_sync(&base, &mgid, &mid, mavatar)?;
+                    write_avatar_sync(&base, &ogid, &mid, mavatar)?;
                 }
                 let mut member = Member::new(*fid, mid, maddr, mname, false, mtime);
                 member.insert(&db)?;
-                results.rpcs.push(rpc::member_join(*mgid, member));
+                results.rpcs.push(rpc::member_join(*ogid, &member));
             }
             None
         }
@@ -678,8 +769,8 @@ fn handle_sync_event(
             None
         }
         PackedEvent::MessageCreate(mid, nmsg, time) => {
-            let (msg, scontent) = from_network_message(height, *fid, mid, mgid, nmsg, time, base)?;
-            results.rpcs.push(rpc::message_create(*mgid, &msg));
+            let (msg, scontent) = from_network_message(height, *fid, mid, ogid, nmsg, time, base)?;
+            results.rpcs.push(rpc::message_create(*ogid, &msg));
             Some((scontent, time))
         }
         PackedEvent::None => None,

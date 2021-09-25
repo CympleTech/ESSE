@@ -32,9 +32,9 @@ class ChatMessage extends StatelessWidget {
 
   Widget _showContactCard(Widget avatar, String gid, String name, String title, ColorScheme color) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 10.0),
+      padding: const EdgeInsets.only(top: 10, bottom: 6.0, left: 10.0, right: 10.0),
       width: 200.0,
-      decoration: BoxDecoration(color: const Color(0x40ADB0BB), borderRadius: BorderRadius.circular(15.0)),
+      decoration: BoxDecoration(color: const Color(0x40ADB0BB), borderRadius: BorderRadius.circular(10.0)),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(children: [
@@ -57,10 +57,10 @@ class ChatMessage extends StatelessWidget {
     // text
     return Container(
       constraints: BoxConstraints(minWidth: 50, maxWidth: maxWidth),
-      padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 14.0),
+      padding: const EdgeInsets.symmetric(vertical: 6.0, horizontal: 10.0),
       decoration: BoxDecoration(
         color: message.isMe ? Color(0xFF6174FF) : color.primaryVariant,
-        borderRadius: BorderRadius.circular(15.0),
+        borderRadius: BorderRadius.circular(10.0),
       ),
       child: Text(message.content,
         style: TextStyle(
@@ -272,7 +272,7 @@ class ChatMessage extends StatelessWidget {
         ),
         child: _showContactCard(
           Container(width: 40.0, height: 40.0,
-            decoration: BoxDecoration(color: color.surface, borderRadius: BorderRadius.circular(15.0)),
+            decoration: BoxDecoration(color: color.surface, borderRadius: BorderRadius.circular(10.0)),
             child: Icon(Icons.groups_rounded, color: color.primary, size: 20.0),
           ),
           gid, infos[3], lang.groupChat, color)
@@ -313,24 +313,24 @@ class ChatMessage extends StatelessWidget {
     final isAvatar = avatar != null && !message.isMe;
 
     final timeWidget = Container(
-      padding: EdgeInsets.only(top: 6.0),
+      padding: EdgeInsets.only(top: 4.0),
       child: Row(children: [
           if (message.isMe) Spacer(),
           if (isAvatar)
           Container(
             width: 50.0,
             child: Text(name, maxLines: 1, overflow: TextOverflow.ellipsis,
-              style: TextStyle(color: color.onPrimary.withOpacity(0.5), fontSize: 12.0)
+              style: TextStyle(color: color.onPrimary.withOpacity(0.5), fontSize: 10.0)
           )),
           const SizedBox(width: 4.0),
           Text(message.time.toString(), style: TextStyle(
               color: color.onPrimary.withOpacity(0.5),
-              fontSize: 12.0)),
+              fontSize: 10.0)),
           const SizedBox(width: 4.0),
           Icon(
             message.isDelivery == null ? Icons.hourglass_top
             : (message.isDelivery! ? Icons.done : Icons.error),
-            size: 12.0,
+            size: 10.0,
             color: message.isDelivery == null ? color.primaryVariant
             : (message.isDelivery! ? color.primary : Colors.red)
           ),
@@ -346,7 +346,7 @@ class ChatMessage extends StatelessWidget {
     ]);
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 5.0),
+      padding: const EdgeInsets.symmetric(vertical: 4.0),
       child:
       isAvatar
       ? Row(

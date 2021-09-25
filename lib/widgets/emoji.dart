@@ -25,7 +25,7 @@ class Emoji extends StatelessWidget {
       child: SingleChildScrollView(
         child: EmojiPicker(
           rows: 3,
-          columns: maxWidth ~/ 32,
+          columns: maxWidth ~/ 36,
           maxWidth: maxWidth,
           bgColor: color.background,
           onEmojiSelected: (emoji, category) {

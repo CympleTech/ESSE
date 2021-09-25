@@ -142,9 +142,7 @@ class GroupChatProvider extends ChangeNotifier {
 
   messageCreate(MessageType mtype, String content) {
     final gcd = this.activedGroup!.gid;
-    rpc.send('group-chat-message-create', [
-        gcd, this.actived!, this.activedGroup!.isRemote, mtype.toInt(), content
-    ]);
+    rpc.send('group-chat-message-create', [gcd, mtype.toInt(), content]);
   }
 
   close(int id) {
@@ -235,10 +233,10 @@ class GroupChatProvider extends ChangeNotifier {
   }
 
   _requestHandle(List params) {
-    final id = params[0];
-    final ok = params[1];
-    //final _efficacy = params[2];
-    if (this.requests.containsKey(id)) {
+    final id = params[1];
+    final ok = params[2];
+    //final _efficacy = params[3];
+    if (this.actived == params[0] && this.requests.containsKey(id)) {
       this.requests[id]!.overIt(ok);
       notifyListeners();
     }
@@ -263,17 +261,17 @@ class GroupChatProvider extends ChangeNotifier {
 
   _memberLeave(List params) {
     final id = params[0];
-    if (this.activedMembers.containsKey(id)) {
+    if (this.actived == params[0] && this.activedMembers.containsKey(id)) {
       this.activedMembers.remove(id);
       notifyListeners();
     }
   }
 
   _memberInfo(List params) {
-    final id = params[0];
-    if (this.activedMembers.containsKey(id)) {
-      this.activedMembers[id]!.addr = params[1];
-      this.activedMembers[id]!.name = params[2];
+    final id = params[1];
+    if (this.actived == params[0] && this.activedMembers.containsKey(id)) {
+      this.activedMembers[id]!.addr = params[2];
+      this.activedMembers[id]!.name = params[3];
       notifyListeners();
     }
   }

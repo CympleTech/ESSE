@@ -50,11 +50,11 @@ class Avatar extends StatelessWidget {
       decoration: showAvatar != null
       ? BoxDecoration(
         image: DecorationImage(image: showAvatar, fit: BoxFit.cover),
-        borderRadius: BorderRadius.circular(15.0)
+        borderRadius: BorderRadius.circular(10.0)
       )
       : BoxDecoration(
         color: this.colorSurface ? color.surface : color.background,
-        borderRadius: BorderRadius.circular(15.0)
+        borderRadius: BorderRadius.circular(10.0)
       ),
       child: Stack(
         alignment: Alignment.center,
@@ -63,7 +63,7 @@ class Avatar extends StatelessWidget {
           Text(this.name.length > 0 ? this.name[0].toUpperCase() : "A"),
           if (this.hasNew)
           Positioned(top: 0.0, right: 0.0,
-            child: Container(width: 9.0, height: 9.0,
+            child: Container(width: 8.0, height: 8.0,
               decoration: BoxDecoration(color: this.hasNewColor, shape: BoxShape.circle),
             ),
           ),
@@ -74,7 +74,7 @@ class Avatar extends StatelessWidget {
               decoration: ShapeDecoration(color: color.background, shape: CircleBorder()),
               child: this.loading
               ? CupertinoActivityIndicator(radius: 5.0, animating: true)
-              : Container(width: 9.0, height: 9.0,
+              : Container(width: 6.0, height: 6.0,
                 decoration: BoxDecoration(color: this.onlineColor, shape: BoxShape.circle),
               ),
             ),

@@ -163,11 +163,10 @@ impl Request {
         }
     }
 
-    pub fn over_rid(db: &DStorage, gcd: &GroupId, rid: &i64, is_ok: bool) -> Result<i64> {
+    pub fn over_rid(db: &DStorage, gid: &i64, rid: &i64, is_ok: bool) -> Result<i64> {
         let mut matrix = db.query(&format!(
-            "SELECT id from requests WHERE gid = '{}' AND rid = {} AND is_over = 0",
-            gcd.to_hex(),
-            rid
+            "SELECT id from requests WHERE fid = {} AND rid = {} AND is_over = 0",
+            gid, rid
         ))?;
         if matrix.len() == 0 {
             return Err(anyhow!("request is missing"));

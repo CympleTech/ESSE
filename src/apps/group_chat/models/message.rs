@@ -21,7 +21,7 @@ use super::Member;
 /// Group Chat Message Model.
 pub(crate) struct Message {
     /// db auto-increment id.
-    id: i64,
+    pub id: i64,
     /// group message consensus height.
     height: i64,
     /// group's db id.

@@ -252,7 +252,7 @@ class _EmojiPickerState extends State<EmojiPicker> {
                     child: TextButton(
                       child: Text(
                           emojiTxt,
-                          style: TextStyle(fontSize: 18.0),
+                          style: TextStyle(fontSize: 16.0),
                       ),
                       onPressed: () {
                         widget.onEmojiSelected(
@@ -290,7 +290,7 @@ class _EmojiPickerState extends State<EmojiPicker> {
                       child: Text(
                           animalMap.values.toList()[
                             index + (widget.columns * widget.rows * i)],
-                          style: TextStyle(fontSize: 18.0),
+                          style: TextStyle(fontSize: 16.0),
                       ),
                       onPressed: () {
                         widget.onEmojiSelected(
@@ -328,7 +328,7 @@ class _EmojiPickerState extends State<EmojiPicker> {
                       child: Text(
                           foodMap.values.toList()[
                             index + (widget.columns * widget.rows * i)],
-                          style: TextStyle(fontSize: 18.0),
+                          style: TextStyle(fontSize: 16.0),
                       ),
                       onPressed: () {
                         widget.onEmojiSelected(
@@ -366,7 +366,7 @@ class _EmojiPickerState extends State<EmojiPicker> {
                       child: Text(
                           travelMap.values.toList()[
                             index + (widget.columns * widget.rows * i)],
-                          style: TextStyle(fontSize: 18.0),
+                          style: TextStyle(fontSize: 16.0),
                       ),
                       onPressed: () {
                         widget.onEmojiSelected(
@@ -405,7 +405,7 @@ class _EmojiPickerState extends State<EmojiPicker> {
                       child: Text(
                           activityMap.values.toList()[
                             index + (widget.columns * widget.rows * i)],
-                          style: TextStyle(fontSize: 18.0),
+                          style: TextStyle(fontSize: 16.0),
                       ),
                       onPressed: () {
                         widget.onEmojiSelected(
@@ -443,7 +443,7 @@ class _EmojiPickerState extends State<EmojiPicker> {
                       child: Text(
                           objectMap.values.toList()[
                             index + (widget.columns * widget.rows * i)],
-                          style: TextStyle(fontSize: 18.0),
+                          style: TextStyle(fontSize: 16.0),
                       ),
                       onPressed: () {
                         widget.onEmojiSelected(
@@ -481,7 +481,7 @@ class _EmojiPickerState extends State<EmojiPicker> {
                       child: Text(
                           symbolMap.values.toList()[
                             index + (widget.columns * widget.rows * i)],
-                          style: TextStyle(fontSize: 18.0),
+                          style: TextStyle(fontSize: 16.0),
                       ),
                       onPressed: () {
                         widget.onEmojiSelected(
@@ -519,7 +519,7 @@ class _EmojiPickerState extends State<EmojiPicker> {
                       child: Text(
                           flagMap.values.toList()[
                             index + (widget.columns * widget.rows * i)],
-                          style: TextStyle(fontSize: 18.0),
+                          style: TextStyle(fontSize: 16.0),
                       ),
                       onPressed: () {
                         widget.onEmojiSelected(

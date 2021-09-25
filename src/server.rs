@@ -273,7 +273,7 @@ pub fn init_log(mut db_path: PathBuf) {
 
     #[cfg(not(debug_assertions))]
     CombinedLogger::init(vec![simplelog::WriteLogger::new(
-        LevelFilter::Debug,
+        LevelFilter::Info,
         LogConfig::default(),
         std::fs::File::create(db_path).unwrap(),
     )])

@@ -114,6 +114,7 @@ impl Layer {
     }
 
     pub fn get_running_remote_id(&self, mgid: &GroupId, fgid: &GroupId) -> Result<(i64, i64)> {
+        println!("onlines: {:?}, find: {:?}", self.runnings.keys(), mgid);
         self.running(mgid)?.get_online_id(fgid)
     }
 
@@ -281,6 +282,7 @@ impl RunningLayer {
     }
 
     pub fn get_online_id(&self, gid: &GroupId) -> Result<(i64, i64)> {
+        println!("onlines: {:?}, find: {:?}", self.sessions.keys(), gid);
         self.sessions
             .get(gid)
             .map(|online| (online.db_id, online.db_fid))

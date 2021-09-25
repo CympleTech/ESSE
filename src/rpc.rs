@@ -14,11 +14,11 @@ use tokio::sync::{
 
 use crate::apps::app_rpc_inject;
 use crate::apps::chat::chat_conn;
-use crate::apps::group_chat::{add_layer, group_chat_conn, GroupChat};
+use crate::apps::group_chat::{add_layer, group_chat_conn, GroupChat, Member};
 use crate::event::InnerEvent;
 use crate::group::Group;
-use crate::layer::{Layer, LayerEvent};
-use crate::session::{Session, SessionType};
+use crate::layer::{Layer, LayerEvent, Online};
+use crate::session::{connect_session, Session, SessionType};
 use crate::storage::{group_chat_db, session_db};
 
 pub(crate) fn init_rpc(
@@ -360,29 +360,55 @@ fn new_rpc_handler(
     handler.add_method(
         "account-login",
         |_gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
-            let gid = GroupId::from_hex(params[0].as_str().ok_or(RpcError::ParseError)?)?;
+            let ogid = GroupId::from_hex(params[0].as_str().ok_or(RpcError::ParseError)?)?;
             let me_lock = params[1].as_str().ok_or(RpcError::ParseError)?;
 
-            let mut results = HandleResult::rpc(json!([gid.to_hex()]));
+            let mut results = HandleResult::rpc(json!([ogid.to_hex()]));
 
-            let id = state.group.write().await.add_running(&gid, me_lock)?;
+            let id = state.group.write().await.add_running(&ogid, me_lock)?;
             // add AddGroup to TDN.
-            results.networks.push(NetworkType::AddGroup(gid));
+            results.networks.push(NetworkType::AddGroup(ogid));
 
             let mut layer_lock = state.layer.write().await;
-            layer_lock.add_running(&gid, gid, id, 0)?; // TODO account current state height.
+            layer_lock.add_running(&ogid, ogid, id, 0)?; // TODO account current state height.
 
             // load all services layer created by this account.
             // 1. group chat.
-            let group_db = group_chat_db(&layer_lock.base, &gid)?;
-            let group_chats = GroupChat::all_local(&group_db, &gid)?;
-            for (id, gcd, gheight) in group_chats {
-                layer_lock.add_running(&gcd, gid, id, gheight)?;
+            let self_addr = layer_lock.addr.clone();
+            let group_db = group_chat_db(&layer_lock.base, &ogid)?;
+            let group_chats = GroupChat::all_local(&group_db, &ogid)?;
+            for (gid, gcd, gheight) in group_chats {
+                layer_lock.add_running(&gcd, ogid, gid, gheight)?;
                 results.networks.push(NetworkType::AddGroup(gcd));
+
+                // 2. online self-hold owner to group.
+                let (mid, _) = Member::get_id(&group_db, &gid, &ogid)?;
+                layer_lock.running_mut(&gcd)?.check_add_online(
+                    ogid,
+                    Online::Direct(self_addr),
+                    gid,
+                    mid,
+                )?;
+
+                // 3. online group to self group onlines.
+                if let Some(session) = connect_session(
+                    &layer_lock.base,
+                    &ogid,
+                    &SessionType::Group,
+                    &gid,
+                    &self_addr,
+                )? {
+                    layer_lock.running_mut(&ogid)?.check_add_online(
+                        gcd,
+                        Online::Direct(self_addr),
+                        session.id,
+                        gid,
+                    )?;
+                }
             }
             drop(layer_lock);
 
-            debug!("Account Logined: {}.", gid.to_hex());
+            debug!("Account Logined: {}.", ogid.to_hex());
 
             Ok(results)
         },

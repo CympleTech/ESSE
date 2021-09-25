@@ -52,6 +52,7 @@ pub(crate) async fn handle(
     mgid: GroupId,
     msg: RecvType,
 ) -> Result<HandleResult> {
+    println!("---------DEBUG--------- GOT CHAT EVENT");
     let mut results = HandleResult::new();
     let mut layer = arc_layer.write().await;
 
