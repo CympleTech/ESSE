@@ -346,7 +346,7 @@ class _GroupAddPageState extends State<GroupAddPage> {
                                   color: color.surface,
                                   border: Border.all(color: _createAddrFocus.hasFocus
                                     ? color.primary : color.surface),
-                                  borderRadius: BorderRadius.circular(15.0),
+                                  borderRadius: BorderRadius.circular(10.0),
                                 ),
                                 child: TextField(
                                   style: TextStyle(fontSize: 16.0),
@@ -379,7 +379,7 @@ class _GroupAddPageState extends State<GroupAddPage> {
                                 height: 45.0,
                                 decoration: BoxDecoration(
                                   color: Color(0xFF6174FF),
-                                  borderRadius: BorderRadius.circular(15.0)),
+                                  borderRadius: BorderRadius.circular(10.0)),
                                 child: Center(
                                   child: Text(lang.search,
                                     style: TextStyle(fontSize: 16.0, color: Colors.white))),
@@ -392,7 +392,7 @@ class _GroupAddPageState extends State<GroupAddPage> {
                                 height: 45.0,
                                 decoration: BoxDecoration(
                                   color: Color(0xFF6174FF),
-                                  borderRadius: BorderRadius.circular(15.0)),
+                                  borderRadius: BorderRadius.circular(10.0)),
                                 child: Center(
                                   child: Text(lang.add,
                                     style: TextStyle(fontSize: 16.0, color: Colors.white))),
@@ -462,7 +462,7 @@ class _GroupAddPageState extends State<GroupAddPage> {
                         padding: const EdgeInsets.all(12.0),
                         margin: const EdgeInsets.only(bottom: 10.0),
                         decoration: BoxDecoration(color: color.surface,
-                          borderRadius: BorderRadius.circular(15.0)
+                          borderRadius: BorderRadius.circular(10.0)
                         ),
                         child: Text(
                           _groupType == 0 ? lang.groupTypeEncryptedInfo

@@ -88,7 +88,7 @@ class _AccountRestorePageState extends State<AccountRestorePage> {
                               height: 40.0,
                               decoration: BoxDecoration(
                                 color: Color(0xFF6174FF),
-                                borderRadius: BorderRadius.circular(15.0)),
+                                borderRadius: BorderRadius.circular(10.0)),
                               child: Center(
                                 child: Icon(Icons.arrow_back, color: Colors.white)),
                           )),
@@ -130,7 +130,7 @@ class _AccountRestorePageState extends State<AccountRestorePage> {
                                       color: this._addrFocus.hasFocus
                                       ? color.primary
                                       : color.surface),
-                                    borderRadius: BorderRadius.circular(15.0),
+                                    borderRadius: BorderRadius.circular(10.0),
                                   ),
                                   child: TextField(
                                     style: TextStyle(fontSize: 16.0),
@@ -170,7 +170,7 @@ class _AccountRestorePageState extends State<AccountRestorePage> {
                                       ? Color(0xFF6174FF)
                                       : Color(0xFFADB0BB),
                                       borderRadius:
-                                      BorderRadius.circular(15.0)),
+                                      BorderRadius.circular(10.0)),
                                     child: Center(
                                       child: Text(lang.search,
                                         style: TextStyle(
@@ -230,7 +230,7 @@ class _AccountRestorePageState extends State<AccountRestorePage> {
                                       color: this._wordFocus.hasFocus
                                       ? color.primary
                                       : color.surface),
-                                    borderRadius: BorderRadius.circular(15.0),
+                                    borderRadius: BorderRadius.circular(10.0),
                                   ),
                                   child: TextField(
                                     enabled: !this._statusChecked,
@@ -264,7 +264,7 @@ class _AccountRestorePageState extends State<AccountRestorePage> {
                                       ? Color(0xFF6174FF)
                                       : Color(0xFFADB0BB),
                                       borderRadius:
-                                      BorderRadius.circular(15.0)),
+                                      BorderRadius.circular(10.0)),
                                     child: Center(
                                       child: Text(lang.add,
                                         style: TextStyle(

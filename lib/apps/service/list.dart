@@ -102,7 +102,7 @@ class ListInnerService extends StatelessWidget {
               padding: const EdgeInsets.all(6.0),
               margin: const EdgeInsets.only(left: 20.0, right: 15.0),
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(15.0),
+                borderRadius: BorderRadius.circular(10.0),
               ),
               child: Image.asset(this.logo),
             ),

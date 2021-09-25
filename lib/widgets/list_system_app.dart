@@ -25,7 +25,7 @@ class ListSystemApp extends StatelessWidget {
               child: Icon(icon, color: color.primary, size: 24.0),
               decoration: BoxDecoration(
                 color: color.surface,
-                borderRadius: BorderRadius.circular(15.0)
+                borderRadius: BorderRadius.circular(10.0)
               ),
             ),
             Text(name, style: TextStyle(fontSize: 16.0)),

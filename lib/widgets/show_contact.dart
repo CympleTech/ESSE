@@ -66,7 +66,7 @@ class _ContactListState extends State<ContactList> {
       Container(
         height: 40.0,
         decoration: BoxDecoration(
-            color: color.surface, borderRadius: BorderRadius.circular(15.0)),
+            color: color.surface, borderRadius: BorderRadius.circular(10.0)),
         child: TextField(
           autofocus: false,
           textInputAction: TextInputAction.search,

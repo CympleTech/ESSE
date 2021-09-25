@@ -19,7 +19,7 @@ class InputText extends StatelessWidget {
       decoration: BoxDecoration(
         color: color.surface,
         border: Border.all(color: focus.hasFocus ? color.primary : color.surface),
-        borderRadius: BorderRadius.circular(15.0)
+        borderRadius: BorderRadius.circular(10.0)
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,

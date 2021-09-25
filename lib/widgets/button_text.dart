@@ -26,7 +26,7 @@ class ButtonText extends StatelessWidget {
         height: height,
         decoration: BoxDecoration(
           color: this.enable ? Color(0xFF6174FF) : Color(0xFFADB0BB),
-          borderRadius: BorderRadius.circular(15.0)),
+          borderRadius: BorderRadius.circular(10.0)),
         child: Center(child: Text(text, style: TextStyle(
               fontSize: 20.0,
               color: Colors.white

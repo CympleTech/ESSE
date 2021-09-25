@@ -48,7 +48,7 @@ class _SocketInputTextState extends State<SocketInputText> {
       padding: const EdgeInsets.symmetric(horizontal: 20.0),
       decoration: BoxDecoration(
         color: const Color(0x40ADB0BB),
-        borderRadius: BorderRadius.circular(15.0)
+        borderRadius: BorderRadius.circular(10.0)
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.end,

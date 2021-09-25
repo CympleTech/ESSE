@@ -150,7 +150,7 @@ class _AccountGeneratePageState extends State<AccountGeneratePage> {
                       padding: EdgeInsets.only(left: 20, right: 10),
                       decoration: BoxDecoration(
                         color: color.surface,
-                        borderRadius: BorderRadius.circular(15.0)),
+                        borderRadius: BorderRadius.circular(10.0)),
                       child: DropdownButtonHideUnderline(
                         child: Theme(
                           data: Theme.of(context).copyWith(
@@ -186,7 +186,7 @@ class _AccountGeneratePageState extends State<AccountGeneratePage> {
                         height: 45.0,
                         decoration: BoxDecoration(
                           color: Color(0xFF6174FF),
-                          borderRadius: BorderRadius.circular(15.0)),
+                          borderRadius: BorderRadius.circular(10.0)),
                         child: Center(
                           child: Text(lang.newMnemonicInput,
                             style: TextStyle(
@@ -250,7 +250,7 @@ class _AccountGeneratePageState extends State<AccountGeneratePage> {
                 color: color.surface,
                 border: Border.all(
                   color: _nameFocus.hasFocus ? color.primary : color.surface),
-                borderRadius: BorderRadius.circular(15.0),
+                borderRadius: BorderRadius.circular(10.0),
               ),
               child: TextField(
                 style: TextStyle(fontSize: 16.0),
@@ -330,7 +330,7 @@ Widget _header(String value, VoidCallback callback) {
             height: 40.0,
             decoration: BoxDecoration(
               color: Color(0xFF6174FF),
-              borderRadius: BorderRadius.circular(15.0)),
+              borderRadius: BorderRadius.circular(10.0)),
             child: Center(child: Icon(Icons.arrow_back, color: Colors.white)),
         )),
         const SizedBox(width: 32.0),

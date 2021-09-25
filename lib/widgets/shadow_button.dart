@@ -28,7 +28,7 @@ class ShadowButton extends StatelessWidget {
         height: width,
         decoration: BoxDecoration(
           color: isOn ? color.primaryVariant : color.background,
-          borderRadius: BorderRadius.circular(15.0),
+          borderRadius: BorderRadius.circular(10.0),
           boxShadow: [
             if (!isOn)
             BoxShadow(
