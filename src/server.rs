@@ -75,7 +75,7 @@ pub async fn start(db_path: String) -> Result<()> {
     let mut now_rpc_uid = 0;
 
     // running session remain task.
-    tokio::spawn(session_remain(layer.clone(), sender.clone()));
+    tokio::spawn(session_remain(peer_id, layer.clone(), sender.clone()));
 
     while let Some(message) = recver.recv().await {
         match message {
@@ -154,7 +154,11 @@ async fn sleep_waiting_reboot(
     Ok(())
 }
 
-async fn session_remain(layer: Arc<RwLock<Layer>>, sender: Sender<SendMessage>) -> Result<()> {
+async fn session_remain(
+    self_addr: PeerAddr,
+    layer: Arc<RwLock<Layer>>,
+    sender: Sender<SendMessage>,
+) -> Result<()> {
     loop {
         tokio::time::sleep(std::time::Duration::from_secs(120)).await;
         if let Some(uid) = RPC_WS_UID.get() {
@@ -163,7 +167,7 @@ async fn session_remain(layer: Arc<RwLock<Layer>>, sender: Sender<SendMessage>) 
             let mut addrs = HashMap::new();
 
             for (_, running) in layer_lock.runnings.iter_mut() {
-                let closed = running.close_suspend();
+                let closed = running.close_suspend(&self_addr);
                 for (gid, addr, sid) in closed {
                     addrs.insert(addr, false);
                     rpcs.push(crate::rpc::session_lost(gid, &sid));

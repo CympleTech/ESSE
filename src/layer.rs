@@ -161,6 +161,7 @@ impl Layer {
 }
 
 /// online info.
+#[derive(Eq, PartialEq)]
 pub(crate) enum Online {
     /// connected to this device.
     Direct(PeerAddr),
@@ -402,9 +403,14 @@ impl RunningLayer {
     }
 
     /// list all onlines groups.
-    pub fn close_suspend(&mut self) -> Vec<(GroupId, PeerAddr, i64)> {
+    pub fn close_suspend(&mut self, self_addr: &PeerAddr) -> Vec<(GroupId, PeerAddr, i64)> {
         let mut needed = vec![];
         for (fgid, online) in &mut self.sessions {
+            // when online is self. skip.
+            if online.online == Online::Direct(*self_addr) {
+                continue;
+            }
+
             if online.close_suspend() {
                 needed.push((*fgid, *online.online.addr(), online.db_id));
             }
