@@ -10,6 +10,7 @@ use tdn_did::Proof;
 use group_chat_types::{CheckType, Event, GroupLocation, GroupType, JoinProof, LayerEvent};
 
 use crate::apps::chat::{Friend, MessageType};
+use crate::layer::Online;
 use crate::rpc::{session_close, session_create, session_delete, session_last, RpcState};
 use crate::session::{Session, SessionType};
 use crate::storage::{chat_db, group_chat_db, read_avatar, session_db, write_avatar};
@@ -223,17 +224,18 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
                 glocation == GroupLocation::Remote,
             );
             let gcd = gc.g_id;
-            let gdid = gc.id;
             let gheight = gc.height;
 
             // save db
-            let me = state.group.read().await.clone_user(&gid)?;
             gc.insert(&db)?;
+            let gdid = gc.id;
 
             // save avatar
             let _ = write_avatar(&base, &gid, &gcd, &avatar_bytes).await;
 
             let mut results = HandleResult::new();
+            let me = state.group.read().await.clone_user(&gid)?;
+
             // add to rpcs.
             results.rpcs.push(json!(gc.to_rpc()));
 
@@ -248,9 +250,10 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             } else {
                 let mut m = Member::new(gc.id, gid, me.addr, me.name, true, gc.datetime);
                 m.insert(&db)?;
+                let mid = m.id;
                 let _ = write_avatar(&base, &gid, &gid, &me.avatar).await;
 
-                // ADD NEW SESSION.
+                // Add new session.
                 let s_db = session_db(state.layer.read().await.base(), &gid)?;
                 let mut session = gc.to_session();
                 session.insert(&s_db)?;
@@ -260,11 +263,28 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
                 let mut layer_lock = state.layer.write().await;
                 layer_lock.add_running(&gcd, gid, gdid, gheight)?;
                 let height = layer_lock.running_mut(&gcd)?.increased();
+
+                // Add online to layers.
+                layer_lock.running_mut(&gcd)?.check_add_online(
+                    gid,
+                    Online::Direct(addr),
+                    gdid,
+                    mid,
+                )?;
+                layer_lock.running_mut(&gid)?.check_add_online(
+                    gcd,
+                    Online::Direct(addr),
+                    session.id,
+                    gdid,
+                )?;
+
                 drop(layer_lock);
+
+                // Update consensus.
                 Consensus::insert(&db, &gdid, &height, &m.id, &ConsensusType::MemberJoin)?;
                 GroupChat::add_height(&db, gdid, height)?;
 
-                // online local group.
+                // Online local group.
                 results.networks.push(NetworkType::AddGroup(gcd));
             }
 

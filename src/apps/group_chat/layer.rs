@@ -258,14 +258,18 @@ async fn handle_event(
             }
         }
         LayerEvent::Suspend(gcd) => {
-            // TODO if only client handle it ???
-            if layer
-                .write()
-                .await
-                .running_mut(&ogid)?
-                .suspend(&gcd, false, true)?
-            {
-                results.rpcs.push(session_suspend(ogid, &sid));
+            // TODO server & client handle it.
+            if is_server {
+                //
+            } else {
+                if layer
+                    .write()
+                    .await
+                    .running_mut(&ogid)?
+                    .suspend(&gcd, false, true)?
+                {
+                    results.rpcs.push(session_suspend(ogid, &sid));
+                }
             }
         }
         LayerEvent::Actived(gcd) => {

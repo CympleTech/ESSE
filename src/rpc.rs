@@ -386,8 +386,8 @@ fn new_rpc_handler(
                 layer_lock.running_mut(&gcd)?.check_add_online(
                     ogid,
                     Online::Direct(self_addr),
-                    gid,
-                    mid,
+                    gid, // group id.
+                    mid, // member id.
                 )?;
 
                 // 3. online group to self group onlines.
@@ -529,10 +529,6 @@ fn new_rpc_handler(
 
             let s = Session::get(&db, &id)?;
             drop(db);
-
-            if s.addr == state.layer.read().await.addr {
-                return Ok(HandleResult::rpc(json!([id, s.addr.to_hex()])));
-            }
 
             let mut results = HandleResult::new();
             match s.s_type {
