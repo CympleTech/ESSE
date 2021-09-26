@@ -365,7 +365,11 @@ fn new_rpc_handler(
 
             let mut results = HandleResult::rpc(json!([ogid.to_hex()]));
 
-            let id = state.group.write().await.add_running(&ogid, me_lock)?;
+            let (id, running) = state.group.write().await.add_running(&ogid, me_lock)?;
+            if running {
+                return Ok(results);
+            }
+
             // add AddGroup to TDN.
             results.networks.push(NetworkType::AddGroup(ogid));
 

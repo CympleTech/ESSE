@@ -393,18 +393,20 @@ impl Group {
         addrs
     }
 
-    pub fn add_running(&mut self, gid: &GroupId, lock: &str) -> Result<i64> {
+    pub fn add_running(&mut self, gid: &GroupId, lock: &str) -> Result<(i64, bool)> {
         if let Some(u) = self.accounts.get(gid) {
             let keypair = u.secret(&self.secret, lock)?;
             if !self.runnings.contains_key(gid) {
                 // load devices to runnings.
                 let running = RunningAccount::init(keypair, &self.base, gid)?;
                 self.runnings.insert(gid.clone(), running);
-                return Ok(u.id);
+                Ok((u.id, false))
+            } else {
+                Ok((u.id, true))
             }
+        } else {
+            Err(anyhow!("user missing."))
         }
-
-        Err(anyhow!("user missing."))
     }
 
     pub fn clone_user(&self, gid: &GroupId) -> Result<User> {
