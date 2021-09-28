@@ -274,6 +274,7 @@ class _AccountRestorePageState extends State<AccountRestorePage> {
                         ])),
                         const SizedBox(height: 32.0),
                         ButtonText(
+                          width: 450,
                           text: lang.next,
                           enable: _statusChecked,
                           action: () => _mnemonicRegister(lang.unknown, lang.setPin),

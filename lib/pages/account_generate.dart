@@ -214,6 +214,7 @@ class _AccountGeneratePageState extends State<AccountGeneratePage> {
             ),
             const SizedBox(height: 32.0),
             ButtonText(
+              width: 450,
               text: lang.next,
               enable: _mnemonicChecked,
               action: () {
@@ -270,7 +271,7 @@ class _AccountGeneratePageState extends State<AccountGeneratePage> {
               }),
             ),
             const SizedBox(height: 32.0),
-            ButtonText(text: lang.ok, action: () => registerNewAction(lang.setPin),
+            ButtonText(width: 450, text: lang.ok, action: () => registerNewAction(lang.setPin),
               enable: this._registerChecked),
             _footer(lang.hasAccount, () => Navigator.of(context).pop()),
         ])

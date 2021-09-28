@@ -12,7 +12,7 @@ class ButtonText extends StatelessWidget {
       Key? key,
       required this.action,
       this.text = '',
-      this.width = 450.0,
+      this.width = 600.0,
       this.height = 50.0,
       this.enable = true,
   }) : super(key: key);

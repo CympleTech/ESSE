@@ -12,6 +12,7 @@ const List<InnerService> INNER_SERVICES = [
   InnerService.Files,
   InnerService.Assistant,
   InnerService.GroupChat,
+  InnerService.Domain,
 ];
 
 class ServiceList extends StatefulWidget {

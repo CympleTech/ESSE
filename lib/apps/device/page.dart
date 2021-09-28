@@ -46,7 +46,6 @@ class _DevicesPageState extends State<DevicesPage> {
               }
             },
             text: lang.send,
-            width: 600.0
           ),
         ]
     ));

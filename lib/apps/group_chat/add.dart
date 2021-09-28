@@ -231,7 +231,9 @@ class _GroupAddPageState extends State<GroupAddPage> {
                 onPressed: () => Navigator.push(context,
                   MaterialPageRoute(builder: (context) => QRScan(callback: _scanCallback))
                 ),
-                child: Text(lang.scanQr, style: TextStyle(fontSize: 16.0)),
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 10.0),
+                  child: Text(lang.scanQr, style: TextStyle(fontSize: 16.0))),
               ),
             ],
             bottom: TabBar(
@@ -278,7 +280,7 @@ class _GroupAddPageState extends State<GroupAddPage> {
                         controller: _joinAddrController,
                         focus: _joinAddrFocus),
                       const SizedBox(height: 20.0),
-                      ButtonText(action: _join, text: lang.send, width: 600.0),
+                      ButtonText(action: _join, text: lang.send),
                       const SizedBox(height: 20.0),
                       const Divider(height: 1.0, color: Color(0x40ADB0BB)),
                       const SizedBox(height: 10.0),
@@ -517,7 +519,7 @@ class _GroupAddPageState extends State<GroupAddPage> {
                         ),
                       ),
                       const SizedBox(height: 20.0),
-                      ButtonText(action: _create, text: lang.create, width: 600.0),
+                      ButtonText(action: _create, text: lang.create),
                       const SizedBox(height: 20.0),
                       const Divider(height: 1.0, color: Color(0x40ADB0BB)),
                       const SizedBox(height: 10.0),

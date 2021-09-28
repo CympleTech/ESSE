@@ -57,6 +57,7 @@ abstract class AppLocalizations {
   String get onlineSuspend;
   String get onlineLost;
   String get nickname;
+  String get bio;
   String get id;
   String get address;
   String get remark;
@@ -90,6 +91,7 @@ abstract class AppLocalizations {
   String get invite;
   String get emoji;
   String get record;
+  String get default0;
   String get others;
   String get closed;
 
@@ -171,8 +173,10 @@ abstract class AppLocalizations {
   // services
   String get files;
   String get filesBio;
+
   String get assistant;
   String get assistantBio;
+
   String get groupChat;
   String get groupChats;
   String get groupChatAdd;
@@ -198,6 +202,14 @@ abstract class AppLocalizations {
   String get groupCheckTypeDeny;
   String get members;
   String get groupRequireConsent;
+
+  String get domain;
+  String get domainIntro;
+  String get domainShowProvider;
+  String get domainShowName;
+  String get domainName;
+  String get domainProviderAdress;
+  String get domainAddProvider;
 }
 
 class _AppLocalizationsDelegate

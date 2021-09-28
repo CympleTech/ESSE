@@ -39,6 +39,8 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String get nickname => '昵称';
   @override
+  String get bio => '个性签名';
+  @override
   String get id => '身份账户';
   @override
   String get address => '网络地址';
@@ -104,6 +106,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get emoji => '动画表情';
   @override
   String get record => '语音';
+  @override
+  String get default0 => '默认';
   @override
   String get others => '其他';
   @override
@@ -306,4 +310,18 @@ class AppLocalizationsZh extends AppLocalizations {
   String get members => '成员';
   @override
   String get groupRequireConsent => "需要管理员同意";
+  @override
+  String get domain => '分布式域名';
+  @override
+  String get domainIntro => '管理自己的公开身份';
+  @override
+  String get domainShowProvider => '展示所有服务商';
+  @override
+  String get domainShowName => '展示所有注册名';
+  @override
+  String get domainName => '用户名';
+  @override
+  String get domainProviderAdress => '服务商网络地址';
+  @override
+  String get domainAddProvider => '添加新的服务商';
 }

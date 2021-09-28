@@ -74,6 +74,7 @@ flutter:
     - assets/logo/logo_assistant.png
     - assets/logo/logo_files.png
     - assets/logo/logo_group_chat.png
+    - assets/logo/logo_domain.png
     - assets/images/background_light.jpg
     - assets/images/background_dark.jpg
     - assets/images/image_missing.png

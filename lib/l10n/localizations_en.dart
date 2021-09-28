@@ -39,6 +39,8 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get nickname => 'Name';
   @override
+  String get bio => 'Bio';
+  @override
   String get id => 'ID';
   @override
   String get address => 'Address';
@@ -104,6 +106,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get emoji => 'Emoji';
   @override
   String get record => 'Record';
+  @override
+  String get default0 => 'Default';
   @override
   String get others => 'Others';
   @override
@@ -306,4 +310,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get members => 'Members';
   @override
   String get groupRequireConsent => "Requires manager's consent";
+  @override
+  String get domain => 'Domain';
+  @override
+  String get domainIntro => 'Unique identity to global';
+  @override
+  String get domainShowProvider => 'show all providers';
+  @override
+  String get domainShowName => 'show all names';
+  @override
+  String get domainName => 'Username';
+  @override
+  String get domainProviderAdress => 'Provider Network Address';
+  @override
+  String get domainAddProvider => 'Add new provider';
 }
