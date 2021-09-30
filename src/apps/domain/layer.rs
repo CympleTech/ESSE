@@ -41,7 +41,8 @@ pub(crate) async fn handle(
                     println!("------ DEBUG DOMAIN SERVICE IS OK");
                 }
                 ServerEvent::Result(_name, _is_ok) => {}
-                ServerEvent::Info(_ugid, _uaddr, _uname, _ubio, _uavatar) => {}
+                ServerEvent::Info(_uname, _ugid, _uaddr, _ubio, _uavatar) => {}
+                ServerEvent::None(_name) => {}
                 ServerEvent::Response(_ugid, _uname, _is_ok) => {}
             }
         }

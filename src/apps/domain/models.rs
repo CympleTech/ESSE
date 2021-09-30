@@ -121,7 +121,7 @@ impl Provider {
     }
 }
 
-/// Provider Model.
+/// Name Model.
 pub(crate) struct Name {
     /// db auto-increment id.
     id: i64,
