@@ -4,13 +4,13 @@ mod models;
 pub use group_chat_types::GROUP_CHAT_ID as GROUP_ID;
 use tdn::types::{group::GroupId, message::SendType, primitive::HandleResult};
 
-/// Group chat server to ESSE.
+/// Send to group chat service.
 #[inline]
 pub(crate) fn add_layer(results: &mut HandleResult, gid: GroupId, msg: SendType) {
     results.layers.push((gid, GROUP_ID, msg));
 }
 
-/// Group chat server to ESSE.
+/// Send to group chat member.
 #[inline]
 pub fn add_server_layer(results: &mut HandleResult, gid: GroupId, msg: SendType) {
     results.layers.push((GROUP_ID, gid, msg));

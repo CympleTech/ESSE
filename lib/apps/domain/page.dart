@@ -13,6 +13,7 @@ import 'package:esse/widgets/audio_recorder.dart';
 import 'package:esse/widgets/show_contact.dart';
 import 'package:esse/global.dart';
 import 'package:esse/options.dart';
+import 'package:esse/rpc.dart';
 
 //import 'package:esse/apps/assistant/models.dart';
 //import 'package:esse/apps/assistant/provider.dart';
@@ -277,7 +278,13 @@ class _AddProviderScreenState extends State<_AddProviderScreen> {
             controller: _addrController,
             focus: _addrFocus),
         ),
-        ButtonText(action: () {}, text: lang.send),
+        ButtonText(action: () {
+            String addr = _addrController.text.trim();
+            if (addr.substring(0, 2) == '0x') {
+              addr = addr.substring(2);
+            }
+            rpc.send('domain-provider-add', [addr]);
+        }, text: lang.send),
       ]
     );
   }

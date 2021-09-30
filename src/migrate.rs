@@ -6,6 +6,7 @@ pub mod consensus;
 
 mod account;
 mod chat;
+mod domain;
 mod file;
 mod group_chat;
 mod service;
@@ -14,6 +15,7 @@ mod session;
 use account::ACCOUNT_VERSIONS;
 use chat::CHAT_VERSIONS;
 use consensus::CONSENSUS_VERSIONS;
+use domain::DOMAIN_VERSIONS;
 use file::FILE_VERSIONS;
 use group_chat::GROUP_CHAT_VERSIONS;
 use service::SERVICE_VERSIONS;
@@ -44,6 +46,9 @@ pub(crate) const ASSISTANT_DB: &'static str = "assistant.db";
 
 /// Account's assistant database name
 pub(crate) const GROUP_CHAT_DB: &'static str = "group_chat.db";
+
+/// Account's domain database name
+pub(crate) const DOMAIN_DB: &'static str = "domain.db";
 
 pub(crate) fn main_migrate(path: &PathBuf) -> Result<()> {
     let mut db_path = path.clone();
@@ -112,6 +117,7 @@ pub(crate) fn main_migrate(path: &PathBuf) -> Result<()> {
                 ASSISTANT_DB => ASSISTANT_VERSIONS.as_ref(),
                 GROUP_CHAT_DB => GROUP_CHAT_VERSIONS.as_ref(),
                 CHAT_DB => CHAT_VERSIONS.as_ref(),
+                DOMAIN_DB => DOMAIN_VERSIONS.as_ref(),
                 _ => {
                     continue;
                 }
@@ -195,6 +201,12 @@ pub(crate) fn main_migrate(path: &PathBuf) -> Result<()> {
             CHAT_DB,
         ))?;
 
+        db.update(&format!(
+            "UPDATE migrates SET version = {} where db_name = '{}'",
+            DOMAIN_VERSIONS.len(),
+            DOMAIN_DB,
+        ))?;
+
         db.close()?;
     }
 
@@ -254,6 +266,14 @@ pub(crate) fn account_init_migrate(path: &PathBuf) -> Result<()> {
     db_path.push(CHAT_DB);
     let db = DStorage::open(db_path)?;
     for i in &CHAT_VERSIONS {
+        db.execute(i)?;
+    }
+    db.close()?;
+
+    let mut db_path = path.clone();
+    db_path.push(DOMAIN_DB);
+    let db = DStorage::open(db_path)?;
+    for i in &DOMAIN_VERSIONS {
         db.execute(i)?;
     }
     db.close()

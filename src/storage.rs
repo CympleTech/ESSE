@@ -8,8 +8,8 @@ use tdn::types::{group::GroupId, primitive::Result};
 use tdn_storage::local::DStorage;
 
 use crate::migrate::{
-    account_init_migrate, ACCOUNT_DB, ASSISTANT_DB, CHAT_DB, CONSENSUS_DB, FILE_DB, GROUP_CHAT_DB,
-    SERVICE_DB, SESSION_DB,
+    account_init_migrate, ACCOUNT_DB, ASSISTANT_DB, CHAT_DB, CONSENSUS_DB, DOMAIN_DB, FILE_DB,
+    GROUP_CHAT_DB, SERVICE_DB, SESSION_DB,
 };
 
 const FILES_DIR: &'static str = "files";
@@ -375,6 +375,14 @@ pub(crate) fn group_chat_db(base: &PathBuf, gid: &GroupId) -> Result<DStorage> {
     let mut db_path = base.clone();
     db_path.push(gid.to_hex());
     db_path.push(GROUP_CHAT_DB);
+    DStorage::open(db_path)
+}
+
+#[inline]
+pub(crate) fn domain_db(base: &PathBuf, gid: &GroupId) -> Result<DStorage> {
+    let mut db_path = base.clone();
+    db_path.push(gid.to_hex());
+    db_path.push(DOMAIN_DB);
     DStorage::open(db_path)
 }
 

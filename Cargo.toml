@@ -36,8 +36,10 @@ tokio = { version = "1", features = ["full"] }
 tdn = { version = "0.5", default-features = false, features = ["full"] }
 tdn_did = { git = "https://github.com/cypherlink/tdn_did", branch="main" }
 tdn_storage = { git = "https://github.com/cypherlink/tdn_storage", branch="main" }
-group-chat_types = { git = "https://github.com/cympletech/group-chat", branch="main" }
-#group-chat-types = { path = "../group-chat/types" }
+group-chat_types = { git = "https://github.com/cympletech/esse_types", branch="main" }
+domain_types = { git = "https://github.com/cympletech/esse_types", branch="main" }
+#group-chat_types = { path = "../esse_types/group_chat" }
+#domain_types = { path = "../esse_types/domain" }
 
 [target.'cfg(target_os="android")'.dependencies]
 jni = { version = "0.19", default-features = false }

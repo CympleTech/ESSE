@@ -36,6 +36,7 @@ pub(crate) async fn app_layer_handle(
     match (fgid, mgid) {
         (group_chat::GROUP_ID, _) => group_chat::layer_handle(layer, fgid, mgid, false, msg).await,
         (_, group_chat::GROUP_ID) => group_chat::layer_handle(layer, fgid, mgid, true, msg).await,
+        (domain::GROUP_ID, _) => domain::layer_handle(layer, mgid, msg).await,
         _ => chat::layer_handle(layer, fgid, mgid, msg).await,
     }
 }
