@@ -7,20 +7,39 @@ use tdn::types::{
 
 use domain_types::PeerEvent;
 
-use super::add_layer;
-use crate::rpc::RpcState;
+use super::{
+    add_layer,
+    models::{Name, Provider},
+};
+use crate::{rpc::RpcState, storage::domain_db};
 
 pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
-    handler.add_method("domain-echo", |_, params, _| async move {
-        Ok(HandleResult::rpc(json!(params)))
-    });
+    handler.add_method(
+        "domain-list",
+        |gid: GroupId, _params: Vec<RpcParam>, state: Arc<RpcState>| async move {
+            let db = domain_db(state.layer.read().await.base(), &gid)?;
+
+            // list providers.
+            let providers: Vec<RpcParam> =
+                Provider::list(&db)?.iter().map(|p| p.to_rpc()).collect();
+
+            // list names.
+            let names: Vec<RpcParam> = Name::list(&db)?.iter().map(|p| p.to_rpc()).collect();
+
+            Ok(HandleResult::rpc(json!([providers, names])))
+        },
+    );
 
     handler.add_method(
         "domain-provider-add",
-        |gid: GroupId, params: Vec<RpcParam>, _state: Arc<RpcState>| async move {
+        |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
             let provider = PeerAddr::from_hex(params[0].as_str().ok_or(RpcError::ParseError)?)?;
 
             let mut results = HandleResult::new();
+            let db = domain_db(state.layer.read().await.base(), &gid)?;
+            let mut p = Provider::prepare(provider);
+            p.insert(&db);
+
             add_layer(&mut results, provider, PeerEvent::Check, gid)?;
             Ok(results)
         },

@@ -36,13 +36,38 @@ pub(crate) async fn handle(
             // server & client handle it.
             let LayerServerEvent(event, proof) = bincode::deserialize(&bytes)?;
 
+            let db = domain_db(layer.read().await.base(), &ogid)?;
+
             match event {
-                ServerEvent::Status => {
-                    println!("------ DEBUG DOMAIN SERVICE IS OK");
+                ServerEvent::Status(name, support_request) => {
+                    println!(
+                        "------ DEBUG DOMAIN SERVICE IS {}, request: {}",
+                        name, support_request
+                    );
+
+                    let mut provider = Provider::get_by_addr(&db, &addr)?;
+                    provider.ok(&db, name, support_request);
+
+                    // TODO UI: add new provider.
                 }
-                ServerEvent::Result(_name, _is_ok) => {}
-                ServerEvent::Info(_uname, _ugid, _uaddr, _ubio, _uavatar) => {}
-                ServerEvent::None(_name) => {}
+                ServerEvent::Result(name, is_ok) => {
+                    let provider = Provider::get_by_addr(&db, &addr)?;
+                    let mut name = Name::get_by_name_provider(&db, &name, &provider.id)?;
+
+                    if is_ok {
+                        //name.ok(&db);
+                    } else {
+                        //name.delete(&db);
+                    }
+
+                    // TODO UI: add new regsiter name.
+                }
+                ServerEvent::Info(_uname, _ugid, _uaddr, _ubio, _uavatar) => {
+                    // TODO UI: show search result.
+                }
+                ServerEvent::None(_name) => {
+                    // TODO UI: show search result.
+                }
                 ServerEvent::Response(_ugid, _uname, _is_ok) => {}
             }
         }

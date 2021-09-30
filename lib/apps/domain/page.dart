@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:esse/utils/adaptive.dart';
+import 'package:esse/utils/better_print.dart';
 import 'package:esse/utils/pick_image.dart';
 import 'package:esse/utils/pick_file.dart';
 import 'package:esse/l10n/localizations.dart';
@@ -15,8 +16,7 @@ import 'package:esse/global.dart';
 import 'package:esse/options.dart';
 import 'package:esse/rpc.dart';
 
-//import 'package:esse/apps/assistant/models.dart';
-//import 'package:esse/apps/assistant/provider.dart';
+import 'package:esse/apps/domain/models.dart';
 
 class DomainDetail extends StatefulWidget {
   const DomainDetail({Key? key}) : super(key: key);
@@ -28,6 +28,38 @@ class DomainDetail extends StatefulWidget {
 class _DomainDetailState extends State<DomainDetail> {
   bool _showProviders = false;
   bool _listHome = true;
+
+  Map<int, ProviderServer> _providers = {};
+  List<Name> _names = [];
+
+  _domainList(List params) {
+    this._providers.clear();
+    params[0].forEach((param) {
+        this._providers[param[0]] = ProviderServer.fromList(param);
+    });
+    this._names.clear();
+    params[1].forEach((param) {
+        this._names.add(Name.fromList(param));
+    });
+    setState(() {});
+  }
+
+  _domainProviderAdd(List params) {
+    setState(() {
+        this._providers[params[0]] = ProviderServer.fromList(params);
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+
+    // resigter rpc for current page.
+    rpc.addListener('domain-list', _domainList, false);
+    rpc.addListener('domain-provider-add', _domainProviderAdd, false);
+
+    rpc.send('domain-list', []);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -62,7 +94,7 @@ class _DomainDetailState extends State<DomainDetail> {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 20.0),
             child: this._listHome
-            ? (this._showProviders ? _ListProviderScreen() : _ListNameScreen())
+            ? (this._showProviders ? _ListProviderScreen(this._providers) : _ListNameScreen(this._providers, this._names))
             : (this._showProviders ? _AddProviderScreen() : _RegisterScreen()),
       ))),
       floatingActionButton: FloatingActionButton(
@@ -78,7 +110,10 @@ class _DomainDetailState extends State<DomainDetail> {
 }
 
 class _ListNameScreen extends StatelessWidget {
-  const _ListNameScreen({Key? key}) : super(key: key);
+  final Map<int, ProviderServer> providers;
+  final List<Name> names;
+
+  const _ListNameScreen(this.providers, this.names);
 
   Widget _nameItem(int id, String name, String provider, bool isActive, ColorScheme color) {
     return Card(
@@ -112,17 +147,17 @@ class _ListNameScreen extends StatelessWidget {
     final color = Theme.of(context).colorScheme;
 
     return Column(
-      children: [
-        _nameItem(0, "Sun", "domain.esse", true, color),
-        _nameItem(0, "Huachuang", "domain.esse", false, color),
-        _nameItem(0, "sun", "eth.esse", true, color),
-      ]
+      children: this.names.map(
+        (name) => _nameItem(name.id, name.name, providers[name.provider]!.name, name.isActived, color)
+      ).toList(),
     );
   }
 }
 
 class _ListProviderScreen extends StatelessWidget {
-  const _ListProviderScreen({Key? key}) : super(key: key);
+  final Map<int, ProviderServer> providers;
+
+  const _ListProviderScreen(this.providers);
 
   Widget _providerItem(int id, String name, String address, bool isDefault, ColorScheme color, AppLocalizations lang) {
     return Card(
@@ -164,10 +199,9 @@ class _ListProviderScreen extends StatelessWidget {
     final lang = AppLocalizations.of(context);
 
     return Column(
-      children: [
-        _providerItem(0, "domain.esse", "0x89d240...77407b0e", true, color, lang),
-        _providerItem(0, "eth.esse", "0x89d240...77407b0e", false, color, lang),
-      ]
+      children: this.providers.values.map(
+        (provider) => _providerItem(provider.id, provider.name, addrPrint(provider.addr), provider.isDefault, color, lang)
+      ).toList(),
     );
   }
 }

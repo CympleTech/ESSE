@@ -13,5 +13,6 @@ pub(super) const DOMAIN_VERSIONS: [&str; 2] = [
     addr TEXT NOT NULL,
     is_ok INTEGER NOT NULL,
     is_default INTEGER NOT NULL,
+    is_proxy INTEGER NOT NULL,
     is_actived INTEGER NOT NULL);",
 ];
