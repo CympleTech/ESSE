@@ -9,6 +9,7 @@ ESSE, stands for Encrypted Symmetrical Session Engine, positioned as an engine. 
 ## Features
 - Built-in IM Application
 - Built-in Group Chat
+- Built-in Domain
 - Built-in Robot assistant
 - Distributed Identity
 - Distributed Network
