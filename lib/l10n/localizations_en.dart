@@ -334,4 +334,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get domainAddProvider => 'Add new provider';
   @override
   String get domainSearch => 'Domain Search';
+  @override
+  String get domainRegisterFailure => 'name already existed!';
 }

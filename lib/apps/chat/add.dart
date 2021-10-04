@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -44,18 +45,20 @@ class _ChatAddPageState extends State<ChatAddPage> {
     if (isOk && app == 'add-friend' && params.length == 3) {
       setState(() {
           this._showHome = false;
+          final avatar = Avatar(name: params[2], width: 100.0, colorSurface: false);
           this._coreScreen = _InfoScreen(
             callback: this._sendCallback,
             id: params[0],
             addr: params[1],
             name: params[2],
-            bio: ''
+            bio: '',
+            avatar: avatar,
           );
       });
     }
   }
 
-  void _searchCallBack(String id, String addr, String name, String bio) {
+  void _searchCallBack(String id, String addr, String name, String bio, Avatar avatar) {
     setState(() {
         this._showHome = false;
         this._coreScreen = _InfoScreen(
@@ -63,7 +66,8 @@ class _ChatAddPageState extends State<ChatAddPage> {
           id: id,
           addr: addr,
           name: name,
-          bio: bio
+          bio: bio,
+          avatar: avatar,
         );
     });
   }
@@ -134,12 +138,14 @@ class _ChatAddPageState extends State<ChatAddPage> {
         if (widget.id != '') {
           setState(() {
               this._showHome = false;
+              final avatar = Avatar(name: widget.name, width: 100.0, colorSurface: false);
               this._coreScreen = _InfoScreen(
                 callback: this._sendCallback,
                 name: widget.name,
                 id: widget.id,
                 addr: widget.addr,
                 bio: '',
+                avatar: avatar,
               );
           });
         }
@@ -246,22 +252,37 @@ class _DomainSearchScreenState extends State<_DomainSearchScreen> {
     params[0].forEach((param) {
         final provider = ProviderServer.fromList(param);
         if (provider.isDefault) {
-          _selectedProvider = provider.id;
+          this._selectedProvider = provider.id;
         }
         this._providers.add(provider);
     });
+
+    if (this._selectedProvider == null && this._providers.length > 0) {
+      this._selectedProvider = this._providers[0].id;
+    }
+
     setState(() {});
   }
 
   _searchResult(List params) {
-    print(params);
-
     if (params.length == 5) {
+      String name = params[0].trim();
+      Avatar avatar = Avatar(name: name, width: 100.0, colorSurface: false);
+      if (params[4].length > 0) {
+        avatar = Avatar(
+          name: name,
+          avatar: base64.decode(params[4]),
+          width: 100.0,
+          colorSurface: false
+        );
+      }
+
       widget.callback(
-        "EHAAAA...AAAAAAA",
-        '0xaaaaaaa....aaaaaaaaa',
-        _nameController.text.trim(),
-        'aaa'
+        params[1],
+        params[2],
+        name,
+        params[3],
+        avatar,
       );
     } else {
       setState(() {
@@ -309,7 +330,7 @@ class _DomainSearchScreenState extends State<_DomainSearchScreen> {
                         canvasColor: color.surface,
                       ),
                       child: DropdownButton<int>(
-                        hint: Text(lang.loginChooseAccount, style: TextStyle(fontSize: 16)),
+                        hint: Text('-', style: TextStyle(fontSize: 16)),
                         iconEnabledColor: Color(0xFFADB0BB),
                         value: _selectedProvider,
                         onChanged: (int? m) {
@@ -345,9 +366,17 @@ class _DomainSearchScreenState extends State<_DomainSearchScreen> {
           action: () => setState(() {
               final name = this._nameController.text.trim();
               if (name.length > 0) {
-                rpc.send('domain-search', [name]);
-                this._waiting = true;
-                this._searchNone = false;
+                String addr = '';
+                this._providers.forEach((v) {
+                    if (v.id == this._selectedProvider) {
+                      addr = v.addr;
+                    }
+                });
+                if (addr.length > 0) {
+                  rpc.send('domain-search', [addr, name]);
+                  this._waiting = true;
+                  this._searchNone = false;
+                }
               }
         }), text: this._waiting ? lang.waiting : lang.search, width: 600.0),
       ]
@@ -439,6 +468,7 @@ class _InfoScreen extends StatelessWidget {
   final String addr;
   final String name;
   final String bio;
+  final Avatar avatar;
 
   const _InfoScreen({
       Key? key,
@@ -447,6 +477,7 @@ class _InfoScreen extends StatelessWidget {
       required this.addr,
       required this.name,
       required this.bio,
+      required this.avatar,
   }) : super(key: key);
 
   @override
@@ -463,7 +494,7 @@ class _InfoScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Avatar(name: this.name, width: 100.0, colorSurface: false),
+          avatar,
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 10.0),
             child: Text(this.name, style: TextStyle(fontWeight: FontWeight.bold)),

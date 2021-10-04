@@ -7,6 +7,15 @@ class ProviderServer {
   bool isProxy;
   bool isActived;
 
+  ProviderServer.empty():
+    this.id = 0,
+    this.name = '',
+    this.addr = '',
+    this.isOk = false,
+    this.isDefault = false,
+    this.isProxy = false,
+    this.isActived = false;
+
   ProviderServer.fromList(List params):
     this.id = params[0],
     this.name = params[1],

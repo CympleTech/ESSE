@@ -103,7 +103,7 @@ class _SecurityPageState extends State<SecurityPage> {
                   const SizedBox(height: 80.0),
                   loginForm(color, lang),
                   const SizedBox(height: 20.0),
-                  ButtonText(text: lang.ok, enable: _accountsLoaded,
+                  ButtonText(width: 450.0, text: lang.ok, enable: _accountsLoaded,
                     action: () => loginAction(lang.verifyPin)),
                   Padding(
                     padding: const EdgeInsets.only(top: 20),

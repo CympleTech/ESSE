@@ -22,7 +22,7 @@ pub(crate) async fn handle(
     ogid: GroupId,
     msg: RecvType,
 ) -> Result<HandleResult> {
-    let results = HandleResult::new();
+    let mut results = HandleResult::new();
 
     match msg {
         RecvType::Connect(..)
@@ -34,7 +34,7 @@ pub(crate) async fn handle(
         }
         RecvType::Event(addr, bytes) => {
             // server & client handle it.
-            let LayerServerEvent(event, proof) = bincode::deserialize(&bytes)?;
+            let LayerServerEvent(event, _proof) = bincode::deserialize(&bytes)?;
 
             let db = domain_db(layer.read().await.base(), &ogid)?;
 
@@ -46,24 +46,28 @@ pub(crate) async fn handle(
                     );
 
                     let mut provider = Provider::get_by_addr(&db, &addr)?;
-                    provider.ok(&db, name, support_request);
-
-                    // TODO UI: add new provider.
+                    provider.ok(&db, name, support_request)?;
+                    results.rpcs.push(rpc::add_provider(ogid, &provider));
                 }
                 ServerEvent::Result(name, is_ok) => {
                     let provider = Provider::get_by_addr(&db, &addr)?;
-                    let mut name = Name::get_by_name_provider(&db, &name, &provider.id)?;
+                    let mut user = Name::get_by_name_provider(&db, &name, &provider.id)?;
 
                     if is_ok {
-                        //name.ok(&db);
+                        Name::active(&db, &user.id, true)?;
+                        user.is_ok = true;
+                        user.is_actived = true;
+                        results.rpcs.push(rpc::register_success(ogid, &user));
                     } else {
-                        //name.delete(&db);
+                        Name::delete(&db, &user.id)?;
+                        results.rpcs.push(rpc::register_failure(ogid, &name));
                     }
-
-                    // TODO UI: add new regsiter name.
                 }
-                ServerEvent::Info(_uname, _ugid, _uaddr, _ubio, _uavatar) => {
-                    // TODO UI: show search result.
+                ServerEvent::Info(uname, ugid, uaddr, ubio, uavatar) => {
+                    println!("------ Search: {} --", uname);
+                    results.rpcs.push(rpc::search_result(
+                        ogid, &uname, &ugid, &uaddr, &ubio, &uavatar,
+                    ));
                 }
                 ServerEvent::None(_name) => {
                     // TODO UI: show search result.

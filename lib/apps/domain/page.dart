@@ -46,7 +46,17 @@ class _DomainDetailState extends State<DomainDetail> {
 
   _domainProviderAdd(List params) {
     setState(() {
+        this._listHome = true;
+        this._showProviders = true;
         this._providers[params[0]] = ProviderServer.fromList(params);
+    });
+  }
+
+  _domainRegisterSuccess(List params) {
+    setState(() {
+        this._listHome = true;
+        this._showProviders = false;
+        this._names.add(Name.fromList(params));
     });
   }
 
@@ -57,6 +67,7 @@ class _DomainDetailState extends State<DomainDetail> {
     // resigter rpc for current page.
     rpc.addListener('domain-list', _domainList, false);
     rpc.addListener('domain-provider-add', _domainProviderAdd, false);
+    rpc.addListener('domain-register-success', _domainRegisterSuccess, false);
 
     rpc.send('domain-list', []);
   }
@@ -68,7 +79,7 @@ class _DomainDetailState extends State<DomainDetail> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(lang.domain + ' (${lang.wip})'),
+        title: Text(lang.domain),
         bottom: PreferredSize(
           child: Container(color: const Color(0x40ADB0BB), height: 1.0),
           preferredSize: Size.fromHeight(1.0)
@@ -95,7 +106,9 @@ class _DomainDetailState extends State<DomainDetail> {
             padding: const EdgeInsets.symmetric(horizontal: 20.0),
             child: this._listHome
             ? (this._showProviders ? _ListProviderScreen(this._providers) : _ListNameScreen(this._providers, this._names))
-            : (this._showProviders ? _AddProviderScreen() : _RegisterScreen()),
+            : ((!this._showProviders && this._providers.length > 0)
+              ? _RegisterScreen(this._providers.values.toList().asMap()) : _AddProviderScreen()
+            ),
       ))),
       floatingActionButton: FloatingActionButton(
         onPressed: () => setState(() {
@@ -207,7 +220,8 @@ class _ListProviderScreen extends StatelessWidget {
 }
 
 class _RegisterScreen extends StatefulWidget {
-  const _RegisterScreen({Key? key}) : super(key: key);
+  final Map<int, ProviderServer> providers;
+  const _RegisterScreen(this.providers);
 
   @override
   _RegisterScreenState createState() => _RegisterScreenState();
@@ -215,8 +229,9 @@ class _RegisterScreen extends StatefulWidget {
 
 class _RegisterScreenState extends State<_RegisterScreen> {
   bool _showProviders = false;
-  List _providers = [''];
-  int _providerSelected = 0;
+  int _providerSelected = -1;
+  bool _registerNone = false;
+  bool _waiting = false;
 
   TextEditingController _nameController = TextEditingController();
   TextEditingController _bioController = TextEditingController();
@@ -224,13 +239,35 @@ class _RegisterScreenState extends State<_RegisterScreen> {
   FocusNode _nameFocus = FocusNode();
   FocusNode _bioFocus = FocusNode();
 
+  _domainRegisterFailure(List _params) {
+    setState(() {
+        this._waiting = false;
+        this._registerNone = true;
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    rpc.addListener('domain-register-failure', _domainRegisterFailure, false);
+  }
+
+
   @override
   Widget build(BuildContext context) {
     final color = Theme.of(context).colorScheme;
     final lang = AppLocalizations.of(context);
 
-    this._providers = ["domain.esse", "eth.esse", "btc.esse"];
-    final maxIndex = this._providers.length - 1;
+    if (this._providerSelected < 0) {
+      this._providerSelected = 0;
+      widget.providers.forEach((k, v) {
+          if (v.isDefault) {
+            this._providerSelected = k;
+          }
+      });
+    }
+
+    final maxIndex = widget.providers.length - 1;
 
     return Column(
       children: [
@@ -249,7 +286,9 @@ class _RegisterScreenState extends State<_RegisterScreen> {
               Expanded(
                 child: Center(
                   child: Text(
-                    this._providers[this._providerSelected],
+                    widget.providers.length >= this._providerSelected
+                    ? widget.providers[this._providerSelected]!.name
+                    : '',
                     style: TextStyle(fontWeight: FontWeight.bold)),
               )),
               TextButton(child: Icon(Icons.navigate_next),
@@ -275,15 +314,32 @@ class _RegisterScreenState extends State<_RegisterScreen> {
             controller: _bioController,
             focus: _bioFocus),
         ),
-        const SizedBox(height: 20.0),
-        ButtonText(action: () {}, text: lang.send),
+        SizedBox(
+          height: 40.0,
+          child: Center(child: Text(this._registerNone ? lang.domainRegisterFailure : '',
+              style: TextStyle(color: Colors.red))),
+        ),
+        ButtonText(
+          enable: !this._waiting,
+          action: () {
+            String name = _nameController.text.trim();
+            String bio = _bioController.text.trim();
+            if (name.length > 0 && widget.providers.length >= this._providerSelected) {
+              final provider = widget.providers[this._providerSelected]!.id;
+              final addr = widget.providers[this._providerSelected]!.addr;
+              rpc.send('domain-register', [provider, addr, name, bio]);
+              setState(() {
+                  this._waiting = true;
+              });
+            }
+        }, text: this._waiting ? lang.waiting : lang.send),
       ]
     );
   }
 }
 
 class _AddProviderScreen extends StatefulWidget {
-  const _AddProviderScreen({Key? key}) : super(key: key);
+  const _AddProviderScreen();
 
   @override
   _AddProviderScreenState createState() => _AddProviderScreenState();
@@ -292,6 +348,7 @@ class _AddProviderScreen extends StatefulWidget {
 class _AddProviderScreenState extends State<_AddProviderScreen> {
   TextEditingController _addrController = TextEditingController();
   FocusNode _addrFocus = FocusNode();
+  bool _waiting = false;
 
   @override
   Widget build(BuildContext context) {
@@ -312,13 +369,18 @@ class _AddProviderScreenState extends State<_AddProviderScreen> {
             controller: _addrController,
             focus: _addrFocus),
         ),
-        ButtonText(action: () {
+        ButtonText(
+          enable: !this._waiting,
+          action: () {
             String addr = _addrController.text.trim();
             if (addr.substring(0, 2) == '0x') {
               addr = addr.substring(2);
             }
             rpc.send('domain-provider-add', [addr]);
-        }, text: lang.send),
+            setState(() {
+                this._waiting = true;
+            });
+        }, text: this._waiting ? lang.waiting : lang.send),
       ]
     );
   }

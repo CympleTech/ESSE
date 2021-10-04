@@ -215,6 +215,7 @@ abstract class AppLocalizations {
   String get domainProviderAdress;
   String get domainAddProvider;
   String get domainSearch;
+  String get domainRegisterFailure;
 }
 
 class _AppLocalizationsDelegate

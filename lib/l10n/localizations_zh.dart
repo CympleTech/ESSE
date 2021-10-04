@@ -334,4 +334,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get domainAddProvider => '添加新的服务商';
   @override
   String get domainSearch => '域名搜索';
+  @override
+  String get domainRegisterFailure => '用户名已存在！';
 }

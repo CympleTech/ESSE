@@ -159,20 +159,31 @@ impl Provider {
 /// Name Model.
 pub(crate) struct Name {
     /// db auto-increment id.
-    id: i64,
+    pub id: i64,
     /// provider database id.
     provider: i64,
     /// name.
-    name: String,
+    pub name: String,
     /// bio.
-    bio: String,
+    pub bio: String,
     /// is add ok.
-    is_ok: bool,
+    pub is_ok: bool,
     /// is actived.
-    is_actived: bool,
+    pub is_actived: bool,
 }
 
 impl Name {
+    pub fn prepare(name: String, bio: String, provider: i64) -> Self {
+        Self {
+            name,
+            bio,
+            provider,
+            is_ok: false,
+            is_actived: false,
+            id: 0,
+        }
+    }
+
     pub fn to_rpc(&self) -> RpcParam {
         json!([
             self.id,
@@ -197,7 +208,9 @@ impl Name {
 
     /// use in rpc when load providers.
     pub fn list(db: &DStorage) -> Result<Vec<Self>> {
-        let matrix = db.query("SELECT id, provider, name, bio, is_ok, is_actived FROM names")?;
+        let matrix = db.query(
+            "SELECT id, provider, name, bio, is_ok, is_actived FROM names WHERE is_ok = true",
+        )?;
         let mut names = vec![];
         for values in matrix {
             names.push(Self::from_values(values));
@@ -270,7 +283,10 @@ impl Name {
 
     /// active/suspend the name.
     pub fn active(db: &DStorage, id: &i64, active: bool) -> Result<()> {
-        let sql = format!("UPDATE names SET is_actived = {} WHERE id = {}", active, id);
+        let sql = format!(
+            "UPDATE names SET is_ok = true, is_actived = {} WHERE id = {}",
+            active, id
+        );
         db.update(&sql)?;
         Ok(())
     }
