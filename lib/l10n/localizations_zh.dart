@@ -112,6 +112,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get others => '其他';
   @override
   String get closed => '已关闭';
+  @override
+  String get input => '输入信息';
+  @override
+  String get waiting => '等待中';
+  @override
+  String get notExist => '用户不存在。';
 
   // theme
   @override
@@ -321,7 +327,11 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String get domainName => '用户名';
   @override
+  String get domainProvider => '服务商';
+  @override
   String get domainProviderAdress => '服务商网络地址';
   @override
   String get domainAddProvider => '添加新的服务商';
+  @override
+  String get domainSearch => '域名搜索';
 }

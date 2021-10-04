@@ -94,6 +94,9 @@ abstract class AppLocalizations {
   String get default0;
   String get others;
   String get closed;
+  String get input;
+  String get waiting;
+  String get notExist;
 
   // theme
   String get themeDark;
@@ -208,8 +211,10 @@ abstract class AppLocalizations {
   String get domainShowProvider;
   String get domainShowName;
   String get domainName;
+  String get domainProvider;
   String get domainProviderAdress;
   String get domainAddProvider;
+  String get domainSearch;
 }
 
 class _AppLocalizationsDelegate

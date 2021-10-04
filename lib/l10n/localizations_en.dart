@@ -112,6 +112,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get others => 'Others';
   @override
   String get closed => 'Closed';
+  @override
+  String get input => 'Type Infomation';
+  @override
+  String get waiting => 'Waiting';
+  @override
+  String get notExist => 'User not exist.';
 
   // theme
   @override
@@ -321,7 +327,11 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get domainName => 'Username';
   @override
+  String get domainProvider => 'Provider';
+  @override
   String get domainProviderAdress => 'Provider Network Address';
   @override
   String get domainAddProvider => 'Add new provider';
+  @override
+  String get domainSearch => 'Domain Search';
 }
