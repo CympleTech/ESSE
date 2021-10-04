@@ -38,7 +38,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             let mut results = HandleResult::new();
             let db = domain_db(state.layer.read().await.base(), &gid)?;
             let mut p = Provider::prepare(provider);
-            p.insert(&db);
+            p.insert(&db)?;
 
             add_layer(&mut results, provider, PeerEvent::Check, gid)?;
             Ok(results)

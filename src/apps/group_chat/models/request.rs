@@ -11,9 +11,9 @@ use super::GroupChatKey;
 /// Group Join Request model. include my requests and other requests.
 /// When fid is 0, it's my requests.
 pub(crate) struct Request {
-    id: i64,
+    pub id: i64,
     fid: i64,
-    rid: i64,
+    pub rid: i64,
     pub gid: GroupId,
     pub addr: PeerAddr,
     pub name: String,
@@ -46,6 +46,34 @@ impl Request {
             is_ok: false,
             is_over: false,
             id: 0,
+        }
+    }
+
+    pub fn new_by_server(
+        fid: i64,
+        gid: GroupId,
+        addr: PeerAddr,
+        name: String,
+        remark: String,
+    ) -> Self {
+        let start = SystemTime::now();
+        let datetime = start
+            .duration_since(UNIX_EPOCH)
+            .map(|s| s.as_secs())
+            .unwrap_or(0) as i64; // safe for all life.
+
+        Self {
+            fid,
+            gid,
+            addr,
+            name,
+            remark,
+            datetime,
+            key: GroupChatKey(vec![]),
+            is_ok: false,
+            is_over: false,
+            id: 0,
+            rid: 0,
         }
     }
 

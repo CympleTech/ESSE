@@ -1,6 +1,5 @@
 use std::path::PathBuf;
 use std::sync::Arc;
-use std::time::{SystemTime, UNIX_EPOCH};
 use tdn::types::{
     group::GroupId,
     message::{RecvType, SendType},
@@ -517,21 +516,24 @@ async fn handle_event(
                     }
 
                     if group.g_type == GroupType::Open {
-                        let start = SystemTime::now();
-                        let datetime = start
-                            .duration_since(UNIX_EPOCH)
-                            .map(|s| s.as_secs())
-                            .unwrap_or(0) as i64; // safe for all life.
-
-                        let mut m = Member::new(id, fgid, addr, mname, false, datetime);
+                        let mut m = Member::new_notime(id, fgid, addr, mname, false);
                         m.insert(&db)?;
-
                         // save avatar.
-                        let _ = write_avatar(&base, &ogid, &fgid, &mavatar).await;
+                        let _ = write_avatar(&base, &ogid, &m.m_id, &mavatar).await;
 
-                        // add_height consensus.
+                        // add consensuse and storage.
+                        let height = layer.write().await.running_mut(&gcd)?.increased();
+                        Consensus::insert(&db, &id, &height, &m.id, &ConsensusType::MemberJoin)?;
+                        GroupChat::add_height(&db, id, height)?;
 
-                        // self.broadcast_join(&gcd, m, mavatar, results).await?;
+                        // UI: update.
+                        results.rpcs.push(rpc::member_join(fgid, &m));
+
+                        // broadcast join event.
+                        let event =
+                            Event::MemberJoin(m.m_id, m.m_addr, m.m_name, mavatar, m.datetime);
+                        broadcast(&LayerEvent::Sync(gcd, height, event), layer, &gcd, results)
+                            .await?;
 
                         // return join result.
                         let s = agree(&base, &ogid, &gcd, group, addr).await;
@@ -565,15 +567,16 @@ async fn handle_event(
 
                     if group.is_need_agree {
                         let (_inv_id, inv_is_manager) = inv_mid.unwrap();
+                        // only server holder to handle this request.
                         if !inv_is_manager {
-                            // let mut request = Request::new();
-                            // request.insert().await?;
-                            // self.broadcast_request(
-                            //     &gcd,
-                            //     request,
-                            //     JoinProof::Invite(invite_gid, proof, mname, mavatar),
-                            //     results,
-                            // );
+                            let mut req =
+                                Request::new_by_server(id, fgid, addr, mname, invite_gid.to_hex());
+                            req.insert(&db)?;
+                            req.rid = req.id; // not need save. beacuse UI rpc will sended.
+                            if mavatar.len() > 0 {
+                                write_avatar_sync(&base, &ogid, &fgid, mavatar)?;
+                            }
+                            results.rpcs.push(rpc::request_create(ogid, &req));
                             return Ok(());
                         }
                     }
