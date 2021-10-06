@@ -129,29 +129,25 @@ class _ListNameScreen extends StatelessWidget {
   const _ListNameScreen(this.providers, this.names);
 
   Widget _nameItem(int id, String name, String provider, bool isActive, ColorScheme color) {
-    return Card(
-      elevation: 0.0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-      margin: new EdgeInsets.symmetric(horizontal: 10.0, vertical: 8.0),
-      child: Container(
-        decoration: BoxDecoration(color: color.surface, borderRadius: BorderRadius.circular(15.0)),
-        child: ListTile(
-          contentPadding: EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
-          leading: Container(
-            padding: EdgeInsets.only(right: 12.0),
-            decoration: new BoxDecoration(
-              border: new Border(right: new BorderSide(width: 1.0, color: Color(0xA0ADB0BB)))),
-            child: isActive ? Icon(Icons.toggle_on, color: color.primary) : Icon(Icons.toggle_off),
-          ),
-          title: Text(name, style: TextStyle(fontWeight: FontWeight.bold)),
-          subtitle: Row(
-            children: <Widget>[
-              Expanded(child: Text(provider)),
-            ],
-          ),
-          trailing: Icon(Icons.keyboard_arrow_right, size: 30.0),
-        )
-      ),
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 10.0),
+      decoration: BoxDecoration(color: color.surface, borderRadius: BorderRadius.circular(15.0)),
+      child: ListTile(
+        contentPadding: EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
+        leading: Container(
+          padding: EdgeInsets.only(right: 12.0),
+          decoration: new BoxDecoration(
+            border: new Border(right: new BorderSide(width: 1.0, color: Color(0xA0ADB0BB)))),
+          child: isActive ? Icon(Icons.toggle_on, color: color.primary) : Icon(Icons.toggle_off),
+        ),
+        title: Text(name, style: TextStyle(fontWeight: FontWeight.bold)),
+        subtitle: Row(
+          children: <Widget>[
+            Expanded(child: Text(provider)),
+          ],
+        ),
+        trailing: Icon(Icons.keyboard_arrow_right, size: 30.0),
+      )
     );
   }
 
@@ -173,36 +169,25 @@ class _ListProviderScreen extends StatelessWidget {
   const _ListProviderScreen(this.providers);
 
   Widget _providerItem(int id, String name, String address, bool isDefault, ColorScheme color, AppLocalizations lang) {
-    return Card(
-      elevation: 0.0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-      margin: new EdgeInsets.symmetric(horizontal: 10.0, vertical: 8.0),
-      child: Container(
-        decoration: BoxDecoration(color: color.surface, borderRadius: BorderRadius.circular(15.0)),
-        child: ListTile(
-          contentPadding: EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
-          leading: Container(
-            padding: EdgeInsets.only(right: 12.0),
-            decoration: new BoxDecoration(
-              border: new Border(
-                right: new BorderSide(width: 1.0, color: Color(0xA0ADB0BB)))),
-            child: Icon(Icons.sync),
-          ),
-          title: Text(name, style: TextStyle(fontWeight: FontWeight.bold)),
-          subtitle: Row(
-            children: <Widget>[
-              Expanded(child: Text(address)),
-            ],
-          ),
-          trailing: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (isDefault) Text(lang.default0, style: TextStyle(color: color.primary)),
-              Icon(Icons.keyboard_arrow_right, size: 30.0),
-            ]
-          )
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 10.0),
+      decoration: BoxDecoration(color: color.surface, borderRadius: BorderRadius.circular(15.0)),
+      child: ListTile(
+        contentPadding: EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
+        title: Text(name, style: TextStyle(fontWeight: FontWeight.bold)),
+        subtitle: Row(
+          children: <Widget>[
+            Expanded(child: Text(address)),
+          ],
+        ),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (isDefault) Text(lang.default0, style: TextStyle(color: color.primary)),
+            Icon(Icons.keyboard_arrow_right, size: 30.0),
+          ]
         )
-      ),
+      )
     );
   }
 
@@ -365,7 +350,7 @@ class _AddProviderScreenState extends State<_AddProviderScreen> {
           padding: EdgeInsets.symmetric(vertical: 30.0),
           child: InputText(
             icon: Icons.location_on,
-            text: lang.address,
+            text: lang.address + ' (0x00..00)',
             controller: _addrController,
             focus: _addrFocus),
         ),

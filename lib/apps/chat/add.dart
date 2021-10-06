@@ -435,13 +435,13 @@ class _InputScreenState extends State<_InputScreen> {
         const SizedBox(height: 20.0),
         InputText(
           icon: Icons.person,
-          text: lang.id,
+          text: lang.id + ' (EH00..00)',
           controller: userIdEditingController,
           focus: userIdFocus),
         const SizedBox(height: 20.0),
         InputText(
           icon: Icons.location_on,
-          text: lang.address,
+          text: lang.address + ' (0x00..00)',
           controller: addrEditingController,
           focus: addrFocus),
         const SizedBox(height: 20.0),
