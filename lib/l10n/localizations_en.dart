@@ -5,7 +5,7 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn();
 
   @override
-  String get title => 'Encrypted Secure Session Engine.';
+  String get title => 'Encrypted Secure Session Engine';
   @override
   String get ok => 'OK';
   @override
@@ -246,8 +246,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get disk => 'Disk';
   @override
   String get deviceQrcodeIntro => 'Tips: Scan to Login and sync, use it with care, and do not tell others';
-  @override
-  String get about1 => 'ESSE (Encrypted Symmetrical Session Engine)';
   @override
   String get about2 => 'An open source encrypted peer-to-peer session system would allow data to be sent securely from one terminal to another without going through third-party services.';
   @override

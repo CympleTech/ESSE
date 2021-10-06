@@ -5,7 +5,7 @@ class AppLocalizationsZh extends AppLocalizations {
   AppLocalizationsZh();
 
   @override
-  String get title => '加密安全会话引擎。';
+  String get title => '加密安全会话引擎';
   @override
   String get ok => '确认';
   @override
@@ -246,8 +246,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get disk => '硬盘';
   @override
   String get deviceQrcodeIntro => '扫码登陆与同步账户，小心使用，请勿告知他人';
-  @override
-  String get about1 => 'ESSE (加密对称会话引擎)';
   @override
   String get about2 => '一款开源的加密对等通信系统，允许信息安全地从发送端经由网络直接到达接收端而不用经过第三方服务。';
   @override

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'package:esse/l10n/localizations.dart';
+import 'package:esse/global.dart';
 
 class AboutDetail extends StatefulWidget {
   AboutDetail({Key? key}) : super(key: key);
@@ -21,7 +22,9 @@ class _AboutDetailState extends State<AboutDetail> {
     final lang = AppLocalizations.of(context);
     return Column(
       children: [
-        Text(lang.about1, style: Theme.of(context).textTheme.headline6),
+        Text('ESSE ' + Global.version, style: Theme.of(context).textTheme.headline6),
+        const SizedBox(height: 10.0),
+        Text(lang.title, style: Theme.of(context).textTheme.headline6),
         const SizedBox(height: 10.0),
         Text(lang.about2, style: Theme.of(context).textTheme.headline6),
         const SizedBox(height: 15.0),

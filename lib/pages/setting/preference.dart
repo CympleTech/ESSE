@@ -28,7 +28,7 @@ class _PreferenceDetailState extends State<PreferenceDetail> {
             padding: EdgeInsets.only(left: 20, right: 20),
             decoration: BoxDecoration(
                 color: color.surface,
-                borderRadius: BorderRadius.circular(15.0)),
+                borderRadius: BorderRadius.circular(10.0)),
             child: DropdownButtonHideUnderline(
               child: Theme(
                 data: Theme.of(context).copyWith(
