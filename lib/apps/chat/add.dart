@@ -46,10 +46,13 @@ class _ChatAddPageState extends State<ChatAddPage> {
       setState(() {
           this._showHome = false;
           final avatar = Avatar(name: params[2], width: 100.0, colorSurface: false);
+          String id = gidParse(params[0].trim());
+          String addr = addrParse(params[1]);
+
           this._coreScreen = _InfoScreen(
             callback: this._sendCallback,
-            id: params[0],
-            addr: params[1],
+            id: id,
+            addr: addr,
             name: params[2],
             bio: '',
             avatar: avatar,
@@ -86,7 +89,7 @@ class _ChatAddPageState extends State<ChatAddPage> {
     return Column(
       children: <Widget>[
         ListTile(
-          contentPadding: EdgeInsets.symmetric(horizontal: 20.0, vertical: 4.0),
+          contentPadding: EdgeInsets.symmetric(horizontal: 10.0, vertical: 4.0),
           leading: Icon(Icons.create, color: color.primary),
           title: Text(lang.input),
           trailing: Icon(Icons.keyboard_arrow_right, size: 30.0),
@@ -96,7 +99,7 @@ class _ChatAddPageState extends State<ChatAddPage> {
           }),
         ),
         ListTile(
-          contentPadding: EdgeInsets.symmetric(horizontal: 20.0, vertical: 4.0),
+          contentPadding: EdgeInsets.symmetric(horizontal: 10.0, vertical: 4.0),
           leading: Icon(Icons.search, color: color.primary),
           title: Text(lang.domainSearch),
           trailing: Icon(Icons.keyboard_arrow_right, size: 30.0),
@@ -106,7 +109,7 @@ class _ChatAddPageState extends State<ChatAddPage> {
           }),
         ),
         ListTile(
-          contentPadding: EdgeInsets.symmetric(horizontal: 20.0, vertical: 4.0),
+          contentPadding: EdgeInsets.symmetric(horizontal: 10.0, vertical: 4.0),
           leading: Icon(Icons.camera_alt, color: color.primary),
           title: Text(lang.scanQr),
           trailing: Icon(Icons.keyboard_arrow_right, size: 30.0),
@@ -116,7 +119,7 @@ class _ChatAddPageState extends State<ChatAddPage> {
           )
         ),
         ListTile(
-          contentPadding: EdgeInsets.symmetric(horizontal: 20.0, vertical: 4.0),
+          contentPadding: EdgeInsets.symmetric(horizontal: 10.0, vertical: 4.0),
           leading: Icon(Icons.image, color: color.primary),
           title: Text(lang.scanImage + " (${lang.wip})"),
           trailing: Icon(Icons.keyboard_arrow_right, size: 30.0),
@@ -189,7 +192,7 @@ class _ChatAddPageState extends State<ChatAddPage> {
               Icons.info,
               lang.info,
               UserInfo(app: 'add-friend',
-                id: account.id, name: account.name, addr: Global.addr)
+                id: account.gid, name: account.name, addr: Global.addr)
             ),
             child: Padding(
               padding: const EdgeInsets.only(right: 10.0),
@@ -402,22 +405,14 @@ class _InputScreenState extends State<_InputScreen> {
   FocusNode remarkFocus = FocusNode();
 
   send() {
-    var id = userIdEditingController.text;
-    if (id == '') {
+    final id = gidParse(userIdEditingController.text.trim());
+    final addr = addrParse(addrEditingController.text.trim());
+    if (id == '' || addr == '') {
       return;
     }
 
-    if (id.substring(0, 2) == 'EH') {
-      id = id.substring(2);
-    }
-
-    var addr = addrEditingController.text;
-    if (addr.substring(0, 2) == '0x') {
-      //substring(2); if has 0x, need remove
-      addr = addr.substring(2);
-    }
-    var name = nameEditingController.text;
-    var remark = remarkEditingController.text;
+    final name = nameEditingController.text.trim();
+    final remark = remarkEditingController.text.trim();
 
     context.read<ChatProvider>().requestCreate(Request(id, addr, name, remark));
     setState(() {
@@ -506,7 +501,7 @@ class _InfoScreen extends StatelessWidget {
             title: Text(gidPrint(this.id), style: TextStyle(fontSize: 16.0)),
             trailing: TextButton(
               child: Icon(Icons.copy, size: 20.0),
-              onPressed: () => Clipboard.setData(ClipboardData(text: this.id)),
+              onPressed: () => Clipboard.setData(ClipboardData(text: gidText(this.id))),
             )
           ),
           ListTile(
@@ -515,7 +510,7 @@ class _InfoScreen extends StatelessWidget {
             title: Text(addrPrint(this.addr), style: TextStyle(fontSize: 16.0)),
             trailing: TextButton(
               child: Icon(Icons.copy, size: 20.0),
-              onPressed: () => Clipboard.setData(ClipboardData(text: this.addr)),
+              onPressed: () => Clipboard.setData(ClipboardData(text: addrText(this.addr))),
             )
           ),
           ListTile(
@@ -558,7 +553,7 @@ class _RequestItem extends StatelessWidget {
     );
   }
 
-  Widget _infoListTooltip(icon, color, text) {
+  Widget _infoListTooltip(icon, color, text, short) {
     return Container(
       width: 300.0,
       padding: const EdgeInsets.symmetric(vertical: 10.0),
@@ -569,7 +564,7 @@ class _RequestItem extends StatelessWidget {
           Expanded(
             child: Tooltip(
               message: text,
-              child: Text(betterPrint(text)),
+              child: Text(short),
             )
           )
         ]
@@ -587,8 +582,8 @@ class _RequestItem extends StatelessWidget {
         const SizedBox(height: 10.0),
         const Divider(height: 1.0, color: Color(0x40ADB0BB)),
         const SizedBox(height: 10.0),
-        _infoListTooltip(Icons.person, color.primary, 'EH' + request.gid.toUpperCase()),
-        _infoListTooltip(Icons.location_on, color.primary, "0x" + request.addr),
+        _infoListTooltip(Icons.person, color.primary, gidText(request.gid), gidPrint(request.gid)),
+        _infoListTooltip(Icons.location_on, color.primary, addrText(request.addr), addrPrint(request.addr)),
         _infoList(Icons.turned_in, color.primary, request.remark),
         _infoList(Icons.access_time_rounded, color.primary, request.time.toString()),
         const SizedBox(height: 10.0),

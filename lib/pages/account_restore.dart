@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import 'package:esse/l10n/localizations.dart';
 import 'package:esse/utils/device_info.dart';
+import 'package:esse/utils/better_print.dart';
 import 'package:esse/widgets/button_text.dart';
 import 'package:esse/widgets/shadow_dialog.dart';
 import 'package:esse/widgets/show_pin.dart';
@@ -294,8 +295,8 @@ class _AccountRestorePageState extends State<AccountRestorePage> {
             Navigator.of(context).pop();
             if (app == 'distribute' && params.length == 4) {
               final name = params[0];
-              //final id = params[1];
-              final addr = params[2];
+              //final id = gidParse(params[1]);
+              final addr = addrParse(params[2]);
               final mnemonicWords = params[3];
               setState(() {
                   this._addrOnline = true;
@@ -304,7 +305,7 @@ class _AccountRestorePageState extends State<AccountRestorePage> {
                   this._wordChecked = false;
                   this._statusChecked = true;
                   this._name = name;
-                  this._addrController.text = addr;
+                  this._addrController.text = addrText(addr);
                   this._mnemoicWords = mnemonicWords.split(" ");
               });
             }
@@ -356,10 +357,9 @@ class _AccountRestorePageState extends State<AccountRestorePage> {
     if (this._name == '') {
       this._name = defaultName;
     }
-    var addr = this._addrController.text;
-    if (addr.length > 2 && addr.substring(0, 2) == '0x') {
-      //substring(2); if has 0x, need remove
-      addr = addr.substring(2);
+    final addr = addrParse(this._addrController.text.trim());
+    if (addr.length < 2) {
+      return;
     }
     final info = await deviceInfo();
 

@@ -247,9 +247,9 @@ class _ChatDetailState extends State<ChatDetail> {
                           lang.friendInfo,
                           UserInfo(
                             app: 'add-friend',
-                            id: 'EH' + friend.gid.toUpperCase(),
+                            id: friend.gid,
                             name: friend.name,
-                            addr: '0x' + friend.addr,
+                            addr: friend.addr,
                             title: lang.qrFriend,
                             remark: friend.remark,
                           ),

@@ -19,6 +19,7 @@ class UserInfo extends StatefulWidget {
   final bool showQr;
   final Widget? avatar;
   Map? qrInfo;
+  final String pre;
 
   UserInfo({Key? key,
       required this.id,
@@ -30,12 +31,13 @@ class UserInfo extends StatefulWidget {
       this.callback,
       this.avatar,
       this.title,
-      this.showQr = true
+      this.showQr = true,
+      this.pre = 'EH',
   }) : super(key: key) {
     if (this.showQr) {
       this.qrInfo = {
         "app": this.app,
-        "params": [this.id, this.addr, this.name],
+        "params": [gidText(this.id, this.pre), addrText(this.addr), this.name],
       };
     }
   }
@@ -112,7 +114,7 @@ class _UserInfoState extends State<UserInfo> {
         const SizedBox(height: 20),
         InkWell(
           onTap: () {
-            Clipboard.setData(ClipboardData(text: widget.id));
+            Clipboard.setData(ClipboardData(text: gidText(widget.id)));
             setState(() {
                 idCopy = true;
                 addrCopy = false;
@@ -124,7 +126,7 @@ class _UserInfoState extends State<UserInfo> {
               children: [
                 Icon(Icons.person, size: 20.0, color: color.primary),
                 Spacer(),
-                Text(betterPrint(widget.id), style: TextStyle(fontSize: 14, color: idColor)),
+                Text(gidPrint(widget.id, widget.pre), style: TextStyle(fontSize: 14, color: idColor)),
                 Spacer(),
                 Icon(idCopy ? Icons.file_copy : Icons.copy, size: 20.0, color: color.primary),
               ]
@@ -134,7 +136,7 @@ class _UserInfoState extends State<UserInfo> {
         const SizedBox(height: 16),
         InkWell(
           onTap: () {
-            Clipboard.setData(ClipboardData(text: widget.addr));
+            Clipboard.setData(ClipboardData(text: addrText(widget.addr)));
             setState(() {
                 idCopy = false;
                 addrCopy = true;
@@ -146,7 +148,7 @@ class _UserInfoState extends State<UserInfo> {
               children: [
                 Icon(Icons.location_on, size: 20.0, color: color.primary),
                 Spacer(),
-                Text(betterPrint(widget.addr), style: TextStyle(fontSize: 14, color: addrColor)),
+                Text(addrPrint(widget.addr), style: TextStyle(fontSize: 14, color: addrColor)),
                 Spacer(),
                 Icon(addrCopy ? Icons.file_copy : Icons.copy, size: 20.0, color: color.primary),
               ]

@@ -100,11 +100,10 @@ class _GroupAddPageState extends State<GroupAddPage> {
   }
 
   _checkGroupAddr() {
-    String addr = _createAddrController.text;
-    if (addr.substring(0, 2) == '0x') {
-      addr = addr.substring(2);
+    final addr = addrParse(_createAddrController.text.trim());
+    if (addr.length > 0) {
+      context.read<GroupChatProvider>().check(addr);
     }
-    context.read<GroupChatProvider>().check(addr);
   }
 
   _scanCallback(bool isOk, String app, List params) {
@@ -112,29 +111,20 @@ class _GroupAddPageState extends State<GroupAddPage> {
     print(app);
     print(params);
     if (isOk && app == 'add-group' && params.length == 3) {
-      this._joinIdController.text = params[0];
-      this._joinAddrController.text = params[1];
+      this._joinIdController.text = gidText(params[0]);
+      this._joinAddrController.text = addrText(params[1]);
       this._joinNameController.text = params[2];
       setState(() {});
     }
   }
 
   _join() {
-    var id = _joinIdController.text;
-    if (id == '') {
+    final id = gidParse(_joinIdController.text.trim(), 'EG');
+    if (id.length < 2) {
       return;
     }
-
-    if (id.substring(0, 2) == 'EG') {
-      id = id.substring(2);
-    }
-
-    var addr = _joinAddrController.text;
-    // if has 0x, need remove
-    if (addr.substring(0, 2) == '0x') {
-      addr = addr.substring(2);
-    }
-    var name = _joinNameController.text;
+    final addr = addrParse(_joinAddrController.text.trim());
+    final name = _joinNameController.text.trim();
     context.read<GroupChatProvider>().join(GroupType.Open, id, addr, name, "");
     setState(() {
         _joinIdController.text = '';
@@ -144,10 +134,9 @@ class _GroupAddPageState extends State<GroupAddPage> {
   }
 
   _create() {
-    var addr = _createAddrController.text.trim();
-    // if has 0x, need remove
-    if (addr.length > 2 && addr.substring(0, 2) == '0x') {
-      addr = addr.substring(2);
+    final addr = addrParse(_createAddrController.text.trim());
+    if (_groupLocation == 0 && addr.length < 2) {
+      return;
     }
     final name = _createNameController.text.trim();
     final bio = _createBioController.text.trim();
@@ -165,8 +154,8 @@ class _GroupAddPageState extends State<GroupAddPage> {
     super.initState();
     _addrChecked = false;
 
-    _joinIdController.text = widget.id;
-    _joinAddrController.text = widget.addr;
+    _joinIdController.text = gidText(widget.id, 'EG');
+    _joinAddrController.text = addrText(widget.addr);
     _joinNameController.text = widget.name;
 
     _joinIdFocus.addListener(() {
@@ -563,7 +552,7 @@ class _RequestItem extends StatelessWidget {
     );
   }
 
-  Widget _infoListTooltip(icon, color, text) {
+  Widget _infoListTooltip(icon, color, text, short) {
     return Container(
       width: 300.0,
       padding: const EdgeInsets.symmetric(vertical: 10.0),
@@ -574,7 +563,7 @@ class _RequestItem extends StatelessWidget {
           Expanded(
             child: Tooltip(
               message: text,
-              child: Text(betterPrint(text)),
+              child: Text(short),
             )
           )
         ]
@@ -593,8 +582,10 @@ class _RequestItem extends StatelessWidget {
         const Divider(height: 1.0, color: Color(0x40ADB0BB)),
         const SizedBox(height: 10.0),
         _infoListTooltip(Icons.person, color.primary,
-          (request.isMe ? 'EG' : 'EH') + request.gid.toUpperCase()),
-        _infoListTooltip(Icons.location_on, color.primary, "0x" + request.addr),
+          request.isMe ? gidText(request.gid, 'EG') : gidText(request.gid),
+          request.isMe ? gidPrint(request.gid, 'EG') : gidPrint(request.gid),
+        ),
+        _infoListTooltip(Icons.location_on, color.primary, addrText(request.addr), addrPrint(request.addr)),
         _infoList(Icons.turned_in, color.primary, request.remark),
         _infoList(Icons.access_time_rounded, color.primary, request.time.toString()),
         const SizedBox(height: 10.0),

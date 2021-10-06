@@ -5,6 +5,7 @@ import 'package:percent_indicator/percent_indicator.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 import 'package:esse/utils/adaptive.dart';
+import 'package:esse/utils/better_print.dart';
 import 'package:esse/l10n/localizations.dart';
 import 'package:esse/widgets/shadow_dialog.dart';
 import 'package:esse/widgets/input_text.dart';
@@ -35,11 +36,7 @@ class _DevicesPageState extends State<DevicesPage> {
           const SizedBox(height: 32.0),
           ButtonText(
             action: () {
-              var addr = this._addrController.text;
-              if (addr.substring(0, 2) == '0x') {
-                //substring(2); if has 0x, need remove
-                addr = addr.substring(2);
-              }
+              final addr = addrParse(this._addrController.text.trim());
               if (addr.length > 0) {
                 Provider.of<DeviceProvider>(context, listen: false).connect(addr);
                 Navigator.pop(context);
@@ -55,7 +52,7 @@ class _DevicesPageState extends State<DevicesPage> {
     final res = await httpPost(Global.httpRpc, 'account-mnemonic', [lock]);
     if (res.isOk) {
       final words = res.params[0];
-      final info = json.encode({'app': 'distribute', 'params': [name, id, addr, words]});
+      final info = json.encode({'app': 'distribute', 'params': [name, gidText(id), addrText(addr), words]});
       showShadowDialog(context, Icons.qr_code_rounded, lang.deviceQrcode,
         Column(
           children: [
@@ -112,7 +109,7 @@ class _DevicesPageState extends State<DevicesPage> {
   }
 
   Widget deviceWidget(ColorScheme color, Device device, bool isDesktop, double widgetWidth, lang) {
-    final bool isLocal = '0x' + device.addr == Global.addr;
+    final bool isLocal = device.addr == Global.addr;
     final String name = isLocal ? (device.name + " (${lang.deviceLocal})") : device.name;
 
     return Container(
@@ -131,7 +128,7 @@ class _DevicesPageState extends State<DevicesPage> {
             title: Text(name),
             subtitle: Container(
               padding: const EdgeInsets.only(top: 8.0),
-              child: Text(device.printAddr())
+              child: Text(addrPrint(device.addr))
             ),
           ),
           Row(
@@ -226,7 +223,7 @@ class _DevicesPageState extends State<DevicesPage> {
                               Navigator.of(context).pop();
                               _showQrCode(
                                 account.name,
-                                account.id,
+                                account.gid,
                                 Global.addr,
                                 account.lock,
                                 color,

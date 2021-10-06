@@ -372,9 +372,9 @@ class _AddProviderScreenState extends State<_AddProviderScreen> {
         ButtonText(
           enable: !this._waiting,
           action: () {
-            String addr = _addrController.text.trim();
-            if (addr.substring(0, 2) == '0x') {
-              addr = addr.substring(2);
+            final addr = addrParse(_addrController.text.trim());
+            if (addr.length < 2) {
+              return;
             }
             rpc.send('domain-provider-add', [addr]);
             setState(() {

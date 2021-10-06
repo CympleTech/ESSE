@@ -179,7 +179,7 @@ class _HomeListState extends State<HomeList> {
                             lang.info,
                             UserInfo(
                                 app: 'add-friend',
-                                id: provider.activedAccount.id,
+                                id: provider.id,
                                 name: provider.activedAccount.name,
                                 addr: Global.addr));
                       }

@@ -34,13 +34,4 @@ class Global {
   static changeHttp(String newHttp) {
     Global.httpRpc = newHttp;
   }
-
-  static printAddr() {
-    final len = Global.addr.length;
-    if (len > 8) {
-      return Global.addr.substring(0, 8) + '...' +  Global.addr.substring(len - 6, len);
-    } else {
-      return Global.addr;
-    }
-  }
 }

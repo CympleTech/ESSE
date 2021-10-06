@@ -262,11 +262,12 @@ class _GroupChatDetailState extends State<GroupChatDetail> {
                         showShadowDialog(context, Icons.info, lang.groupChat,
                           UserInfo(
                             app: 'add-group',
-                            id: 'EG' + this.group!.gid.toUpperCase(),
+                            id: this.group!.gid,
                             name: this.group!.name,
-                            addr: '0x' + this.group!.addr,
+                            addr: this.group!.addr,
                             title: this.group!.type.lang(lang),
                             bio: this.group!.bio,
+                            pre: 'EG',
                           ),
                           0.0,
                         );
@@ -696,7 +697,7 @@ class MemberDetail extends StatefulWidget {
 }
 
 class _MemberDetailState extends State<MemberDetail> {
-  Widget _infoListTooltip(icon, color, text) {
+  Widget _infoListTooltip(icon, color, text, short) {
     return Container(
       width: 300.0,
       padding: const EdgeInsets.symmetric(vertical: 10.0),
@@ -707,7 +708,7 @@ class _MemberDetailState extends State<MemberDetail> {
           Expanded(
             child: Tooltip(
               message: text,
-              child: Text(betterPrint(text)),
+              child: Text(short),
             )
           )
         ]
@@ -730,8 +731,8 @@ class _MemberDetailState extends State<MemberDetail> {
         const SizedBox(height: 10.0),
         const Divider(height: 1.0, color: Color(0x40ADB0BB)),
         const SizedBox(height: 10.0),
-        _infoListTooltip(Icons.person, color.primary, widget.member.mid),
-        _infoListTooltip(Icons.location_on, color.primary, widget.member.addr),
+        _infoListTooltip(Icons.person, color.primary, gidText(widget.member.mid), gidPrint(widget.member.mid)),
+        _infoListTooltip(Icons.location_on, color.primary, addrText(widget.member.addr), addrPrint(widget.member.addr)),
         if (widget.isGroupOwner)
         Container(
           padding: const EdgeInsets.only(top: 20.0, bottom: 10.0),

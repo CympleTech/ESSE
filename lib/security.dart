@@ -9,6 +9,7 @@ import 'package:esse/widgets/show_pin.dart';
 import 'package:esse/pages/account_generate.dart';
 import 'package:esse/pages/account_restore.dart';
 import 'package:esse/utils/logined_cache.dart';
+import 'package:esse/utils/better_print.dart';
 import 'package:esse/account.dart';
 import 'package:esse/global.dart';
 import 'package:esse/rpc.dart';
@@ -268,7 +269,7 @@ class _SecurityPageState extends State<SecurityPage> {
                           style: TextStyle(fontSize: 16)
                         ),
                       ),
-                      Text(" (${account.printShortId()})", style: TextStyle(fontSize: 16)),
+                      Text(" (${gidPrint(account.gid)})", style: TextStyle(fontSize: 16)),
                     ]
                   ),
                 );

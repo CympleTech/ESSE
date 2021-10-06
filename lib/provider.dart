@@ -19,7 +19,7 @@ class AccountProvider extends ChangeNotifier {
   Account get activedAccount => this.accounts[activedAccountId]!;
 
   /// current user's did.
-  String get id => this.activedAccount.id;
+  String get id => this.activedAccount.gid;
 
   bool systemAppFriendAddNew = false;
 
@@ -239,7 +239,7 @@ class AccountProvider extends ChangeNotifier {
 
   // -- callback when receive rpc info. -- //
   _systemInfo(List params) {
-    Global.addr = '0x' + params[0];
+    Global.addr = params[0];
   }
 
   _accountLogin(List _params) {

@@ -15,10 +15,6 @@ class Device {
     this.addr = params[3],
     this.lastTime = RelativeTime.fromInt(params[4]),
     this.online = params[5] == "1";
-
-  String printAddr() {
-    return '0x' + this.addr.substring(0, 6) + "..." + this.addr.substring(64 - 8, 64);
-  }
 }
 
 class DeviceStatus {

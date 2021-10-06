@@ -23,7 +23,7 @@ class _ProfileDetailState extends State<ProfileDetail> {
   bool _mnemoicShow = false;
   List<String> _mnemoicWords = [];
 
-  Widget _infoListTooltip(icon, color, text) {
+  Widget _infoListTooltip(icon, color, text, short) {
     return SizedBox(
       width: 300.0,
       height: 40.0,
@@ -33,7 +33,7 @@ class _ProfileDetailState extends State<ProfileDetail> {
         Expanded(
             child: Tooltip(
           message: text,
-          child: Text(betterPrint(text)),
+          child: Text(short),
         ))
       ]),
     );
@@ -157,8 +157,8 @@ class _ProfileDetailState extends State<ProfileDetail> {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.max,
               children: [
-                _infoListTooltip(Icons.person, color.primary, account.id),
-                _infoListTooltip(Icons.location_on, color.primary, Global.addr),
+                _infoListTooltip(Icons.person, color.primary, gidText(account.gid), gidPrint(account.gid)),
+                _infoListTooltip(Icons.location_on, color.primary, addrText(Global.addr), addrPrint(Global.addr)),
                 SizedBox(
                   width: 300.0,
                   height: 40.0,
@@ -168,7 +168,7 @@ class _ProfileDetailState extends State<ProfileDetail> {
                     const SizedBox(width: 20.0),
                     TextButton(
                       onPressed: () => _pinCheck(account.lock,
-                        () => _changePin(context, account.id, account.lock, lang.setPin),
+                        () => _changePin(context, account.gid, account.lock, lang.setPin),
                         lang.verifyPin,
                       ),
                       child: Text(lang.change + ' PIN'),
@@ -192,7 +192,7 @@ class _ProfileDetailState extends State<ProfileDetail> {
                           )
                         : TextButton(
                             onPressed: () => _pinCheck(account.lock,
-                                () => _showMnemonic(account.id, account.lock), lang.verifyPin),
+                                () => _showMnemonic(account.gid, account.lock), lang.verifyPin),
                             child: Text(lang.show + ' ' + lang.mnemonic),
                           ),
                   ]),

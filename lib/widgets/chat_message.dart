@@ -43,7 +43,7 @@ class ChatMessage extends StatelessWidget {
                 child: Column(children: [
                     Text(name, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: color.onPrimary, fontSize: 16.0)),
                     const SizedBox(height: 4.0),
-                    Text(betterPrint(gid), style: TextStyle(color: Colors.grey, fontSize: 12.0)),
+                    Text(gidPrint(gid), style: TextStyle(color: Colors.grey, fontSize: 12.0)),
           ]))]),
           const SizedBox(height: 5.0),
           const Divider(height: 1.0, color: Color(0x40ADB0BB)),
@@ -216,14 +216,13 @@ class ChatMessage extends StatelessWidget {
     // contact [name, gid, addr, avatar]
     final infos = message.showContact();
     if (infos[1].length > 0) {
-      final gid = 'EH' + infos[1].toUpperCase();
       return GestureDetector(
         onTap: () => showShadowDialog(
           context,
           Icons.person_rounded,
           lang.contactCard,
           UserInfo(
-            showQr: false, id: gid, addr: '0x' + infos[2], name: infos[0],
+            showQr: false, id: infos[1], addr: infos[2], name: infos[0],
             remark: lang.fromContactCard(name),
             avatar: Avatar(width: 100.0, name: infos[0], avatarPath: infos[3]),
             callback: () {
@@ -236,7 +235,7 @@ class ChatMessage extends StatelessWidget {
         ),
         child: _showContactCard(
           Avatar(width: 40.0, name: infos[0], avatarPath: infos[3]),
-          gid, infos[0], lang.contactCard, color
+          infos[1], infos[0], lang.contactCard, color
         )
       );
     } else {

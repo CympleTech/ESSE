@@ -200,9 +200,8 @@ class AssistantMessage extends StatelessWidget {
               const SizedBox(height: 10.0),
               const Divider(height: 1.0, color: Color(0x40ADB0BB)),
               const SizedBox(height: 10.0),
-              _infoListTooltip(Icons.person, color.primary, gid),
-              _infoListTooltip(
-                  Icons.location_on, color.primary, "0x" + infos[2]),
+              _infoListTooltip(Icons.person, color.primary, gidText(gid), gidPrint(gid)),
+              _infoListTooltip(Icons.location_on, color.primary, addrText(infos[2]), addrPrint(infos[2])),
               Container(
                 width: 300.0,
                 padding: const EdgeInsets.symmetric(vertical: 10.0),
@@ -250,7 +249,7 @@ class AssistantMessage extends StatelessWidget {
                           style: TextStyle(
                               color: color.onPrimary, fontSize: 16.0)),
                       SizedBox(height: 5.0),
-                      Text(betterPrint(gid),
+                      Text(gidPrint(gid),
                           style: TextStyle(color: Colors.grey, fontSize: 12.0)),
                     ])),
               ]),
@@ -262,7 +261,7 @@ class AssistantMessage extends StatelessWidget {
             ])));
   }
 
-  Widget _infoListTooltip(icon, color, text) {
+  Widget _infoListTooltip(icon, color, text, short) {
     return Container(
       width: 300.0,
       padding: const EdgeInsets.symmetric(vertical: 10.0),
@@ -273,7 +272,7 @@ class AssistantMessage extends StatelessWidget {
           Expanded(
             child: Tooltip(
               message: text,
-              child: Text(betterPrint(text)),
+              child: Text(short),
             )
           )
         ]

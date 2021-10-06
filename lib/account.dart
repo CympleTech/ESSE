@@ -22,8 +22,6 @@ class Account {
     this.hasNew = false;
   }
 
-  String get id => 'EH' + this.gid.toUpperCase();
-
   String encodeAvatar() {
     if (this.avatar != null && this.avatar!.length > 1) {
       return base64.encode(this.avatar!);
@@ -37,26 +35,6 @@ class Account {
       this.avatar = base64.decode(avatar);
     } else {
       this.avatar = null;
-    }
-  }
-
-  String printShortId() {
-    final id = this.id;
-    final len = id.length;
-    if (len > 4) {
-      return id.substring(0, 4) + "..." + id.substring(len - 4, len);
-    } else {
-      return id;
-    }
-  }
-
-  String printId() {
-    final id = this.id;
-    final len = id.length;
-    if (len > 8) {
-      return id.substring(0, 8) + "..." + id.substring(len - 8, len);
-    } else {
-      return id;
     }
   }
 
