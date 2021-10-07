@@ -320,13 +320,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get groupRequireConsent => "需要管理员同意";
 
   @override
-  String get domain => '公开身份';
+  String get domain => '个人ID';
   @override
-  String get domainIntro => '管理自己的公开身份';
+  String get domainIntro => '管理自己的公开ID';
   @override
   String get domainShowProvider => '所有站点';
   @override
-  String get domainShowName => '所有已注册身份';
+  String get domainShowName => '所有已注册ID';
   @override
   String get domainName => '用户名';
   @override

@@ -320,7 +320,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get groupRequireConsent => "Requires manager's consent";
 
   @override
-  String get domain => 'Public identity';
+  String get domain => 'ID';
   @override
   String get domainIntro => 'Unique identity to public services';
   @override
