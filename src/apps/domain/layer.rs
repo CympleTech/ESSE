@@ -1,21 +1,18 @@
-use std::path::PathBuf;
 use std::sync::Arc;
 use tdn::types::{
     group::GroupId,
-    message::{RecvType, SendType},
-    primitive::{HandleResult, PeerAddr, Result},
+    message::RecvType,
+    primitive::{HandleResult, Result},
 };
 use tokio::sync::RwLock;
 
-use domain_types::{LayerPeerEvent, LayerServerEvent, ServerEvent};
-use tdn_did::Proof;
-use tdn_storage::local::DStorage;
+use domain_types::{LayerServerEvent, ServerEvent};
 
-use crate::layer::{Layer, Online};
+use crate::layer::Layer;
 use crate::storage::domain_db;
 
 use super::models::{Name, Provider};
-use super::{add_layer, rpc};
+use super::rpc;
 
 pub(crate) async fn handle(
     layer: &Arc<RwLock<Layer>>,
@@ -40,11 +37,6 @@ pub(crate) async fn handle(
 
             match event {
                 ServerEvent::Status(name, support_request) => {
-                    println!(
-                        "------ DEBUG DOMAIN SERVICE IS {}, request: {}",
-                        name, support_request
-                    );
-
                     let mut provider = Provider::get_by_addr(&db, &addr)?;
                     provider.ok(&db, name, support_request)?;
                     results.rpcs.push(rpc::add_provider(ogid, &provider));
@@ -64,13 +56,12 @@ pub(crate) async fn handle(
                     }
                 }
                 ServerEvent::Info(uname, ugid, uaddr, ubio, uavatar) => {
-                    println!("------ Search: {} --", uname);
                     results.rpcs.push(rpc::search_result(
                         ogid, &uname, &ugid, &uaddr, &ubio, &uavatar,
                     ));
                 }
-                ServerEvent::None(_name) => {
-                    // TODO UI: show search result.
+                ServerEvent::None(uname) => {
+                    results.rpcs.push(rpc::search_none(ogid, &uname));
                 }
                 ServerEvent::Response(_ugid, _uname, _is_ok) => {}
             }

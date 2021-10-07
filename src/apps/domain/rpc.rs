@@ -55,6 +55,11 @@ pub(crate) fn search_result(
     )
 }
 
+#[inline]
+pub(crate) fn search_none(mgid: GroupId, name: &str) -> RpcParam {
+    rpc_response(0, "domain-search", json!([name]), mgid)
+}
+
 pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
     handler.add_method(
         "domain-list",
