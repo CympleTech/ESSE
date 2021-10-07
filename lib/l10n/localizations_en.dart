@@ -37,7 +37,7 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get bio => 'Bio';
   @override
-  String get id => 'ID';
+  String get id => 'ESSEID';
   @override
   String get address => 'Address';
   @override
@@ -320,7 +320,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get groupRequireConsent => "Requires manager's consent";
 
   @override
-  String get domain => 'ID';
+  String get domain => 'Public ID';
   @override
   String get domainIntro => 'Unique identity to public services';
   @override
@@ -336,7 +336,7 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get domainAddProvider => 'Add new provider';
   @override
-  String get domainSearch => 'Username Search';
+  String get domainSearch => 'Public ID Search';
   @override
   String get domainRegisterFailure => 'username already existed!';
   @override

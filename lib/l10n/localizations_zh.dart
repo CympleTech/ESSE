@@ -37,7 +37,7 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String get bio => '个性签名';
   @override
-  String get id => '身份账户';
+  String get id => 'ESSEID';
   @override
   String get address => '网络地址';
   @override
@@ -336,7 +336,7 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String get domainAddProvider => '添加新的站点';
   @override
-  String get domainSearch => '用户名搜索';
+  String get domainSearch => '个人ID搜索';
   @override
   String get domainRegisterFailure => '用户名已存在！';
   @override

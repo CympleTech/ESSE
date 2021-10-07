@@ -243,10 +243,10 @@ class _ListProviderScreen extends StatelessWidget {
 
   Widget _providerItem(int id, String name, String address, bool isDefault, ColorScheme color, AppLocalizations lang) {
     return Container(
-      margin: const EdgeInsets.symmetric(vertical: 10.0),
-      decoration: BoxDecoration(color: color.surface, borderRadius: BorderRadius.circular(15.0)),
+      margin: const EdgeInsets.only(bottom: 10.0),
+      decoration: BoxDecoration(color: color.surface),
       child: ListTile(
-        contentPadding: EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
+        contentPadding: EdgeInsets.symmetric(vertical: 4.0),
         leading: Tooltip(
           message: 'set default ?',
           child: TextButton(
@@ -257,11 +257,11 @@ class _ListProviderScreen extends StatelessWidget {
         title: Text(name, style: TextStyle(fontWeight: FontWeight.bold)),
         subtitle: Row(
           children: <Widget>[
-            Expanded(child: Text(address)),
+            Expanded(child: Text(address, style: TextStyle(fontSize: 14.0))),
           ],
         ),
         trailing: Container(
-          margin: EdgeInsets.only(left: 10.0),
+          margin: EdgeInsets.only(left: 4.0),
           decoration: new BoxDecoration(
             border: new Border(left: const BorderSide(width: 1.0, color: Color(0xA0ADB0BB)))),
           child: TextButton(
