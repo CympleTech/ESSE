@@ -137,9 +137,9 @@ class _HomeListState extends State<HomeList> {
           icon: const Icon(Icons.menu),
           onPressed: () => Scaffold.of(context).openDrawer(),
         ),
-        bottom: PreferredSize(
+        bottom: isDesktop ? PreferredSize(
           child: Container(color: const Color(0x40ADB0BB), height: 1.0),
-          preferredSize: Size.fromHeight(1.0)),
+          preferredSize: Size.fromHeight(1.0)): null,
         actions: [
           IconButton(
             icon: const Icon(Icons.search),
@@ -243,7 +243,7 @@ class _HomeListState extends State<HomeList> {
                   ),
                   title: Text(params[0], style: TextStyle(fontSize: 16.0)),
                   subtitle: Text(params[1], style: TextStyle(fontSize: 12.0)),
-                  trailing: Icon(Icons.keyboard_arrow_right, color: Colors.purpleAccent),
+                  trailing: Icon(Icons.keyboard_arrow_right),
                   onTap: () {
                     final widget = INNER_SERVICES[index].callback();
                     if (widget != null) {
@@ -262,9 +262,9 @@ class _HomeListState extends State<HomeList> {
               itemBuilder: (BuildContext ctx, int index) {
                 final params = FILE_DIRECTORY[index];
                 return ListTile(
-                  leading: Icon(params[1], color: Colors.green),
+                  leading: Icon(params[1], color: Color(0xFF6174FF)),
                   title: Text(params[0], style: TextStyle(fontSize: 16.0)),
-                  trailing: Icon(Icons.keyboard_arrow_right, color: Colors.green),
+                  trailing: Icon(Icons.keyboard_arrow_right),
                   onTap: () {
                     final widget = FilesList(root: params[2]);
                     if (widget != null) {
@@ -296,16 +296,19 @@ class _HomeListState extends State<HomeList> {
             icon: Icon(Icons.sms),
             title: Text(lang.sessions, style: TextStyle(fontSize: 15.0)),
             activeColor: Color(0xFF6174FF),
+            inactiveColor: Colors.grey,
           ),
           BottomNavyBarItem(
             icon: Icon(Icons.apps),
             title: Text(lang.services, style: TextStyle(fontSize: 15.0)),
-            activeColor: Colors.purpleAccent
+            activeColor: Color(0xFF6174FF),
+            inactiveColor: Colors.grey,
           ),
           BottomNavyBarItem(
             icon: Icon(Icons.source),
             title: Text(lang.dataCenter, style: TextStyle(fontSize: 15.0)),
-            activeColor: Colors.green
+            activeColor: Color(0xFF6174FF),
+            inactiveColor: Colors.grey,
           ),
         ],
       )
