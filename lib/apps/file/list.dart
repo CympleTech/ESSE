@@ -6,19 +6,22 @@ import 'package:esse/utils/file_image.dart';
 import 'package:esse/l10n/localizations.dart';
 //import 'package:esse/provider.dart';
 
+const List FILE_DIRECTORY = [
+  ["Starred", Icons.star, "started"],
+  ["Documents", Icons.description, "documents"],
+  ["Images", Icons.image, "images"],
+  ["Musics", Icons.music_note, "musics"],
+  ["Videos", Icons.play_circle_filled, "videos"],
+  ["Trash", Icons.auto_delete, "trash"],
+];
+
 class FilesList extends StatefulWidget {
-  const FilesList({Key? key}) : super(key: key);
+  final String root;
+  const FilesList({Key? key, required this.root}) : super(key: key);
 
   @override
   _FilesListState createState() => _FilesListState();
 }
-
-const List FILE_DIRECTORY = [
-    ["Starred", Icons.star],
-    ["Documents", Icons.description],
-    ["Media", Icons.music_video],
-    ["Trash", Icons.auto_delete],
-  ];
 
 class _FilesListState extends State<FilesList> {
   @override
@@ -38,64 +41,22 @@ class _FilesListState extends State<FilesList> {
     });
   }
 
-  Widget item(String name, IconData icon, ColorScheme color, bool isDesktop) {
-    return Container(
-      width: 140,
-      height: 50,
-      decoration: BoxDecoration(
-        color: color.surface,
-        borderRadius: BorderRadius.circular(15.0),
-      ),
-      child: InkWell(
-        onTap: () => changeItem(name, isDesktop),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Padding(
-              padding: const EdgeInsets.only(left: 16.0, right: 8.0),
-              child: Icon(icon, color: color.primary),
-            ),
-            Expanded(
-              child: Text(name, style: TextStyle(fontSize: 14.0))
-            )
-          ]
-      )),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final color = Theme.of(context).colorScheme;
     final lang = AppLocalizations.of(context);
     final isDesktop = isDisplayDesktop(context);
 
-    final List<Widget> widgets = FILE_DIRECTORY.map(
-      (i) => item(i[0], i[1], color, isDesktop)
-    ).toList();
-
     return Scaffold(
-      appBar: AppBar(
-        title: Text(lang.files + ' (${lang.wip})'),
-        bottom: PreferredSize(
-          child: Container(color: const Color(0x40ADB0BB), height: 1.0),
-          preferredSize: Size.fromHeight(1.0)
-        ),
-      ),
+      appBar: AppBar(title: Text(lang.dataCenter + ' (${lang.wip})')),
       body: Padding(
         padding: const EdgeInsets.all(10.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            const SizedBox(height: 10.0),
-            Wrap(
-              spacing: 10.0,
-              runSpacing: 10.0,
-              children: widgets,
-            ),
-            const SizedBox(height: 20.0),
             Align(
               alignment: Alignment.centerLeft,
-              child: Text('Recents', style: Theme.of(context).textTheme.caption)
+              child: Text('/' + widget.root, style: Theme.of(context).textTheme.caption)
             ),
             Expanded(
               child: GridView.extent(

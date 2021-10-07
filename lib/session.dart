@@ -10,11 +10,8 @@ import 'package:esse/apps/primitives.dart';
 enum SessionType {
   Chat,
   Group,
-  Files,
   Device,
   Assistant,
-  Domain,
-  Service,
 }
 
 extension SessionTypeExtension on SessionType {
@@ -25,15 +22,9 @@ extension SessionTypeExtension on SessionType {
       case 1:
         return SessionType.Group;
       case 2:
-        return SessionType.Files;
-      case 3:
         return SessionType.Device;
-      case 4:
+      case 3:
         return SessionType.Assistant;
-      case 5:
-        return SessionType.Domain;
-      case 6:
-        return SessionType.Service;
       default:
         return SessionType.Chat;
     }
@@ -147,9 +138,6 @@ class Session {
         ];
       case SessionType.Assistant:
         final params = Session.innerService(InnerService.Assistant, lang);
-        return [params[0], params[1], params[2], '', Icons.campaign];
-      case SessionType.Files:
-        final params = Session.innerService(InnerService.Files, lang);
         return [params[0], params[1], params[2], '', Icons.campaign];
       default:
         return [];

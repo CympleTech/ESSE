@@ -21,11 +21,7 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get info => 'Info';
   @override
-  String get contact => 'Contacts';
-  @override
   String get friend => 'Friend';
-  @override
-  String get friends => 'Friends';
   @override
   String get logout => 'Logout';
   @override
@@ -163,7 +159,11 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get addService => 'Add Service';
   @override
+  String get sessions => 'Sessions';
+  @override
   String get services => 'Services';
+  @override
+  String get dataCenter => 'IDC';
   @override
   String get devices => 'Devices';
   @override
@@ -172,6 +172,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get scan => 'Scan';
 
   // friend
+  @override
+  String get contact => 'Contacts';
+  @override
+  String get contactIntro => 'Chat with friends security';
   @override
   String get myQrcode => 'My QRCode';
   @override
@@ -263,7 +267,7 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get assistant => 'Jarvis';
   @override
-  String get assistantBio => 'Jarvis is a robot, only belongs to you.';
+  String get assistantBio => 'Jarvis is a robot, only belongs to you';
   @override
   String get groupChat => 'Group Chat';
   @override
@@ -334,4 +338,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get domainSearch => 'Domain Search';
   @override
   String get domainRegisterFailure => 'name already existed!';
+  @override
+  String get cloud => 'Cloud Peer';
+  @override
+  String get cloudIntro => 'Cloud hosting peer belongs to you';
 }

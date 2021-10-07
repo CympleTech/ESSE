@@ -13,13 +13,7 @@ class ServiceAddPage extends StatelessWidget {
     final lang = AppLocalizations.of(context);
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(lang.addService),
-        bottom: PreferredSize(
-          child: Container(color: const Color(0x40ADB0BB), height: 1.0),
-          preferredSize: Size.fromHeight(1.0)
-        ),
-      ),
+      appBar: AppBar(title: Text(lang.addService)),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 10.0),

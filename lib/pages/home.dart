@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/cupertino.dart' show CupertinoSwitch;
+import 'package:bottom_navy_bar/bottom_navy_bar.dart';
 
 import 'package:esse/l10n/localizations.dart';
 import 'package:esse/utils/adaptive.dart';
@@ -29,7 +30,7 @@ import 'package:esse/apps/chat/list.dart';
 import 'package:esse/apps/chat/detail.dart';
 import 'package:esse/apps/chat/add.dart';
 import 'package:esse/apps/file/list.dart';
-import 'package:esse/apps/service/list.dart';
+import 'package:esse/apps/service/models.dart';
 import 'package:esse/apps/assistant/page.dart';
 import 'package:esse/apps/group_chat/add.dart';
 import 'package:esse/apps/group_chat/list.dart';
@@ -52,29 +53,27 @@ class HomePage extends StatelessWidget {
     }
 
     return WillPopScope(
-        onWillPop: () async {
-          SystemChannels.platform.invokeMethod('SystemNavigator.pop');
-          return false;
-        },
-        child: Scaffold(
-            drawer: const DrawerWidget(),
-            drawerScrimColor: const Color(0x26ADB0BB),
-            body: AnnotatedRegion<SystemUiOverlayStyle>(
-                value: style.copyWith(statusBarColor: colorScheme.background),
-                child: SafeArea(
-                    child: isDesktop
-                        ? Row(children: [
-                            Container(
-                              width: 375.0,
-                              child: HomeList(),
-                            ),
-                            const SizedBox(width: 20.0),
-                            Expanded(
-                                child: context
-                                    .watch<AccountProvider>()
-                                    .coreShowWidget),
-                          ])
-                        : HomeList()))));
+      onWillPop: () async {
+        SystemChannels.platform.invokeMethod('SystemNavigator.pop');
+        return false;
+      },
+      child: Scaffold(
+        drawer: const DrawerWidget(),
+        drawerScrimColor: const Color(0x26ADB0BB),
+        body: AnnotatedRegion<SystemUiOverlayStyle>(
+          value: style.copyWith(statusBarColor: colorScheme.secondary),
+          child: SafeArea(
+            child: isDesktop
+            ? Row(children: [
+                Container(
+                  width: 375.0,
+                  decoration: BoxDecoration(color: colorScheme.secondary),
+                  child: HomeList()
+                ),
+                Expanded(child: context.watch<AccountProvider>().coreShowWidget),
+            ])
+            : HomeList()
+    ))));
   }
 }
 
@@ -86,35 +85,44 @@ class HomeList extends StatefulWidget {
 }
 
 class _HomeListState extends State<HomeList> {
+  int _currentIndex = 0;
+  PageController _pageController = PageController();
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
   _scanQr(bool isDesktop) {
     Navigator.push(
-        context,
-        MaterialPageRoute(
-            builder: (context) => QRScan(callback: (isOk, app, params) {
-                  Navigator.of(context).pop();
-                  if (app == 'add-friend' && params.length == 3) {
-                    final id = params[0];
-                    final addr = params[1];
-                    final name = params[2];
-                    final widget = ChatAddPage(id: id, addr: addr, name: name);
-                    Provider.of<AccountProvider>(context, listen: false)
-                        .systemAppFriendAddNew = false;
-                    if (isDesktop) {
-                      Provider.of<AccountProvider>(context, listen: false)
-                          .updateActivedWidget(widget);
-                    } else {
-                      Navigator.push(
-                          context, MaterialPageRoute(builder: (_) => widget));
-                    }
-                  } else if (app == 'distribute' && params.length == 4) {
-                    //final _name = params[0];
-                    //final id = params[1];
-                    final addr = params[2];
-                    //final _mnemonicWords = params[3];
-                    Provider.of<DeviceProvider>(context, listen: false)
-                        .connect(addr);
-                  }
-                })));
+      context,
+      MaterialPageRoute(
+        builder: (context) => QRScan(callback: (isOk, app, params) {
+            Navigator.of(context).pop();
+            if (app == 'add-friend' && params.length == 3) {
+              final id = params[0];
+              final addr = params[1];
+              final name = params[2];
+              final widget = ChatAddPage(id: id, addr: addr, name: name);
+              Provider.of<AccountProvider>(context, listen: false)
+              .systemAppFriendAddNew = false;
+              if (isDesktop) {
+                Provider.of<AccountProvider>(context, listen: false)
+                .updateActivedWidget(widget);
+              } else {
+                Navigator.push(
+                  context, MaterialPageRoute(builder: (_) => widget));
+              }
+            } else if (app == 'distribute' && params.length == 4) {
+              //final _name = params[0];
+              //final id = params[1];
+              final addr = params[2];
+              //final _mnemonicWords = params[3];
+              Provider.of<DeviceProvider>(context, listen: false)
+              .connect(addr);
+            }
+    })));
   }
 
   @override
@@ -127,97 +135,184 @@ class _HomeListState extends State<HomeList> {
     final sessions = provider.sessions;
 
     return Scaffold(
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
-          leading: IconButton(
-            icon: const Icon(Icons.menu),
-            onPressed: () => Scaffold.of(context).openDrawer(),
+        leading: IconButton(
+          icon: const Icon(Icons.menu),
+          onPressed: () => Scaffold.of(context).openDrawer(),
+        ),
+        bottom: PreferredSize(
+          child: Container(color: const Color(0x40ADB0BB), height: 1.0),
+          preferredSize: Size.fromHeight(1.0)),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.search),
+            onPressed: null,
           ),
-          bottom: PreferredSize(
-              child: Container(color: const Color(0x40ADB0BB), height: 1.0),
-              preferredSize: Size.fromHeight(1.0)),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.search),
-              onPressed: null,
-            ),
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 20.0),
-              alignment: Alignment.center,
-              child: Stack(
-                children: <Widget>[
-                  PopupMenuButton<int>(
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(15)),
-                    color: const Color(0xFFEDEDED),
-                    child: Icon(Icons.add_circle_outline, color: color.primary),
-                    onSelected: (int value) {
-                      if (value == 0) {
-                        _scanQr(isDesktop);
-                      } else if (value == 1) {
-                        final widget = ChatAddPage();
-                        provider.systemAppFriendAddNew = false;
-                        if (isDesktop) {
-                          provider.updateActivedWidget(widget);
-                        } else {
-                          setState(() {});
-                          Navigator.push(context,
-                              MaterialPageRoute(builder: (_) => widget));
-                        }
-                      } else if (value == 2) {
-                        final widget = GroupAddPage();
-                        if (isDesktop) {
-                          provider.updateActivedWidget(widget);
-                        } else {
-                          setState(() {});
-                          Navigator.push(context,
-                              MaterialPageRoute(builder: (_) => widget));
-                        }
-                      } else if (value == 3) {
-                        showShadowDialog(
-                            context,
-                            Icons.info,
-                            lang.info,
-                            UserInfo(
-                                app: 'add-friend',
-                                id: provider.id,
-                                name: provider.activedAccount.name,
-                                addr: Global.addr));
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 20.0),
+            alignment: Alignment.center,
+            child: Stack(
+              children: <Widget>[
+                PopupMenuButton<int>(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(15)),
+                  color: const Color(0xFFEDEDED),
+                  child: Icon(Icons.add_circle_outline, color: color.primary),
+                  onSelected: (int value) {
+                    if (value == 0) {
+                      _scanQr(isDesktop);
+                    } else if (value == 1) {
+                      final widget = ChatAddPage();
+                      provider.systemAppFriendAddNew = false;
+                      if (isDesktop) {
+                        provider.updateActivedWidget(widget);
+                      } else {
+                        setState(() {});
+                        Navigator.push(context,
+                          MaterialPageRoute(builder: (_) => widget));
                       }
-                    },
-                    itemBuilder: (context) {
-                      return <PopupMenuEntry<int>>[
-                        _menuItem(0, Icons.qr_code_scanner_rounded, lang.scan),
-                        _menuItem(1, Icons.person_add_rounded, lang.addFriend,
-                            provider.systemAppFriendAddNew),
-                        _menuItem(
-                            2, Icons.group_add_rounded, lang.groupChatAdd),
-                        _menuItem(3, Icons.qr_code_rounded, lang.myQrcode),
-                      ];
-                    },
-                  ),
-                  if (provider.systemAppFriendAddNew)
-                    Positioned(
-                        top: 0,
-                        right: 0,
-                        child: Container(
-                            width: 8.0,
-                            height: 8.0,
-                            decoration: BoxDecoration(
-                              color: Colors.red,
-                              shape: BoxShape.circle,
-                            ))),
-                ],
-              ),
-            )
-          ]),
-      body: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 10.0),
-        child: ListView.builder(
-          itemCount: allKeys.length,
-          itemBuilder: (BuildContext ctx, int index) =>
+                    } else if (value == 2) {
+                      final widget = GroupAddPage();
+                      if (isDesktop) {
+                        provider.updateActivedWidget(widget);
+                      } else {
+                        setState(() {});
+                        Navigator.push(context,
+                          MaterialPageRoute(builder: (_) => widget));
+                      }
+                    } else if (value == 3) {
+                      showShadowDialog(
+                        context,
+                        Icons.info,
+                        lang.info,
+                        UserInfo(
+                          app: 'add-friend',
+                          id: provider.id,
+                          name: provider.activedAccount.name,
+                          addr: Global.addr));
+                    }
+                  },
+                  itemBuilder: (context) {
+                    return <PopupMenuEntry<int>>[
+                      _menuItem(0, Icons.qr_code_scanner_rounded, lang.scan),
+                      _menuItem(1, Icons.person_add_rounded, lang.addFriend,
+                        provider.systemAppFriendAddNew),
+                      _menuItem(
+                        2, Icons.group_add_rounded, lang.groupChatAdd),
+                      _menuItem(3, Icons.qr_code_rounded, lang.myQrcode),
+                    ];
+                  },
+                ),
+                if (provider.systemAppFriendAddNew)
+                Positioned(
+                  top: 0,
+                  right: 0,
+                  child: Container(
+                    width: 8.0,
+                    height: 8.0,
+                    decoration: BoxDecoration(
+                      color: Colors.red,
+                      shape: BoxShape.circle,
+                ))),
+              ],
+            ),
+          )
+      ]),
+      body: SizedBox.expand(
+        child: PageView(
+          controller: _pageController,
+          onPageChanged: (index) {
+            setState(() => _currentIndex = index);
+          },
+          children: <Widget>[
+            ListView.builder(
+              itemCount: allKeys.length,
+              itemBuilder: (BuildContext ctx, int index) =>
               _SessionWidget(session: sessions[allKeys[index]]!),
+            ),
+            ListView.builder(
+              itemCount: INNER_SERVICES.length,
+              itemBuilder: (BuildContext ctx, int index) {
+                final params = INNER_SERVICES[index].params(lang);
+                return ListTile(
+                  leading: Container(
+                    width: 40.0,
+                    height: 40.0,
+                    padding: const EdgeInsets.all(6.0),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(10.0),
+                    ),
+                    child: Image.asset(params[2]),
+                  ),
+                  title: Text(params[0], style: TextStyle(fontSize: 16.0)),
+                  subtitle: Text(params[1], style: TextStyle(fontSize: 12.0)),
+                  trailing: Icon(Icons.keyboard_arrow_right, color: Colors.purpleAccent),
+                  onTap: () {
+                    final widget = INNER_SERVICES[index].callback();
+                    if (widget != null) {
+                      if (isDesktop) {
+                        Provider.of<AccountProvider>(context, listen: false).updateActivedWidget(widget);
+                      } else {
+                        Navigator.push(context, MaterialPageRoute(builder: (_) => widget));
+                      }
+                    }
+                  },
+                );
+              }
+            ),
+            ListView.builder(
+              itemCount: FILE_DIRECTORY.length,
+              itemBuilder: (BuildContext ctx, int index) {
+                final params = FILE_DIRECTORY[index];
+                return ListTile(
+                  leading: Icon(params[1], color: Colors.green),
+                  title: Text(params[0], style: TextStyle(fontSize: 16.0)),
+                  trailing: Icon(Icons.keyboard_arrow_right, color: Colors.green),
+                  onTap: () {
+                    final widget = FilesList(root: params[2]);
+                    if (widget != null) {
+                      if (isDesktop) {
+                        Provider.of<AccountProvider>(context, listen: false).updateActivedWidget(widget);
+                      } else {
+                        Navigator.push(context, MaterialPageRoute(builder: (_) => widget));
+                      }
+                    }
+                  }
+                );
+              }
+            ),
+          ],
         ),
       ),
+      bottomNavigationBar: BottomNavyBar(
+        backgroundColor: color.secondary,
+        selectedIndex: _currentIndex,
+        showElevation: true,
+        containerHeight: 50.0,
+        onItemSelected: (index) => setState(() {
+            _currentIndex = index;
+            _pageController.animateToPage(index,
+              duration: Duration(milliseconds: 300), curve: Curves.ease);
+        }),
+        items: [
+          BottomNavyBarItem(
+            icon: Icon(Icons.sms),
+            title: Text(lang.sessions, style: TextStyle(fontSize: 15.0)),
+            activeColor: Color(0xFF6174FF),
+          ),
+          BottomNavyBarItem(
+            icon: Icon(Icons.apps),
+            title: Text(lang.services, style: TextStyle(fontSize: 15.0)),
+            activeColor: Colors.purpleAccent
+          ),
+          BottomNavyBarItem(
+            icon: Icon(Icons.source),
+            title: Text(lang.dataCenter, style: TextStyle(fontSize: 15.0)),
+            activeColor: Colors.green
+          ),
+        ],
+      )
     );
   }
 }
@@ -347,56 +442,6 @@ class DrawerWidget extends StatelessWidget {
                   const SizedBox(height: 5.0),
                   const Divider(height: 1.0, color: Color(0x40ADB0BB)),
                   ListTile(
-                      leading: Icon(Icons.people_rounded, color: color.primary),
-                      title: Text(lang.friends,
-                          textAlign: TextAlign.left,
-                          style: TextStyle(fontSize: 16.0)),
-                      onTap: () {
-                        Navigator.pop(context);
-                        final coreWidget = ChatList();
-                        if (isDesktop) {
-                          Provider.of<AccountProvider>(context, listen: false)
-                              .updateActivedWidget(coreWidget);
-                        } else {
-                          Navigator.push(context,
-                              MaterialPageRoute(builder: (_) => coreWidget));
-                        }
-                      }),
-                  ListTile(
-                      leading: Icon(Icons.groups_rounded, color: color.primary),
-                      title: Text(lang.groupChats,
-                          textAlign: TextAlign.left,
-                          style: TextStyle(fontSize: 16.0)),
-                      onTap: () {
-                        Navigator.pop(context);
-                        final coreWidget = GroupChatList();
-                        if (isDesktop) {
-                          Provider.of<AccountProvider>(context, listen: false)
-                              .updateActivedWidget(coreWidget);
-                        } else {
-                          Navigator.push(context,
-                              MaterialPageRoute(builder: (_) => coreWidget));
-                        }
-                      }),
-                  ListTile(
-                      leading:
-                          Icon(Icons.grid_view_rounded, color: color.primary),
-                      title: Text(lang.services,
-                          textAlign: TextAlign.left,
-                          style: TextStyle(fontSize: 16.0)),
-                      onTap: () {
-                        Navigator.pop(context);
-                        final coreWidget = ServiceList();
-                        if (isDesktop) {
-                          Provider.of<AccountProvider>(context, listen: false)
-                              .updateActivedWidget(coreWidget);
-                        } else {
-                          Navigator.push(context,
-                              MaterialPageRoute(builder: (_) => coreWidget));
-                        }
-                      }),
-                  const Divider(height: 1.0, color: Color(0x40ADB0BB)),
-                  ListTile(
                       leading: Icon(Icons.person, color: color.primary),
                       title: Text(lang.profile,
                           textAlign: TextAlign.left,
@@ -509,9 +554,6 @@ class _SessionWidget extends StatelessWidget {
             break;
           case SessionType.Assistant:
             coreWidget = AssistantDetail();
-            break;
-          case SessionType.Files:
-            coreWidget = FilesList();
             break;
           default:
             break; // TODO

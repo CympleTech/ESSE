@@ -21,11 +21,7 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String get info => '信息';
   @override
-  String get contact => '联系人';
-  @override
   String get friend => '好友';
-  @override
-  String get friends => '好友';
   @override
   String get logout => '退出';
   @override
@@ -163,7 +159,11 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String get addService => '添加服务';
   @override
+  String get sessions => '会话';
+  @override
   String get services => '服务';
+  @override
+  String get dataCenter => '数据中心';
   @override
   String get devices => '关联设备';
   @override
@@ -172,6 +172,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get scan => '扫一扫';
 
   // friend
+  @override
+  String get contact => '联系人';
+  @override
+  String get contactIntro => '与好友点对点即时通信';
   @override
   String get myQrcode => '我的二维码';
   @override
@@ -263,7 +267,7 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String get assistant => 'Jarvis';
   @override
-  String get assistantBio => 'Jarvis 是个机器人，只属于你。';
+  String get assistantBio => 'Jarvis 是个机器人，只属于你';
   @override
   String get groupChat => '群聊';
   @override
@@ -315,7 +319,7 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String get groupRequireConsent => "需要管理员同意";
   @override
-  String get domain => '分布式域名';
+  String get domain => '个人域名';
   @override
   String get domainIntro => '管理自己的公开身份';
   @override
@@ -334,4 +338,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get domainSearch => '域名搜索';
   @override
   String get domainRegisterFailure => '用户名已存在！';
+  @override
+  String get cloud => '云节点';
+  @override
+  String get cloudIntro => '专属于个人的云节点服务';
 }

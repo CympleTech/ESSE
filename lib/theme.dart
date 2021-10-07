@@ -19,7 +19,7 @@ class AppTheme {
       primaryColor: const Color(0xFF030303),
       appBarTheme: AppBarTheme(
         toolbarTextStyle: TextStyle(color: colorScheme.onPrimary),
-        color: colorScheme.background,
+        color: colorScheme.secondary,
         elevation: 0,
         iconTheme: IconThemeData(color: colorScheme.primary),
       ),
@@ -44,7 +44,7 @@ class AppTheme {
   static const ColorScheme lightColorScheme = ColorScheme(
     primary: Color(0xFF6174FF),
     primaryVariant: Color(0xFFDFE3FF),
-    secondary: Color(0xFFEFF3F3),
+    secondary: Color(0XFFF2F2F2),
     secondaryVariant: Color(0xFFFAFBFB),
     background: Color(0xFFF6F7F8),
     surface: Colors.white,
@@ -60,7 +60,7 @@ class AppTheme {
   static const ColorScheme darkColorScheme = ColorScheme(
     primary: Colors.white, //Color(0xFF009688),
     primaryVariant: Color(0xFFADB0BB), //Color(0xFF4DB6AC),
-    secondary: Color(0xFF4D1F7C),
+    secondary: Color(0xFF30273F),
     secondaryVariant: Color(0xFF451B6F),
     background: Color(0xFF241E30),
     surface: Color(0xFF1F1929),

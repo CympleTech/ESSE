@@ -48,9 +48,7 @@ abstract class AppLocalizations {
   String get setting;
   String get search;
   String get info;
-  String get contact;
   String get friend;
-  String get friends;
   String get logout;
   String get onlineWaiting;
   String get onlineActive;
@@ -123,12 +121,16 @@ abstract class AppLocalizations {
   // homeage
   String get addFriend;
   String get addService;
+  String get sessions;
   String get services;
+  String get dataCenter;
   String get devices;
   String get nightly;
   String get scan;
 
   // friend
+  String get contact;
+  String get contactIntro;
   String get myQrcode;
   String get qrFriend;
   String get friendInfo;
@@ -215,6 +217,9 @@ abstract class AppLocalizations {
   String get domainAddProvider;
   String get domainSearch;
   String get domainRegisterFailure;
+
+  String get cloud;
+  String get cloudIntro;
 }
 
 class _AppLocalizationsDelegate

@@ -80,10 +80,6 @@ class _DomainDetailState extends State<DomainDetail> {
     return Scaffold(
       appBar: AppBar(
         title: Text(lang.domain),
-        bottom: PreferredSize(
-          child: Container(color: const Color(0x40ADB0BB), height: 1.0),
-          preferredSize: Size.fromHeight(1.0)
-        ),
         actions: [
           TextButton(
             onPressed: () {

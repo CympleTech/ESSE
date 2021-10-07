@@ -51,6 +51,7 @@ dependencies:
   just_audio: any
   device_info_plus: any
   percent_indicator: any
+  bottom_navy_bar: ^6.0.0
 
 dev_dependencies:
   flutter_test:
@@ -71,10 +72,11 @@ flutter:
     - assets/logo/logo_dark.png
     - assets/logo/logo_light.png
     - assets/logo/logo_40.jpg
+    - assets/logo/logo_chat.png
     - assets/logo/logo_assistant.png
-    - assets/logo/logo_files.png
     - assets/logo/logo_group_chat.png
     - assets/logo/logo_domain.png
+    - assets/logo/logo_cloud.png
     - assets/images/background_light.jpg
     - assets/images/background_dark.jpg
     - assets/images/image_missing.png

@@ -173,10 +173,6 @@ class _ChatAddPageState extends State<ChatAddPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(lang.addFriend),
-        bottom: PreferredSize(
-          child: Container(color: const Color(0x40ADB0BB), height: 1.0),
-          preferredSize: Size.fromHeight(1.0)
-        ),
         leading: isDesktop
         ? IconButton(
           onPressed: () {

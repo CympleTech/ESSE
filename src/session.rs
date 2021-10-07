@@ -11,11 +11,8 @@ use crate::storage::session_db;
 pub(crate) enum SessionType {
     Chat,
     Group,
-    Files,
     Device,
     Assistant,
-    Domain,
-    Service,
 }
 
 impl SessionType {
@@ -23,11 +20,8 @@ impl SessionType {
         match self {
             SessionType::Chat => 0,
             SessionType::Group => 1,
-            SessionType::Files => 2,
-            SessionType::Device => 3,
-            SessionType::Assistant => 4,
-            SessionType::Domain => 5,
-            SessionType::Service => 6,
+            SessionType::Device => 2,
+            SessionType::Assistant => 3,
         }
     }
 
@@ -35,11 +29,8 @@ impl SessionType {
         match i {
             0 => SessionType::Chat,
             1 => SessionType::Group,
-            2 => SessionType::Files,
-            3 => SessionType::Device,
-            4 => SessionType::Assistant,
-            5 => SessionType::Domain,
-            6 => SessionType::Service,
+            2 => SessionType::Device,
+            3 => SessionType::Assistant,
             _ => SessionType::Chat,
         }
     }

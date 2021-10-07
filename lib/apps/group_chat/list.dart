@@ -29,13 +29,7 @@ class _GroupChatListState extends State<GroupChatList> {
     final groups = provider.groups;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(lang.groupChats),
-        bottom: PreferredSize(
-          child: Container(color: const Color(0x40ADB0BB), height: 1.0),
-          preferredSize: Size.fromHeight(1.0)
-        ),
-      ),
+      appBar: AppBar(title: Text(lang.groupChats)),
       body: Padding(
         padding: const EdgeInsets.symmetric(vertical: 10.0),
         child: ListView.builder(
