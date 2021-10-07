@@ -9,6 +9,7 @@ import 'package:bottom_navy_bar/bottom_navy_bar.dart';
 
 import 'package:esse/l10n/localizations.dart';
 import 'package:esse/utils/adaptive.dart';
+import 'package:esse/utils/better_print.dart';
 import 'package:esse/widgets/shadow_dialog.dart';
 import 'package:esse/widgets/user_info.dart';
 import 'package:esse/widgets/show_pin.dart';
@@ -33,7 +34,6 @@ import 'package:esse/apps/file/list.dart';
 import 'package:esse/apps/service/models.dart';
 import 'package:esse/apps/assistant/page.dart';
 import 'package:esse/apps/group_chat/add.dart';
-import 'package:esse/apps/group_chat/list.dart';
 import 'package:esse/apps/group_chat/detail.dart';
 import 'package:esse/apps/group_chat/provider.dart';
 
@@ -101,26 +101,22 @@ class _HomeListState extends State<HomeList> {
         builder: (context) => QRScan(callback: (isOk, app, params) {
             Navigator.of(context).pop();
             if (app == 'add-friend' && params.length == 3) {
-              final id = params[0];
-              final addr = params[1];
-              final name = params[2];
+              final id = gidParse(params[0]);
+              final addr = addrParse(params[1]);
+              final name = params[2].trim();
               final widget = ChatAddPage(id: id, addr: addr, name: name);
-              Provider.of<AccountProvider>(context, listen: false)
-              .systemAppFriendAddNew = false;
+              Provider.of<AccountProvider>(context, listen: false).systemAppFriendAddNew = false;
               if (isDesktop) {
-                Provider.of<AccountProvider>(context, listen: false)
-                .updateActivedWidget(widget);
+                Provider.of<AccountProvider>(context, listen: false).updateActivedWidget(widget);
               } else {
-                Navigator.push(
-                  context, MaterialPageRoute(builder: (_) => widget));
+                Navigator.push(context, MaterialPageRoute(builder: (_) => widget));
               }
             } else if (app == 'distribute' && params.length == 4) {
-              //final _name = params[0];
-              //final id = params[1];
-              final addr = params[2];
+              //final _name = params[0].trim();
+              //final id = gidParse(params[1]);
+              final addr = addrParse(params[2]);
               //final _mnemonicWords = params[3];
-              Provider.of<DeviceProvider>(context, listen: false)
-              .connect(addr);
+              Provider.of<DeviceProvider>(context, listen: false).connect(addr);
             }
     })));
   }

@@ -188,7 +188,7 @@ class _AssistantDetailState extends State<AssistantDetail> {
                         SizedBox(height: 5.0),
                         Container(
                           height: 15.0,
-                          child: Text(lang.onlineActive,
+                          child: Text(lang.assistantBio,
                             style: TextStyle(color: color.onPrimary.withOpacity(0.5), fontSize: 12.0))
                         )
                       ],
