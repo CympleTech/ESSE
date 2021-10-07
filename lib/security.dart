@@ -29,6 +29,7 @@ class SecurityPage extends StatefulWidget {
 
 class _SecurityPageState extends State<SecurityPage> {
   Map<String, Account> _accounts = {};
+  bool _loaded = false;
   bool _accountsLoaded = false;
 
   String _selectedUserId = '';
@@ -141,7 +142,7 @@ class _SecurityPageState extends State<SecurityPage> {
                   )
                 )
               ),
-              this._accountsLoaded ? Container() : LoaderTransparent(color: color.primary)
+              this._loaded ? Container() : LoaderTransparent(color: color.primary)
             ]
           )
         )
@@ -200,12 +201,14 @@ class _SecurityPageState extends State<SecurityPage> {
         this._selectedUserLock = this._accounts[accountId]!.lock;
         this._accountsLoaded = true;
       }
-
-      setState(() {});
     } else {
       // TODO tostor error
       print(res.error);
     }
+
+    setState(() {
+        this._loaded = true;
+    });
   }
 
   void loginAction(String title) {

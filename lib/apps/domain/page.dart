@@ -101,9 +101,13 @@ class _DomainDetailState extends State<DomainDetail> {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 20.0),
             child: this._listHome
-            ? (this._showProviders ? _ListProviderScreen(this._providers) : _ListNameScreen(this._providers, this._names))
+            ? (this._showProviders
+              ? _ListProviderScreen(this._providers)
+              : _ListNameScreen(this._providers, this._names)
+            )
             : ((!this._showProviders && this._providers.length > 0)
-              ? _RegisterScreen(this._providers.values.toList().asMap()) : _AddProviderScreen()
+              ? _RegisterScreen(this._providers.values.toList().asMap())
+              : _AddProviderScreen()
             ),
       ))),
       floatingActionButton: FloatingActionButton(
@@ -118,44 +122,116 @@ class _DomainDetailState extends State<DomainDetail> {
   }
 }
 
-class _ListNameScreen extends StatelessWidget {
+class _NameItem {
+  final ProviderServer provider;
+  final Name name;
+  bool isExpanded;
+
+  _NameItem({
+      required this.name,
+      required this.provider,
+      this.isExpanded = false,
+  });
+}
+
+class _ListNameScreen extends StatefulWidget {
   final Map<int, ProviderServer> providers;
   final List<Name> names;
 
   const _ListNameScreen(this.providers, this.names);
 
-  Widget _nameItem(int id, String name, String provider, bool isActive, ColorScheme color) {
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 10.0),
-      decoration: BoxDecoration(color: color.surface, borderRadius: BorderRadius.circular(15.0)),
-      child: ListTile(
-        contentPadding: EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
-        leading: Container(
-          padding: EdgeInsets.only(right: 12.0),
-          decoration: new BoxDecoration(
-            border: new Border(right: new BorderSide(width: 1.0, color: Color(0xA0ADB0BB)))),
-          child: isActive ? Icon(Icons.toggle_on, color: color.primary) : Icon(Icons.toggle_off),
-        ),
-        title: Text(name, style: TextStyle(fontWeight: FontWeight.bold)),
-        subtitle: Row(
-          children: <Widget>[
-            Expanded(child: Text(provider)),
-          ],
-        ),
-        trailing: Icon(Icons.keyboard_arrow_right, size: 30.0),
-      )
-    );
-  }
+  @override
+  _ListNameScreenState createState() => _ListNameScreenState();
+}
+
+class _ListNameScreenState extends State<_ListNameScreen> {
+  List<_NameItem> _data = [];
 
   @override
   Widget build(BuildContext context) {
     final color = Theme.of(context).colorScheme;
+    final lang = AppLocalizations.of(context);
+
+    if (this._data.length != widget.names.length) {
+      this._data = widget.names.map((name) {
+          return _NameItem(
+            name: name,
+            provider: widget.providers[name.provider]!,
+          );
+      }).toList();
+    }
+
+    return ExpansionPanelList(
+      elevation: 0.0,
+      expansionCallback: (int index, bool isExpanded) {
+        setState(() {
+            _data[index].isExpanded = !isExpanded;
+        });
+      },
+      children: _data.map<ExpansionPanel>((_NameItem item) {
+          return ExpansionPanel(
+            headerBuilder: (BuildContext context, bool isExpanded) {
+              return ListTile(
+                contentPadding: EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
+                leading: Container(
+                  padding: EdgeInsets.only(right: 12.0),
+                  decoration: new BoxDecoration(
+                    border: new Border(right:
+                      const BorderSide(width: 1.0, color: Color(0xA0ADB0BB)))),
+                  child: item.name.isActived
+                  ? Icon(Icons.toggle_on, color: color.primary)
+                  : Icon(Icons.toggle_off),
+                ),
+                title: Text(item.name.name, style: TextStyle(fontWeight: FontWeight.bold)),
+              );
+            },
+            body: Column(
+              children: [
+                ListTile(
+                  leading: Icon(Icons.campaign),
+                  title: Text(item.name.bio),
+                ),
+                ListTile(
+                  leading: Icon(Icons.location_on),
+                  title: Text(item.provider.name),
+                ),
+                ListTile(
+                  leading: Icon(Icons.cancel, color: color.primary),
+                  title: Text('Set to unactived ?', style: TextStyle(color: color.primary)),
+                  onTap: () {
+                    //
+                }),
+                ListTile(
+                  leading: const Icon(Icons.delete, color: Colors.red),
+                  title: Text('Delete from provider ?', style: TextStyle(color: Colors.red)),
+                  onTap: () {
+                    //
+                }),
+              ]
+            ),
+            isExpanded: item.isExpanded,
+          );
+      }).toList(),
+    );
+  }
+}
+
+
+class _NameDetailScreen extends StatelessWidget {
+  final ProviderServer provider;
+  final Name name;
+  const _NameDetailScreen(this.provider, this.name);
+
+  @override
+  Widget build(BuildContext context) {
+    final color = Theme.of(context).colorScheme;
+    final lang = AppLocalizations.of(context);
 
     return Column(
-      children: this.names.map(
-        (name) => _nameItem(name.id, name.name, providers[name.provider]!.name, name.isActived, color)
-      ).toList(),
-    );
+      children: [
+        Text(this.name.name),
+        Text(this.provider.name),
+    ]);
   }
 }
 
@@ -170,19 +246,27 @@ class _ListProviderScreen extends StatelessWidget {
       decoration: BoxDecoration(color: color.surface, borderRadius: BorderRadius.circular(15.0)),
       child: ListTile(
         contentPadding: EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
+        leading: Tooltip(
+          message: 'set default ?',
+          child: TextButton(
+            child: Icon(Icons.check_circle, color: isDefault ? Color(0xFF6174FF) : Colors.grey),
+            onPressed: () {}
+          ),
+        ),
         title: Text(name, style: TextStyle(fontWeight: FontWeight.bold)),
         subtitle: Row(
           children: <Widget>[
             Expanded(child: Text(address)),
           ],
         ),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (isDefault) Text(lang.default0, style: TextStyle(color: color.primary)),
-            Icon(Icons.keyboard_arrow_right, size: 30.0),
-          ]
-        )
+        trailing: Container(
+          margin: EdgeInsets.only(left: 10.0),
+          decoration: new BoxDecoration(
+            border: new Border(left: const BorderSide(width: 1.0, color: Color(0xA0ADB0BB)))),
+          child: TextButton(
+            child: Icon(Icons.delete, color: Colors.red),
+            onPressed: () {}
+        )),
       )
     );
   }
