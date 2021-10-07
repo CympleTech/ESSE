@@ -1,3 +1,4 @@
+import 'dart:ui' show ImageFilter;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -62,82 +63,86 @@ class _SecurityPageState extends State<SecurityPage> {
       body: AnnotatedRegion<SystemUiOverlayStyle>(
         value: style.copyWith(statusBarColor: color.background),
         child: SafeArea(
-          child: Container(
-            padding: const EdgeInsets.all(20.0),
-            height: MediaQuery.of(context).size.height,
-            decoration: BoxDecoration(
-              image: DecorationImage(
-                image: AssetImage(
-                  isLight
-                  ? 'assets/images/background_light.jpg'
-                  : 'assets/images/background_dark.jpg'
+          child: Stack(children: [
+              Container(
+                padding: const EdgeInsets.all(20.0),
+                height: MediaQuery.of(context).size.height,
+                decoration: BoxDecoration(
+                  image: DecorationImage(
+                    image: AssetImage(
+                      isLight
+                      ? 'assets/images/background_light.jpg'
+                      : 'assets/images/background_dark.jpg'
+                    ),
+                    fit: BoxFit.cover,
+                  ),
                 ),
-                fit: BoxFit.cover,
-              ),
-            ),
-            child: SingleChildScrollView(
-              child: Column(
-                children: <Widget>[
-                  SizedBox(height: maxHeight),
-                  Container(
-                    width: 100.0,
-                    height: 100.0,
-                    decoration: BoxDecoration(
-                      boxShadow: [
-                        BoxShadow(
-                          color: Color(0xFF2B2E38).withOpacity(0.3),
-                          spreadRadius: 5.0,
-                          blurRadius: 15.0,
-                          offset: Offset(0, 10),
+                child: SingleChildScrollView(
+                  child: Column(
+                    children: <Widget>[
+                      SizedBox(height: maxHeight),
+                      Container(
+                        width: 100.0,
+                        height: 100.0,
+                        decoration: BoxDecoration(
+                          boxShadow: [
+                            BoxShadow(
+                              color: Color(0xFF2B2E38).withOpacity(0.3),
+                              spreadRadius: 5.0,
+                              blurRadius: 15.0,
+                              offset: Offset(0, 10),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(15.0),
-                      child: Image(image: isLight
-                        ? AssetImage('assets/logo/logo_light.png')
-                        : AssetImage('assets/logo/logo_dark.png'))
-                    )
-                  ),
-                  const SizedBox(height: 40.0),
-                  Text('ESSE', style: TextStyle(fontSize: 20.0)),
-                  const SizedBox(height: 80.0),
-                  loginForm(color, lang),
-                  const SizedBox(height: 20.0),
-                  ButtonText(width: 450.0, text: lang.ok, enable: _accountsLoaded,
-                    action: () => loginAction(lang.verifyPin)),
-                  Padding(
-                    padding: const EdgeInsets.only(top: 20),
-                    child: Container(
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: <Widget>[
-                          TextButton(
-                            onPressed: () => Navigator.push(context,
-                              MaterialPageRoute(builder: (_) => AccountRestorePage())),
-                            child: Text(
-                              lang.loginRestore,
-                              style: TextStyle(fontSize: 16),
-                            ),
-                          ),
-                          const SizedBox(width: 10.0),
-                          Text("|", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                          const SizedBox(width: 10.0),
-                          TextButton(
-                            onPressed: () => Navigator.push(context,
-                              MaterialPageRoute(builder: (_) => AccountGeneratePage())),
-                            child: Text(
-                              lang.loginNew,
-                              style: TextStyle(fontSize: 16),
-                            ),
-                          ),
-                        ],
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(15.0),
+                          child: Image(image: isLight
+                            ? AssetImage('assets/logo/logo_light.png')
+                            : AssetImage('assets/logo/logo_dark.png'))
+                        )
                       ),
-                    ),
-                  ),
-                ]
-              )
-            )
+                      const SizedBox(height: 40.0),
+                      Text('ESSE', style: TextStyle(fontSize: 20.0)),
+                      const SizedBox(height: 80.0),
+                      loginForm(color, lang),
+                      const SizedBox(height: 20.0),
+                      ButtonText(width: 450.0, text: lang.ok, enable: _accountsLoaded,
+                        action: () => loginAction(lang.verifyPin)),
+                      Padding(
+                        padding: const EdgeInsets.only(top: 20),
+                        child: Container(
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: <Widget>[
+                              TextButton(
+                                onPressed: () => Navigator.push(context,
+                                  MaterialPageRoute(builder: (_) => AccountRestorePage())),
+                                child: Text(
+                                  lang.loginRestore,
+                                  style: TextStyle(fontSize: 16),
+                                ),
+                              ),
+                              const SizedBox(width: 10.0),
+                              Text("|", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                              const SizedBox(width: 10.0),
+                              TextButton(
+                                onPressed: () => Navigator.push(context,
+                                  MaterialPageRoute(builder: (_) => AccountGeneratePage())),
+                                child: Text(
+                                  lang.loginNew,
+                                  style: TextStyle(fontSize: 16),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ]
+                  )
+                )
+              ),
+              this._accountsLoaded ? Container() : LoaderTransparent(color: color.primary)
+            ]
           )
         )
       )
@@ -155,7 +160,6 @@ class _SecurityPageState extends State<SecurityPage> {
 
     // check if has logined.
     final loginedAccounts = await getLogined();
-
     if (loginedAccounts.length != 0) {
       print("INFO: START LOGINED USE CACHE");
       final mainAccount = loginedAccounts[0];
@@ -276,6 +280,34 @@ class _SecurityPageState extends State<SecurityPage> {
             }).toList(),
           ),
         ),
+    ));
+  }
+}
+
+class LoaderTransparent extends StatelessWidget {
+  final Color color;
+  LoaderTransparent({required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    final height = MediaQuery.of(context).size.height;
+    final width = MediaQuery.of(context).size.width;
+
+    return BackdropFilter(
+      filter: ImageFilter.blur(sigmaX: 6.0, sigmaY: 6.0),
+      child: Container(
+        height: height,
+        width: width,
+        child: Center(
+          child: SizedBox(
+            height: 60.0,
+            width: 60.0,
+            child: CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation(this.color),
+              strokeWidth: 12.0
+            )
+          )
+        )
     ));
   }
 }
