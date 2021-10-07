@@ -21,7 +21,7 @@ dependencies:
   shared_preferences: any
   path_provider: any
   url_launcher: any
-  permission_handler: any
+  permission_handler: 8.1.4+2
   image_picker: any # pick image
   image_save: any # Mobile save image to gallery
   file_picker: any # pick file
@@ -60,11 +60,16 @@ dev_dependencies:
   integration_test:
     sdk: flutter
   flutter_launcher_icons: any #flutter pub run flutter_launcher_icons:main
+  flutter_native_splash: any #flutter pub run flutter_native_splash:create
 
 flutter_icons:
   android: "ic_launcher"
   ios: true
   image_path: "assets/logo/logo_dark.png"
+
+flutter_native_splash:
+  background_image: "assets/images/background.png"
+  #android12: true
 
 flutter:
   uses-material-design: true
