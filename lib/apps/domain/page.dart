@@ -89,7 +89,8 @@ class _DomainDetailState extends State<DomainDetail> {
             },
             child: Padding(
               padding: const EdgeInsets.only(right: 10.0),
-              child: Text(this._showProviders ? lang.domainShowName : lang.domainShowProvider)
+              child: Text('< ' +
+                (this._showProviders ? lang.domainShowName : lang.domainShowProvider))
             )
           ),
         ]

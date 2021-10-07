@@ -318,24 +318,25 @@ class AppLocalizationsZh extends AppLocalizations {
   String get members => '成员';
   @override
   String get groupRequireConsent => "需要管理员同意";
+
   @override
-  String get domain => '个人域名';
+  String get domain => '公开身份';
   @override
   String get domainIntro => '管理自己的公开身份';
   @override
-  String get domainShowProvider => '展示所有服务商';
+  String get domainShowProvider => '所有站点';
   @override
-  String get domainShowName => '展示所有注册名';
+  String get domainShowName => '所有已注册身份';
   @override
   String get domainName => '用户名';
   @override
-  String get domainProvider => '服务商';
+  String get domainProvider => '站点';
   @override
-  String get domainProviderAdress => '服务商网络地址';
+  String get domainProviderAdress => '站点网络地址';
   @override
-  String get domainAddProvider => '添加新的服务商';
+  String get domainAddProvider => '添加新的站点';
   @override
-  String get domainSearch => '域名搜索';
+  String get domainSearch => '用户名搜索';
   @override
   String get domainRegisterFailure => '用户名已存在！';
   @override

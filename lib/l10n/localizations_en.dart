@@ -318,14 +318,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get members => 'Members';
   @override
   String get groupRequireConsent => "Requires manager's consent";
+
   @override
-  String get domain => 'Domain';
+  String get domain => 'Public identity';
   @override
-  String get domainIntro => 'Unique identity to global';
+  String get domainIntro => 'Unique identity to public services';
   @override
   String get domainShowProvider => 'show all providers';
   @override
-  String get domainShowName => 'show all names';
+  String get domainShowName => 'show all identities';
   @override
   String get domainName => 'Username';
   @override
@@ -335,9 +336,9 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get domainAddProvider => 'Add new provider';
   @override
-  String get domainSearch => 'Domain Search';
+  String get domainSearch => 'Username Search';
   @override
-  String get domainRegisterFailure => 'name already existed!';
+  String get domainRegisterFailure => 'username already existed!';
   @override
   String get cloud => 'Cloud Peer';
   @override
