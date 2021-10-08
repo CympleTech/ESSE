@@ -342,9 +342,9 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String get domainSetDefault => '设为默认？';
   @override
-  String get domainSetUnactived => '设为暂停状态？';
+  String get domainSetUnactived => '设为暂停状态 (别人无法搜索到你)？';
   @override
-  String get domainSetActived => '设为正常状态？';
+  String get domainSetActived => '设为正常状态 (别人可以搜索到你)？';
   @override
   String get domainDelete => '从站点中删除？';
   @override

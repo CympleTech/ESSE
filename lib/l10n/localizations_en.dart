@@ -342,9 +342,9 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get domainSetDefault => 'Set default ?';
   @override
-  String get domainSetUnactived => 'Set to unactived ?';
+  String get domainSetUnactived => 'Set to unactived (others cannot search you) ?';
   @override
-  String get domainSetActived => 'Set to actived ?';
+  String get domainSetActived => 'Set to actived (others can search you) ?';
   @override
   String get domainDelete => 'Delete from provider ?';
   @override

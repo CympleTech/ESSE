@@ -204,7 +204,7 @@ class _ListNameScreenState extends State<_ListNameScreen> {
                 item.name.isActived
                 ? ListTile(
                   leading: Icon(Icons.cancel, color: Colors.orange),
-                  title: Text(lang.domainSetUnactived, style: TextStyle(color: Colors.orange)),
+                  title: Text(lang.domainSetUnactived, style: TextStyle(color: Colors.orange, fontSize: 16.0)),
                   onTap: () {
                     rpc.send('domain-active', [item.name.name, item.provider.addr, false]);
                     setState(() {
@@ -214,7 +214,7 @@ class _ListNameScreenState extends State<_ListNameScreen> {
                 })
                 : ListTile(
                   leading: Icon(Icons.done, color: color.primary),
-                  title: Text(lang.domainSetActived, style: TextStyle(color: color.primary)),
+                  title: Text(lang.domainSetActived, style: TextStyle(color: color.primary, fontSize: 16.0)),
                   onTap: () {
                     rpc.send('domain-active', [item.name.name, item.provider.addr, true]);
                     setState(() {
@@ -224,14 +224,33 @@ class _ListNameScreenState extends State<_ListNameScreen> {
                 }),
                 ListTile(
                   leading: const Icon(Icons.delete, color: Colors.red),
-                  title: Text(lang.domainDelete, style: TextStyle(color: Colors.red)),
-                  onTap: () {
-                    rpc.send('domain-remove', [item.name.name, item.provider.addr]);
-                    setState(() {
-                        this._data.removeWhere((_NameItem currentItem) => item == currentItem);
-                        this._deleteTime = true;
-                    });
-                }),
+                  title: Text(lang.domainDelete, style: TextStyle(color: Colors.red, fontSize: 16.0)),
+                  onTap: () => showDialog(
+                    context: context,
+                    builder: (BuildContext context) {
+                      return AlertDialog(
+                        title: Text(lang.delete + " ${item.name.name} ?"),
+                        actions: [
+                          TextButton(
+                            child: Text(lang.cancel),
+                            onPressed: () => Navigator.pop(context),
+                          ),
+                          TextButton(
+                            child: Text(lang.ok),
+                            onPressed:  () {
+                              Navigator.pop(context);
+                              rpc.send('domain-remove', [item.name.name, item.provider.addr]);
+                              setState(() {
+                                  this._data.removeWhere((_NameItem currentItem) => item == currentItem);
+                                  this._deleteTime = true;
+                              });
+                            },
+                          ),
+                        ]
+                      );
+                    },
+                  )
+                ),
               ]
             ),
             isExpanded: item.isExpanded,
