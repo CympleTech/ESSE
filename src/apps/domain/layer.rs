@@ -51,7 +51,7 @@ pub(crate) async fn handle(
                         user.is_actived = true;
                         results.rpcs.push(rpc::register_success(ogid, &user));
                     } else {
-                        Name::delete(&db, &user.id)?;
+                        user.delete(&db)?;
                         results.rpcs.push(rpc::register_failure(ogid, &name));
                     }
                 }
@@ -62,6 +62,24 @@ pub(crate) async fn handle(
                 }
                 ServerEvent::None(uname) => {
                     results.rpcs.push(rpc::search_none(ogid, &uname));
+                }
+                ServerEvent::Actived(uname, is_actived) => {
+                    let provider = Provider::get_by_addr(&db, &addr)?;
+                    let name = Name::get_by_name_provider(&db, &uname, &provider.id)?;
+                    Name::active(&db, &name.id, is_actived)?;
+
+                    let ps = Provider::list(&db)?;
+                    let names = Name::list(&db)?;
+                    results.rpcs.push(rpc::domain_list(ogid, &ps, &names));
+                }
+                ServerEvent::Deleted(uname) => {
+                    let provider = Provider::get_by_addr(&db, &addr)?;
+                    let name = Name::get_by_name_provider(&db, &uname, &provider.id)?;
+                    name.delete(&db)?;
+
+                    let ps = Provider::list(&db)?;
+                    let names = Name::list(&db)?;
+                    results.rpcs.push(rpc::domain_list(ogid, &ps, &names));
                 }
                 ServerEvent::Response(_ugid, _uname, _is_ok) => {}
             }

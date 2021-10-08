@@ -39,7 +39,9 @@ class _DomainDetailState extends State<DomainDetail> {
     });
     this._names.clear();
     params[1].forEach((param) {
-        this._names.add(Name.fromList(param));
+        final name = Name.fromList(param);
+        this._providers[name.provider]!.deletable = false;
+        this._names.add(name);
     });
     setState(() {});
   }
@@ -146,6 +148,7 @@ class _ListNameScreen extends StatefulWidget {
 }
 
 class _ListNameScreenState extends State<_ListNameScreen> {
+  bool _deleteTime = false;
   List<_NameItem> _data = [];
 
   @override
@@ -153,7 +156,7 @@ class _ListNameScreenState extends State<_ListNameScreen> {
     final color = Theme.of(context).colorScheme;
     final lang = AppLocalizations.of(context);
 
-    if (this._data.length != widget.names.length) {
+    if (!this._deleteTime && this._data.length != widget.names.length) {
       this._data = widget.names.map((name) {
           return _NameItem(
             name: name,
@@ -161,6 +164,7 @@ class _ListNameScreenState extends State<_ListNameScreen> {
           );
       }).toList();
     }
+    this._deleteTime = false;
 
     return ExpansionPanelList(
       elevation: 0.0,
@@ -171,6 +175,7 @@ class _ListNameScreenState extends State<_ListNameScreen> {
       },
       children: _data.map<ExpansionPanel>((_NameItem item) {
           return ExpansionPanel(
+            backgroundColor: color.surface,
             headerBuilder: (BuildContext context, bool isExpanded) {
               return ListTile(
                 contentPadding: EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
@@ -196,17 +201,36 @@ class _ListNameScreenState extends State<_ListNameScreen> {
                   leading: Icon(Icons.location_on),
                   title: Text(item.provider.name),
                 ),
-                ListTile(
-                  leading: Icon(Icons.cancel, color: color.primary),
-                  title: Text('Set to unactived ?', style: TextStyle(color: color.primary)),
+                item.name.isActived
+                ? ListTile(
+                  leading: Icon(Icons.cancel, color: Colors.orange),
+                  title: Text(lang.domainSetUnactived, style: TextStyle(color: Colors.orange)),
                   onTap: () {
-                    //
+                    rpc.send('domain-active', [item.name.name, item.provider.addr, false]);
+                    setState(() {
+                        item.name.isActived = false;
+                        item.isExpanded = false;
+                    });
+                })
+                : ListTile(
+                  leading: Icon(Icons.done, color: color.primary),
+                  title: Text(lang.domainSetActived, style: TextStyle(color: color.primary)),
+                  onTap: () {
+                    rpc.send('domain-active', [item.name.name, item.provider.addr, true]);
+                    setState(() {
+                        item.name.isActived = true;
+                        item.isExpanded = false;
+                    });
                 }),
                 ListTile(
                   leading: const Icon(Icons.delete, color: Colors.red),
-                  title: Text('Delete from provider ?', style: TextStyle(color: Colors.red)),
+                  title: Text(lang.domainDelete, style: TextStyle(color: Colors.red)),
                   onTap: () {
-                    //
+                    rpc.send('domain-remove', [item.name.name, item.provider.addr]);
+                    setState(() {
+                        this._data.removeWhere((_NameItem currentItem) => item == currentItem);
+                        this._deleteTime = true;
+                    });
                 }),
               ]
             ),
@@ -241,23 +265,26 @@ class _ListProviderScreen extends StatelessWidget {
 
   const _ListProviderScreen(this.providers);
 
-  Widget _providerItem(int id, String name, String address, bool isDefault, ColorScheme color, AppLocalizations lang) {
+  Widget _providerItem(ProviderServer provider, ColorScheme color, AppLocalizations lang, context) {
     return Container(
       margin: const EdgeInsets.only(bottom: 10.0),
       decoration: BoxDecoration(color: color.surface),
       child: ListTile(
         contentPadding: EdgeInsets.symmetric(vertical: 4.0),
         leading: Tooltip(
-          message: 'set default ?',
+          message: lang.domainSetDefault,
           child: TextButton(
-            child: Icon(Icons.check_circle, color: isDefault ? Color(0xFF6174FF) : Colors.grey),
-            onPressed: () {}
+            child: Icon(Icons.check_circle, color: provider.isDefault ? Color(0xFF6174FF) : Colors.grey),
+            onPressed: () {
+              rpc.send('domain-provider-default', [provider.id]);
+              rpc.send('domain-list', []);
+            }
           ),
         ),
-        title: Text(name, style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(provider.name, style: TextStyle(fontWeight: FontWeight.bold)),
         subtitle: Row(
           children: <Widget>[
-            Expanded(child: Text(address, style: TextStyle(fontSize: 14.0))),
+            Expanded(child: Text(addrPrint(provider.addr), style: TextStyle(fontSize: 14.0))),
           ],
         ),
         trailing: Container(
@@ -265,8 +292,29 @@ class _ListProviderScreen extends StatelessWidget {
           decoration: new BoxDecoration(
             border: new Border(left: const BorderSide(width: 1.0, color: Color(0xA0ADB0BB)))),
           child: TextButton(
-            child: Icon(Icons.delete, color: Colors.red),
-            onPressed: () {}
+            child: Icon(Icons.delete, color: provider.deletable ? Colors.red : Colors.grey),
+            onPressed: provider.deletable ? () => showDialog(
+              context: context,
+              builder: (BuildContext context) {
+                return AlertDialog(
+                  title: Text(lang.delete + " ${provider.name} ?"),
+                  actions: [
+                    TextButton(
+                      child: Text(lang.cancel),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                    TextButton(
+                      child: Text(lang.ok),
+                      onPressed:  () {
+                        Navigator.pop(context);
+                        rpc.send('domain-provider-remove', [provider.id]);
+                        rpc.send('domain-list', []);
+                      },
+                    ),
+                  ]
+                );
+              },
+            ) : null
         )),
       )
     );
@@ -279,7 +327,7 @@ class _ListProviderScreen extends StatelessWidget {
 
     return Column(
       children: this.providers.values.map(
-        (provider) => _providerItem(provider.id, provider.name, addrPrint(provider.addr), provider.isDefault, color, lang)
+        (provider) => _providerItem(provider, color, lang, context)
       ).toList(),
     );
   }

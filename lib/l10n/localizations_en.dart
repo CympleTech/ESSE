@@ -340,6 +340,17 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get domainRegisterFailure => 'username already existed!';
   @override
+  String get domainSetDefault => 'Set default ?';
+  @override
+  String get domainSetUnactived => 'Set to unactived ?';
+  @override
+  String get domainSetActived => 'Set to actived ?';
+  @override
+  String get domainDelete => 'Delete from provider ?';
+  @override
+  String get domainNotDelete => 'Had ID, cannot delete';
+
+  @override
   String get cloud => 'Cloud Peer';
   @override
   String get cloudIntro => 'Cloud hosting peer belongs to you';

@@ -6,6 +6,7 @@ class ProviderServer {
   bool isDefault;
   bool isProxy;
   bool isActived;
+  bool deletable = true;
 
   ProviderServer.empty():
     this.id = 0,

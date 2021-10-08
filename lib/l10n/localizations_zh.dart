@@ -340,6 +340,17 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String get domainRegisterFailure => '用户名已存在！';
   @override
+  String get domainSetDefault => '设为默认？';
+  @override
+  String get domainSetUnactived => '设为暂停状态？';
+  @override
+  String get domainSetActived => '设为正常状态？';
+  @override
+  String get domainDelete => '从站点中删除？';
+  @override
+  String get domainNotDelete => '有注册ID，无法删除';
+
+  @override
   String get cloud => '云节点';
   @override
   String get cloudIntro => '专属于个人的云节点服务';

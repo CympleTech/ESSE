@@ -11,7 +11,7 @@ pub(crate) struct Provider {
     /// name.
     name: String,
     /// address.
-    addr: PeerAddr,
+    pub addr: PeerAddr,
     /// is add ok.
     is_ok: bool,
     /// is default.
@@ -85,6 +85,16 @@ impl Provider {
         Err(anyhow!("provider is missing"))
     }
 
+    /// use in rpc when load provider by id.
+    pub fn get_default(db: &DStorage) -> Result<Self> {
+        let mut matrix = db.query("SELECT id, name, addr, is_ok, is_default, is_proxy, is_actived FROM providers WHERE is_default = true")?;
+        if matrix.len() > 0 {
+            let values = matrix.pop().unwrap(); // safe unwrap()
+            return Ok(Self::from_values(values));
+        }
+        Err(anyhow!("provider is missing"))
+    }
+
     /// insert a new provider.
     pub fn get_by_addr(db: &DStorage, addr: &PeerAddr) -> Result<Self> {
         let sql = format!(
@@ -149,6 +159,16 @@ impl Provider {
     }
 
     /// return if is closed
+    pub fn default(&self, db: &DStorage, default: bool) -> Result<()> {
+        let sql = format!(
+            "UPDATE providers SET is_default = {} WHERE id = {}",
+            default, self.id
+        );
+        db.update(&sql)?;
+        Ok(())
+    }
+
+    /// return if is closed
     pub fn delete(db: &DStorage, id: &i64) -> Result<()> {
         let sql = format!("UPDATE providers SET is_actived = false WHERE id = {}", id);
         db.update(&sql)?;
@@ -161,7 +181,7 @@ pub(crate) struct Name {
     /// db auto-increment id.
     pub id: i64,
     /// provider database id.
-    provider: i64,
+    pub provider: i64,
     /// name.
     pub name: String,
     /// bio.
@@ -218,18 +238,18 @@ impl Name {
         Ok(names)
     }
 
-    /// use in rpc when load provider by id.
-    pub fn get(db: &DStorage, id: &i64) -> Result<Self> {
+    /// get name register.
+    pub fn get_by_provider(db: &DStorage, provider: &i64) -> Result<Vec<Self>> {
         let sql = format!(
-            "SELECT id, provider, name, bio, is_ok, is_actived FROM names WHERE id = {}",
-            id
+            "SELECT id, provider, name, bio, is_ok, is_actived FROM names WHERE provider = {}",
+            provider
         );
-        let mut matrix = db.query(&sql)?;
-        if matrix.len() > 0 {
-            let values = matrix.pop().unwrap(); // safe unwrap()
-            return Ok(Self::from_values(values));
+        let matrix = db.query(&sql)?;
+        let mut names = vec![];
+        for values in matrix {
+            names.push(Self::from_values(values));
         }
-        Err(anyhow!("name is missing"))
+        Ok(names)
     }
 
     /// get name register.
@@ -275,8 +295,8 @@ impl Name {
     }
 
     /// delete the name.
-    pub fn delete(db: &DStorage, id: &i64) -> Result<()> {
-        let sql = format!("DELETE names WHERE id = {}", id);
+    pub fn delete(&self, db: &DStorage) -> Result<()> {
+        let sql = format!("DELETE names WHERE id = {}", self.id);
         db.delete(&sql)?;
         Ok(())
     }

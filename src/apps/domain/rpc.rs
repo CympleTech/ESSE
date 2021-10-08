@@ -29,6 +29,13 @@ pub(crate) fn register_failure(mgid: GroupId, name: &str) -> RpcParam {
 }
 
 #[inline]
+pub(crate) fn domain_list(mgid: GroupId, providers: &[Provider], names: &[Name]) -> RpcParam {
+    let providers: Vec<RpcParam> = providers.iter().map(|p| p.to_rpc()).collect();
+    let names: Vec<RpcParam> = names.iter().map(|p| p.to_rpc()).collect();
+    rpc_response(0, "domain-list", json!([providers, names]), mgid)
+}
+
+#[inline]
 pub(crate) fn search_result(
     mgid: GroupId,
     name: &str,
@@ -94,19 +101,35 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
 
     handler.add_method(
         "domain-provider-default",
-        |_gid: GroupId, params: Vec<RpcParam>, _state: Arc<RpcState>| async move {
-            let _id = params[0].as_i64().ok_or(RpcError::ParseError)?;
+        |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
+            let id = params[0].as_i64().ok_or(RpcError::ParseError)?;
 
-            Ok(HandleResult::rpc(json!(params)))
+            let db = domain_db(state.layer.read().await.base(), &gid)?;
+            let provider = Provider::get(&db, &id)?;
+            if let Ok(default) = Provider::get_default(&db) {
+                if default.id == provider.id {
+                    return Ok(HandleResult::new());
+                }
+                default.default(&db, false)?;
+            }
+            provider.default(&db, true)?;
+
+            Ok(HandleResult::new())
         },
     );
 
     handler.add_method(
         "domain-provider-remove",
-        |_gid: GroupId, params: Vec<RpcParam>, _state: Arc<RpcState>| async move {
-            let _id = params[0].as_i64().ok_or(RpcError::ParseError)?;
+        |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
+            let id = params[0].as_i64().ok_or(RpcError::ParseError)?;
 
-            Ok(HandleResult::rpc(json!(params)))
+            let db = domain_db(state.layer.read().await.base(), &gid)?;
+            let names = Name::get_by_provider(&db, &id)?;
+            if names.len() == 0 {
+                Provider::delete(&db, &id)?;
+            }
+
+            Ok(HandleResult::new())
         },
     );
 
@@ -135,19 +158,34 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
 
     handler.add_method(
         "domain-active",
-        |_gid: GroupId, params: Vec<RpcParam>, _state: Arc<RpcState>| async move {
-            let _id = params[0].as_i64().ok_or(RpcError::ParseError)?;
+        |gid: GroupId, params: Vec<RpcParam>, _state: Arc<RpcState>| async move {
+            let name = params[0].as_str().ok_or(RpcError::ParseError)?.to_owned();
+            let provider = PeerAddr::from_hex(params[1].as_str().ok_or(RpcError::ParseError)?)?;
+            let active = params[2].as_bool().ok_or(RpcError::ParseError)?;
 
-            Ok(HandleResult::rpc(json!(params)))
+            let mut results = HandleResult::new();
+            let event = if active {
+                PeerEvent::Active(name)
+            } else {
+                PeerEvent::Suspend(name)
+            };
+            add_layer(&mut results, provider, event, gid)?;
+
+            Ok(results)
         },
     );
 
     handler.add_method(
         "domain-remove",
-        |_gid: GroupId, params: Vec<RpcParam>, _state: Arc<RpcState>| async move {
-            let _id = params[0].as_i64().ok_or(RpcError::ParseError)?;
+        |gid: GroupId, params: Vec<RpcParam>, _state: Arc<RpcState>| async move {
+            let name = params[0].as_str().ok_or(RpcError::ParseError)?.to_owned();
+            let provider = PeerAddr::from_hex(params[1].as_str().ok_or(RpcError::ParseError)?)?;
 
-            Ok(HandleResult::rpc(json!(params)))
+            let mut results = HandleResult::new();
+            let event = PeerEvent::Delete(name);
+            add_layer(&mut results, provider, event, gid)?;
+
+            Ok(results)
         },
     );
 

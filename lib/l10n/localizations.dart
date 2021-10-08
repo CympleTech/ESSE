@@ -217,6 +217,11 @@ abstract class AppLocalizations {
   String get domainAddProvider;
   String get domainSearch;
   String get domainRegisterFailure;
+  String get domainSetDefault;
+  String get domainSetUnactived;
+  String get domainSetActived;
+  String get domainDelete;
+  String get domainNotDelete;
 
   String get cloud;
   String get cloudIntro;
