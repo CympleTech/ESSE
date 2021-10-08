@@ -296,7 +296,7 @@ impl Name {
 
     /// delete the name.
     pub fn delete(&self, db: &DStorage) -> Result<()> {
-        let sql = format!("DELETE names WHERE id = {}", self.id);
+        let sql = format!("DELETE FROM names WHERE id = {}", self.id);
         db.delete(&sql)?;
         Ok(())
     }
