@@ -158,7 +158,7 @@ impl Provider {
         Ok(())
     }
 
-    /// return if is closed
+    /// set default provider.
     pub fn default(&self, db: &DStorage, default: bool) -> Result<()> {
         let sql = format!(
             "UPDATE providers SET is_default = {} WHERE id = {}",
@@ -168,9 +168,9 @@ impl Provider {
         Ok(())
     }
 
-    /// return if is closed
+    /// delete provider.
     pub fn delete(db: &DStorage, id: &i64) -> Result<()> {
-        let sql = format!("UPDATE providers SET is_actived = false WHERE id = {}", id);
+        let sql = format!("DELETE FROM providers WHERE id = {}", id);
         db.update(&sql)?;
         Ok(())
     }
