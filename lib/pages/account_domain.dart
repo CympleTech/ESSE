@@ -79,89 +79,92 @@ class AccountDomainScreenState extends State<AccountDomainScreen> {
     ? this._providers[this._selected]! : ProviderServer.empty();
 
     return Scaffold(
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            RichText(
-              text: TextSpan(
-                text: lang.register + ' ',
-                style: TextStyle(
-                  color: color.onSurface, fontSize: 20.0, fontWeight: FontWeight.bold
-                ),
-                children: <TextSpan>[
-                  TextSpan(text: widget.name, style: TextStyle(color: Color(0xFF6174FF))),
-                  TextSpan(text: '  ->  '),
-                  TextSpan(text: provider.name,
-                    style: TextStyle(color: Color(0xFF6174FF), fontStyle: FontStyle.italic)
+      body: Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              RichText(
+                text: TextSpan(
+                  text: lang.register + ' ',
+                  style: TextStyle(
+                    color: color.onSurface, fontSize: 20.0, fontWeight: FontWeight.bold
                   ),
-                  TextSpan(text: ' ?'),
-                ],
-              ),
-            ),
-            const SizedBox(height: 10.0),
-            Container(
-              width: 600.0,
-              child: Text(lang.domainCreateTip),
-            ),
-            SizedBox(
-              height: 40.0,
-              child: Center(child: Text(this._exist ? lang.domainRegisterFailure : '',
-                  style: TextStyle(color: Colors.red))),
-            ),
-            if (this._showName)
-            Container(
-              width: 600.0,
-              height: 50.0,
-              padding: const EdgeInsets.symmetric(horizontal: 20.0),
-              decoration: BoxDecoration(
-                color: color.surface,
-                border: Border.all(
-                  color: _nameFocus.hasFocus ? color.primary : color.surface),
-                borderRadius: BorderRadius.circular(10.0),
-              ),
-              child: TextField(
-                style: TextStyle(fontSize: 16.0),
-                decoration: InputDecoration(
-                  border: InputBorder.none,
-                  hintText: lang.domainName,
+                  children: <TextSpan>[
+                    TextSpan(text: widget.name, style: TextStyle(color: Color(0xFF6174FF))),
+                    TextSpan(text: '  ->  '),
+                    TextSpan(text: provider.name,
+                      style: TextStyle(color: Color(0xFF6174FF), fontStyle: FontStyle.italic)
+                    ),
+                    TextSpan(text: ' ?'),
+                  ],
                 ),
-                controller: _nameController,
-                focusNode: _nameFocus
               ),
-            ),
-            const SizedBox(height: 20.0),
-            ButtonText(
-              enable: this._providers.length > 0 && !this._waiting,
-              text: this._waiting ? lang.waiting : lang.send,
-              action: () {
-                final name = _nameController.text.trim();
-                if (name.length > 0) {
-                  rpc.send('domain-register', [provider.id, provider.addr, name, '']);
-                  setState(() {
-                      this._waiting = true;
-                      this._exist = false;
-                  });
-                }
-            }),
-            const SizedBox(height: 20.0),
-            InkWell(
-              child: Container(
+              const SizedBox(height: 10.0),
+              Container(
+                width: 600.0,
+                child: Text(lang.domainCreateTip),
+              ),
+              SizedBox(
+                height: 40.0,
+                child: Center(child: Text(this._exist ? lang.domainRegisterFailure : '',
+                    style: TextStyle(color: Colors.red))),
+              ),
+              if (this._showName)
+              Container(
                 width: 600.0,
                 height: 50.0,
+                padding: const EdgeInsets.symmetric(horizontal: 20.0),
                 decoration: BoxDecoration(
-                  border: Border.all(color: Color(0xFF6174FF)),
-                  borderRadius: BorderRadius.circular(10.0)),
-                child: Center(child: Text(lang.skip, style: TextStyle(
-                      fontSize: 20.0, color: Color(0xFF6174FF)
-                ))),
+                  color: color.surface,
+                  border: Border.all(
+                    color: _nameFocus.hasFocus ? color.primary : color.surface),
+                  borderRadius: BorderRadius.circular(10.0),
+                ),
+                child: TextField(
+                  style: TextStyle(fontSize: 16.0),
+                  decoration: InputDecoration(
+                    border: InputBorder.none,
+                    hintText: lang.domainName,
+                  ),
+                  controller: _nameController,
+                  focusNode: _nameFocus
+                ),
               ),
-              onTap: () {
-                Navigator.of(context).pushNamedAndRemoveUntil("/", (Route<dynamic> route) => false);
-              }
-            ),
-          ]
+              const SizedBox(height: 20.0),
+              ButtonText(
+                enable: this._providers.length > 0 && !this._waiting,
+                text: this._waiting ? lang.waiting : lang.send,
+                action: () {
+                  final name = _nameController.text.trim();
+                  if (name.length > 0) {
+                    rpc.send('domain-register', [provider.id, provider.addr, name, '']);
+                    setState(() {
+                        this._waiting = true;
+                        this._exist = false;
+                    });
+                  }
+              }),
+              const SizedBox(height: 20.0),
+              InkWell(
+                child: Container(
+                  width: 600.0,
+                  height: 50.0,
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Color(0xFF6174FF)),
+                    borderRadius: BorderRadius.circular(10.0)),
+                  child: Center(child: Text(lang.skip, style: TextStyle(
+                        fontSize: 20.0, color: Color(0xFF6174FF)
+                  ))),
+                ),
+                onTap: () {
+                  Navigator.of(context).pushNamedAndRemoveUntil("/", (Route<dynamic> route) => false);
+                }
+              ),
+            ]
+          )
         )
       )
     );
