@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 import 'dart:typed_data';
+import 'dart:ui' show Locale;
 
 import 'package:flutter/services.dart' show rootBundle;
 
@@ -64,6 +65,17 @@ extension MnemonicLangExtension on MnemonicLang {
       return MnemonicLang.CHINESE_SIMPLIFIED;
       default:
       return MnemonicLang.NONE;
+    }
+  }
+
+  static MnemonicLang fromLocale(Locale locale) {
+    switch (locale.languageCode) {
+      case 'en':
+      return MnemonicLang.ENGLISH;
+      case 'zh':
+      return MnemonicLang.CHINESE_SIMPLIFIED;
+      default:
+      return MnemonicLang.ENGLISH;
     }
   }
 }

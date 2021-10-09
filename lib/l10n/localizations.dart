@@ -95,6 +95,7 @@ abstract class AppLocalizations {
   String get input;
   String get waiting;
   String get notExist;
+  String get skip;
 
   // theme
   String get themeDark;
@@ -108,6 +109,7 @@ abstract class AppLocalizations {
   String get loginRestore;
   String get loginRestoreOnline;
   String get loginNew;
+  String get loginQuick;
   String get newMnemonicTitle;
   String get newMnemonicInput;
   String get hasAccount;

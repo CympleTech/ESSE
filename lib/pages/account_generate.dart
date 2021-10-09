@@ -17,6 +17,7 @@ import 'package:esse/global.dart';
 import 'package:esse/rpc.dart';
 import 'package:esse/provider.dart';
 
+import 'package:esse/pages/account_domain.dart';
 import 'package:esse/apps/device/provider.dart';
 import 'package:esse/apps/chat/provider.dart';
 import 'package:esse/apps/group_chat/provider.dart';
@@ -44,6 +45,7 @@ class _AccountGeneratePageState extends State<AccountGeneratePage> {
   @override
   initState() {
     super.initState();
+
     _nameFocus.addListener(() {
         setState(() {});
     });
@@ -103,7 +105,9 @@ class _AccountGeneratePageState extends State<AccountGeneratePage> {
             Provider.of<ChatProvider>(context, listen: false).updateActived();
             Provider.of<GroupChatProvider>(context, listen: false).updateActived();
 
-            Navigator.of(context).pushNamedAndRemoveUntil("/", (Route<dynamic> route) => false);
+            Navigator.push(context, MaterialPageRoute(builder: (_) => AccountDomainScreen(
+                  name: name,
+            )));
           } else {
             // TODO tostor error
             print(res.error);
@@ -142,7 +146,7 @@ class _AccountGeneratePageState extends State<AccountGeneratePage> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
             Container(
-              width: 450.0,
+              width: 600.0,
               child: Row(children: [
                   Expanded(
                     child: Container(
@@ -197,7 +201,7 @@ class _AccountGeneratePageState extends State<AccountGeneratePage> {
             ])),
             const SizedBox(height: 32.0),
             Container(
-              width: 450.0,
+              width: 600.0,
               alignment: Alignment.center,
               constraints: BoxConstraints(minHeight: 170.0),
               padding: const EdgeInsets.all(10.0),
@@ -214,7 +218,6 @@ class _AccountGeneratePageState extends State<AccountGeneratePage> {
             ),
             const SizedBox(height: 32.0),
             ButtonText(
-              width: 450,
               text: lang.next,
               enable: _mnemonicChecked,
               action: () {
@@ -245,7 +248,7 @@ class _AccountGeneratePageState extends State<AccountGeneratePage> {
             const SizedBox(height: 32.0),
             Container(
               height: 50.0,
-              width: 450.0,
+              width: 600.0,
               padding: const EdgeInsets.symmetric(horizontal: 20.0),
               decoration: BoxDecoration(
                 color: color.surface,
@@ -271,7 +274,7 @@ class _AccountGeneratePageState extends State<AccountGeneratePage> {
               }),
             ),
             const SizedBox(height: 32.0),
-            ButtonText(width: 450, text: lang.ok, action: () => registerNewAction(lang.setPin),
+            ButtonText(text: lang.ok, action: () => registerNewAction(lang.setPin),
               enable: this._registerChecked),
             _footer(lang.hasAccount, () => Navigator.of(context).pop()),
         ])
@@ -299,8 +302,8 @@ class _AccountGeneratePageState extends State<AccountGeneratePage> {
             right: -1.0,
             child: InkWell(
               child: Container(
-                decoration: const ShapeDecoration(
-                  color: Colors.white,
+                decoration: ShapeDecoration(
+                  color: color.surface,
                   shape: CircleBorder(),
                 ),
                 child: Icon(Icons.add_circle,

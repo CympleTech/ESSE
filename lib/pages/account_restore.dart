@@ -119,7 +119,7 @@ class _AccountRestorePageState extends State<AccountRestorePage> {
                       children: <Widget>[
                         Container(
                           height: 50.0,
-                          width: 450.0,
+                          width: 600.0,
                           child: Row(children: [
                               Expanded(
                                 child: Container(
@@ -187,7 +187,7 @@ class _AccountRestorePageState extends State<AccountRestorePage> {
                         ),
                         const SizedBox(height: 16.0),
                         Container(
-                          width: 450.0,
+                          width: 600.0,
                           alignment: Alignment.center,
                           constraints: BoxConstraints(minHeight: 170.0),
                           padding: const EdgeInsets.all(10.0),
@@ -204,7 +204,7 @@ class _AccountRestorePageState extends State<AccountRestorePage> {
                         const SizedBox(height: 16.0),
                         Container(
                           height: 50.0,
-                          width: 450.0,
+                          width: 600.0,
                           child: Row(children: [
                               Container(
                                 padding: const EdgeInsets.only(right: 8.0),
@@ -275,7 +275,6 @@ class _AccountRestorePageState extends State<AccountRestorePage> {
                         ])),
                         const SizedBox(height: 32.0),
                         ButtonText(
-                          width: 450,
                           text: lang.next,
                           enable: _statusChecked,
                           action: () => _mnemonicRegister(lang.unknown, lang.setPin),

@@ -268,15 +268,19 @@ class _ProfileDetailState extends State<ProfileDetail> {
   }
 
   _pinCheck(String hash, Function callback, String title) {
-    showShadowDialog(
+    if (hash.length > 0) {
+      showShadowDialog(
         context,
         Icons.security_rounded,
         title,
         PinWords(
-            hashPin: hash,
-            callback: (_key, _hash) async {
-              Navigator.of(context).pop();
-              callback();
-            }));
+          hashPin: hash,
+          callback: (_key, _hash) async {
+            Navigator.of(context).pop();
+            callback();
+      }));
+    } else {
+      callback();
+    }
   }
 }

@@ -114,6 +114,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get waiting => '等待中';
   @override
   String get notExist => '用户不存在。';
+  @override
+  String get skip => '跳过';
 
   // theme
   @override
@@ -134,6 +136,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get loginRestoreOnline => '账户在线恢复';
   @override
   String get loginNew => '新建账户';
+  @override
+  String get loginQuick => '快速新建';
   @override
   String get newMnemonicTitle => '助记词（DID）';
   @override

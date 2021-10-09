@@ -9,6 +9,7 @@ import 'package:esse/widgets/shadow_dialog.dart';
 import 'package:esse/widgets/show_pin.dart';
 import 'package:esse/pages/account_generate.dart';
 import 'package:esse/pages/account_restore.dart';
+import 'package:esse/pages/account_quick.dart';
 import 'package:esse/utils/logined_cache.dart';
 import 'package:esse/utils/better_print.dart';
 import 'package:esse/account.dart';
@@ -83,8 +84,8 @@ class _SecurityPageState extends State<SecurityPage> {
                     children: <Widget>[
                       SizedBox(height: maxHeight),
                       Container(
-                        width: 100.0,
-                        height: 100.0,
+                        width: 120.0,
+                        height: 120.0,
                         decoration: BoxDecoration(
                           boxShadow: [
                             BoxShadow(
@@ -103,12 +104,26 @@ class _SecurityPageState extends State<SecurityPage> {
                         )
                       ),
                       const SizedBox(height: 40.0),
-                      Text('ESSE', style: TextStyle(fontSize: 20.0)),
-                      const SizedBox(height: 80.0),
+                      Text('ESSE', style: TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 40.0),
                       loginForm(color, lang),
                       const SizedBox(height: 20.0),
-                      ButtonText(width: 450.0, text: lang.ok, enable: _accountsLoaded,
+                      ButtonText(text: lang.ok, enable: _accountsLoaded,
                         action: () => loginAction(lang.verifyPin)),
+                      const SizedBox(height: 20.0),
+                      InkWell(
+                        child: Container(width: 600.0, height: 50.0,
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Color(0xFF6174FF)),
+                            borderRadius: BorderRadius.circular(10.0)),
+                          child: Center(child: Text(lang.loginQuick, style: TextStyle(
+                                fontSize: 20.0, color: Color(0xFF6174FF)
+                          ))),
+                        ),
+                        onTap: () => Navigator.push(context,
+                          MaterialPageRoute(builder: (_) => AccountQuickPage())
+                        ),
+                      ),
                       Padding(
                         padding: const EdgeInsets.only(top: 20),
                         child: Container(
@@ -211,37 +226,45 @@ class _SecurityPageState extends State<SecurityPage> {
     });
   }
 
+  void _verifyAfter(String lock) async {
+    final res = await httpPost(Global.httpRpc, 'account-login',
+      [this._selectedUserId, lock]);
+
+    if (res.isOk) {
+      final mainAccount = this._accounts[this._selectedUserId]!;
+
+      Provider.of<AccountProvider>(context, listen: false).updateActivedAccount(mainAccount.gid);
+      Provider.of<DeviceProvider>(context, listen: false).updateActived();
+      Provider.of<ChatProvider>(context, listen: false).updateActived();
+      Provider.of<GroupChatProvider>(context, listen: false).updateActived();
+
+      Navigator.of(context).pushNamedAndRemoveUntil("/", (Route<dynamic> route) => false);
+    } else {
+      // TODO tostor error
+      print(res.error);
+    }
+  }
+
   void loginAction(String title) {
-    showShadowDialog(
-      context,
-      Icons.security_rounded,
-      title,
-      PinWords(
-        hashPin: this._selectedUserLock,
-        callback: (pinWords, lock) async {
-          Navigator.of(context).pop();
-          final res = await httpPost(Global.httpRpc, 'account-login',
-            [this._selectedUserId, lock]);
-
-          if (res.isOk) {
-            final mainAccount = this._accounts[this._selectedUserId]!;
-
-            Provider.of<AccountProvider>(context, listen: false).updateActivedAccount(mainAccount.gid);
-            Provider.of<DeviceProvider>(context, listen: false).updateActived();
-            Provider.of<ChatProvider>(context, listen: false).updateActived();
-            Provider.of<GroupChatProvider>(context, listen: false).updateActived();
-
-            Navigator.of(context).pushNamedAndRemoveUntil("/", (Route<dynamic> route) => false);
-          } else {
-            // TODO tostor error
-            print(res.error);
-          }
-    }));
+    if (this._selectedUserLock.length == 0) {
+      _verifyAfter('');
+    } else {
+      showShadowDialog(
+        context,
+        Icons.security_rounded,
+        title,
+        PinWords(
+          hashPin: this._selectedUserLock,
+          callback: (pinWords, lock) async {
+            Navigator.of(context).pop();
+            _verifyAfter(lock);
+      }));
+    }
   }
 
   Widget loginForm(ColorScheme color, AppLocalizations lang) {
     return Container(
-      width: 450.0,
+      width: 600.0,
       height: 50.0,
       padding: EdgeInsets.only(left: 20, right: 20),
       decoration: BoxDecoration(

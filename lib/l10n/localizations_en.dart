@@ -114,6 +114,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get waiting => 'Waiting';
   @override
   String get notExist => 'User not exist.';
+  @override
+  String get skip => 'Skip';
 
   // theme
   @override
@@ -134,6 +136,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get loginRestoreOnline => 'Restore from online';
   @override
   String get loginNew => 'Create Account';
+  @override
+  String get loginQuick => 'Quickly Create';
   @override
   String get newMnemonicTitle => 'Mnemonic code (DID)';
   @override
