@@ -46,174 +46,182 @@ class _ProfileDetailState extends State<ProfileDetail> {
     final account = context.watch<AccountProvider>().activedAccount;
     final noImage = account.avatar == null;
 
-    return Wrap(spacing: 20.0, alignment: WrapAlignment.center, children: <
-        Widget>[
-      Container(
-          width: 180.0,
-          child: Column(children: [
-            Container(
-              width: 100.0,
-              height: 100.0,
-              decoration: noImage
-                  ? BoxDecoration(
-                      color: color.surface,
-                      borderRadius: BorderRadius.circular(15.0))
-                  : BoxDecoration(
-                      color: color.surface,
-                      image: DecorationImage(
-                        image: MemoryImage(account.avatar!),
-                        fit: BoxFit.cover,
-                      ),
-                      borderRadius: BorderRadius.circular(15.0)),
-              child: Stack(
-                alignment: Alignment.center,
-                children: <Widget>[
-                  if (noImage)
-                    Icon(Icons.camera_alt,
-                        size: 47.0, color: Color(0xFFADB0BB)),
-                  Positioned(
-                    bottom: -1.0,
-                    right: -1.0,
-                    child: InkWell(
-                      child: Container(
-                        decoration: const ShapeDecoration(
-                          color: Colors.white,
-                          shape: CircleBorder(),
+    return Scaffold(
+      appBar: AppBar(title: Text(lang.profile)),
+      body: Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: SingleChildScrollView(
+          child: Wrap(
+            spacing: 20.0,
+            alignment: WrapAlignment.center,
+            children: <Widget>[
+              Container(
+                width: 180.0,
+                child: Column(
+                  children: [
+                    Container(
+                      width: 100.0,
+                      height: 100.0,
+                      decoration: noImage
+                      ? BoxDecoration(
+                        color: color.surface,
+                        borderRadius: BorderRadius.circular(15.0))
+                      : BoxDecoration(
+                        color: color.surface,
+                        image: DecorationImage(
+                          image: MemoryImage(account.avatar!),
+                          fit: BoxFit.cover,
                         ),
-                        child: Icon(Icons.add_circle,
-                          size: 32.0, color: color.primary),
-                      ),
-                      onTap: () => selectAvatar(context, (bytes) =>
-                        context.read<AccountProvider>().accountUpdate(account.name, bytes),
+                        borderRadius: BorderRadius.circular(15.0)),
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: <Widget>[
+                          if (noImage)
+                          Icon(Icons.camera_alt,
+                            size: 47.0, color: Color(0xFFADB0BB)),
+                          Positioned(
+                            bottom: -1.0,
+                            right: -1.0,
+                            child: InkWell(
+                              child: Container(
+                                decoration: const ShapeDecoration(
+                                  color: Colors.white,
+                                  shape: CircleBorder(),
+                                ),
+                                child: Icon(Icons.add_circle,
+                                  size: 32.0, color: color.primary),
+                              ),
+                              onTap: () => selectAvatar(context, (bytes) =>
+                                context.read<AccountProvider>().accountUpdate(account.name, bytes),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ),
-                ],
-              ),
-            ),
-            _changeName
-                ? Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 10.0),
-                    child: Row(mainAxisSize: MainAxisSize.max, children: [
-                      Container(
-                        width: 100.0,
-                        child: TextField(
-                          autofocus: true,
-                          style: TextStyle(fontSize: 16.0),
-                          textAlign: TextAlign.center,
-                          controller: _nameController,
-                          decoration: InputDecoration(
-                            hintText: account.name,
-                            hintStyle: TextStyle(
-                                color: Color(0xFF1C1939).withOpacity(0.25)),
-                            filled: false,
-                            isDense: true,
+                    _changeName
+                    ? Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 10.0),
+                      child: Row(mainAxisSize: MainAxisSize.max, children: [
+                          Container(
+                            width: 100.0,
+                            child: TextField(
+                              autofocus: true,
+                              style: TextStyle(fontSize: 16.0),
+                              textAlign: TextAlign.center,
+                              controller: _nameController,
+                              decoration: InputDecoration(
+                                hintText: account.name,
+                                hintStyle: TextStyle(
+                                  color: Color(0xFF1C1939).withOpacity(0.25)),
+                                filled: false,
+                                isDense: true,
+                              ),
+                            ),
                           ),
-                        ),
-                      ),
-                      const SizedBox(width: 10.0),
-                      GestureDetector(
-                        onTap: () {
-                          if (_nameController.text.length > 0) {
-                            context
+                          const SizedBox(width: 10.0),
+                          GestureDetector(
+                            onTap: () {
+                              if (_nameController.text.length > 0) {
+                                context
                                 .read<AccountProvider>()
                                 .accountUpdate(_nameController.text);
-                          }
-                          setState(() {
-                            _changeName = false;
-                          });
-                        },
-                        child: Container(
-                            width: 20.0,
-                            child: Icon(
-                              Icons.done_rounded,
-                              color: color.primary,
+                              }
+                              setState(() {
+                                  _changeName = false;
+                              });
+                            },
+                            child: Container(
+                              width: 20.0,
+                              child: Icon(
+                                Icons.done_rounded,
+                                color: color.primary,
                             )),
-                      ),
-                      const SizedBox(width: 10.0),
-                      GestureDetector(
-                        onTap: () => setState(() {
-                          _changeName = false;
+                          ),
+                          const SizedBox(width: 10.0),
+                          GestureDetector(
+                            onTap: () => setState(() {
+                                _changeName = false;
+                            }),
+                            child: Container(
+                              width: 20.0, child: Icon(Icons.clear_rounded)),
+                          ),
+                      ]),
+                    )
+                    : Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 10.0),
+                      child: TextButton(
+                        onPressed: () => setState(() {
+                            _changeName = true;
                         }),
-                        child: Container(
-                            width: 20.0, child: Icon(Icons.clear_rounded)),
+                        child:
+                        Text(account.name, style: TextStyle(fontSize: 16.0)),
                       ),
-                    ]),
-                  )
-                : Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 10.0),
-                    child: TextButton(
-                      onPressed: () => setState(() {
-                        _changeName = true;
-                      }),
-                      child:
-                          Text(account.name, style: TextStyle(fontSize: 16.0)),
                     ),
-                  ),
-          ])),
-      Container(
-          width: 300.0,
-          child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.max,
-              children: [
-                _infoListTooltip(Icons.person, color.primary, gidText(account.gid), gidPrint(account.gid)),
-                _infoListTooltip(Icons.location_on, color.primary, addrText(Global.addr), addrPrint(Global.addr)),
-                SizedBox(
-                  width: 300.0,
-                  height: 40.0,
-                  child: Row(children: [
-                    Icon(Icons.security_rounded,
-                        size: 20.0, color: color.primary),
-                    const SizedBox(width: 20.0),
-                    TextButton(
-                      onPressed: () => _pinCheck(account.lock,
-                        () => _changePin(context, account.gid, account.lock, lang.setPin),
-                        lang.verifyPin,
-                      ),
-                      child: Text(lang.change + ' PIN'),
+              ])),
+              Container(
+                width: 400.0,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.max,
+                  children: [
+                    _infoListTooltip(Icons.person, color.primary, gidText(account.gid), gidPrint(account.gid)),
+                    _infoListTooltip(Icons.location_on, color.primary, addrText(Global.addr), addrPrint(Global.addr)),
+                    SizedBox(
+                      height: 40.0,
+                      child: Row(children: [
+                          Icon(Icons.security_rounded,
+                            size: 20.0, color: color.primary),
+                          const SizedBox(width: 20.0),
+                          TextButton(
+                            onPressed: () => _pinCheck(account.lock,
+                              () => _changePin(context, account.gid, account.lock, lang.setPin),
+                              lang.verifyPin,
+                            ),
+                            child: Text(lang.change + ' PIN'),
+                          ),
+                      ]),
                     ),
-                  ]),
-                ),
-                SizedBox(
-                  width: 300.0,
-                  height: 40.0,
-                  child: Row(children: [
-                    Icon(Icons.psychology_rounded,
-                        size: 20.0, color: color.primary),
-                    const SizedBox(width: 20.0),
-                    _mnemoicShow
-                        ? TextButton(
+                    SizedBox(
+                      height: 40.0,
+                      child: Row(children: [
+                          Icon(Icons.psychology_rounded,
+                            size: 20.0, color: color.primary),
+                          const SizedBox(width: 20.0),
+                          _mnemoicShow
+                          ? TextButton(
                             onPressed: () => setState(() {
-                              _mnemoicShow = false;
-                              _mnemoicWords.clear();
+                                _mnemoicShow = false;
+                                _mnemoicWords.clear();
                             }),
                             child: Text(lang.hide + ' ' + lang.mnemonic),
                           )
-                        : TextButton(
+                          : TextButton(
                             onPressed: () => _pinCheck(account.lock,
-                                () => _showMnemonic(account.gid, account.lock), lang.verifyPin),
+                              () => _showMnemonic(account.gid, account.lock), lang.verifyPin),
                             child: Text(lang.show + ' ' + lang.mnemonic),
                           ),
-                  ]),
-                ),
-                if (_mnemoicShow)
-                  Container(
-                    width: 300.0,
-                    padding: const EdgeInsets.all(10.0),
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Color(0x40ADB0BB)),
-                      borderRadius: BorderRadius.circular(15),
+                      ]),
                     ),
-                    child: Wrap(
-                      spacing: 10.0,
-                      runSpacing: 5.0,
-                      alignment: WrapAlignment.center,
-                      children: _showMnemonicWords(color),
-                    ),
-                  )
+                    if (_mnemoicShow)
+                    Container(
+                      padding: const EdgeInsets.all(10.0),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Color(0x40ADB0BB)),
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                      child: Wrap(
+                        spacing: 10.0,
+                        runSpacing: 5.0,
+                        alignment: WrapAlignment.center,
+                        children: _showMnemonicWords(color),
+                      ),
+                    )
               ])),
-    ]);
+            ]
+          )
+        )
+    ));
   }
 
   _showMnemonicWords(color) {

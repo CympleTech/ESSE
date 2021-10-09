@@ -66,7 +66,7 @@ class _AccountQuickPageState extends State<AccountQuickPage> {
           child: SingleChildScrollView(
             child: Column(crossAxisAlignment: CrossAxisAlignment.center, children: <
               Widget>[
-                _header(lang.newAccountTitle, () => Navigator.of(context).pop()),
+                _header(lang.loginQuick, () => Navigator.of(context).pop()),
                 SizedBox(height: maxHeight),
                 Column(
                   mainAxisAlignment: MainAxisAlignment.center,

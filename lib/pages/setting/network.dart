@@ -80,109 +80,116 @@ class _NetworkDetailState extends State<NetworkDetail> {
     wsController.text = Global.wsRpc;
     httpController.text = Global.httpRpc;
 
-    return Column(children: [
-        Container(
-          width: 500.0,
+    return Scaffold(
+      appBar: AppBar(title: Text(lang.network)),
+      body: SingleChildScrollView(
+        child: Container(
           padding: const EdgeInsets.all(20.0),
-          decoration: BoxDecoration(
-            color: Color(0xFF6174FF), borderRadius: BorderRadius.circular(15.0)),
-          child: Row(children: [
+          child: Column(
+            children: [
               Container(
-                width: 40.0,
-                height: 40.0,
-                margin: const EdgeInsets.only(right: 15.0),
+                width: 600.0,
+                padding: const EdgeInsets.all(20.0),
                 decoration: BoxDecoration(
-                  color: color.background,
-                  borderRadius: BorderRadius.circular(15.0)),
-                child: Icon(Icons.info, color: Color(0xFF6174FF), size: 24.0),
-              ),
-              Expanded(
-                child: Text(
-                  lang.deviceTip,
-                  style: TextStyle(color: color.background, fontSize: 14.0),
-                  textAlign: TextAlign.center,
+                  color: Color(0xFF6174FF), borderRadius: BorderRadius.circular(15.0)),
+                child: Row(children: [
+                    Container(
+                      width: 40.0,
+                      height: 40.0,
+                      margin: const EdgeInsets.only(right: 15.0),
+                      decoration: BoxDecoration(
+                        color: color.background,
+                        borderRadius: BorderRadius.circular(15.0)),
+                      child: Icon(Icons.info, color: Color(0xFF6174FF), size: 24.0),
+                    ),
+                    Expanded(
+                      child: Text(
+                        lang.deviceTip,
+                        style: TextStyle(color: color.background, fontSize: 14.0),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+              ])),
+              const SizedBox(height: 20.0),
+              Container(
+                width: 600.0,
+                padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                decoration: BoxDecoration(
+                  color: const Color(0x26FF0000),
+                  borderRadius: BorderRadius.circular(15.0)
                 ),
+                child: Column(
+                  children: [
+                    _settingHead(lang.deviceChangeWs),
+                    SocketInputText(controller: wsController, action: changeWs, state: rpc.isLinked()),
+                    _settingHead(lang.deviceChangeHttp),
+                    SocketInputText(controller: httpController, action: changeHttp, state: true),
+                    const SizedBox(height: 15.0),
+                  ]
+                )
               ),
-        ])),
-        const SizedBox(height: 20.0),
-        Container(
-          width: 500.0,
-          padding: const EdgeInsets.symmetric(horizontal: 10.0),
-          decoration: BoxDecoration(
-            color: const Color(0x26FF0000),
-            borderRadius: BorderRadius.circular(15.0)
-          ),
-          child: Column(
-            children: [
-              _settingHead(lang.deviceChangeWs),
-              SocketInputText(controller: wsController, action: changeWs, state: rpc.isLinked()),
-              _settingHead(lang.deviceChangeHttp),
-              SocketInputText(controller: httpController, action: changeHttp, state: true),
-              const SizedBox(height: 15.0),
-            ]
-          )
-        ),
-        const SizedBox(height: 20.0),
-        Container(
-          width: 500.0,
-          padding: const EdgeInsets.symmetric(horizontal: 10.0),
-          decoration: BoxDecoration(
-            color: const Color(0x40ADB0BB),
-            borderRadius: BorderRadius.circular(15.0)
-          ),
-          child: Column(
-            children: [
-              _settingHead(lang.networkAdd),
-              SocketInputText(controller: addController, action: addBootstrap, state: true),
-              const SizedBox(height: 15.0),
-            ]
-          )
-        ),
-        _settingHead(lang.networkStable),
-        Container(
-          height: this.networkStable.length > 0 ? 100.0 : 50.0,
-          child: ListView.builder(
-            itemCount: this.networkStable.length,
-            itemBuilder: (context, index) {
-              final item = this.networkStable[index];
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 2.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+              const SizedBox(height: 20.0),
+              Container(
+                width: 600.0,
+                padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                decoration: BoxDecoration(
+                  color: const Color(0x40ADB0BB),
+                  borderRadius: BorderRadius.circular(15.0)
+                ),
+                child: Column(
                   children: [
-                    Icon(
-                      item[1] == '1'
-                      ? Icons.swap_horiz
-                      : Icons.swap_calls,
-                      size: 18.0,
-                      color: color.primary),
-                    SizedBox(width: 15.0),
-                    Text(addrPrint(item[0]),
-                      style: TextStyle(fontSize: 14.0))
-              ]));
-          }),
-        ),
-        _settingHead(lang.networkDht),
-        Container(
-          height: this.networkDht.length > 0 ? 100.0 : 50.0,
-          child: ListView.builder(
-            itemCount: this.networkDht.length,
-            itemBuilder: (context, index) {
-              final item = this.networkDht[index];
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 2.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.cloud_done_outlined,
-                      size: 18.0, color: color.primary),
-                    SizedBox(width: 15.0),
-                    Text(addrPrint(item),
-                      style: TextStyle(fontSize: 14.0)),
-              ]));
-          }),
-        ),
-    ]);
+                    _settingHead(lang.networkAdd),
+                    SocketInputText(controller: addController, action: addBootstrap, state: true),
+                    const SizedBox(height: 15.0),
+                  ]
+                )
+              ),
+              _settingHead(lang.networkStable),
+              Container(
+                height: this.networkStable.length > 0 ? 100.0 : 50.0,
+                child: ListView.builder(
+                  itemCount: this.networkStable.length,
+                  itemBuilder: (context, index) {
+                    final item = this.networkStable[index];
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 2.0),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            item[1] == '1'
+                            ? Icons.swap_horiz
+                            : Icons.swap_calls,
+                            size: 18.0,
+                            color: color.primary),
+                          SizedBox(width: 15.0),
+                          Text(addrPrint(item[0]),
+                            style: TextStyle(fontSize: 14.0))
+                    ]));
+                }),
+              ),
+              _settingHead(lang.networkDht),
+              Container(
+                height: this.networkDht.length > 0 ? 100.0 : 50.0,
+                child: ListView.builder(
+                  itemCount: this.networkDht.length,
+                  itemBuilder: (context, index) {
+                    final item = this.networkDht[index];
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 2.0),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.cloud_done_outlined,
+                            size: 18.0, color: color.primary),
+                          SizedBox(width: 15.0),
+                          Text(addrPrint(item),
+                            style: TextStyle(fontSize: 14.0)),
+                    ]));
+                }),
+              ),
+          ])
+    )));
   }
 }
 

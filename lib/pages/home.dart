@@ -374,8 +374,7 @@ class DrawerWidget extends StatelessWidget {
             ])));
   }
 
-  _showDevices(context, bool isDesktop) {
-    final widget = DevicesPage();
+  _showPage(Widget widget, bool isDesktop, context) {
     if (isDesktop) {
       Provider.of<AccountProvider>(context, listen: false)
           .updateActivedWidget(widget);
@@ -447,8 +446,7 @@ class DrawerWidget extends StatelessWidget {
                           style: TextStyle(fontSize: 16.0)),
                       onTap: () {
                         Navigator.pop(context);
-                        showShadowDialog(context, Icons.person, lang.profile,
-                            ProfileDetail());
+                        _showPage(ProfileDetail(), isDesktop, context);
                       }),
                   ListTile(
                       leading: Icon(Icons.devices_other_rounded,
@@ -458,7 +456,16 @@ class DrawerWidget extends StatelessWidget {
                           style: TextStyle(fontSize: 16.0)),
                       onTap: () {
                         Navigator.pop(context);
-                        _showDevices(context, isDesktop);
+                        _showPage(DevicesPage(), isDesktop, context);
+                      }),
+                  ListTile(
+                      leading: Icon(Icons.account_tree, color: color.primary),
+                      title: Text(lang.network,
+                          textAlign: TextAlign.left,
+                          style: TextStyle(fontSize: 16.0)),
+                      onTap: () {
+                        Navigator.pop(context);
+                        _showPage(NetworkDetail(), isDesktop, context);
                       }),
                   ListTile(
                       leading: Icon(Icons.language, color: color.primary),
@@ -469,16 +476,6 @@ class DrawerWidget extends StatelessWidget {
                         Navigator.pop(context);
                         showShadowDialog(context, Icons.language,
                             lang.preference, PreferenceDetail());
-                      }),
-                  ListTile(
-                      leading: Icon(Icons.account_tree, color: color.primary),
-                      title: Text(lang.network,
-                          textAlign: TextAlign.left,
-                          style: TextStyle(fontSize: 16.0)),
-                      onTap: () {
-                        Navigator.pop(context);
-                        showShadowDialog(context, Icons.account_tree,
-                            lang.network, NetworkDetail());
                       }),
                   ListTile(
                       leading: Icon(Icons.info, color: color.primary),

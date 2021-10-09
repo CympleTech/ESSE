@@ -44,7 +44,7 @@ class _SocketInputTextState extends State<SocketInputText> {
 
     return Container(
       height: 50.0,
-      width: 300.0,
+      width: 400.0,
       padding: const EdgeInsets.symmetric(horizontal: 20.0),
       decoration: BoxDecoration(
         color: const Color(0x40ADB0BB),

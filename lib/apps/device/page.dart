@@ -176,6 +176,8 @@ class _DevicesPageState extends State<DevicesPage> {
     double widgetWidth = 300.0;
     if (isDesktop) {
       widgetWidth = (MediaQuery.of(context).size.width - 450) / 2;
+    } else {
+      widgetWidth = MediaQuery.of(context).size.width - 40;
     }
 
     final List<Widget> devicesWidgets = provider.devices.values.map((device) {
@@ -183,102 +185,84 @@ class _DevicesPageState extends State<DevicesPage> {
     }).toList();
 
     return Scaffold(
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(10.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.start,
-            crossAxisAlignment: isDesktop ? CrossAxisAlignment.start : CrossAxisAlignment.center,
-            children: <Widget>[
-              Row(
-                children: [
-                  if (!isDesktop)
-                  GestureDetector(
-                    onTap: () => Navigator.pop(context),
-                    child: Container(width: 20.0, child: Icon(Icons.arrow_back, color: color.primary)),
-                  ),
-                  const SizedBox(width: 15.0),
-                  Expanded(child: Text(lang.devices, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20.0))),
-                  PopupMenuButton<int>(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(15)
-                    ),
-                    color: const Color(0xFFEDEDED),
-                    child: Icon(Icons.add_rounded, color: color.primary),
-                    onSelected: (int value) {
-                      if (value == 0) {
-                        // input address to connect.
-                        _inputAddress(lang);
-                      } else if (value == 1) {
-                        // show qrcode.
-                        final account = Provider.of<AccountProvider>(
-                          context, listen: false).activedAccount;
-                        showShadowDialog(
-                          context,
-                          Icons.security_rounded,
-                          lang.verifyPin,
-                          PinWords(
-                            hashPin: account.lock,
-                            callback: (_key, _hash) async {
-                              Navigator.of(context).pop();
-                              _showQrCode(
-                                account.name,
-                                account.gid,
-                                Global.addr,
-                                account.lock,
-                                color,
-                                lang,
-                              );
-                        }));
-                      }
-                    },
-                    itemBuilder: (context) {
-                      return <PopupMenuEntry<int>>[
-                        PopupMenuItem<int>(value: 0,
-                          child: Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.only(right: 10.0),
-                                width: 30.0,
-                                height: 30.0,
-                                child: Icon(Icons.add_rounded, color: Color(0xFF6174FF)),
-                              ),
-                              Text(lang.addDevice, style: TextStyle(color: Colors.black)),
-                            ]
-                          )
-                        ),
-                        PopupMenuItem<int>(value: 1,
-                          child: Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.only(right: 10.0),
-                                width: 30.0,
-                                height: 30.0,
-                                child: Icon(Icons.qr_code_rounded, color: Color(0xFF6174FF)),
-                              ),
-                              Text(lang.deviceQrcode, style: TextStyle(color: Colors.black)),
-                            ]
-                          )
-                        ),
-                      ];
-                    }
-                  ),
-
-                  const SizedBox(width: 10.0),
-                ],
-              ),
-              const SizedBox(height: 30.0),
-              Expanded(
-                child: SingleChildScrollView(
-                  child: Wrap(
-                    spacing: 16.0,
-                    runSpacing: 16.0,
-                    alignment: WrapAlignment.start,
-                    children: devicesWidgets
+      appBar: AppBar(
+        title: Text(lang.devices),
+        actions: [
+          PopupMenuButton<int>(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(15)
+            ),
+            color: const Color(0xFFEDEDED),
+            child: Icon(Icons.add_rounded, color: color.primary),
+            onSelected: (int value) {
+              if (value == 0) {
+                // input address to connect.
+                _inputAddress(lang);
+              } else if (value == 1) {
+                // show qrcode.
+                final account = Provider.of<AccountProvider>(
+                  context, listen: false).activedAccount;
+                showShadowDialog(
+                  context,
+                  Icons.security_rounded,
+                  lang.verifyPin,
+                  PinWords(
+                    hashPin: account.lock,
+                    callback: (_key, _hash) async {
+                      Navigator.of(context).pop();
+                      _showQrCode(
+                        account.name,
+                        account.gid,
+                        Global.addr,
+                        account.lock,
+                        color,
+                        lang,
+                      );
+                }));
+              }
+            },
+            itemBuilder: (context) {
+              return <PopupMenuEntry<int>>[
+                PopupMenuItem<int>(value: 0,
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.only(right: 10.0),
+                        width: 30.0,
+                        height: 30.0,
+                        child: Icon(Icons.add_rounded, color: Color(0xFF6174FF)),
+                      ),
+                      Text(lang.addDevice, style: TextStyle(color: Colors.black)),
+                    ]
                   )
-                )
-              ),
-            ]
+                ),
+                PopupMenuItem<int>(value: 1,
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.only(right: 10.0),
+                        width: 30.0,
+                        height: 30.0,
+                        child: Icon(Icons.qr_code_rounded, color: Color(0xFF6174FF)),
+                      ),
+                      Text(lang.deviceQrcode, style: TextStyle(color: Colors.black)),
+                    ]
+                  )
+                ),
+              ];
+            }
+          ),
+          const SizedBox(width: 20.0),
+        ]
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: SingleChildScrollView(
+          child: Wrap(
+            spacing: 16.0,
+            runSpacing: 16.0,
+            alignment: WrapAlignment.start,
+            children: devicesWidgets
           )
         )
       )
