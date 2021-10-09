@@ -116,6 +116,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get notExist => 'User not exist.';
   @override
   String get skip => 'Skip';
+  @override
+  String get register => 'Register';
 
   // theme
   @override
@@ -353,6 +355,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get domainDelete => 'Delete from provider ?';
   @override
   String get domainNotDelete => 'Had ID, cannot delete';
+  @override
+  String get domainCreateTip => 'Tips: It will be sent to our built-in provider. Others can find your information (avatar, nickname, ESSEID, network address) by search the username, which can be managed and deleted in the personal ID later.';
 
   @override
   String get cloud => 'Cloud Peer';

@@ -96,6 +96,7 @@ abstract class AppLocalizations {
   String get waiting;
   String get notExist;
   String get skip;
+  String get register;
 
   // theme
   String get themeDark;
@@ -224,6 +225,7 @@ abstract class AppLocalizations {
   String get domainSetActived;
   String get domainDelete;
   String get domainNotDelete;
+  String get domainCreateTip;
 
   String get cloud;
   String get cloudIntro;

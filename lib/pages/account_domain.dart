@@ -86,13 +86,13 @@ class AccountDomainScreenState extends State<AccountDomainScreen> {
           children: [
             RichText(
               text: TextSpan(
-                text: 'Register ',
+                text: lang.register + ' ',
                 style: TextStyle(
                   color: color.onSurface, fontSize: 20.0, fontWeight: FontWeight.bold
                 ),
                 children: <TextSpan>[
                   TextSpan(text: widget.name, style: TextStyle(color: Color(0xFF6174FF))),
-                  TextSpan(text: ' to '),
+                  TextSpan(text: '  ->  '),
                   TextSpan(text: provider.name,
                     style: TextStyle(color: Color(0xFF6174FF), fontStyle: FontStyle.italic)
                   ),
@@ -103,7 +103,7 @@ class AccountDomainScreenState extends State<AccountDomainScreen> {
             const SizedBox(height: 10.0),
             Container(
               width: 600.0,
-              child: Text('Tips: It will be sent to our built-in provider. Others can find your information (avatar, nickname, ESSEID, network address) by search the username, which can be managed and deleted in the personal ID later.'),
+              child: Text(lang.domainCreateTip),
             ),
             SizedBox(
               height: 40.0,

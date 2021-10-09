@@ -116,6 +116,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get notExist => '用户不存在。';
   @override
   String get skip => '跳过';
+  @override
+  String get register => '注册';
 
   // theme
   @override
@@ -353,6 +355,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get domainDelete => '从站点中删除？';
   @override
   String get domainNotDelete => '有注册ID，无法删除';
+  @override
+  String get domainCreateTip => '提示： 将会发送至应用内置的站点，其他人可以通过检索用户名搜索到你的信息（头像，昵称，ESSEID，网络地址）。后续可以在个人ID中进行管理和删除。';
 
   @override
   String get cloud => '云节点';
