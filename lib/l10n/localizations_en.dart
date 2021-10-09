@@ -133,7 +133,7 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get loginChooseAccount => 'Choose account';
   @override
-  String get loginRestore => 'Restore account';
+  String get loginRestore => 'Restore Account';
   @override
   String get loginRestoreOnline => 'Restore from online';
   @override
