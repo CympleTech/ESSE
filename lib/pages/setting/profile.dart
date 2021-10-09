@@ -56,8 +56,9 @@ class _ProfileDetailState extends State<ProfileDetail> {
             alignment: WrapAlignment.center,
             children: <Widget>[
               Container(
-                width: 180.0,
+                width: 200.0,
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     Container(
                       width: 100.0,
@@ -161,6 +162,7 @@ class _ProfileDetailState extends State<ProfileDetail> {
               ])),
               Container(
                 width: 400.0,
+                padding: const EdgeInsets.only(left: 20.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.max,
@@ -169,7 +171,8 @@ class _ProfileDetailState extends State<ProfileDetail> {
                     _infoListTooltip(Icons.location_on, color.primary, addrText(Global.addr), addrPrint(Global.addr)),
                     SizedBox(
                       height: 40.0,
-                      child: Row(children: [
+                      child: Row(
+                        children: [
                           Icon(Icons.security_rounded,
                             size: 20.0, color: color.primary),
                           const SizedBox(width: 20.0),
