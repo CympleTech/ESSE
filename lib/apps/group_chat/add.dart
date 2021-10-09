@@ -716,7 +716,9 @@ class _RequestItem extends StatelessWidget {
                         children: [
                           Text(request.name, maxLines: 1, overflow: TextOverflow.ellipsis,
                             style: TextStyle(fontSize: 16.0)),
-                          Text(request.remark, maxLines: 1, overflow: TextOverflow.ellipsis,
+                          Text(
+                            gidPrint(request.gid, 'EG') + " (${addrPrint(request.addr)})",
+                            maxLines: 1, overflow: TextOverflow.ellipsis,
                             style: TextStyle(color: Color(0xFFADB0BB),
                               fontSize: 12.0)),
                         ],
