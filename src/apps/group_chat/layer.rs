@@ -527,7 +527,7 @@ async fn handle_event(
                         GroupChat::add_height(&db, id, height)?;
 
                         // UI: update.
-                        results.rpcs.push(rpc::member_join(fgid, &m));
+                        results.rpcs.push(rpc::member_join(ogid, &m));
 
                         // broadcast join event.
                         let event =
@@ -592,7 +592,7 @@ async fn handle_event(
                     GroupChat::add_height(&db, id, height)?;
 
                     // UI: update.
-                    results.rpcs.push(rpc::member_join(fgid, &m));
+                    results.rpcs.push(rpc::member_join(ogid, &m));
 
                     // broadcast join event.
                     let event = Event::MemberJoin(m.m_id, m.m_addr, m.m_name, mavatar, m.datetime);
