@@ -7,7 +7,7 @@ use tdn::types::{
 };
 use tdn_did::Proof;
 
-use group_chat_types::{CheckType, Event, GroupLocation, GroupType, JoinProof, LayerEvent};
+use group_chat_types::{Event, GroupLocation, GroupType, JoinProof, LayerEvent};
 
 use crate::apps::chat::{Friend, MessageType};
 use crate::layer::Online;
@@ -17,13 +17,23 @@ use crate::storage::{chat_db, group_chat_db, read_avatar, session_db, write_avat
 
 use super::add_layer;
 use super::models::{
-    to_network_message, Consensus, ConsensusType, GroupChat, GroupChatKey, Member, Message, Request,
+    to_network_message, Consensus, ConsensusType, GroupChat, GroupChatKey, Member, Message,
+    Provider, Request,
 };
 
 #[inline]
-pub(crate) fn create_check(mgid: GroupId, ct: CheckType, supported: Vec<GroupType>) -> RpcParam {
-    let s: Vec<u32> = supported.iter().map(|v| v.to_u32()).collect();
-    rpc_response(0, "group-chat-check", json!([ct.to_u32(), s]), mgid)
+pub(crate) fn provider_check(mgid: GroupId, provider: &Provider) -> RpcParam {
+    rpc_response(
+        0,
+        "group-chat-provider-check",
+        json!(provider.to_rpc()),
+        mgid,
+    )
+}
+
+#[inline]
+pub(crate) fn provider_delete(mgid: GroupId, id: i64) -> RpcParam {
+    rpc_response(0, "group-chat-provider-delete", json!([id]), mgid)
 }
 
 #[inline]
@@ -179,15 +189,45 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
     );
 
     handler.add_method(
-        "group-chat-check",
-        |gid: GroupId, params: Vec<RpcParam>, _state: Arc<RpcState>| async move {
-            let addr = PeerAddr::from_hex(params[0].as_str().ok_or(RpcError::ParseError)?)?;
+        "group-chat-provider-list",
+        |gid: GroupId, _params: Vec<RpcParam>, state: Arc<RpcState>| async move {
+            let db = group_chat_db(state.layer.read().await.base(), &gid)?;
+            let providers: Vec<RpcParam> =
+                Provider::list(&db)?.iter().map(|p| p.to_rpc()).collect();
+            Ok(HandleResult::rpc(json!(providers)))
+        },
+    );
+
+    handler.add_method(
+        "group-chat-provider-check",
+        |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
+            let id = params[0].as_i64().ok_or(RpcError::ParseError)?;
+            let addr = PeerAddr::from_hex(params[1].as_str().ok_or(RpcError::ParseError)?)?;
+
+            if id == 0 {
+                // insert into database.
+                let db = group_chat_db(state.layer.read().await.base(), &gid)?;
+                if Provider::get_by_addr(&db, &addr).is_err() {
+                    let mut provider = Provider::new(addr);
+                    provider.insert(&db)?;
+                }
+            }
 
             let mut results = HandleResult::new();
             let data = bincode::serialize(&LayerEvent::Check)?;
             let s = SendType::Event(0, addr, data);
             add_layer(&mut results, gid, s);
             Ok(results)
+        },
+    );
+
+    handler.add_method(
+        "group-chat-provider-delete",
+        |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
+            let id = params[0].as_i64().ok_or(RpcError::ParseError)?;
+            let db = group_chat_db(state.layer.read().await.base(), &gid)?;
+            Provider::delete(&db, &id)?;
+            Ok(HandleResult::new())
         },
     );
 

@@ -1,5 +1,5 @@
 #[rustfmt::skip]
-pub(super) const GROUP_CHAT_VERSIONS: [&str; 5] = [
+pub(super) const GROUP_CHAT_VERSIONS: [&str; 6] = [
   "CREATE TABLE IF NOT EXISTS groups(
     id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
     height INTEGER NOT NULL,
@@ -56,4 +56,11 @@ pub(super) const GROUP_CHAT_VERSIONS: [&str; 5] = [
     height INTEGER NOT NULL,
     ctype INTEGER NOT NULL,
     cid INTEGER NOT NULL);",
+ "CREATE TABLE IF NOT EXISTS providers(
+    id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+    name TEXT NOT NULL,
+    addr TEXT NOT NULL,
+    kinds INTEGER NOT NULL,
+    remain INTEGER NOT NULL,
+    is_ok INTEGER NOT NULL);",
 ];

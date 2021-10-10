@@ -216,3 +216,25 @@ class Message extends BaseMessage {
     this.time = RelativeTime.fromInt(params[8]);
   }
 }
+
+class ProviderServer {
+  int id = 0;
+  String name = '';
+  String addr = '';
+  List<GroupType> kinds = [];
+  int remain = 0;
+  bool isOk = false;
+
+  ProviderServer.fromList(List params) {
+    this.id = params[0];
+    this.name = params[1];
+    this.addr = params[2];
+
+    params[3].forEach((param) {
+        this.kinds.add(GroupTypeExtension.fromInt(param));
+    });
+
+    this.remain = params[4];
+    this.isOk = params[5];
+  }
+}

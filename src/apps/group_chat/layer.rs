@@ -8,7 +8,8 @@ use tdn::types::{
 use tokio::sync::RwLock;
 
 use group_chat_types::{
-    ConnectProof, Event, GroupType, JoinProof, LayerConnect, LayerEvent, LayerResult, PackedEvent,
+    CheckType, ConnectProof, Event, GroupType, JoinProof, LayerConnect, LayerEvent, LayerResult,
+    PackedEvent,
 };
 use tdn_did::Proof;
 use tdn_storage::local::DStorage;
@@ -21,7 +22,9 @@ use crate::storage::{
     chat_db, delete_avatar, group_chat_db, read_avatar, session_db, write_avatar, write_avatar_sync,
 };
 
-use super::models::{from_network_message, Consensus, ConsensusType, GroupChat, Member, Request};
+use super::models::{
+    from_network_message, Consensus, ConsensusType, GroupChat, Member, Provider, Request,
+};
 use super::{add_layer, add_server_layer, rpc};
 
 // variable statement:
@@ -276,10 +279,29 @@ async fn handle_event(
             let _ = layer.write().await.running_mut(&ogid)?.active(&gcd, false);
             results.rpcs.push(session_connect(ogid, &sid, &addr));
         }
-        LayerEvent::CheckResult(ct, supported) => {
+        LayerEvent::CheckResult(ct, name, remain, supported) => {
             // only client handle it.
             println!("check: {:?}, supported: {:?}", ct, supported);
-            results.rpcs.push(rpc::create_check(ogid, ct, supported))
+            let mut provider = Provider::get_by_addr(&db, &addr)?;
+            let rpc_ui = match ct {
+                CheckType::Allow => {
+                    provider.update(&db, name, supported, remain)?;
+                    rpc::provider_check(ogid, &provider)
+                }
+                CheckType::None => {
+                    provider.update(&db, name, supported, 0)?;
+                    rpc::provider_check(ogid, &provider)
+                }
+                CheckType::Suspend => {
+                    provider.suspend(&db)?;
+                    rpc::provider_check(ogid, &provider)
+                }
+                CheckType::Deny => {
+                    Provider::delete(&db, &provider.id)?;
+                    rpc::provider_delete(ogid, provider.id)
+                }
+            };
+            results.rpcs.push(rpc_ui)
         }
         LayerEvent::CreateResult(gcd, ok) => {
             // only client handle it.

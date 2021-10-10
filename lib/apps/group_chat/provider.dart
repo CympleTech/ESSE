@@ -9,9 +9,6 @@ import 'package:esse/apps/primitives.dart';
 import 'package:esse/apps/group_chat/models.dart';
 
 class GroupChatProvider extends ChangeNotifier {
-  List<GroupType> createSupported = [GroupType.Encrypted, GroupType.Private, GroupType.Open];
-  CheckType createCheckType = CheckType.Nothing;
-
   Map<int, GroupChat> groups = {};
   List<int> createKeys = [];
   List<int> orderKeys = [];
@@ -71,7 +68,6 @@ class GroupChatProvider extends ChangeNotifier {
   GroupChatProvider() {
     // rpc.
     rpc.addListener('group-chat-list', _list, false);
-    rpc.addListener('group-chat-check', _check, false);
     rpc.addListener('group-chat-create', _create, false);
     rpc.addListener('group-chat-result', _result, false);
     rpc.addListener('group-chat-detail', _detail, true);
@@ -117,15 +113,6 @@ class GroupChatProvider extends ChangeNotifier {
 
   requestClear() {
     this.requests.clear();
-  }
-
-  check(String addr) {
-    this.createCheckType = CheckType.Wait;
-    rpc.send('group-chat-check', [addr]);
-  }
-
-  clearCheck() {
-    this.createCheckType = CheckType.Nothing;
   }
 
   join(GroupType gtype, String gid, String gaddr, String name, String remark, [String proof = '', String key = '']) {
@@ -181,17 +168,6 @@ class GroupChatProvider extends ChangeNotifier {
         this.groups[gc.id] = gc;
     });
     notifyListeners();
-  }
-
-  _check(List params) {
-    this.createSupported.clear();
-    if (this.createCheckType == CheckType.Wait) {
-      this.createCheckType = CheckTypeExtension.fromInt(params[0]);
-      params[1].forEach((param) {
-          this.createSupported.add(GroupTypeExtension.fromInt(param));
-      });
-      notifyListeners();
-    }
   }
 
   _create(List params) {

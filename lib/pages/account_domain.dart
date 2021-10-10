@@ -140,7 +140,7 @@ class AccountDomainScreenState extends State<AccountDomainScreen> {
                 action: () {
                   final name = _nameController.text.trim();
                   if (name.length > 0) {
-                    rpc.send('domain-register', [provider.id, provider.addr, name, '']);
+                    rpc.send('domain-register', [provider.id, provider.addr, name, 'Hello ESSE!']);
                     setState(() {
                         this._waiting = true;
                         this._exist = false;

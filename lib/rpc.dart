@@ -153,7 +153,7 @@ class WebSocketsNotifications {
         if (gid == Global.gid || method.startsWith('account')) {
           try {
             callbacks[0](params);
-          } catch (_e) {
+          } catch (e) {
             print('function is unvalid');
           }
         } else if (callbacks[1] != null && callbacks[1]) {

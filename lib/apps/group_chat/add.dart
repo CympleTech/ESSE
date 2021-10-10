@@ -49,6 +49,7 @@ class _GroupAddPageState extends State<GroupAddPage> {
   Uint8List? _createAvatarBytes;
 
   int _groupLocation = 0;
+  bool _groupAddLocation = false;
   int _groupType = 1;
   bool _groupNeedAgree = false;
   //bool _addrOnline = false;
@@ -56,6 +57,50 @@ class _GroupAddPageState extends State<GroupAddPage> {
   String _myName = '';
 
   bool _requestsLoadMore = true;
+
+  Map<int, ProviderServer> _providers = {};
+  int _providerSelected = -1;
+
+  _providerList(List params) {
+    this._providers.clear();
+    int index = 0;
+    params.forEach((param) {
+        this._providers[index] = ProviderServer.fromList(param);
+        index += 1;
+    });
+    setState(() {});
+  }
+
+  _providerCheck(List params) {
+    final provider = ProviderServer.fromList(params);
+    bool contains = false;
+    this._providers.forEach((k, p) {
+        if (p.id == provider.id) {
+          this._providers[k] = provider;
+          contains = true;
+        }
+    });
+    if (!contains) {
+      this._providers[this._providers.length] = provider;
+    }
+
+    setState(() {});
+  }
+
+  _providerDelete(List params) {
+    final id = params[0];
+    int index = -1;
+    this._providers.forEach((k, p) {
+        if (p.id == id) {
+          index = k;
+        }
+    });
+    if (index > -1) {
+      this._providers.remove(index);
+    }
+
+    setState(() {});
+  }
 
   // 0 => remote, 1 => local.
   Widget _groupLocationWidget(String text, int value, ColorScheme color, bool disabled) {
@@ -95,15 +140,40 @@ class _GroupAddPageState extends State<GroupAddPage> {
     );
   }
 
-  _checkAddrPermission() {
-    //
-  }
-
-  _checkGroupAddr() {
-    final addr = addrParse(_createAddrController.text.trim());
-    if (addr.length > 0) {
-      context.read<GroupChatProvider>().check(addr);
-    }
+  Widget _providerItem(ProviderServer provider, color, lang, context) {
+    return ListTile(
+      leading: IconButton(icon: Icon(Icons.sync, color: color.primary),
+        onPressed: () => rpc.send('group-chat-provider-check', [
+            provider.id, provider.addr
+        ])
+      ),
+      title: Text('group.esse'),
+      subtitle: Text('remain 10 times'),
+      trailing: IconButton(icon: Icon(Icons.delete, color: Colors.red),
+        onPressed: () => showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: Text(lang.delete + " ${provider.name} ?"),
+              actions: [
+                TextButton(
+                  child: Text(lang.cancel),
+                  onPressed: () => Navigator.pop(context),
+                ),
+                TextButton(
+                  child: Text(lang.ok),
+                  onPressed:  () {
+                    Navigator.pop(context);
+                    rpc.send('group-chat-provider-delete', [provider.id]);
+                    rpc.send('group-chat-provider-list', []);
+                  },
+                ),
+              ]
+            );
+          },
+        )
+      ),
+    );
   }
 
   _scanCallback(bool isOk, String app, List params) {
@@ -134,7 +204,11 @@ class _GroupAddPageState extends State<GroupAddPage> {
   }
 
   _create() {
-    final addr = addrParse(_createAddrController.text.trim());
+    if (!this._providers.containsKey(this._providerSelected)) {
+      return;
+    }
+
+    final addr = this._providers[this._providerSelected]!.addr;
     if (_groupLocation == 0 && addr.length < 2) {
       return;
     }
@@ -177,10 +251,15 @@ class _GroupAddPageState extends State<GroupAddPage> {
         setState(() {});
     });
 
+    rpc.addListener('group-chat-provider-list', _providerList, false);
+    rpc.addListener('group-chat-provider-check', _providerCheck, false);
+    rpc.addListener('group-chat-provider-delete', _providerDelete, false);
+
+    rpc.send('group-chat-provider-list', []);
     rpc.send('group-chat-request-list', [false]);
+
     new Future.delayed(Duration.zero, () {
         _myName = context.read<AccountProvider>().activedAccount.name;
-        context.read<GroupChatProvider>().clearCheck();
         setState(() {});
     });
   }
@@ -191,15 +270,17 @@ class _GroupAddPageState extends State<GroupAddPage> {
     final color = Theme.of(context).colorScheme;
     final lang = AppLocalizations.of(context);
     final provider = context.watch<GroupChatProvider>();
-    final checks = provider.createCheckType.lang(lang);
-    final checkLang = checks[0];
-    final checkOk = checks[1];
 
     final groups = provider.groups;
     final createKeys = provider.createKeys;
 
     final requests = provider.requests;
     final requestKeys = requests.keys.toList().reversed.toList();
+
+    if (this._providerSelected < 0 && this._providers.length > 0) {
+      this._providerSelected = 0;
+    }
+    final maxIndex = this._providers.length - 1;
 
     return DefaultTabController(
         initialIndex: 0,
@@ -251,7 +332,7 @@ class _GroupAddPageState extends State<GroupAddPage> {
           body: TabBarView(
             children: <Widget>[
               Container(
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
                 child: SingleChildScrollView(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
@@ -300,7 +381,7 @@ class _GroupAddPageState extends State<GroupAddPage> {
                 ),
               ),
               Container(
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
                 child: SingleChildScrollView(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
@@ -309,7 +390,7 @@ class _GroupAddPageState extends State<GroupAddPage> {
                         width: 600.0,
                         padding: const EdgeInsets.all(10.0),
                         alignment: Alignment.centerLeft,
-                        child: Text('1. ' + lang.groupChatAddr, textAlign: TextAlign.left,
+                        child: Text('1. ' + lang.groupChatLocation, textAlign: TextAlign.left,
                           style: Theme.of(context).textTheme.headline6),
                       ),
                       Container(
@@ -326,12 +407,64 @@ class _GroupAddPageState extends State<GroupAddPage> {
                       ),
                       if (_groupLocation == 0)
                       Container(
-                        height: 50.0,
+                        margin: const EdgeInsets.only(top: 10.0),
                         width: 600.0,
                         child: Row(
                           children: [
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                              child: Text(lang.domainProvider,
+                                style: TextStyle(fontWeight: FontWeight.bold)),
+                            ),
+                            TextButton(child: Icon(Icons.navigate_before),
+                              onPressed: this._providerSelected > 0 ? () => setState(() {
+                                  this._providerSelected = this._providerSelected - 1;
+                              }) : null,
+                            ),
                             Expanded(
+                              child: Center(
+                                child: Text(
+                                  this._providerSelected >= 0
+                                  ? this._providers[this._providerSelected]!.name
+                                  : '',
+                                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20.0)
+                                ),
+                            )),
+                            TextButton(child: Icon(Icons.navigate_next),
+                              onPressed: this._providerSelected < maxIndex ? () => setState(() {
+                                  this._providerSelected = this._providerSelected + 1;
+                              }) : null,
+                            ),
+                            const SizedBox(width: 20.0),
+                            InkWell(
+                              onTap: () => setState(() {
+                                  this._groupAddLocation = !this._groupAddLocation;
+                              }),
                               child: Container(
+                                height: 40.0,
+                                padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                                decoration: BoxDecoration(
+                                  border: Border.all(color: color.primary),
+                                  borderRadius: BorderRadius.circular(10.0)),
+                                child: Center(
+                                  child: Text(this._groupAddLocation ? lang.cancel : lang.add,
+                                    style: TextStyle(fontSize: 16.0, color: color.primary))),
+                            )),
+                      ])),
+                      if (this._groupAddLocation)
+                      Container(
+                        margin: const EdgeInsets.only(top: 10.0),
+                        padding: const EdgeInsets.all(20.0),
+                        decoration: BoxDecoration(
+                          color: color.secondary,
+                          borderRadius: BorderRadius.circular(10.0),
+                        ),
+                        width: 600.0,
+                        child: Column(
+                          children: [
+                            ListTile(
+                              leading: Icon(Icons.location_on),
+                              title: Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 20.0),
                                 decoration: BoxDecoration(
                                   color: color.surface,
@@ -346,52 +479,24 @@ class _GroupAddPageState extends State<GroupAddPage> {
                                     hintText: lang.address),
                                   controller: _createAddrController,
                                   focusNode: _createAddrFocus,
-                                  onSubmitted: (_v) => _checkAddrPermission(),
-                                  onChanged: (v) {
-                                    if (v.length > 0) {
-                                      setState(() {
-                                          _addrChecked = true;
-                                      });
-                                    }
-                                }),
+                                ),
                               ),
-                            ),
-                            if (checkOk)
-                            Container(
-                              padding: const EdgeInsets.only(left: 8.0),
-                              child: Icon(Icons.cloud_done_rounded,
-                                color: Colors.green),
-                            ),
-                            const SizedBox(width: 8.0),
-                            InkWell(
-                              onTap: _addrChecked ? _checkGroupAddr : null,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                                height: 45.0,
-                                decoration: BoxDecoration(
-                                  color: Color(0xFF6174FF),
-                                  borderRadius: BorderRadius.circular(10.0)),
-                                child: Center(
-                                  child: Text(lang.search,
-                                    style: TextStyle(fontSize: 16.0, color: Colors.white))),
+                              trailing: IconButton(icon: Icon(Icons.send, color: color.primary),
+                                onPressed: () {
+                                  final addr = addrParse(_createAddrController.text.trim());
+                                  if (addr.length > 0) {
+                                    rpc.send('group-chat-provider-check', [0, addr]);
+                                  }
+                                },
                             )),
-                            const SizedBox(width: 8.0),
-                            InkWell(
-                              onTap: _addrChecked ? _checkGroupAddr : null,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                                height: 45.0,
-                                decoration: BoxDecoration(
-                                  color: Color(0xFF6174FF),
-                                  borderRadius: BorderRadius.circular(10.0)),
-                                child: Center(
-                                  child: Text(lang.add,
-                                    style: TextStyle(fontSize: 16.0, color: Colors.white))),
-                            )),
-                      ])),
-                      const SizedBox(height: 8.0),
-                      Text(checkLang, style: TextStyle(fontSize: 14.0,
-                          color: checkOk ? Colors.green : Colors.red)),
+                            const Divider(height: 20.0, color: Color(0x40ADB0BB)),
+                            Column(
+                              children: this._providers.values.map(
+                                (provider) => _providerItem(provider, color, lang, context)
+                              ).toList(),
+                            ),
+                          ]
+                      )),
                       Container(
                         width: 600.0,
                         padding: const EdgeInsets.all(10.0),

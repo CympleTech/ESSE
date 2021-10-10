@@ -192,6 +192,7 @@ abstract class AppLocalizations {
   String get groupChatName;
   String get groupChatKey;
   String get groupChatAddr;
+  String get groupChatLocation;
   String get groupChatInfo;
   String get groupChatBio;
   String get groupJoin;

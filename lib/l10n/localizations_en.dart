@@ -291,6 +291,8 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get groupChatAddr => 'Group Address';
   @override
+  String get groupChatLocation => 'Group Location';
+  @override
   String get groupChatInfo => 'Group Information';
   @override
   String get groupChatBio => 'Group Bio';

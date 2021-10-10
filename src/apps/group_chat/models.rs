@@ -4,6 +4,7 @@ mod consensus;
 mod group;
 mod member;
 mod message;
+mod provider;
 mod request;
 
 // models.
@@ -11,6 +12,7 @@ pub(crate) use consensus::{Consensus, ConsensusType};
 pub(crate) use group::GroupChat;
 pub(crate) use member::Member;
 pub(crate) use message::Message;
+pub(crate) use provider::Provider;
 pub(crate) use request::Request;
 
 pub(crate) use message::{from_network_message, to_network_message};

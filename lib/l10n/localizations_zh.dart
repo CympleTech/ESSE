@@ -287,6 +287,8 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String get groupChatAddr => '群聊地址';
   @override
+  String get groupChatLocation => '群位置';
+  @override
   String get groupChatName => '群名称';
   @override
   String get groupChatKey => '加密密码';
