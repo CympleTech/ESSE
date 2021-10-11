@@ -1,65 +1,127 @@
 PODS:
   - audio_session (0.0.1):
     - Flutter
-  - barcode_scan (0.0.1):
+  - device_info_plus (0.0.1):
     - Flutter
-    - MTBBarcodeScanner
-    - SwiftProtobuf
+  - DKImagePickerController/Core (4.3.2):
+    - DKImagePickerController/ImageDataManager
+    - DKImagePickerController/Resource
+  - DKImagePickerController/ImageDataManager (4.3.2)
+  - DKImagePickerController/PhotoGallery (4.3.2):
+    - DKImagePickerController/Core
+    - DKPhotoGallery
+  - DKImagePickerController/Resource (4.3.2)
+  - DKPhotoGallery (0.0.17):
+    - DKPhotoGallery/Core (= 0.0.17)
+    - DKPhotoGallery/Model (= 0.0.17)
+    - DKPhotoGallery/Preview (= 0.0.17)
+    - DKPhotoGallery/Resource (= 0.0.17)
+    - SDWebImage
+    - SwiftyGif
+  - DKPhotoGallery/Core (0.0.17):
+    - DKPhotoGallery/Model
+    - DKPhotoGallery/Preview
+    - SDWebImage
+    - SwiftyGif
+  - DKPhotoGallery/Model (0.0.17):
+    - SDWebImage
+    - SwiftyGif
+  - DKPhotoGallery/Preview (0.0.17):
+    - DKPhotoGallery/Model
+    - DKPhotoGallery/Resource
+    - SDWebImage
+    - SwiftyGif
+  - DKPhotoGallery/Resource (0.0.17):
+    - SDWebImage
+    - SwiftyGif
   - esse_core (0.0.1):
+    - Flutter
+  - file_picker (0.0.1):
+    - DKImagePickerController/PhotoGallery
     - Flutter
   - Flutter (1.0.0)
   - image_picker (0.0.1):
+    - Flutter
+  - image_save (0.0.1):
     - Flutter
   - integration_test (0.0.1):
     - Flutter
   - just_audio (0.0.1):
     - Flutter
   - MTBBarcodeScanner (5.0.11)
+  - open_file (0.0.1):
+    - Flutter
   - path_provider (0.0.1):
     - Flutter
+  - "permission_handler (5.1.0+2)":
+    - Flutter
+  - qr_code_scanner (0.2.0):
+    - Flutter
+    - MTBBarcodeScanner
   - record (0.0.1):
     - Flutter
+  - SDWebImage (5.11.0):
+    - SDWebImage/Core (= 5.11.0)
+  - SDWebImage/Core (5.11.0)
   - shared_preferences (0.0.1):
     - Flutter
-  - SwiftProtobuf (1.14.0)
+  - SwiftyGif (5.4.0)
   - url_launcher (0.0.1):
     - Flutter
 
 DEPENDENCIES:
   - audio_session (from `.symlinks/plugins/audio_session/ios`)
-  - barcode_scan (from `.symlinks/plugins/barcode_scan/ios`)
+  - device_info_plus (from `.symlinks/plugins/device_info_plus/ios`)
   - esse_core (from `.symlinks/plugins/esse_core/ios`)
+  - file_picker (from `.symlinks/plugins/file_picker/ios`)
   - Flutter (from `Flutter`)
   - image_picker (from `.symlinks/plugins/image_picker/ios`)
+  - image_save (from `.symlinks/plugins/image_save/ios`)
   - integration_test (from `.symlinks/plugins/integration_test/ios`)
   - just_audio (from `.symlinks/plugins/just_audio/ios`)
+  - open_file (from `.symlinks/plugins/open_file/ios`)
   - path_provider (from `.symlinks/plugins/path_provider/ios`)
+  - permission_handler (from `.symlinks/plugins/permission_handler/ios`)
+  - qr_code_scanner (from `.symlinks/plugins/qr_code_scanner/ios`)
   - record (from `.symlinks/plugins/record/ios`)
   - shared_preferences (from `.symlinks/plugins/shared_preferences/ios`)
   - url_launcher (from `.symlinks/plugins/url_launcher/ios`)
 
 SPEC REPOS:
   trunk:
+    - DKImagePickerController
+    - DKPhotoGallery
     - MTBBarcodeScanner
-    - SwiftProtobuf
+    - SDWebImage
+    - SwiftyGif
 
 EXTERNAL SOURCES:
   audio_session:
     :path: ".symlinks/plugins/audio_session/ios"
-  barcode_scan:
-    :path: ".symlinks/plugins/barcode_scan/ios"
+  device_info_plus:
+    :path: ".symlinks/plugins/device_info_plus/ios"
   esse_core:
     :path: ".symlinks/plugins/esse_core/ios"
+  file_picker:
+    :path: ".symlinks/plugins/file_picker/ios"
   Flutter:
     :path: Flutter
   image_picker:
     :path: ".symlinks/plugins/image_picker/ios"
+  image_save:
+    :path: ".symlinks/plugins/image_save/ios"
   integration_test:
     :path: ".symlinks/plugins/integration_test/ios"
   just_audio:
     :path: ".symlinks/plugins/just_audio/ios"
+  open_file:
+    :path: ".symlinks/plugins/open_file/ios"
   path_provider:
     :path: ".symlinks/plugins/path_provider/ios"
+  permission_handler:
+    :path: ".symlinks/plugins/permission_handler/ios"
+  qr_code_scanner:
+    :path: ".symlinks/plugins/qr_code_scanner/ios"
   record:
     :path: ".symlinks/plugins/record/ios"
   shared_preferences:
@@ -69,18 +131,26 @@ EXTERNAL SOURCES:
 
 SPEC CHECKSUMS:
   audio_session: 4f3e461722055d21515cf3261b64c973c062f345
-  barcode_scan: a5c27959edfafaa0c771905bad0b29d6d39e4479
+  device_info_plus: e5c5da33f982a436e103237c0c85f9031142abed
+  DKImagePickerController: b5eb7f7a388e4643264105d648d01f727110fc3d
+  DKPhotoGallery: fdfad5125a9fdda9cc57df834d49df790dbb4179
   esse_core: 1c4544341669919b9ea82825561c2c9d2775a842
-  Flutter: 434fef37c0980e73bb6479ef766c45957d4b510c
-  image_picker: 50e7c7ff960e5f58faa4d1f4af84a771c671bc4a
-  integration_test: 6eb66a19f7104200dcfdd62bc0077e1b09686e4f
+  file_picker: 3e6c3790de664ccf9b882732d9db5eaf6b8d4eb1
+  Flutter: 50d75fe2f02b26cc09d224853bb45737f8b3214a
+  image_picker: 9aa50e1d8cdacdbed739e925b7eea16d014367e6
+  image_save: 66ab41fa2c60bc9569e55563ea287cced7b79fd1
+  integration_test: a1e7d09bd98eca2fc37aefd79d4f41ad37bdbbe5
   just_audio: baa7252489dbcf47a4c7cc9ca663e9661c99aafa
   MTBBarcodeScanner: f453b33c4b7dfe545d8c6484ed744d55671788cb
-  path_provider: abfe2b5c733d04e238b0d8691db0cfd63a27a93c
+  open_file: 02eb5cb6b21264bd3a696876f5afbfb7ca4f4b7d
+  path_provider: d1e9807085df1f9cc9318206cd649dc0b76be3de
+  permission_handler: ccb20a9fad0ee9b1314a52b70b76b473c5f8dab0
+  qr_code_scanner: bb67d64904c3b9658ada8c402e8b4d406d5d796e
   record: 7ee2393532f8553bbb09fa19e95478323b7c0a99
-  shared_preferences: af6bfa751691cdc24be3045c43ec037377ada40d
-  SwiftProtobuf: ed465ed18402f998fd117f631da27e0168e6b59c
-  url_launcher: 6fef411d543ceb26efce54b05a0a40bfd74cbbef
+  SDWebImage: 7acbb57630ac7db4a495547fb73916ff3e432f6b
+  shared_preferences: 5033afbb22d372e15aff8ff766df9021b845f273
+  SwiftyGif: 5d4af95df24caf1c570dbbcb32a3b8a0763bc6d7
+  url_launcher: b6e016d912f04be9f5bf6e8e82dc599b7ba59649
 
 PODFILE CHECKSUM: aafe91acc616949ddb318b77800a7f51bffa2a4c
 
