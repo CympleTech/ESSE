@@ -230,6 +230,12 @@ abstract class AppLocalizations {
 
   String get cloud;
   String get cloudIntro;
+  String get star;
+  String get document;
+  String get image;
+  String get music;
+  String get video;
+  String get trash;
 }
 
 class _AppLocalizationsDelegate

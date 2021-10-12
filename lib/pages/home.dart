@@ -30,6 +30,7 @@ import 'package:esse/apps/chat/provider.dart';
 import 'package:esse/apps/chat/list.dart';
 import 'package:esse/apps/chat/detail.dart';
 import 'package:esse/apps/chat/add.dart';
+import 'package:esse/apps/file/models.dart';
 import 'package:esse/apps/file/list.dart';
 import 'package:esse/apps/service/models.dart';
 import 'package:esse/apps/assistant/page.dart';
@@ -258,15 +259,15 @@ class _HomeListState extends State<HomeList> {
               }
             ),
             ListView.builder(
-              itemCount: FILE_DIRECTORY.length,
+              itemCount: ROOT_DIRECTORY.length,
               itemBuilder: (BuildContext ctx, int index) {
-                final params = FILE_DIRECTORY[index];
+                final params = ROOT_DIRECTORY[index].params(lang);
                 return ListTile(
-                  leading: Icon(params[1], color: Color(0xFF6174FF)),
-                  title: Text(params[0], style: TextStyle(fontSize: 16.0)),
+                  leading: Icon(params[0], color: Color(0xFF6174FF)),
+                  title: Text(params[1], style: TextStyle(fontSize: 16.0)),
                   trailing: Icon(Icons.keyboard_arrow_right),
                   onTap: () {
-                    final widget = FilesList(root: params[2]);
+                    final widget = FilesList(root: ROOT_DIRECTORY[index]);
                     if (widget != null) {
                       if (isDesktop) {
                         Provider.of<AccountProvider>(context, listen: false).updateActivedWidget(widget);

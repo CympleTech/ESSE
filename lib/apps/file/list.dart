@@ -6,17 +6,10 @@ import 'package:esse/utils/file_image.dart';
 import 'package:esse/l10n/localizations.dart';
 //import 'package:esse/provider.dart';
 
-const List FILE_DIRECTORY = [
-  ["Starred", Icons.star, "started"],
-  ["Documents", Icons.description, "documents"],
-  ["Images", Icons.image, "images"],
-  ["Musics", Icons.music_note, "musics"],
-  ["Videos", Icons.play_circle_filled, "videos"],
-  ["Trash", Icons.auto_delete, "trash"],
-];
+import 'package:esse/apps/file/models.dart';
 
 class FilesList extends StatefulWidget {
-  final String root;
+  final RootDirectory root;
   const FilesList({Key? key, required this.root}) : super(key: key);
 
   @override
@@ -56,7 +49,7 @@ class _FilesListState extends State<FilesList> {
           children: [
             Align(
               alignment: Alignment.centerLeft,
-              child: Text('/' + widget.root, style: Theme.of(context).textTheme.caption)
+              child: Text('/' + widget.root.params(lang)[1], style: Theme.of(context).textTheme.caption)
             ),
             Expanded(
               child: GridView.extent(

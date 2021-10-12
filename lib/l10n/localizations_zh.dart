@@ -364,4 +364,16 @@ class AppLocalizationsZh extends AppLocalizations {
   String get cloud => '云节点';
   @override
   String get cloudIntro => '专属于个人的云节点服务';
+  @override
+  String get star => '标星';
+  @override
+  String get document => '文档';
+  @override
+  String get image => '图片';
+  @override
+  String get music => '音乐';
+  @override
+  String get video => '视频';
+  @override
+  String get trash => '垃圾箱';
 }

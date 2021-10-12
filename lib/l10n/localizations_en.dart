@@ -364,4 +364,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cloud => 'Cloud Peer';
   @override
   String get cloudIntro => 'Cloud hosting peer belongs to you';
+  @override
+  String get star => 'Starred';
+  @override
+  String get document => 'Documents';
+  @override
+  String get image => 'Images';
+  @override
+  String get music => 'Music';
+  @override
+  String get video => 'Videos';
+  @override
+  String get trash => 'Trash';
 }
