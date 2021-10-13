@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.15)
 set(PROJECT_NAME "esse_core")
 project(${PROJECT_NAME} LANGUAGES CXX)
 
@@ -21,13 +21,9 @@ target_include_directories(${PLUGIN_NAME} INTERFACE
 target_link_libraries(${PLUGIN_NAME} PRIVATE flutter)
 target_link_libraries(${PLUGIN_NAME} PRIVATE PkgConfig::GTK)
 
-## First Time & Debug To Lanuch install libraries.
+## install rust libraries.
 target_link_directories(${PLUGIN_NAME} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/share")
 target_link_libraries(${PLUGIN_NAME} PRIVATE libesse.a)
-
-## Secound Time, because libraries had in lib, and can found.
-#find_library(ESSE_LIB NAMES libesse.so esse)
-#target_link_libraries(${PLUGIN_NAME} PRIVATE ${ESSE_LIB})
 
 # List of absolute paths to libraries that should be bundled with the plugin
 set(esse_core_bundled_libraries
