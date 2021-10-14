@@ -236,6 +236,10 @@ abstract class AppLocalizations {
   String get music;
   String get video;
   String get trash;
+  String get newPost;
+  String get newFolder;
+  String get uploadFile;
+  String get trashClear;
 }
 
 class _AppLocalizationsDelegate

@@ -376,4 +376,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get video => '视频';
   @override
   String get trash => '垃圾箱';
+  @override
+  String get newPost => '新建文档';
+  @override
+  String get newFolder => '新建文件夹';
+  @override
+  String get uploadFile => '上传文件';
+  @override
+  String get trashClear => '清空垃圾箱，彻底删除？';
 }

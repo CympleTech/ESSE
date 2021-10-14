@@ -52,6 +52,7 @@ dependencies:
   device_info_plus: any
   percent_indicator: any
   bottom_navy_bar: ^6.0.0
+  flutter_quill: ^2.0.6
 
 dev_dependencies:
   flutter_test:

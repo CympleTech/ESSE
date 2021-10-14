@@ -376,4 +376,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get video => 'Videos';
   @override
   String get trash => 'Trash';
+  @override
+  String get newPost => 'Create Post';
+  @override
+  String get newFolder => 'Create Folder';
+  @override
+  String get uploadFile => 'Upload File';
+  @override
+  String get trashClear => 'Empty the trash, Remove completely?';
 }

@@ -267,7 +267,7 @@ class _HomeListState extends State<HomeList> {
                   title: Text(params[1], style: TextStyle(fontSize: 16.0)),
                   trailing: Icon(Icons.keyboard_arrow_right),
                   onTap: () {
-                    final widget = FilesList(root: ROOT_DIRECTORY[index]);
+                    final widget = FilesList(path: params[2]);
                     if (widget != null) {
                       if (isDesktop) {
                         Provider.of<AccountProvider>(context, listen: false).updateActivedWidget(widget);
