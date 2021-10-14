@@ -19,11 +19,14 @@ class EditorPage extends StatefulWidget {
 
 class _EditorPageState extends State<EditorPage> {
   QuillController _controller = QuillController.basic();
+  TextEditingController _nameController = TextEditingController();
+  bool _nameEdit = false;
 
   @override
   initState() {
     print("File editor initState...");
     super.initState();
+    _nameController.text = widget.path.name();
   }
 
   @override
@@ -32,19 +35,61 @@ class _EditorPageState extends State<EditorPage> {
     final lang = AppLocalizations.of(context);
     final isDesktop = isDisplayDesktop(context);
 
-
     return Scaffold(
       appBar: AppBar(
         leading: isDesktop ? IconButton(
           icon: Icon(Icons.arrow_back),
           onPressed: () {
-            final w = FilesList(path: widget.path);
+            final w = FilesList(path: FilePath.prev(widget.path));
             context.read<AccountProvider>().updateActivedWidget(w);
           }
         ) : null,
         centerTitle: true,
-        title: TextButton(child: Text('New Document 0'),
-          onPressed: () {}
+        title: _nameEdit
+        ? Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 200.0,
+              child: TextField(
+                autofocus: true,
+                style: TextStyle(fontSize: 16.0),
+                textAlign: TextAlign.center,
+                controller: _nameController,
+                decoration: InputDecoration(
+                  hintStyle: TextStyle(
+                    color: Color(0xFF1C1939).withOpacity(0.25)),
+                  filled: false,
+                  isDense: true,
+                ),
+              ),
+            ),
+            const SizedBox(width: 10.0),
+            GestureDetector(
+              onTap: () {
+                if (_nameController.text.length > 0) {
+                  // TODO update file name.
+                }
+                setState(() {
+                    this._nameEdit = false;
+                });
+              },
+              child: Container(
+                width: 20.0,
+                child: Icon(Icons.done_rounded, color: color.primary)),
+            ),
+            const SizedBox(width: 8.0),
+            GestureDetector(
+              onTap: () => setState(() {
+                  _nameController.text = widget.path.name();
+                  this._nameEdit = false;
+              }),
+              child: Container(
+                width: 20.0, child: Icon(Icons.clear_rounded)),
+            ),
+        ])
+        : TextButton(child: Text(widget.path.name()),
+          onPressed: () => setState(() { this._nameEdit = true; }),
         ),
       ),
       body: Column(

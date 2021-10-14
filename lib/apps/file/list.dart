@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:esse/utils/adaptive.dart';
-import 'package:esse/utils/file_image.dart';
 import 'package:esse/l10n/localizations.dart';
 import 'package:esse/provider.dart';
 
@@ -18,6 +17,8 @@ class FilesList extends StatefulWidget {
 }
 
 class _FilesListState extends State<FilesList> {
+  bool _isDesktop = false;
+
   @override
   void initState() {
     super.initState();
@@ -26,6 +27,14 @@ class _FilesListState extends State<FilesList> {
 
   _loadDirectory() {
     //
+  }
+
+  _navigator(Widget w) {
+    if (_isDesktop) {
+      context.read<AccountProvider>().updateActivedWidget(w);
+    } else {
+      Navigator.push(context, MaterialPageRoute(builder: (_) => w));
+    }
   }
 
   _nextDirectory(FilePath path) {
@@ -58,11 +67,42 @@ class _FilesListState extends State<FilesList> {
     return widgets;
   }
 
+  Widget _item(FilePath file) {
+    final trueName = file.name();
+    final params = file.fileType().params();
+    return InkWell(
+      onTap: () {
+        if (file.isDirectory()) {
+          _nextDirectory(file);
+        } else if (file.isPost()) {
+          _navigator(EditorPage(path: file));
+        }
+      },
+      child: Container(
+        padding: const EdgeInsets.all(4.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Container(
+              height: 55.0,
+              width: 60.0,
+              child: Icon(params[0], color: params[1], size: 48.0),
+            ),
+            Tooltip(
+              message: trueName,
+              child: Text(trueName,
+                style: TextStyle(fontSize: 14.0), maxLines: 1, overflow: TextOverflow.ellipsis),
+            )
+          ]
+    )));
+  }
+
   @override
   Widget build(BuildContext context) {
     final color = Theme.of(context).colorScheme;
     final lang = AppLocalizations.of(context);
-    final isDesktop = isDisplayDesktop(context);
+    this._isDesktop = isDisplayDesktop(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -101,12 +141,8 @@ class _FilesListState extends State<FilesList> {
             child: SizedBox(width: 40.0, child: Icon(Icons.add_rounded, color: color.primary)),
             onSelected: (int value) {
               if (value == 0) {
-                final editor = EditorPage(path: widget.path);
-                if (!isDesktop) {
-                  Navigator.push(context, MaterialPageRoute(builder: (_) => editor));
-                } else {
-                  context.read<AccountProvider>().updateActivedWidget(editor);
-                }
+                final path = FilePath.next(widget.path, "new document 0.quill.json");
+                _navigator(EditorPage(path: path));
               } else if (value == 1) {
                 // new folder
               } else if (value == 2) {
@@ -142,35 +178,20 @@ class _FilesListState extends State<FilesList> {
                 maxCrossAxisExtent: 75.0,
                 childAspectRatio: 0.8,
                 children: <Widget> [
-                  FileItem(
-                    path: FilePath.next(widget.path, 'myworks.dir'),
-                    directory: this._nextDirectory),
-                  FileItem(path: FilePath.next(widget.path, 'ESSE-infos-public.dir'),
-                    directory: this._nextDirectory),
-                  FileItem(path: FilePath.next(widget.path, 'personal.dir'),
-                    directory: this._nextDirectory),
-                  FileItem(path: FilePath.next(widget.path, 'others.dir'),
-                    directory: this._nextDirectory),
-                  FileItem(path: FilePath.next(widget.path, 'logo.jpg'),
-                    directory: this._nextDirectory),
-                  FileItem(path: FilePath.next(widget.path, 'cat.png'),
-                    directory: this._nextDirectory),
-                  FileItem(path: FilePath.next(widget.path, 'what-is-esse_en.doc'),
-                    directory: this._nextDirectory),
-                  FileItem(path: FilePath.next(widget.path, '20210101-customers.xls'),
-                    directory: this._nextDirectory),
-                  FileItem(path: FilePath.next(widget.path, 'product.pdf'),
-                    directory: this._nextDirectory),
-                  FileItem(path: FilePath.next(widget.path, 'deck.ppt'),
-                    directory: this._nextDirectory),
-                  FileItem(path: FilePath.next(widget.path, 'coder.md'),
-                    directory: this._nextDirectory),
-                  FileItem(path: FilePath.next(widget.path, 'how-to-live-in-happy.mp4'),
-                    directory: this._nextDirectory),
-                  FileItem(path: FilePath.next(widget.path, 'something_important'),
-                    directory: this._nextDirectory),
-                  FileItem(path: FilePath.next(widget.path, 'car.json'),
-                    directory: this._nextDirectory),
+                  _item(FilePath.next(widget.path, 'myworks.dir')),
+                  _item(FilePath.next(widget.path, 'ESSE-infos-public.dir')),
+                  _item(FilePath.next(widget.path, 'personal.dir')),
+                  _item(FilePath.next(widget.path, 'others.dir')),
+                  _item(FilePath.next(widget.path, 'logo.jpg')),
+                  _item(FilePath.next(widget.path, 'cat.png')),
+                  _item(FilePath.next(widget.path, 'what-is-esse_en.doc')),
+                  _item(FilePath.next(widget.path, '20210101-customers.xls')),
+                  _item(FilePath.next(widget.path, 'product.pdf')),
+                  _item(FilePath.next(widget.path, 'deck.ppt')),
+                  _item(FilePath.next(widget.path, 'coder.md')),
+                  _item(FilePath.next(widget.path, 'how-to-live-in-happy.mp4')),
+                  _item(FilePath.next(widget.path, 'something_important')),
+                  _item(FilePath.next(widget.path, 'car.quill.json')),
                 ],
               ),
             )
@@ -178,40 +199,5 @@ class _FilesListState extends State<FilesList> {
         )
       ),
     );
-  }
-}
-
-class FileItem extends StatelessWidget {
-  final FilePath path;
-  final Function directory;
-  const FileItem({Key? key, required this.path, required this.directory}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    final trueName = this.path.name();
-    return InkWell(
-      onTap: () {
-        if (this.path.isDirectory()) {
-          this.directory(this.path);
-        }
-      },
-      child: Container(
-        padding: const EdgeInsets.all(4.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Container(
-              height: 55.0,
-              width: 60.0,
-              child: fileIcon(this.path.fullName, 48.0),
-            ),
-            Tooltip(
-              message: trueName,
-              child: Text(trueName,
-                style: TextStyle(fontSize: 14.0), maxLines: 1, overflow: TextOverflow.ellipsis),
-            )
-          ]
-    )));
   }
 }
