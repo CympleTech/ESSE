@@ -85,7 +85,7 @@ class _EditorPageState extends State<EditorPage> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              width: 200.0,
+              width: 120.0,
               child: TextField(
                 autofocus: true,
                 style: TextStyle(fontSize: 16.0),
@@ -163,10 +163,11 @@ class _EditorPageState extends State<EditorPage> {
           Container(
             width: double.infinity,
             decoration: BoxDecoration(color: color.secondary),
-            padding: const EdgeInsets.all(10.0),
+            padding: const EdgeInsets.only(left: 10.0, right: 10.0, bottom: 5.0),
             child: QuillToolbar.basic(
               controller: this._controller!,
               showAlignmentButtons: true,
+              multiRowsDisplay: isDesktop,
               showLink: false,
             )
           ),
