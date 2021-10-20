@@ -9,6 +9,8 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String get ok => '确认';
   @override
+  String get saveOk => '保存成功';
+  @override
   String get cancel => '取消';
   @override
   String get next => '下一步';

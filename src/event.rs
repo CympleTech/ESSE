@@ -23,7 +23,7 @@ use crate::migrate::consensus::{
 
 use crate::apps::chat::rpc as chat_rpc;
 use crate::apps::chat::{Friend, Message, NetworkMessage, Request};
-use crate::apps::file::{FileId, FileType};
+use crate::apps::file::{FileDid, RootDirectory};
 use crate::rpc;
 use crate::storage::{
     account_db, chat_db, consensus_db, delete_avatar_sync, read_avatar_sync, write_avatar_sync,
@@ -59,16 +59,16 @@ pub(crate) enum InnerEvent {
     /// Session's message delete.
     SessionMessageDelete(EventId),
     /// create a file.
-    /// params: file_id, file_parent_id, file_type, file_name, file_desc, device_addr.
-    FileCreate(FileId, FileId, FileType, String, String, PeerAddr),
+    /// params: file_id, file_parent_id, file_directory, file_name, file_desc, device_addr.
+    FileCreate(FileDid, FileDid, RootDirectory, String, String, PeerAddr),
     /// update file info. file_id, file_name, file_desc.
-    FileUpdate(FileId, String, String),
+    FileUpdate(FileDid, String, String),
     /// update file's parent id (move file to other directory).
-    FileParent(FileId, FileId),
+    FileParent(FileDid, FileDid),
     /// backup file in new device.
-    FileBackup(FileId, PeerAddr),
+    FileBackup(FileDid, PeerAddr),
     /// delete a file.
-    FileDelete(FileId),
+    FileDelete(FileDid),
 }
 
 /// Event that not update status. only change UI.

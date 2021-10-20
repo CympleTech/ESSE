@@ -137,7 +137,6 @@ class WebSocketsNotifications {
     print(response);
 
     if (response["result"] != null &&
-        response["result"].length != 0 &&
         response["method"] != null &&
         response["gid"] != null
       ) {

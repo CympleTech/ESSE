@@ -21,7 +21,7 @@ class _FadeToastState extends State<FadeToast>
     _animation = Tween(begin: 0.0, end: 1.0).animate(_controller!);
     _animation!.addStatusListener((status) {
       if (status == AnimationStatus.completed) {
-        Future.delayed(Duration(seconds: 2), () {
+        Future.delayed(Duration(seconds: 1), () {
           _controller!.reverse();
         });
       }
@@ -54,7 +54,7 @@ void toast(BuildContext context, String text) {
       decoration: BoxDecoration(
           color: Color(0xFFADB0BB).withOpacity(0.5),
           borderRadius: BorderRadius.circular(25.0)),
-      height: 50.0,
+      height: 40.0,
       margin: EdgeInsets.only(bottom: 40.0),
       alignment: Alignment.center,
       padding: const EdgeInsets.all(10.0),
@@ -63,6 +63,6 @@ void toast(BuildContext context, String text) {
     backgroundColor: Colors.transparent,
     elevation: 1000,
     behavior: SnackBarBehavior.floating,
-    duration: Duration(seconds: 4),
+    duration: Duration(seconds: 2),
   ));
 }

@@ -8,7 +8,6 @@ import 'package:open_file/open_file.dart';
 
 import 'package:esse/l10n/localizations.dart';
 import 'package:esse/utils/adaptive.dart';
-import 'package:esse/utils/file_image.dart';
 import 'package:esse/utils/better_print.dart';
 import 'package:esse/widgets/avatar.dart';
 import 'package:esse/widgets/audio_player.dart';
@@ -19,6 +18,7 @@ import 'package:esse/global.dart';
 import 'package:esse/apps/primitives.dart';
 import 'package:esse/apps/chat/models.dart' show Request;
 import 'package:esse/apps/group_chat/models.dart' show GroupType, GroupTypeExtension;
+import 'package:esse/apps/file/models.dart' show FileType, FileTypeExtension, parseFileType;
 import 'package:esse/apps/chat/provider.dart';
 import 'package:esse/apps/group_chat/provider.dart';
 
@@ -144,7 +144,8 @@ class ChatMessage extends StatelessWidget {
       fileExsit = false;
       fileImage = Image(image: AssetImage('assets/images/image_missing.png'), fit: BoxFit.cover);
     } else {
-      fileImage = fileIcon(message.content, 36.0);
+      final params = parseFileType(message.content).params();
+      fileImage = Icon(params[0], color: params[1], size: 36.0);
     }
     return GestureDetector(
       onTap: fileExsit

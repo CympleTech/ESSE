@@ -53,6 +53,7 @@ dependencies:
   percent_indicator: any
   bottom_navy_bar: ^6.0.0
   flutter_quill: ^2.0.6
+  fluttertoast: ^8.0.8
 
 dev_dependencies:
   flutter_test:

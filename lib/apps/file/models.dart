@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import 'package:esse/utils/relative_time.dart';
 import 'package:esse/l10n/localizations.dart';
 
 const List<RootDirectory> ROOT_DIRECTORY = [
@@ -7,6 +9,7 @@ const List<RootDirectory> ROOT_DIRECTORY = [
   RootDirectory.Image,
   RootDirectory.Music,
   RootDirectory.Video,
+  RootDirectory.Session,
   RootDirectory.Trash,
 ];
 
@@ -16,24 +19,74 @@ enum RootDirectory {
   Image,
   Music,
   Video,
+  Session,
   Trash,
 }
 
-extension InnerServiceExtension on RootDirectory {
+extension RootDirectoryExtension on RootDirectory {
   List params(AppLocalizations lang) {
     switch (this) {
       case RootDirectory.Star:
-        return [Icons.star, lang.star, FilePath.root(RootDirectory.Star)];
+        return [Icons.star, lang.star,
+          [FilePath.root(RootDirectory.Star, lang.star)]];
       case RootDirectory.Document:
-        return [Icons.description, lang.document, FilePath.root(RootDirectory.Document)];
+        return [Icons.description, lang.document,
+          [FilePath.root(RootDirectory.Document, lang.document)]];
       case RootDirectory.Image:
-        return [Icons.image, lang.image, FilePath.root(RootDirectory.Image)];
+        return [Icons.image, lang.image,
+          [FilePath.root(RootDirectory.Image, lang.image)]];
       case RootDirectory.Music:
-        return [Icons.music_note, lang.music, FilePath.root(RootDirectory.Music)];
+        return [Icons.music_note, lang.music,
+          [FilePath.root(RootDirectory.Music, lang.music)]];
       case RootDirectory.Video:
-        return [Icons.play_circle_filled, lang.video, FilePath.root(RootDirectory.Video)];
+        return [Icons.play_circle_filled, lang.video,
+          [FilePath.root(RootDirectory.Video, lang.video)]];
+      case RootDirectory.Session:
+        return [Icons.sms, lang.sessions,
+          [FilePath.root(RootDirectory.Session, lang.sessions)]];
       case RootDirectory.Trash:
-        return [Icons.auto_delete, lang.trash, FilePath.root(RootDirectory.Trash)];
+        return [Icons.auto_delete, lang.trash,
+          [FilePath.root(RootDirectory.Trash, lang.trash)]];
+    }
+  }
+
+  int toInt() {
+    switch (this) {
+      case RootDirectory.Star:
+        return 0;
+      case RootDirectory.Trash:
+        return 1;
+      case RootDirectory.Session:
+        return 2;
+      case RootDirectory.Document:
+        return 3;
+      case RootDirectory.Image:
+        return 4;
+      case RootDirectory.Music:
+        return 5;
+      case RootDirectory.Video:
+        return 6;
+    }
+  }
+
+  static RootDirectory fromInt(int a) {
+    switch (a) {
+      case 0:
+        return RootDirectory.Star;
+      case 1:
+        return RootDirectory.Trash;
+      case 2:
+        return RootDirectory.Session;
+      case 3:
+        return RootDirectory.Document;
+      case 4:
+        return RootDirectory.Image;
+      case 5:
+        return RootDirectory.Music;
+      case 6:
+        return RootDirectory.Video;
+      default:
+        return RootDirectory.Trash;
     }
   }
 }
@@ -100,7 +153,7 @@ extension FileTypeExtension on FileType {
       case FileType.Sheet:
         return [Icons.table_chart_rounded, Color(0xFF4CAF50)];
       case FileType.Word:
-        return [Icons.description_rounded, Color(0xFF1976d2)];
+        return [Icons.description_rounded, Color(0xFF0b335b)];
       case FileType.Markdown:
         return [Icons.description_rounded, Color(0xFF455A64)];
       case FileType.Other:
@@ -109,78 +162,80 @@ extension FileTypeExtension on FileType {
   }
 }
 
-class FilePath {
-  RootDirectory root;
-  List<String> path = [];
-  String get fullName => this.path.last;
-
-  FilePath.root(this.root);
-
-  FilePath(this.root, this.path);
-
-  static FilePath next(FilePath file, String name) {
-    final root = file.root;
-    List<String> path = List.from(file.path);
-    path.add(name);
-    return FilePath(root, path);
+FileType parseFileType(String name) {
+  if (name.endsWith('.quill.json')) {
+    return FileType.Post;
   }
 
-  static FilePath prev(FilePath file) {
-    final root = file.root;
-    List<String> path = List.from(file.path);
-    if (path.length == 0) {
-      return FilePath.root(root);
+  final i = name.lastIndexOf('.');
+  if (i > 0) {
+    final suffix = name.substring(i + 1);
+    if (FILE_TYPES.containsKey(suffix)) {
+      return FILE_TYPES[suffix]!;
+    }
+  }
+  return FileType.Other;
+}
+
+class FilePath {
+  int id = 0;
+  String did = '';
+  int parent = 0;
+  RootDirectory root = RootDirectory.Trash;
+  String name = '';
+  bool starred = false;
+  RelativeTime time = RelativeTime();
+
+  FilePath.root(this.root, this.name);
+
+  static newPostName(String name) {
+    return name + '.quill.json';
+  }
+
+  static newFolderName(String name) {
+    return name + '.dir';
+  }
+
+  String directoryName() {
+    final i = this.name.lastIndexOf('.');
+    if (i < 0) {
+      return this.name;
     } else {
-      path.removeLast();
-      return FilePath(root, path);
+      return this.name.substring(0, i);
     }
   }
 
-  static directoryName(String name) {
-    final i = name.lastIndexOf('.');
-    return name.substring(0, i);
-  }
-
-  void add(String next) {
-    this.path.add(next);
-  }
-
-  String name() {
+  String showName() {
     if (isDirectory()) {
-      final i = this.path.last.lastIndexOf('.');
-      return this.path.last.substring(0, i);
+      final i = this.name.lastIndexOf('.');
+      return this.name.substring(0, i);
     } else if (isPost()){
-      final i = this.path.last.lastIndexOf('.quill');
-      return this.path.last.substring(0, i);
+      final i = this.name.lastIndexOf('.quill');
+      return this.name.substring(0, i);
     } else {
-      return this.path.last;
+      return this.name;
     }
   }
 
   FileType fileType() {
-    if (isDirectory()) {
-      return FileType.Folder;
-    }
-
-    if (isPost()) {
-      return FileType.Post;
-    }
-
-    final i = this.path.last.lastIndexOf('.');
-    if (i > 0) {
-      final suffix = this.path.last.substring(i + 1);
-      if (FILE_TYPES.containsKey(suffix)) {
-        return FILE_TYPES[suffix]!;
-      }
-    }
-    return FileType.Other;
+    return parseFileType(this.name);
   }
 
   bool isPost() {
-    return this.path.last.endsWith('.quill.json');
+    return this.name.endsWith('.quill.json');
   }
 
   bool isDirectory() {
-    return this.path.last.endsWith('.dir');
+    return this.name.endsWith('.dir');
+  }
+
+  FilePath.fromList(List params) {
+    this.id = params[0];
+    this.did = params[1];
+    this.parent = params[2];
+    this.root = RootDirectoryExtension.fromInt(params[3]);
+    this.name = params[4];
+    this.starred = params[5];
+    this.time = RelativeTime.fromInt(params[6]);
   }
 }

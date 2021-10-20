@@ -57,6 +57,20 @@ pub(crate) async fn read_file(base: &PathBuf) -> Result<Vec<u8>> {
     Ok(fs::read(base).await?)
 }
 
+pub(crate) async fn copy_file(
+    target: &PathBuf,
+    base: &PathBuf,
+    gid: &GroupId,
+    name: &str,
+) -> Result<()> {
+    let mut path = base.clone();
+    path.push(gid.to_hex());
+    path.push(FILES_DIR);
+    path.push(name);
+    fs::copy(target, path).await?;
+    Ok(())
+}
+
 pub(crate) async fn write_file(
     base: &PathBuf,
     gid: &GroupId,
@@ -347,7 +361,7 @@ pub(crate) fn chat_db(base: &PathBuf, gid: &GroupId) -> Result<DStorage> {
 }
 
 #[inline]
-pub(crate) fn _file_db(base: &PathBuf, gid: &GroupId) -> Result<DStorage> {
+pub(crate) fn file_db(base: &PathBuf, gid: &GroupId) -> Result<DStorage> {
     let mut db_path = base.clone();
     db_path.push(gid.to_hex());
     db_path.push(FILE_DB);

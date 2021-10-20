@@ -7,13 +7,13 @@ import 'package:open_file/open_file.dart';
 
 import 'package:esse/l10n/localizations.dart';
 import 'package:esse/utils/adaptive.dart';
-import 'package:esse/utils/file_image.dart';
 import 'package:esse/utils/better_print.dart';
 import 'package:esse/widgets/avatar.dart';
 import 'package:esse/widgets/audio_player.dart';
 import 'package:esse/widgets/shadow_dialog.dart';
 import 'package:esse/global.dart';
 
+import 'package:esse/apps/file/models.dart' show FileType, FileTypeExtension, parseFileType;
 import 'package:esse/apps/assistant/models.dart';
 
 class AssistantMessage extends StatelessWidget {
@@ -107,7 +107,8 @@ class AssistantMessage extends StatelessWidget {
       fileExsit = false;
       fileImage = Image(image: AssetImage('assets/images/image_missing.png'), fit: BoxFit.cover);
     } else {
-      fileImage = fileIcon(content, 36.0);
+      final params = parseFileType(content).params();
+      fileImage = Icon(params[0], color: params[1], size: 36.0);
     }
     return GestureDetector(
       onTap: fileExsit

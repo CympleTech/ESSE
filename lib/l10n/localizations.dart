@@ -42,6 +42,7 @@ abstract class AppLocalizations {
   // Common
   String get title;
   String get ok;
+  String get saveOk;
   String get cancel;
   String get next;
   String get back;
