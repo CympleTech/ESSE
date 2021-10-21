@@ -108,6 +108,9 @@ const Map<String, FileType> FILE_TYPES = {
   'md': FileType.Markdown,
   'mp4': FileType.Video,
   'mp3': FileType.Music,
+  'm4a': FileType.Music,
+  'flac': FileType.Music,
+  'wav': FileType.Music,
 };
 
 enum FileType {

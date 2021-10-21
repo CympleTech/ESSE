@@ -204,13 +204,15 @@ class _GroupAddPageState extends State<GroupAddPage> {
   }
 
   _create() {
-    if (!this._providers.containsKey(this._providerSelected)) {
-      return;
-    }
-
-    final addr = this._providers[this._providerSelected]!.addr;
-    if (_groupLocation == 0 && addr.length < 2) {
-      return;
+    String addr = '';
+    if (_groupLocation == 0) {
+      if (!this._providers.containsKey(this._providerSelected)) {
+        return;
+      }
+      addr = this._providers[this._providerSelected]!.addr;
+      if (addr.length < 2) {
+        return;
+      }
     }
     final name = _createNameController.text.trim();
     final bio = _createBioController.text.trim();
