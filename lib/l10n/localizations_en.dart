@@ -120,6 +120,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get skip => 'Skip';
   @override
   String get register => 'Register';
+  @override
+  String get gallery => 'Gallery';
+  @override
+  String get link => 'Link';
 
   // theme
   @override

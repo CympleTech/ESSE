@@ -98,6 +98,8 @@ abstract class AppLocalizations {
   String get notExist;
   String get skip;
   String get register;
+  String get gallery;
+  String get link;
 
   // theme
   String get themeDark;

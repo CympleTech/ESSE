@@ -1,11 +1,13 @@
-import 'dart:io' show File;
+import 'dart:io' show File, Directory;
 import 'dart:convert' show jsonDecode, jsonEncode;
+import 'package:path/path.dart' show basename;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:flutter_quill/flutter_quill.dart' hide Text;
 
 import 'package:esse/utils/adaptive.dart';
+import 'package:esse/utils/pick_image.dart';
 import 'package:esse/l10n/localizations.dart';
 import 'package:esse/provider.dart';
 import 'package:esse/global.dart';
@@ -29,6 +31,7 @@ class _EditorPageState extends State<EditorPage> {
   TextEditingController _nameController = TextEditingController();
   bool _nameEdit = false;
   String _filePath = '';
+  bool _edit = false;
 
   readFile() async {
     try {
@@ -47,6 +50,25 @@ class _EditorPageState extends State<EditorPage> {
             document: doc, selection: const TextSelection.collapsed(offset: 0));
       });
     }
+  }
+
+  save(String saveOk) async {
+    final j = this._controller!.document.toDelta().toJson();
+    final s = jsonEncode(j);
+    await File(this._filePath).writeAsString(s);
+    this._fToast!.showToast(
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 10.0),
+        decoration: BoxDecoration(borderRadius: BorderRadius.circular(25.0),
+          color: Color(0x2F008000)),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [Icon(Icons.check, color: Colors.green),
+            const SizedBox(width: 12.0), Text(saveOk, style: TextStyle(color: Colors.green))],
+      )),
+      gravity: ToastGravity.BOTTOM,
+      toastDuration: Duration(seconds: 2),
+    );
   }
 
   @override
@@ -135,31 +157,27 @@ class _EditorPageState extends State<EditorPage> {
             ),
         ])
         : TextButton(child: Text(widget.path.showName()),
-          onPressed: () => setState(() { this._nameEdit = true; }),
+          onPressed: this._edit ? () => setState(() { this._nameEdit = true; }) : null,
         ),
         actions: [
-          IconButton(icon: Icon(Icons.save_rounded), onPressed: () async {
-              final j = this._controller!.document.toDelta().toJson();
-              final s = jsonEncode(j);
-              await File(this._filePath).writeAsString(s);
-              this._fToast!.showToast(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 10.0),
-                  decoration: BoxDecoration(borderRadius: BorderRadius.circular(25.0),
-                    color: Colors.green),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [Icon(Icons.check), const SizedBox(width: 12.0), Text(lang.saveOk)],
-                )),
-                gravity: ToastGravity.BOTTOM,
-                toastDuration: Duration(seconds: 2),
-              );
+          if (this._edit)
+          IconButton(icon: Icon(Icons.save_rounded), onPressed: () => save(lang.saveOk)),
+          if (this._edit)
+          IconButton(icon: Icon(Icons.menu_book_rounded, color: Colors.green),
+            onPressed: () async {
+              await save(lang.saveOk);
+              setState(() { this._edit = false; });
+          }),
+          if (!this._edit)
+          IconButton(icon: Icon(Icons.edit_rounded, color: Colors.green), onPressed: () {
+              setState(() { this._edit = true; });
           }),
           const SizedBox(width: 10.0),
         ]
       ),
       body: Column(
         children: [
+          if (this._edit)
           Container(
             width: double.infinity,
             decoration: BoxDecoration(color: color.secondary),
@@ -168,6 +186,10 @@ class _EditorPageState extends State<EditorPage> {
               controller: this._controller!,
               showAlignmentButtons: true,
               multiRowsDisplay: isDesktop,
+              onImagePickCallback: _onImagePickCallback,
+              onVideoPickCallback: _onImagePickCallback,
+              mediaPickSettingSelector: _selectMediaPickSetting,
+              filePickImpl: pickMedia,
               showLink: false,
             )
           ),
@@ -176,12 +198,62 @@ class _EditorPageState extends State<EditorPage> {
               padding: const EdgeInsets.all(10.0),
               child: QuillEditor.basic(
                 controller: this._controller!,
-                readOnly: false, // true for view only mode
+                readOnly: !this._edit,
               ),
             ),
           )
         ],
       )
     );
+  }
+
+  Future<MediaPickSetting?> _selectMediaPickSetting(BuildContext context) {
+    final lang = AppLocalizations.of(context);
+    return showDialog<MediaPickSetting>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        contentPadding: const EdgeInsets.all(20.0),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextButton.icon(
+              icon: const Icon(Icons.collections),
+              label: Text(lang.gallery),
+              onPressed: () => Navigator.pop(ctx, MediaPickSetting.Gallery),
+            ),
+            const Divider(height: 32.0),
+            TextButton.icon(
+              icon: const Icon(Icons.link),
+              label: Text(lang.link),
+              onPressed: () => Navigator.pop(ctx, MediaPickSetting.Link),
+            )
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<String> _checkName(String path, String name) async {
+    String tryName = name;
+    for( var i=0; i >= 0; i++) {
+      if (await File(path + tryName).exists()) {
+        tryName = "${i}_" + name;
+      } else {
+        return path + tryName;
+      }
+    }
+
+    return path + name;
+  }
+
+  Future<String> _onImagePickCallback(File file) async {
+    final dir = Directory(Global.filePath + widget.path.did + '_assets');
+    final isExists = await dir.exists();
+    if (!isExists) {
+      await dir.create(recursive: true);
+    }
+    final pathname = await _checkName(dir.path + '/', basename(file.path));
+    final copiedFile = await file.copy(pathname);
+    return copiedFile.path.toString();
   }
 }
