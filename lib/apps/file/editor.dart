@@ -160,6 +160,7 @@ class _EditorPageState extends State<EditorPage> {
           onPressed: this._edit ? () => setState(() { this._nameEdit = true; }) : null,
         ),
         actions: [
+          const SizedBox(width: 10.0),
           if (this._edit)
           IconButton(icon: Icon(Icons.save_rounded), onPressed: () => save(lang.saveOk)),
           if (this._edit)
