@@ -7,13 +7,15 @@
 ESSE, stands for Encrypted Symmetrical Session Engine, positioned as an engine. The engine is coded in [**Rust**](https://github.com/rust-lang/rust) language based on [**TDN**](https://github.com/cypherlink/TDN) framework, and the cross-platform user interface is built using [**Flutter**](https://github.com/flutter/flutter).
 
 ## Features
-- Built-in IM Application
-- Built-in Group Chat
-- Built-in Domain
-- Built-in Robot assistant
+- Data Fortress
 - Distributed Identity
-- Distributed Network
-- Synchronization & Distributed Storage
+- Distributed Devices
+- Distributed Notes & Files
+- Distributed Storage & Synchronization
+- Built-in IM Application
+- Built-in Group Chat Application
+- Built-in Domain Application
+- Built-in Robot assistant Application
 - Multi-identity System
 - Multi-platform Support: Android, iOS, iPadOS, MacOS, Windows, Linux, etc.
 
