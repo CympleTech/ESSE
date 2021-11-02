@@ -259,9 +259,9 @@ class _HomeListState extends State<HomeList> {
               }
             ),
             ListView.builder(
-              itemCount: ROOT_DIRECTORY.length,
+              itemCount: HOME_DIRECTORY.length,
               itemBuilder: (BuildContext ctx, int index) {
-                final params = ROOT_DIRECTORY[index].params(lang);
+                final params = HOME_DIRECTORY[index].params(lang);
                 return ListTile(
                   leading: Icon(params[0], color: Color(0xFF6174FF)),
                   title: Text(params[1], style: TextStyle(fontSize: 16.0)),

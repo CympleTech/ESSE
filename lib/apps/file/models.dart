@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:esse/utils/relative_time.dart';
 import 'package:esse/l10n/localizations.dart';
 
-const List<RootDirectory> ROOT_DIRECTORY = [
+const List<RootDirectory> HOME_DIRECTORY = [
   RootDirectory.Star,
   RootDirectory.Document,
   RootDirectory.Image,
@@ -11,6 +11,13 @@ const List<RootDirectory> ROOT_DIRECTORY = [
   RootDirectory.Video,
   RootDirectory.Session,
   RootDirectory.Trash,
+];
+
+const List<RootDirectory> ROOT_DIRECTORY = [
+  RootDirectory.Document,
+  RootDirectory.Image,
+  RootDirectory.Music,
+  RootDirectory.Video,
 ];
 
 enum RootDirectory {
@@ -217,6 +224,16 @@ class FilePath {
       return this.name.substring(0, i);
     } else {
       return this.name;
+    }
+  }
+
+  String rename(String newName) {
+    if (isDirectory()) {
+      return newName + '.dir';
+    } else if (isPost()){
+      return newName + '.quill.json';
+    } else {
+      return newName;
     }
   }
 

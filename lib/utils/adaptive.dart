@@ -1,3 +1,4 @@
+import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
 
 enum DisplayType {
@@ -34,5 +35,9 @@ bool isDisplayDesktop(BuildContext context) {
 /// than [_desktopLandscapeBreakpoint] width. Used to build adaptive and responsive layouts.
 bool isDisplaySmallDesktop(BuildContext context) {
   return isDisplayDesktop(context) &&
-      MediaQuery.of(context).size.width < _desktopLandscapeBreakpoint;
+  MediaQuery.of(context).size.width < _desktopLandscapeBreakpoint;
+}
+
+bool isDesktop() {
+  return Platform.isLinux || Platform.isMacOS || Platform.isWindows;
 }

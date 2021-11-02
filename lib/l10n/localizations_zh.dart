@@ -81,6 +81,8 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String get delete => '删除';
   @override
+  String get deleteImmediate => '立即删除';
+  @override
   String get open => '打开';
   @override
   String get unknown => '未知';
@@ -124,6 +126,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get gallery => '图库';
   @override
   String get link => '链接';
+  @override
+  String get rename => '重命名';
+  @override
+  String get moveTo => '移动到';
 
   // theme
   @override
@@ -390,4 +396,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get uploadFile => '上传文件';
   @override
   String get trashClear => '清空垃圾箱，彻底删除？';
+  @override
+  String get moveTrash => '扔垃圾箱';
+  @override
+  String get setstar => '标星';
+  @override
+  String get setunstar => '取消标星';
 }

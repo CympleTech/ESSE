@@ -205,6 +205,12 @@ impl File {
         Ok(())
     }
 
+    pub fn delete(db: &DStorage, id: &i64) -> Result<()> {
+        let sql = format!("DELETE FROM files WHERE id = {}", id);
+        db.delete(&sql)?;
+        Ok(())
+    }
+
     pub fn update(&self, db: &DStorage) -> Result<()> {
         let sql = format!(
             "UPDATE files SET parent = {}, root = {}, name = '{}' WHERE id = {}",

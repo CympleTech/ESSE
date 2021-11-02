@@ -78,6 +78,7 @@ abstract class AppLocalizations {
   String get album;
   String get file;
   String get delete;
+  String get deleteImmediate;
   String get open;
   String get unknown;
   String get create;
@@ -100,6 +101,8 @@ abstract class AppLocalizations {
   String get register;
   String get gallery;
   String get link;
+  String get rename;
+  String get moveTo;
 
   // theme
   String get themeDark;
@@ -243,6 +246,9 @@ abstract class AppLocalizations {
   String get newFolder;
   String get uploadFile;
   String get trashClear;
+  String get moveTrash;
+  String get setstar;
+  String get setunstar;
 }
 
 class _AppLocalizationsDelegate

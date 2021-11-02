@@ -135,4 +135,17 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             Ok(HandleResult::new())
         },
     );
+
+    handler.add_method(
+        "dc-file-delete",
+        |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
+            let id = params[0].as_i64().ok_or(RpcError::ParseError)?;
+
+            // TODO deleted file & directory.
+
+            let db = file_db(state.layer.read().await.base(), &gid)?;
+            File::delete(&db, &id)?;
+            Ok(HandleResult::new())
+        },
+    );
 }

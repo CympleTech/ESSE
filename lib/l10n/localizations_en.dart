@@ -81,6 +81,8 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get delete => 'Delete';
   @override
+  String get deleteImmediate => 'Delete Immediately';
+  @override
   String get open => 'Open';
   @override
   String get unknown => 'Unknown';
@@ -124,6 +126,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get gallery => 'Gallery';
   @override
   String get link => 'Link';
+  @override
+  String get rename => 'Rename';
+  @override
+  String get moveTo => 'Move to';
 
   // theme
   @override
@@ -390,4 +396,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get uploadFile => 'Upload File';
   @override
   String get trashClear => 'Empty the trash, Remove completely?';
+  @override
+  String get moveTrash => 'Move to trash';
+  @override
+  String get setstar => 'Star';
+  @override
+  String get setunstar => 'Unstar';
 }
