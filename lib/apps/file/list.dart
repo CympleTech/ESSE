@@ -187,8 +187,8 @@ class _FilesListState extends State<FilesList> {
     final params = file.fileType().params();
 
     return GestureDetector(
-      onLongPressDown: desktop ? null : (details) => _showItemMenu(details, lang, file),
-      onSecondaryLongPressDown: desktop ? (details) => _showItemMenu(details, lang, file) : null,
+      onLongPressEnd: desktop ? null : (details) => _showItemMenu(details, lang, file),
+      onSecondaryTapUp: desktop ? (details) => _showItemMenu(details, lang, file) : null,
       onTap: () {
         if (file.isDirectory()) {
           _nextDirectory(file);
@@ -519,7 +519,7 @@ class _MoveToScreenState extends State<_MoveToScreen> {
     final color = Theme.of(context).colorScheme;
     final lang = AppLocalizations.of(context);
 
-    double maxHeight = MediaQuery.of(context).size.height - 400;
+    double maxHeight = MediaQuery.of(context).size.height - 500;
     if (maxHeight < 100.0) {
       maxHeight = 100.0;
     }
@@ -529,12 +529,14 @@ class _MoveToScreenState extends State<_MoveToScreen> {
         Row(children: this._pathWidget(lang)),
         Container(
           height: maxHeight,
+          decoration: BoxDecoration(color: color.secondary),
           child: SingleChildScrollView(
             child: Column(
               children: List<Widget>.generate(_list.length, (i) => _item(_list[i], i),
             ))
           )
         ),
+        const SizedBox(height: 20.0),
         ButtonText(
           text: lang.ok,
           enable: this._selected != null,
