@@ -229,6 +229,27 @@ class _HomeListState extends State<HomeList> {
               _SessionWidget(session: sessions[allKeys[index]]!),
             ),
             ListView.builder(
+              itemCount: HOME_DIRECTORY.length,
+              itemBuilder: (BuildContext ctx, int index) {
+                final params = HOME_DIRECTORY[index].params(lang);
+                return ListTile(
+                  leading: Icon(params[0], color: Color(0xFF6174FF)),
+                  title: Text(params[1], style: TextStyle(fontSize: 16.0)),
+                  trailing: Icon(Icons.keyboard_arrow_right),
+                  onTap: () {
+                    final widget = FilesList(path: params[2]);
+                    if (widget != null) {
+                      if (isDesktop) {
+                        Provider.of<AccountProvider>(context, listen: false).updateActivedWidget(widget);
+                      } else {
+                        Navigator.push(context, MaterialPageRoute(builder: (_) => widget));
+                      }
+                    }
+                  }
+                );
+              }
+            ),
+            ListView.builder(
               itemCount: INNER_SERVICES.length,
               itemBuilder: (BuildContext ctx, int index) {
                 final params = INNER_SERVICES[index].params(lang);
@@ -258,27 +279,6 @@ class _HomeListState extends State<HomeList> {
                 );
               }
             ),
-            ListView.builder(
-              itemCount: HOME_DIRECTORY.length,
-              itemBuilder: (BuildContext ctx, int index) {
-                final params = HOME_DIRECTORY[index].params(lang);
-                return ListTile(
-                  leading: Icon(params[0], color: Color(0xFF6174FF)),
-                  title: Text(params[1], style: TextStyle(fontSize: 16.0)),
-                  trailing: Icon(Icons.keyboard_arrow_right),
-                  onTap: () {
-                    final widget = FilesList(path: params[2]);
-                    if (widget != null) {
-                      if (isDesktop) {
-                        Provider.of<AccountProvider>(context, listen: false).updateActivedWidget(widget);
-                      } else {
-                        Navigator.push(context, MaterialPageRoute(builder: (_) => widget));
-                      }
-                    }
-                  }
-                );
-              }
-            ),
           ],
         ),
       ),
@@ -300,14 +300,14 @@ class _HomeListState extends State<HomeList> {
             inactiveColor: Colors.grey,
           ),
           BottomNavyBarItem(
-            icon: Icon(Icons.apps),
-            title: Text(lang.services, style: TextStyle(fontSize: 15.0)),
+            icon: Icon(Icons.source),
+            title: Text(lang.dataCenter, style: TextStyle(fontSize: 15.0)),
             activeColor: Color(0xFF6174FF),
             inactiveColor: Colors.grey,
           ),
           BottomNavyBarItem(
-            icon: Icon(Icons.source),
-            title: Text(lang.dataCenter, style: TextStyle(fontSize: 15.0)),
+            icon: Icon(Icons.apps),
+            title: Text(lang.services, style: TextStyle(fontSize: 15.0)),
             activeColor: Color(0xFF6174FF),
             inactiveColor: Colors.grey,
           ),
