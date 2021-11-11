@@ -78,7 +78,7 @@ It is recommended to use [rust.sh](./rust.sh) to auto-compile the Rust code
 
 This project is licensed under
 
- * GNU GENERAL PUBLIC LICENSE, Version 3.0, ([LICENSE](LICENSE)
+ * GNU GENERAL PUBLIC LICENSE, Version 3.0, [LICENSE](LICENSE)
  * Any question, please contact: contact@cympletech.com
 
 ## Donation
