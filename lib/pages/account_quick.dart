@@ -177,7 +177,7 @@ class _AccountQuickPageState extends State<AccountQuickPage> {
                   shape: CircleBorder(),
                 ),
                 child: Icon(Icons.add_circle,
-                  size: 32.0, color: color.primary),
+                  size: 32.0, color: Color(0xFF6174FF)),
               ),
               onTap: () => selectAvatar(context, (bytes) => setState(() {
                     _imageBytes = bytes;

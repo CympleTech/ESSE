@@ -13,7 +13,7 @@ Future<List<String>> deviceInfo() async {
         "Web",
         data.platform!
       ];
-    } on PlatformException {
+    } catch (_e) {
       return ["Web", "Web Unknown"];
     }
   } else {
@@ -24,7 +24,7 @@ Future<List<String>> deviceInfo() async {
           data.brand!,
           data.id!,
         ];
-      } on PlatformException {
+      } catch (_e) {
         return ["Android", "Android Unknown"];
       }
     } else if (Platform.isIOS) {
@@ -34,7 +34,7 @@ Future<List<String>> deviceInfo() async {
           data.name!,
           data.utsname.machine!,
         ];
-      } on PlatformException {
+      } catch (_e) {
         return ["IOS", "IOS Unknown"];
       }
     } else if (Platform.isLinux) {
@@ -44,7 +44,7 @@ Future<List<String>> deviceInfo() async {
           data.name,
           data.prettyName,
         ];
-      } on PlatformException {
+      } catch (_e) {
         return ["Linux", "Linux Unknown"];
       }
     } else if (Platform.isMacOS) {
@@ -54,7 +54,7 @@ Future<List<String>> deviceInfo() async {
           data.hostName,
           data.computerName,
         ];
-      } on PlatformException {
+      } catch (_e) {
         return ["MacOS", "MacOS Unknown"];
       }
     } else if (Platform.isWindows) {
@@ -64,7 +64,7 @@ Future<List<String>> deviceInfo() async {
           'Windows',
           data.computerName,
         ];
-      } on PlatformException {
+      } catch (_e) {
         return ["Windows", "Windows Unknown"];
       }
     }
