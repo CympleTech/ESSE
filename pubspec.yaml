@@ -21,7 +21,7 @@ dependencies:
   shared_preferences: any
   path_provider: any
   url_launcher: any
-  permission_handler: 8.1.4+2
+  permission_handler: any
   image_picker: any # pick image
   image_save: any # Mobile save image to gallery
   file_picker: any # pick file
@@ -41,7 +41,6 @@ dependencies:
       path: plugins/file_selector/file_selector_windows
   open_file: any # open file in mobile.
   crypto: any
-  #pointycastle: any
   crop: any
   unorm_dart: any
   qr_flutter: any
@@ -51,9 +50,9 @@ dependencies:
   just_audio: any
   device_info_plus: any
   percent_indicator: any
-  bottom_navy_bar: ^6.0.0
-  flutter_quill: ^2.0.6
-  fluttertoast: ^8.0.8
+  bottom_navy_bar: any
+  flutter_quill: any
+  fluttertoast: any
 
 dev_dependencies:
   flutter_test:

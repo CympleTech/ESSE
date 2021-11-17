@@ -114,8 +114,10 @@ class _QRScanState extends State<QRScan> {
       this.controller = controller;
     });
     controller.scannedDataStream.listen((scanData) async {
-      print(scanData.code);
-      final Map qrInfo = json.decode(scanData.code);
+      if (scanData.code == null) {
+        return;
+      }
+      final Map qrInfo = json.decode(scanData.code!);
       if (!qrInfo.containsKey("app") || !qrInfo.containsKey("params")) {
         // TODO show Error.
         return;

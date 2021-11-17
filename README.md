@@ -28,8 +28,8 @@ ESSE, stands for Encrypted Symmetrical Session Engine, positioned as an engine. 
 ### 2. Compile
 #### 2.1. Pre-installed
 - Rustup [install](https://rustup.rs/)
-- Rust (Nightly Version)
-- Flutter (Master channel)
+- Rust (Lastest Stable version)
+- Flutter (Lastest Stable channel)
 
 #### 2.2. Compile Rust code to dynamic link library (FFI)
 ##### 2.2.1. Auto-compile script
