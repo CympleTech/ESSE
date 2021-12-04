@@ -402,4 +402,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get setstar => 'Star';
   @override
   String get setunstar => 'Unstar';
+
+  @override
+  String get wallet => 'Wallet';
+  @override
+  String get walletIntro => 'Manage your own cryptocurrency.';
 }

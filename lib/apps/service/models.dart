@@ -6,8 +6,10 @@ import 'package:esse/apps/file/list.dart';
 import 'package:esse/apps/group_chat/list.dart';
 import 'package:esse/apps/domain/page.dart';
 import 'package:esse/apps/chat/list.dart';
+import 'package:esse/apps/wallet/page.dart';
 
 const List<InnerService> INNER_SERVICES = [
+  InnerService.Wallet,
   InnerService.Chat,
   InnerService.GroupChat,
   InnerService.Assistant,
@@ -21,6 +23,7 @@ enum InnerService {
   Assistant,
   Domain,
   Cloud,
+  Wallet,
 }
 
 extension InnerServiceExtension on InnerService {
@@ -34,8 +37,10 @@ extension InnerServiceExtension on InnerService {
         return [lang.groupChat, lang.groupChatIntro, 'assets/logo/logo_group_chat.png'];
       case InnerService.Domain:
         return [lang.domain, lang.domainIntro, 'assets/logo/logo_domain.png'];
+      case InnerService.Wallet:
+        return [lang.wallet, lang.walletIntro, 'assets/logo/logo_wallet.png'];
       case InnerService.Cloud:
-        return [lang.cloud, lang.cloudIntro, 'assets/logo/logo_domain.png'];
+        return [lang.cloud, lang.cloudIntro, 'assets/logo/logo_cloud.png'];
     }
   }
 
@@ -49,6 +54,8 @@ extension InnerServiceExtension on InnerService {
         return GroupChatList();
       case InnerService.Domain:
         return DomainDetail();
+      case InnerService.Wallet:
+        return WalletDetail();
       case InnerService.Cloud:
         return DomainDetail();
     }

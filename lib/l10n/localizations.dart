@@ -249,6 +249,9 @@ abstract class AppLocalizations {
   String get moveTrash;
   String get setstar;
   String get setunstar;
+
+  String get wallet;
+  String get walletIntro;
 }
 
 class _AppLocalizationsDelegate

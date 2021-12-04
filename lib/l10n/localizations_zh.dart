@@ -402,4 +402,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get setstar => '标星';
   @override
   String get setunstar => '取消标星';
+
+  @override
+  String get wallet => '钱包';
+  @override
+  String get walletIntro => '管理自己的加密货币。';
 }
