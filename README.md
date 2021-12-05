@@ -21,6 +21,8 @@ ESSE, stands for Encrypted Symmetrical Session Engine, positioned as an engine. 
 
 [About ESSE(English)](https://github.com/CympleTech/esse/wiki/About-ESSE) / [关于ESSE(简体中文)](https://github.com/CympleTech/esse/wiki/%E5%85%B3%E4%BA%8E-ESSE)
 
+[Screenshots](https://github.com/CympleTech/esse/wiki/Screenshots)
+
 ## Usage
 ### 1. Use Binary executable
 [Download](https://github.com/cympletech/esse/releases)
