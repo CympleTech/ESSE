@@ -423,14 +423,26 @@ impl Group {
 
     pub async fn add_account(
         &mut self,
-        name: &str,
+        lang: i64,
         seed: &str,
+        pass: &str,
+        name: &str,
         lock: &str,
         avatar_bytes: Vec<u8>,
         device_name: &str,
         device_info: &str,
     ) -> Result<(i64, GroupId)> {
-        let (mut account, sk) = Account::generate(&self.secret, name, seed, lock, avatar_bytes)?;
+        let account_index = self.accounts.len() as u32;
+        let (mut account, sk) = Account::generate(
+            account_index,
+            &self.secret,
+            lang,
+            seed,
+            pass,
+            name,
+            lock,
+            avatar_bytes,
+        )?;
         let account_id = account.gid;
 
         if let Some(u) = self.accounts.get(&account_id) {

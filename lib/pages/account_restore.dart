@@ -34,6 +34,7 @@ class _AccountRestorePageState extends State<AccountRestorePage> {
   bool _addrOnline = false;
   bool _addrChecked = false;
 
+  Language _selectedLang = Language.English;
   TextEditingController _wordController = new TextEditingController();
   FocusNode _wordFocus = new FocusNode();
   List<String> _mnemoicWords = [];
@@ -185,7 +186,40 @@ class _AccountRestorePageState extends State<AccountRestorePage> {
                           style: TextStyle(
                             fontSize: 18.0, fontWeight: FontWeight.bold),
                         ),
-                        const SizedBox(height: 16.0),
+                        Container(
+                          width: 600.0,
+                          height: 45.0,
+                          padding: const EdgeInsets.only(left: 20, right: 10),
+                          margin: const EdgeInsets.symmetric(vertical: 16.0),
+                          decoration: BoxDecoration(
+                            color: color.surface,
+                            borderRadius: BorderRadius.circular(10.0)),
+                          child: DropdownButtonHideUnderline(
+                            child: Theme(
+                              data: Theme.of(context).copyWith(
+                                canvasColor: color.surface,
+                              ),
+                              child: DropdownButton<Language>(
+                                hint: Text(lang.loginChooseAccount,
+                                  style: TextStyle(fontSize: 16)),
+                                iconEnabledColor: Color(0xFFADB0BB),
+                                value: _selectedLang,
+                                onChanged: (Language? m) {
+                                  if (m != null) {
+                                    setState(() {
+                                        _selectedLang = m;
+                                    });
+                                  }
+                                },
+                                items: MNEMONIC_LANGUAGE.map((Language m) {
+                                    return DropdownMenuItem<Language>(
+                                      value: m,
+                                      child: Text(m.localizations(context),
+                                        style: TextStyle(fontSize: 16)));
+                                }).toList(),
+                            )),
+                          ),
+                        ),
                         Container(
                           width: 600.0,
                           alignment: Alignment.center,
@@ -370,8 +404,9 @@ class _AccountRestorePageState extends State<AccountRestorePage> {
         callback: (key, lock) async {
           Navigator.of(context).pop();
           // send to core node service by rpc.
-          final res = await httpPost(Global.httpRpc, 'account-restore',
-            [this._name, lock, mnemonic, addr, info[0], info[1]]);
+          final res = await httpPost(Global.httpRpc, 'account-restore', [
+              _selectedLang.toInt(), mnemonic, "", this._name, lock, addr, info[0], info[1]
+          ]);
 
           if (res.isOk) {
             // save this User

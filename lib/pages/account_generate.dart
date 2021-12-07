@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:esse/l10n/localizations.dart';
-import 'package:esse/utils/mnemonic.dart';
 import 'package:esse/utils/device_info.dart';
 import 'package:esse/widgets/button_text.dart';
 import 'package:esse/widgets/shadow_dialog.dart';
@@ -30,7 +29,7 @@ class AccountGeneratePage extends StatefulWidget {
 }
 
 class _AccountGeneratePageState extends State<AccountGeneratePage> {
-  int _selectedMnemonicLang = 1;
+  Language _selectedLang = Language.English;
   String _mnemoicWords = "";
 
   bool _mnemonicChecked = false;
@@ -69,10 +68,15 @@ class _AccountGeneratePageState extends State<AccountGeneratePage> {
   }
 
   void genMnemonic() async {
-    final lang = MnemonicLangExtension.fromInt(_selectedMnemonicLang);
-    this._mnemoicWords = await generateMnemonic(lang: lang);
-    this._mnemonicChecked = true;
-    setState(() {});
+    final res = await httpPost(Global.httpRpc, 'account-generate', [_selectedLang.toInt()]);
+    if (res.isOk) {
+      this._mnemoicWords = res.params[0];
+      this._mnemonicChecked = true;
+      setState(() {});
+    } else {
+      // TODO tostor error
+      print(res.error);
+    }
   }
 
   void registerNewAction(String title) async {
@@ -94,7 +98,9 @@ class _AccountGeneratePageState extends State<AccountGeneratePage> {
           Navigator.of(context).pop();
           // send to core node service by rpc.
           final res = await httpPost(Global.httpRpc,
-            'account-create', [name, lock, mnemonic, avatar, info[0], info[1]]);
+            'account-create', [
+              _selectedLang.toInt(), mnemonic, "", name, lock, avatar, info[0], info[1]
+          ]);
 
           if (res.isOk) {
             // save this User
@@ -160,22 +166,22 @@ class _AccountGeneratePageState extends State<AccountGeneratePage> {
                           data: Theme.of(context).copyWith(
                             canvasColor: color.surface,
                           ),
-                          child: DropdownButton<int>(
+                          child: DropdownButton<Language>(
                             hint: Text(lang.loginChooseAccount,
                               style: TextStyle(fontSize: 16)),
                             iconEnabledColor: Color(0xFFADB0BB),
-                            value: _selectedMnemonicLang,
-                            onChanged: (int? m) {
+                            value: _selectedLang,
+                            onChanged: (Language? m) {
                                if (m != null) {
                                  setState(() {
-                                     _selectedMnemonicLang = m;
+                                     _selectedLang = m;
                                  });
                                }
                             },
-                            items: MNEMONIC_LANGS.map((MnemonicLang m) {
-                                return DropdownMenuItem<int>(
-                                  value: m.toInt(),
-                                  child: Text(m.localizations(),
+                            items: MNEMONIC_LANGUAGE.map((Language m) {
+                                return DropdownMenuItem<Language>(
+                                  value: m,
+                                  child: Text(m.localizations(context),
                                     style: TextStyle(fontSize: 16)));
                             }).toList(),
                         )),

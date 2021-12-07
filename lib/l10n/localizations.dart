@@ -110,6 +110,16 @@ abstract class AppLocalizations {
 
   // langs
   String get lang;
+  String get english;
+  String get simplifiedChinese;
+  String get traditionalChinese;
+  String get czech;
+  String get french;
+  String get italian;
+  String get japanese;
+  String get korean;
+  String get spanish;
+  String get portuguese;
 
   // security page (did)
   String get loginChooseAccount;

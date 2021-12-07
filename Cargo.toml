@@ -33,8 +33,9 @@ aes-gcm = "0.8"
 sysinfo = "0.16"
 serde = { version = "1", features = ["derive"] }
 tokio = { version = "1", features = ["full"] }
+web3 = { version = "0.17", default-features = false, features = ["http-tls", "signing"] }
 tdn = { version = "0.5", default-features = false, features = ["full"] }
-tdn_did = { git = "https://github.com/cypherlink/tdn_did", branch="main" }
+tdn_did = { version = "0.5" }
 tdn_storage = { git = "https://github.com/cypherlink/tdn_storage", branch="main" }
 group-chat_types = { git = "https://github.com/cympletech/esse_types", branch="main" }
 domain_types = { git = "https://github.com/cympletech/esse_types", branch="main" }

@@ -7,6 +7,7 @@ use tdn::types::{
     primitive::{HandleResult, PeerAddr, Result},
     rpc::{json, rpc_response, RpcError, RpcHandler, RpcParam},
 };
+use tdn_did::{generate_mnemonic, Count};
 use tokio::sync::{
     mpsc::{self, error::SendError, Sender},
     RwLock,
@@ -245,21 +246,44 @@ fn new_rpc_handler(
     );
 
     handler.add_method(
+        "account-generate",
+        |_gid, params: Vec<RpcParam>, _state: Arc<RpcState>| async move {
+            let lang = params[0].as_i64().ok_or(RpcError::ParseError)?;
+            let language = crate::account::mnemonic_lang_from_i64(lang);
+            let words = generate_mnemonic(language, Count::Words12);
+            Ok(HandleResult::rpc(json!([words])))
+        },
+    );
+
+    handler.add_method(
         "account-create",
         |_gid, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
-            let name = params[0].as_str().ok_or(RpcError::ParseError)?;
-            let lock = params[1].as_str().ok_or(RpcError::ParseError)?;
-            let seed = params[2].as_str().ok_or(RpcError::ParseError)?;
-            let avatar = params[3].as_str().ok_or(RpcError::ParseError)?;
-            let device_name = params[4].as_str().ok_or(RpcError::ParseError)?;
-            let device_info = params[5].as_str().ok_or(RpcError::ParseError)?;
-            let avatar_bytes = base64::decode(avatar).unwrap_or(vec![]);
+            let lang = params[0].as_i64().ok_or(RpcError::ParseError)?;
+            let seed = params[1].as_str().ok_or(RpcError::ParseError)?;
+            let pass = params[2].as_str().ok_or(RpcError::ParseError)?;
 
+            let name = params[3].as_str().ok_or(RpcError::ParseError)?;
+            let lock = params[4].as_str().ok_or(RpcError::ParseError)?;
+            let avatar = params[5].as_str().ok_or(RpcError::ParseError)?;
+
+            let device_name = params[6].as_str().ok_or(RpcError::ParseError)?;
+            let device_info = params[7].as_str().ok_or(RpcError::ParseError)?;
+
+            let avatar_bytes = base64::decode(avatar).unwrap_or(vec![]);
             let (id, gid) = state
                 .group
                 .write()
                 .await
-                .add_account(name, seed, lock, avatar_bytes, device_name, device_info)
+                .add_account(
+                    lang,
+                    seed,
+                    pass,
+                    name,
+                    lock,
+                    avatar_bytes,
+                    device_name,
+                    device_info,
+                )
                 .await?;
             state.layer.write().await.add_running(&gid, gid, id, 0)?;
 
@@ -275,19 +299,32 @@ fn new_rpc_handler(
     handler.add_method(
         "account-restore",
         |_gid, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
-            let name = params[0].as_str().ok_or(RpcError::ParseError)?;
-            let lock = params[1].as_str().ok_or(RpcError::ParseError)?;
-            let seed = params[2].as_str().ok_or(RpcError::ParseError)?;
+            let lang = params[0].as_i64().ok_or(RpcError::ParseError)?;
+            let seed = params[1].as_str().ok_or(RpcError::ParseError)?;
+            let pass = params[2].as_str().ok_or(RpcError::ParseError)?;
+
+            let name = params[3].as_str().ok_or(RpcError::ParseError)?;
+            let lock = params[4].as_str().ok_or(RpcError::ParseError)?;
+
             let some_addr =
-                PeerAddr::from_hex(params[3].as_str().ok_or(RpcError::ParseError)?).ok();
-            let device_name = params[4].as_str().ok_or(RpcError::ParseError)?;
-            let device_info = params[5].as_str().ok_or(RpcError::ParseError)?;
+                PeerAddr::from_hex(params[5].as_str().ok_or(RpcError::ParseError)?).ok();
+            let device_name = params[6].as_str().ok_or(RpcError::ParseError)?;
+            let device_info = params[7].as_str().ok_or(RpcError::ParseError)?;
 
             let (id, gid) = state
                 .group
                 .write()
                 .await
-                .add_account(name, seed, lock, vec![], device_name, device_info)
+                .add_account(
+                    lang,
+                    seed,
+                    pass,
+                    name,
+                    lock,
+                    vec![],
+                    device_name,
+                    device_info,
+                )
                 .await?;
             state.layer.write().await.add_running(&gid, gid, id, 0)?;
 

@@ -5,17 +5,51 @@ use tdn::types::{
     group::{EventId, GroupId},
     primitive::Result,
 };
-use tdn_did::{genereate_id, Keypair};
+use tdn_did::{generate_id, Keypair, Language};
 use tdn_storage::local::{DStorage, DsValue};
+
+fn mnemonic_lang_to_i64(lang: Language) -> i64 {
+    match lang {
+        Language::English => 0,
+        Language::SimplifiedChinese => 1,
+        Language::TraditionalChinese => 2,
+        Language::Czech => 3,
+        Language::French => 4,
+        Language::Italian => 5,
+        Language::Japanese => 6,
+        Language::Korean => 7,
+        Language::Spanish => 8,
+        Language::Portuguese => 9,
+    }
+}
+
+pub fn mnemonic_lang_from_i64(u: i64) -> Language {
+    match u {
+        0 => Language::English,
+        1 => Language::SimplifiedChinese,
+        2 => Language::TraditionalChinese,
+        3 => Language::Czech,
+        4 => Language::French,
+        5 => Language::Italian,
+        6 => Language::Japanese,
+        7 => Language::Korean,
+        8 => Language::Spanish,
+        9 => Language::Portuguese,
+        _ => Language::English,
+    }
+}
 
 pub(crate) struct Account {
     pub id: i64,
     pub gid: GroupId,
-    pub name: String,
-    pub lock: String,      // hashed-key.
+    pub index: i64,
+    pub lang: i64,
     pub mnemonic: Vec<u8>, // encrypted value.
-    pub secret: Vec<u8>,   // encrypted value.
+    pub pass: String,
+    pub name: String,
     pub avatar: Vec<u8>,
+    pub lock: String,    // hashed-key.
+    pub secret: Vec<u8>, // encrypted value.
     pub height: u64,
     pub event: EventId,
     pub datetime: i64,
@@ -24,9 +58,12 @@ pub(crate) struct Account {
 impl Account {
     pub fn new(
         gid: GroupId,
+        index: i64,
+        lang: i64,
+        pass: String,
         name: String,
-        avatar: Vec<u8>,
         lock: String,
+        avatar: Vec<u8>,
         mnemonic: Vec<u8>,
         secret: Vec<u8>,
     ) -> Self {
@@ -41,6 +78,9 @@ impl Account {
             height: 0,
             event: EventId::default(),
             gid,
+            index,
+            lang,
+            pass,
             name,
             lock,
             mnemonic,
@@ -50,14 +90,27 @@ impl Account {
         }
     }
 
+    pub fn lang(&self) -> Language {
+        mnemonic_lang_from_i64(self.lang)
+    }
+
     pub fn generate(
+        index: u32,
         skey: &[u8], // &[u8; 32]
-        name: &str,
+        lang: i64,
         mnemonic: &str,
+        pass: &str,
+        name: &str,
         lock: &str,
         avatar: Vec<u8>,
     ) -> Result<(Account, Keypair)> {
-        let (gid, sk) = genereate_id(mnemonic.as_bytes());
+        let (gid, sk) = generate_id(
+            mnemonic_lang_from_i64(lang),
+            mnemonic,
+            index,
+            0, // account default multiple address index is 0.
+            if pass.len() > 0 { Some(pass) } else { None },
+        )?;
 
         let cipher = Aes256Gcm::new(GenericArray::from_slice(skey)); // 256-bit key.
         let hash_nonce = blake3::hash(lock.as_bytes());
@@ -74,9 +127,12 @@ impl Account {
         Ok((
             Account::new(
                 gid,
+                index as i64,
+                lang,
+                pass.to_string(),
                 name.to_string(),
-                avatar,
                 lock.to_string(),
+                avatar,
                 mnemonic_bytes,
                 sk_bytes,
             ),
@@ -153,6 +209,9 @@ impl Account {
             mnemonic: base64::decode(v.pop().unwrap().as_string()).unwrap_or(vec![]),
             lock: v.pop().unwrap().as_string(),
             name: v.pop().unwrap().as_string(),
+            pass: v.pop().unwrap().as_string(),
+            lang: v.pop().unwrap().as_i64(),
+            index: v.pop().unwrap().as_i64(),
             gid: GroupId::from_hex(v.pop().unwrap().as_str()).unwrap_or(GroupId::default()),
             id: v.pop().unwrap().as_i64(),
         }
@@ -160,13 +219,13 @@ impl Account {
 
     pub fn _get(db: &DStorage, gid: &GroupId) -> Result<Option<Account>> {
         let sql = format!(
-            "SELECT id, gid, name, lock, mnemonic, secret, avatar, height, event, datetime FROM accounts WHERE gid = '{}'",
+            "SELECT id, gid, indx, lang, pass, name, lock, mnemonic, secret, avatar, height, event, datetime FROM accounts WHERE gid = '{}'",
             gid.to_hex()
         );
         let mut matrix = db.query(&sql)?;
         if matrix.len() > 0 {
             let values = matrix.pop().unwrap(); // safe unwrap()
-            if values.len() == 10 {
+            if values.len() == 13 {
                 return Ok(Some(Account::from_values(values)));
             }
         }
@@ -175,11 +234,11 @@ impl Account {
 
     pub fn all(db: &DStorage) -> Result<Vec<Account>> {
         let matrix = db.query(
-            "SELECT id, gid, name, lock, mnemonic, secret, avatar, height, event, datetime FROM accounts ORDER BY datetime DESC",
+            "SELECT id, gid, indx, lang, pass, name, lock, mnemonic, secret, avatar, height, event, datetime FROM accounts ORDER BY datetime DESC",
         )?;
         let mut accounts = vec![];
         for values in matrix {
-            if values.len() == 10 {
+            if values.len() == 13 {
                 accounts.push(Account::from_values(values));
             }
         }
@@ -196,8 +255,11 @@ impl Account {
             self.id = id;
             self.update(db)?;
         } else {
-            let sql = format!("INSERT INTO accounts (gid, name, lock, mnemonic, secret, avatar, height,event, datetime) VALUES ('{}', '{}', '{}', '{}', '{}', '{}', {}, '{}', {})",
+            let sql = format!("INSERT INTO accounts (gid, indx, lang, pass, name, lock, mnemonic, secret, avatar, height,event, datetime) VALUES ('{}', {}, {}, '{}', '{}', '{}', '{}', '{}', '{}', {}, '{}', {})",
             self.gid.to_hex(),
+            self.index,
+            self.lang,
+            self.pass,
             self.name,
             self.lock,
             base64::encode(&self.mnemonic),
@@ -214,8 +276,7 @@ impl Account {
     }
 
     pub fn update(&self, db: &DStorage) -> Result<usize> {
-        let sql = format!("UPDATE accounts SET gid='{}', name='{}', lock='{}', mnemonic='{}', secret='{}', avatar='{}', height={}, event='{}', datetime={} WHERE id = {}",
-            self.gid.to_hex(),
+        let sql = format!("UPDATE accounts SET name='{}', lock='{}', mnemonic='{}', secret='{}', avatar='{}', height={}, event='{}', datetime={} WHERE id = {}",
             self.name,
             self.lock,
             base64::encode(&self.mnemonic),

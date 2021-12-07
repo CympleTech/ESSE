@@ -7,7 +7,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:esse/l10n/localizations.dart';
-import 'package:esse/utils/mnemonic.dart';
 import 'package:esse/utils/device_info.dart';
 import 'package:esse/widgets/button_text.dart';
 import 'package:esse/widgets/shadow_dialog.dart';
@@ -113,13 +112,24 @@ class _AccountQuickPageState extends State<AccountQuickPage> {
     );
   }
 
-  Future<String> _getMnemonic(Locale locale) async {
-    final lang = MnemonicLangExtension.fromLocale(locale);
-    return await generateMnemonic(lang: lang);
+  Future<List?> _getMnemonic(Locale locale) async {
+    final language = LanguageExtension.fromLocale(locale);
+    final res = await httpPost(Global.httpRpc, 'account-generate', [language.toInt()]);
+    if (res.isOk) {
+      return [language, res.params[0]];
+    } else {
+      // TODO tostor error
+      print(res.error);
+    }
   }
 
   void registerNewAction(Locale locale) async {
-    final mnemonic = await _getMnemonic(locale);
+    final lang_mnemonic = await _getMnemonic(locale);
+    if (lang_mnemonic == null) {
+      return;
+    }
+    final Language language = lang_mnemonic[0];
+    final String mnemonic = lang_mnemonic[1];
     final name = _nameController.text;
     final avatar = _imageBytes != null ? base64.encode(_imageBytes!) : "";
     final info = await deviceInfo();
@@ -130,8 +140,9 @@ class _AccountQuickPageState extends State<AccountQuickPage> {
     }
 
     // send to core node service by rpc.
-    final res = await httpPost(Global.httpRpc,
-      'account-create', [name, lock, mnemonic, avatar, info[0], info[1]]);
+    final res = await httpPost(Global.httpRpc, 'account-create', [
+        language.toInt(), mnemonic, "", name, lock, avatar, info[0], info[1]
+    ]);
 
     if (res.isOk) {
       // save this User
