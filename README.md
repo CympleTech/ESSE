@@ -15,6 +15,7 @@ ESSE, stands for Encrypted Symmetrical Session Engine, positioned as an engine. 
 - Built-in IM Application
 - Built-in Group Chat Application
 - Built-in Domain Application
+- Built-in Wallet Application (Support ETH/ERC20/ERC721)
 - Built-in Robot assistant Application
 - Multi-identity System
 - Multi-platform Support: Android, iOS, iPadOS, MacOS, Windows, Linux, etc.
