@@ -11,6 +11,7 @@ mod file;
 mod group_chat;
 mod service;
 mod session;
+mod wallet;
 
 use account::ACCOUNT_VERSIONS;
 use chat::CHAT_VERSIONS;
@@ -20,6 +21,7 @@ use file::FILE_VERSIONS;
 use group_chat::GROUP_CHAT_VERSIONS;
 use service::SERVICE_VERSIONS;
 use session::SESSION_VERSIONS;
+use wallet::WALLET_VERSIONS;
 
 use crate::apps::assistant::ASSISTANT_VERSIONS;
 
@@ -49,6 +51,9 @@ pub(crate) const GROUP_CHAT_DB: &'static str = "group_chat.db";
 
 /// Account's domain database name
 pub(crate) const DOMAIN_DB: &'static str = "domain.db";
+
+/// Account's domain database name
+pub(crate) const WALLET_DB: &'static str = "wallet.db";
 
 pub(crate) fn main_migrate(path: &PathBuf) -> Result<()> {
     let mut db_path = path.clone();
@@ -118,6 +123,7 @@ pub(crate) fn main_migrate(path: &PathBuf) -> Result<()> {
                 GROUP_CHAT_DB => GROUP_CHAT_VERSIONS.as_ref(),
                 CHAT_DB => CHAT_VERSIONS.as_ref(),
                 DOMAIN_DB => DOMAIN_VERSIONS.as_ref(),
+                WALLET_DB => WALLET_VERSIONS.as_ref(),
                 _ => {
                     continue;
                 }
@@ -207,6 +213,12 @@ pub(crate) fn main_migrate(path: &PathBuf) -> Result<()> {
             DOMAIN_DB,
         ))?;
 
+        db.update(&format!(
+            "UPDATE migrates SET version = {} where db_name = '{}'",
+            WALLET_VERSIONS.len(),
+            WALLET_DB,
+        ))?;
+
         db.close()?;
     }
 
@@ -274,6 +286,14 @@ pub(crate) fn account_init_migrate(path: &PathBuf) -> Result<()> {
     db_path.push(DOMAIN_DB);
     let db = DStorage::open(db_path)?;
     for i in &DOMAIN_VERSIONS {
+        db.execute(i)?;
+    }
+    db.close()?;
+
+    let mut db_path = path.clone();
+    db_path.push(WALLET_DB);
+    let db = DStorage::open(db_path)?;
+    for i in &WALLET_VERSIONS {
         db.execute(i)?;
     }
     db.close()
