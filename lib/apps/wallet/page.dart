@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import 'package:esse/utils/adaptive.dart';
@@ -20,16 +21,15 @@ class WalletDetail extends StatefulWidget {
   _WalletDetailState createState() => _WalletDetailState();
 }
 
-class Network {
-  const Network(this.name, this.color);
-  final Color color;
-  final String name;
-}
-
 class _WalletDetailState extends State<WalletDetail> with SingleTickerProviderStateMixin {
   TabController? _tabController;
-  List<Address> _addresses = [];
   bool _needGenerate = false;
+
+  List<Address> _addresses = [];
+  Address? _selectedAddress;
+
+  List<Network> _networks = [];
+  Network? _selectedNetwork;
 
   List tokens = [
     ['ETH', '100', '1000', 'assets/logo/logo_eth.png'],
@@ -38,36 +38,16 @@ class _WalletDetailState extends State<WalletDetail> with SingleTickerProviderSt
     ['FFF', '100', '1000', 'assets/logo/logo_erc20.png'],
   ];
 
-  Network? selectedNetwork;
-  List<Network> networks = <Network>[
-    const Network(
-      'Ethereum Mainnet',
-      const Color(0xFF167F67)
-    ),
-    const Network(
-      'Ropsten Test Network',
-      Colors.orange,
-    ),
-    const Network(
-      'Rinkeby Test Network',
-      Colors.orange,
-    ),
-    const Network(
-      'Localhost 8545',
-      const Color(0xFF6174FF),
-    ),
-  ];
-
   @override
   void initState() {
     _tabController = new TabController(length: 2, vsync: this);
     rpc.addListener('wallet-generate', _walletGenerate, false);
+    rpc.addListener('wallet-balance', _walletBalance, false);
     super.initState();
     Future.delayed(Duration.zero, _load);
   }
 
   _walletGenerate(List params) {
-    print('aaaaaaaaaaaaaaaaaa');
     final address = Address.fromList(params);
     bool isNew = true;
     this._addresses.forEach((addr) {
@@ -79,6 +59,10 @@ class _WalletDetailState extends State<WalletDetail> with SingleTickerProviderSt
       this._addresses.add(address);
       setState(() {});
     }
+  }
+
+  _walletBalance(List params) {
+    //
   }
 
   _load() async {
@@ -95,6 +79,14 @@ class _WalletDetailState extends State<WalletDetail> with SingleTickerProviderSt
     } else {
       // TODO tostor error
       print(res.error);
+    }
+  }
+
+  _changeAddress(Address address) {
+    this._selectedAddress = address;
+    this._networks = address.networks();
+    if (!this._networks.contains(this._selectedNetwork)) {
+      this._selectedNetwork = this._networks[0];
     }
   }
 
@@ -135,55 +127,74 @@ class _WalletDetailState extends State<WalletDetail> with SingleTickerProviderSt
       );
     }
 
+    if (this._selectedAddress == null) {
+      _changeAddress(this._addresses[0]);
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: DropdownButton<Network>(
           icon: Container(),
           underline: Container(),
-          hint:  Text("Select network"),
-          value: selectedNetwork,
+          value: this._selectedNetwork,
           onChanged: (Network? value) {
             if (value != null) {
               setState(() {
-                  selectedNetwork = value;
+                  this._selectedNetwork = value;
               });
             }
           },
-          items: networks.map((Network network) {
+          items: this._networks.map((Network network) {
+              final params = network.params();
               return  DropdownMenuItem<Network>(
                 value: network,
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 6.0),
                   decoration:  BoxDecoration(
-                    border: Border.all(width: 1.0, color: network.color),
+                    border: Border.all(width: 1.0, color: params[1]),
                     borderRadius: BorderRadius.circular(25.0)
                   ),
                   child: Row(
                     children: <Widget>[
-                      Icon(Icons.public, color: network.color, size: 18.0),
+                      Icon(Icons.public, color: params[1], size: 18.0),
                       const SizedBox(width: 10),
-                      Text(network.name, style: TextStyle(color: network.color, fontSize: 14.0)),
+                      Text(params[0], style: TextStyle(color: params[1], fontSize: 14.0)),
                     ],
                 )),
               );
           }).toList(),
         ),
         actions: [
-          TextButton(
-            onPressed: () {
-              setState(() {});
-            },
-            child: Container(
-              margin: const EdgeInsets.symmetric(horizontal: 10.0),
-              width: 40.0,
-              height: 40.0,
-              decoration:  BoxDecoration(
-                color: color.surface,
-                borderRadius: BorderRadius.circular(25.0)
-              ),
-              child: Center(child: Text('A'))
-            )
-          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10.0),
+            child: DropdownButton<Address>(
+              icon: Container(),
+              underline: Container(),
+              value: this._selectedAddress,
+              onChanged: (Address? value) {
+                if (value != null) {
+                  setState(() {
+                      _changeAddress(value);
+                  });
+                }
+              },
+              items: this._addresses.map((Address addr) {
+                  return  DropdownMenuItem<Address>(
+                    value: addr,
+                    child: Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 10.0),
+                      width: 40.0,
+                      height: 40.0,
+                      decoration:  BoxDecoration(
+                        color: color.surface,
+                        borderRadius: BorderRadius.circular(25.0)
+                      ),
+                      child: Center(child: Text(addr.icon()))
+                    ),
+                  );
+              }).toList(),
+            ),
+          )
         ]
       ),
       body: Container(
@@ -193,7 +204,7 @@ class _WalletDetailState extends State<WalletDetail> with SingleTickerProviderSt
           children:[
             InkWell(
               onTap: () {
-                //Clipboard.setData(ClipboardData(text: gidText(widget.id)));
+                Clipboard.setData(ClipboardData(text: this._selectedAddress!.address));
               },
               child: Container(
                 padding: const EdgeInsets.symmetric(vertical: 10.0),
@@ -204,12 +215,13 @@ class _WalletDetailState extends State<WalletDetail> with SingleTickerProviderSt
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text('Account1', style: TextStyle(fontSize: 18.0)),
+                    Text(this._selectedAddress!.name, style: TextStyle(fontSize: 18.0)),
                     const SizedBox(height: 4.0),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text('0x222...334444', style: TextStyle(color: Color(0xFFADB0BB))),
+                        Text(this._selectedAddress!.short(),
+                          style: TextStyle(color: Color(0xFFADB0BB))),
                         const SizedBox(width: 8.0),
                         Icon(Icons.copy, size: 16.0, color: color.primary),
                       ]
