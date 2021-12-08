@@ -49,6 +49,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             let lang = account.lang();
             let pass = account.pass.to_string();
             let account_index = account.index as u32;
+            let db = wallet_db(group_lock.base(), &gid)?;
             drop(group_lock);
 
             let pass = if pass.len() > 0 {
@@ -56,11 +57,12 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             } else {
                 None
             };
-            let index = 0; // TOOD
+
+            let index = Address::next_index(&db, &chain)?;
             let mut address = match chain {
                 ChainToken::ETH | ChainToken::ERC20 | ChainToken::ERC721 => {
                     let sk = generate_eth_account(lang, &mnemonic, account_index, index, pass)?;
-                    let address = (&sk).address().to_string();
+                    let address = format!("{:?}", (&sk).address());
                     Address::new(chain, index as i64, address)
                 }
                 ChainToken::BTC => {
@@ -69,9 +71,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
                 }
             };
 
-            let db = wallet_db(state.layer.read().await.base(), &gid)?;
             address.insert(&db)?;
-
             Ok(HandleResult::rpc(address.to_rpc()))
         },
     );

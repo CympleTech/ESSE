@@ -6,9 +6,12 @@ import 'package:esse/utils/better_print.dart';
 import 'package:esse/l10n/localizations.dart';
 import 'package:esse/widgets/button_text.dart';
 import 'package:esse/widgets/input_text.dart';
+import 'package:esse/widgets/default_core_show.dart';
 import 'package:esse/global.dart';
 import 'package:esse/options.dart';
 import 'package:esse/rpc.dart';
+
+import 'package:esse/apps/wallet/models.dart';
 
 class WalletDetail extends StatefulWidget {
   const WalletDetail({Key? key}) : super(key: key);
@@ -25,6 +28,8 @@ class Network {
 
 class _WalletDetailState extends State<WalletDetail> with SingleTickerProviderStateMixin {
   TabController? _tabController;
+  List<Address> _addresses = [];
+  bool _needGenerate = false;
 
   List tokens = [
     ['ETH', '100', '1000', 'assets/logo/logo_eth.png'],
@@ -56,13 +61,79 @@ class _WalletDetailState extends State<WalletDetail> with SingleTickerProviderSt
   @override
   void initState() {
     _tabController = new TabController(length: 2, vsync: this);
+    rpc.addListener('wallet-generate', _walletGenerate, false);
     super.initState();
+    Future.delayed(Duration.zero, _load);
+  }
+
+  _walletGenerate(List params) {
+    print('aaaaaaaaaaaaaaaaaa');
+    final address = Address.fromList(params);
+    bool isNew = true;
+    this._addresses.forEach((addr) {
+        if (addr.address == address.address) {
+          isNew = false;
+        }
+    });
+    if (isNew) {
+      this._addresses.add(address);
+      setState(() {});
+    }
+  }
+
+  _load() async {
+    final res = await httpPost(Global.httpRpc, 'wallet-list', []);
+    if (res.isOk) {
+      this._addresses.clear();
+      res.params.forEach((param) {
+          this._addresses.add(Address.fromList(param));
+      });
+      if (this._addresses.length == 0) {
+        this._needGenerate = true;
+      }
+      setState(() {});
+    } else {
+      // TODO tostor error
+      print(res.error);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final color = Theme.of(context).colorScheme;
     final lang = AppLocalizations.of(context);
+
+    if (this._addresses.length == 0 && !this._needGenerate) {
+      return Scaffold(
+        appBar: AppBar(title: Text(lang.loadMore)),
+        body: const DefaultCoreShow(),
+      );
+    }
+
+    if (this._addresses.length == 0 && this._needGenerate) {
+      return Scaffold(
+        appBar: AppBar(title: Text(lang.wallet)),
+        body: DefaultCoreShow(
+          child: ElevatedButton(
+            style: ElevatedButton.styleFrom(onPrimary: color.surface),
+            onPressed: () {
+              rpc.send('wallet-generate', [ChainToken.ETH.toInt(), ""]);
+            },
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.lock),
+                  const SizedBox(width: 8.0),
+                  const Text('生成以太坊地址'),
+                ]
+              )
+            )
+        ))
+      );
+    }
 
     return Scaffold(
       appBar: AppBar(

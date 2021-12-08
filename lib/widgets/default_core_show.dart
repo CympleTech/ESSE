@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 
 class DefaultCoreShow extends StatelessWidget {
-  const DefaultCoreShow({Key? key}): super(key: key);
+  final Widget? child;
+  const DefaultCoreShow({Key? key, this.child}): super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -18,7 +19,7 @@ class DefaultCoreShow extends StatelessWidget {
           fit: BoxFit.cover,
         ),
       ),
-      child: Center(child: Text('', style: TextStyle(fontSize: 32.0)))
+      child: Center(child: this.child)
     );
   }
 }
