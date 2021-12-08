@@ -13,7 +13,7 @@ pub(crate) enum ChainToken {
 }
 
 impl ChainToken {
-    fn to_i64(&self) -> i64 {
+    pub fn to_i64(&self) -> i64 {
         match self {
             ChainToken::ETH => 1,
             ChainToken::ERC20 => 2,
@@ -29,6 +29,43 @@ impl ChainToken {
             3 => ChainToken::ERC721,
             4 => ChainToken::BTC,
             _ => ChainToken::ETH,
+        }
+    }
+}
+
+pub(crate) enum Network {
+    EthMain,
+    EthTestRopsten,
+    EthTestRinkeby,
+    EthTestKovan,
+    EthLocal,
+    BtcMain,
+    BtcLocal,
+}
+
+impl Network {
+    pub fn to_i64(&self) -> i64 {
+        match self {
+            Network::EthMain => 1,
+            Network::EthTestRopsten => 2,
+            Network::EthTestRinkeby => 3,
+            Network::EthTestKovan => 4,
+            Network::EthLocal => 5,
+            Network::BtcMain => 6,
+            Network::BtcLocal => 7,
+        }
+    }
+
+    pub fn from_i64(i: i64) -> Self {
+        match i {
+            1 => Network::EthMain,
+            2 => Network::EthTestRopsten,
+            3 => Network::EthTestRinkeby,
+            4 => Network::EthTestKovan,
+            5 => Network::EthLocal,
+            6 => Network::BtcMain,
+            7 => Network::BtcLocal,
+            _ => Network::EthMain,
         }
     }
 }

@@ -62,7 +62,8 @@ class _WalletDetailState extends State<WalletDetail> with SingleTickerProviderSt
   }
 
   _walletBalance(List params) {
-    //
+    // TODO
+    print(params);
   }
 
   _load() async {
@@ -86,8 +87,16 @@ class _WalletDetailState extends State<WalletDetail> with SingleTickerProviderSt
     this._selectedAddress = address;
     this._networks = address.networks();
     if (!this._networks.contains(this._selectedNetwork)) {
-      this._selectedNetwork = this._networks[0];
+      _changeNetwork(this._networks[0]);
     }
+  }
+
+  _changeNetwork(Network network) {
+    this._selectedNetwork = network;
+    rpc.send('wallet-balance', [
+        this._selectedNetwork!.toInt(), this._selectedAddress!.address
+    ]);
+    print('sended balances');
   }
 
   @override
@@ -140,7 +149,7 @@ class _WalletDetailState extends State<WalletDetail> with SingleTickerProviderSt
           onChanged: (Network? value) {
             if (value != null) {
               setState(() {
-                  this._selectedNetwork = value;
+                  _changeNetwork(value);
               });
             }
           },

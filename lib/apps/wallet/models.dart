@@ -41,6 +41,7 @@ enum Network {
   EthMain,
   EthTestRopsten,
   EthTestRinkeby,
+  EthTestKovan,
   EthLocal,
   BtcMain,
   BtcLocal,
@@ -55,12 +56,54 @@ extension NetworkExtension on Network {
         return ['Ropsten Test Network', Colors.orange];
       case Network.EthTestRinkeby:
         return ['Rinkeby Test Network', Colors.orange];
+      case Network.EthTestKovan:
+        return ['Rinkeby Test Network', Colors.orange];
       case Network.EthLocal:
         return ['Localhost 8545', Color(0xFF6174FF)];
       case Network.BtcMain:
         return ['Bitcoin Mainnet', Colors.purple];
       case Network.BtcLocal:
         return ['Localhost 8333', Color(0xFF6174FF)];
+    }
+  }
+
+  int toInt() {
+    switch (this) {
+      case Network.EthMain:
+        return 1;
+      case Network.EthTestRopsten:
+        return 2;
+      case Network.EthTestRinkeby:
+        return 3;
+      case Network.EthTestKovan:
+        return 4;
+      case Network.EthLocal:
+        return 5;
+      case Network.BtcMain:
+        return 6;
+      case Network.BtcLocal:
+        return 7;
+    }
+  }
+
+  static Network fromInt(int a) {
+    switch (a) {
+      case 1:
+        return Network.EthMain;
+      case 2:
+        return Network.EthTestRopsten;
+      case 3:
+        return Network.EthTestRinkeby;
+      case 4:
+        return Network.EthTestKovan;
+      case 5:
+        return Network.EthLocal;
+      case 6:
+        return Network.BtcMain;
+      case 7:
+        return Network.BtcLocal;
+      default:
+        return Network.EthMain;
     }
   }
 }
@@ -86,6 +129,7 @@ class Address {
           Network.EthMain,
           Network.EthTestRopsten,
           Network.EthTestRinkeby,
+          Network.EthTestKovan,
           Network.EthLocal,
         ];
       case ChainToken.BTC:
