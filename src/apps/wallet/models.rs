@@ -5,6 +5,22 @@ use tdn::types::{
 
 use tdn_storage::local::{DStorage, DsValue};
 
+#[rustfmt::skip]
+pub const ETH_NODE: &'static str =
+    "https://mainnet.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161";
+#[rustfmt::skip]
+pub const ETH_ROPSTEN: &'static str =
+    "https://ropsten.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161";
+#[rustfmt::skip]
+pub const ETH_RINKEBY: &'static str =
+    "https://rinkeby.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161";
+#[rustfmt::skip]
+pub const ETH_KOVAN: &'static str =
+    "https://kovan.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161";
+#[rustfmt::skip]
+pub const ETH_LOCAL: &'static str =
+    "http://localhost:8545";
+
 pub(crate) enum ChainToken {
     ETH,
     ERC20,
@@ -44,6 +60,30 @@ pub(crate) enum Network {
 }
 
 impl Network {
+    pub fn node<'a>(&self) -> &'a str {
+        // TODO more.
+        match self {
+            Network::EthMain => ETH_NODE,
+            Network::EthTestRopsten => ETH_ROPSTEN,
+            Network::EthTestRinkeby => ETH_RINKEBY,
+            Network::EthTestKovan => ETH_KOVAN,
+            Network::EthLocal => ETH_LOCAL,
+            Network::BtcMain => ETH_NODE,
+            Network::BtcLocal => ETH_NODE,
+        }
+    }
+
+    pub fn chain(&self) -> ChainToken {
+        match self {
+            Network::EthMain
+            | Network::EthTestRopsten
+            | Network::EthTestRinkeby
+            | Network::EthTestKovan
+            | Network::EthLocal => ChainToken::ETH,
+            Network::BtcMain | Network::BtcLocal => ChainToken::BTC,
+        }
+    }
+
     pub fn to_i64(&self) -> i64 {
         match self {
             Network::EthMain => 1,
@@ -68,13 +108,6 @@ impl Network {
             _ => Network::EthMain,
         }
     }
-}
-
-pub(crate) struct Token {
-    pub id: i64,
-    pub chain: ChainToken,
-    pub contract: String,
-    pub decimal: i64,
 }
 
 pub(crate) struct Address {
@@ -168,6 +201,88 @@ impl Address {
 
     pub fn _delete(db: &DStorage, id: &i64) -> Result<()> {
         let sql = format!("DELETE FROM addresses WHERE id = {}", id);
+        db.delete(&sql)?;
+        Ok(())
+    }
+}
+
+pub(crate) struct Token {
+    pub id: i64,
+    pub chain: ChainToken,
+    pub network: Network,
+    pub name: String,
+    pub contract: String,
+    pub decimal: i64,
+}
+
+impl Token {
+    pub fn new(
+        chain: ChainToken,
+        network: Network,
+        name: String,
+        contract: String,
+        decimal: i64,
+    ) -> Self {
+        Self {
+            chain,
+            network,
+            name,
+            contract,
+            decimal,
+            id: 0,
+        }
+    }
+
+    pub fn to_rpc(&self) -> RpcParam {
+        json!([
+            self.id,
+            self.chain.to_i64(),
+            self.network.to_i64(),
+            self.name,
+            self.contract,
+            self.decimal,
+        ])
+    }
+
+    fn from_values(mut v: Vec<DsValue>) -> Self {
+        Self {
+            decimal: v.pop().unwrap().as_i64(),
+            contract: v.pop().unwrap().as_string(),
+            name: v.pop().unwrap().as_string(),
+            network: Network::from_i64(v.pop().unwrap().as_i64()),
+            chain: ChainToken::from_i64(v.pop().unwrap().as_i64()),
+            id: v.pop().unwrap().as_i64(),
+        }
+    }
+
+    pub fn insert(&mut self, db: &DStorage) -> Result<()> {
+        let sql = format!(
+            "INSERT INTO tokens (chain, network, name, contract, decimal) VALUES ({}, {}, '{}', '{}', {})",
+            self.chain.to_i64(),
+            self.network.to_i64(),
+            self.name,
+            self.contract,
+            self.decimal,
+        );
+        let id = db.insert(&sql)?;
+        self.id = id;
+        Ok(())
+    }
+
+    pub fn list(db: &DStorage, network: &Network) -> Result<Vec<Self>> {
+        let matrix = db.query(&format!(
+            "SELECT id, chain, network, name, contract, decimal FROM tokens where network = {}",
+            network.to_i64()
+        ))?;
+        let mut tokens = vec![];
+        for values in matrix {
+            tokens.push(Self::from_values(values));
+        }
+        Ok(tokens)
+    }
+
+    pub fn _delete(db: &DStorage, id: &i64) -> Result<()> {
+        let sql = format!("DELETE FROM tokens WHERE id = {}", id);
         db.delete(&sql)?;
         Ok(())
     }

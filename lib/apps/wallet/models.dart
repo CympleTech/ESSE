@@ -158,3 +158,54 @@ class Address {
     this.isGen = params[5];
   }
 }
+
+class Token {
+  int id = 0;
+  ChainToken chain = ChainToken.ETH;
+  Network network = Network.EthMain;
+  String name = 'ETH';
+  String contract = '';
+  int decimal = 18;
+
+  String balanceString = '';
+  double amount = 0.0;
+  double fiat = 0.0;
+  String logo = 'assets/logo/logo_eth.png';
+
+  Token() {}
+
+  Token.fromList(List params) {
+    this.id = params[0];
+    this.chain = ChainTokenExtension.fromInt(params[1]);
+    this.network = NetworkExtension.fromInt(params[2]);
+    this.name = params[3];
+    this.contract = params[4];
+    this.decimal = params[5];
+  }
+
+  Token.eth(Network network) {
+    this.network = network;
+  }
+
+  Token.btc(Network network) {
+    this.network = network;
+    this.name = 'BTC';
+    this.decimal = 8;
+  }
+
+  balance(String number) {
+    this.balanceString = number;
+
+    final pad = number.length - (this.decimal + 1); // 0.00..00
+    if (pad < 0) {
+      number = ('0' * (-pad)) + number;
+    }
+    String right = number.substring(number.length - this.decimal, number.length);
+    final left = number.substring(0, number.length - this.decimal);
+    if (right.length > 8) {
+      right = right.substring(0, 8);
+    }
+    final amount_s = left + '.' + right;
+    this.amount = double.parse(amount_s);
+  }
+}

@@ -31,11 +31,13 @@ class _WalletDetailState extends State<WalletDetail> with SingleTickerProviderSt
   List<Network> _networks = [];
   Network? _selectedNetwork;
 
+  Token _mainToken = Token();
+  List<Token> _tokens = [];
+
   List tokens = [
-    ['ETH', '100', '1000', 'assets/logo/logo_eth.png'],
     ['USDT', '2000', '2000', 'assets/logo/logo_tether.png'],
-    ['XXX', '100', '1000', 'assets/logo/logo_erc20.png'],
-    ['FFF', '100', '1000', 'assets/logo/logo_erc20.png'],
+    ['XXX', '100', '1000', 'assets/logo/logo_eth.png'],
+    ['FFF', '100', '1000', 'assets/logo/logo_eth.png'],
   ];
 
   @override
@@ -62,8 +64,17 @@ class _WalletDetailState extends State<WalletDetail> with SingleTickerProviderSt
   }
 
   _walletBalance(List params) {
-    // TODO
     print(params);
+    final address = params[0];
+    final network = NetworkExtension.fromInt(params[1]);
+    final contract = params[2];
+    final balance = params[3];
+
+    // TODO check token.
+
+    this._mainToken = Token.eth(network);
+    this._mainToken.balance(balance);
+    setState(() {});
   }
 
   _load() async {
@@ -249,7 +260,7 @@ class _WalletDetailState extends State<WalletDetail> with SingleTickerProviderSt
                     height: 36.0,
                     decoration: BoxDecoration(
                       image: DecorationImage(
-                        image: AssetImage(tokens[0][3]),
+                        image: AssetImage(this._mainToken.logo),
                         fit: BoxFit.cover,
                       ),
                     ),
@@ -258,7 +269,7 @@ class _WalletDetailState extends State<WalletDetail> with SingleTickerProviderSt
                     height: 60.0,
                     alignment: Alignment.center,
                     child: Text(
-                      '100 ETH',
+                      "${this._mainToken.amount} ${this._mainToken.name}",
                       style: TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold)),
                   ),
                   Text('\$1000', style: TextStyle(color: Color(0xFFADB0BB))),

@@ -2,20 +2,17 @@ use std::sync::Arc;
 use tdn::types::{
     group::GroupId,
     message::SendMessage,
-    primitive::HandleResult,
+    primitive::{HandleResult, Result},
     rpc::{json, rpc_response, RpcError, RpcHandler, RpcParam},
 };
 use tdn_did::{generate_btc_account, generate_eth_account};
 use tdn_storage::local::DStorage;
-use tokio::sync::mpsc::{error::SendError, Sender};
+use tokio::sync::mpsc::Sender;
 use web3::signing::Key;
 
 use crate::{rpc::RpcState, storage::wallet_db};
 
-use super::{
-    models::{Address, ChainToken, Network},
-    ETH_NODE,
-};
+use super::models::{Address, ChainToken, Network, Token};
 
 #[inline]
 fn wallet_list(devices: Vec<Address>) -> RpcParam {
@@ -26,44 +23,66 @@ fn wallet_list(devices: Vec<Address>) -> RpcParam {
     json!(results)
 }
 
+#[inline]
+fn res_balance(
+    gid: GroupId,
+    address: &str,
+    network: &Network,
+    contract: &str,
+    balance: &str,
+) -> RpcParam {
+    rpc_response(
+        0,
+        "wallet-balance",
+        json!([address, network.to_i64(), contract, balance]),
+        gid,
+    )
+}
+
 async fn loop_token(
     sender: Sender<SendMessage>,
-    _db: DStorage,
+    db: DStorage,
     gid: GroupId,
     network: Network,
     address: String,
-) -> std::result::Result<(), SendError<SendMessage>> {
+) -> Result<()> {
     // loop get balance of all tokens.
+    let node = network.node();
+    let chain = network.chain();
+    let tokens = Token::list(&db, &network)?;
 
-    match network {
-        Network::EthMain => {
-            //
+    match chain {
+        ChainToken::ETH => {
+            let transport = web3::transports::Http::new(node).unwrap();
+            let web3 = web3::Web3::new(transport);
+            let balance = web3
+                .eth()
+                .balance(address.parse().unwrap(), None)
+                .await
+                .unwrap();
+            let balance = balance.to_string();
+            let res = res_balance(gid, &address, &network, "", &balance);
+            sender.send(SendMessage::Rpc(0, res, true)).await?;
+
+            for token in tokens {
+                match token.chain {
+                    ChainToken::ERC20 => {
+                        //
+                    }
+                    ChainToken::ERC721 => {
+                        //
+                    }
+                    _ => {
+                        //
+                    }
+                }
+            }
         }
-        Network::EthTestRopsten => {}
-        Network::EthTestRinkeby => {}
-        Network::EthTestKovan => {}
-        Network::EthLocal => {}
-        Network::BtcMain => {}
-        Network::BtcLocal => {}
+        ChainToken::BTC => {
+            // TODO
+        }
+        _ => panic!("nerver here!"),
     }
-
-    let transport = web3::transports::Http::new(ETH_NODE).unwrap();
-    let web3 = web3::Web3::new(transport);
-
-    let balance = web3
-        .eth()
-        .balance(address.parse().unwrap(), None)
-        .await
-        .unwrap();
-    println!("Balance of {:?}: {}", address, balance);
-
-    let res = rpc_response(
-        0,
-        "wallet-balance",
-        json!([address, network.to_i64(), balance]),
-        gid,
-    );
-    sender.send(SendMessage::Rpc(0, res, true)).await?;
 
     Ok(())
 }

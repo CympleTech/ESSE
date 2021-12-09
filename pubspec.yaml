@@ -86,7 +86,6 @@ flutter:
     - assets/logo/logo_wallet.png
     - assets/logo/logo_eth.png
     - assets/logo/logo_tether.png
-    - assets/logo/logo_erc20.png
     - assets/images/background_light.jpg
     - assets/images/background_dark.jpg
     - assets/images/image_missing.png
