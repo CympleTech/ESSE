@@ -120,6 +120,7 @@ pub(crate) struct Address {
     /// if this address is imported, has this field,
     /// if this address is generated, no this field.
     pub secret: String,
+    pub balance: String,
 }
 
 impl Address {
@@ -134,6 +135,7 @@ impl Address {
             address,
             name: format!("Account {}", index),
             secret: "".to_owned(),
+            balance: "".to_owned(),
             id: 0,
         }
     }
@@ -146,11 +148,13 @@ impl Address {
             self.name,
             self.address,
             self.is_gen(),
+            self.balance,
         ])
     }
 
     fn from_values(mut v: Vec<DsValue>) -> Self {
         Self {
+            balance: v.pop().unwrap().as_string(),
             secret: v.pop().unwrap().as_string(),
             address: v.pop().unwrap().as_string(),
             name: v.pop().unwrap().as_string(),
@@ -162,12 +166,13 @@ impl Address {
 
     pub fn insert(&mut self, db: &DStorage) -> Result<()> {
         let sql = format!(
-            "INSERT INTO addresses (chain, indx, name, address, secret) VALUES ({}, {}, '{}', '{}', '{}')",
+            "INSERT INTO addresses (chain, indx, name, address, secret) VALUES ({}, {}, '{}', '{}', '{}', '{}')",
             self.chain.to_i64(),
             self.index,
             self.name,
             self.address,
             self.secret,
+            self.balance,
         );
         let id = db.insert(&sql)?;
         self.id = id;
@@ -176,7 +181,7 @@ impl Address {
 
     pub fn list(db: &DStorage) -> Result<Vec<Self>> {
         let matrix = db.query(&format!(
-            "SELECT id, chain, indx, name, address, secret FROM addresses"
+            "SELECT id, chain, indx, name, address, secret, balance FROM addresses"
         ))?;
         let mut addresses = vec![];
         for values in matrix {
@@ -187,7 +192,7 @@ impl Address {
 
     pub fn next_index(db: &DStorage, chain: &ChainToken) -> Result<u32> {
         let mut matrix = db.query(&format!(
-            "SELECT indx FROM addresses where chain = {} AND secret = '' ORDER BY indx DESC",
+            "SELECT indx FROM addresses where chain = {} AND secret = '' ORDER BY indx ASC",
             chain.to_i64()
         ))?;
         if matrix.len() > 0 {
@@ -197,6 +202,15 @@ impl Address {
         } else {
             return Ok(0);
         }
+    }
+
+    pub fn update_balance(db: &DStorage, address: &str, balance: &str) -> Result<()> {
+        let sql = format!(
+            "UPDATE addresses SET balance = '{}' WHERE address = {}",
+            balance, address
+        );
+        db.update(&sql)?;
+        Ok(())
     }
 
     pub fn _delete(db: &DStorage, id: &i64) -> Result<()> {

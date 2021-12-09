@@ -6,7 +6,8 @@ pub(super) const WALLET_VERSIONS: [&str; 2] = [
     indx INTEGER NOT NULL,
     name TEXT NOT NULL,
     address TEXT NOT NULL,
-    secret TEXT NOT NULL);",
+    secret TEXT NOT NULL,
+    balance TEXT NOT NULL);",
   "CREATE TABLE IF NOT EXISTS tokens(
     id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
     chain INTEGER NOT NULL,

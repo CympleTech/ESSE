@@ -8,6 +8,17 @@ enum ChainToken {
 }
 
 extension ChainTokenExtension on ChainToken {
+  bool isEth() {
+    switch (this) {
+      case ChainToken.ETH:
+      case ChainToken.ERC20:
+      case ChainToken.ERC721:
+        return true;
+      default:
+        return false;
+    }
+  }
+
   int toInt() {
     switch (this) {
       case ChainToken.ETH:
@@ -115,6 +126,7 @@ class Address {
   String name = '';
   String address = '';
   bool isGen = true;
+  String balanceString = '';
 
   String icon() {
     return this.address.substring(2, 4);
@@ -149,6 +161,17 @@ class Address {
     }
   }
 
+  String get balance {
+    switch (this.chain) {
+      case ChainToken.ETH:
+      case ChainToken.ERC20:
+      case ChainToken.ERC721:
+        return unit_balance(this.balanceString, 18, 4);
+      case ChainToken.BTC:
+        return unit_balance(this.balanceString, 8, 4);
+    }
+  }
+
   Address.fromList(List params) {
     this.id = params[0];
     this.chain = ChainTokenExtension.fromInt(params[1]);
@@ -156,6 +179,7 @@ class Address {
     this.name = params[3];
     this.address = params[4];
     this.isGen = params[5];
+    this.balanceString = params[6];
   }
 }
 
@@ -170,9 +194,23 @@ class Token {
   String balanceString = '';
   double amount = 0.0;
   double fiat = 0.0;
-  String logo = 'assets/logo/logo_eth.png';
 
   Token() {}
+
+  String get logo {
+    switch (name.toUpperCase()) {
+      case 'ETH':
+        return 'assets/logo/logo_eth.png';
+      case 'USDT':
+        return 'assets/logo/logo_tether.png';
+      default:
+        if (chain.isEth()) {
+          return 'assets/logo/logo_erc20.png';
+        } else {
+          return 'assets/logo/logo_btc.png';
+        }
+    }
+  }
 
   Token.fromList(List params) {
     this.id = params[0];
@@ -195,17 +233,19 @@ class Token {
 
   balance(String number) {
     this.balanceString = number;
-
-    final pad = number.length - (this.decimal + 1); // 0.00..00
-    if (pad < 0) {
-      number = ('0' * (-pad)) + number;
-    }
-    String right = number.substring(number.length - this.decimal, number.length);
-    final left = number.substring(0, number.length - this.decimal);
-    if (right.length > 8) {
-      right = right.substring(0, 8);
-    }
-    final amount_s = left + '.' + right;
-    this.amount = double.parse(amount_s);
+    this.amount = double.parse(unit_balance(number, this.decimal, 8));
   }
+}
+
+String unit_balance(String number, int decimal, int limit) {
+  final pad = number.length - (decimal + 1); // 0.00..00
+  if (pad < 0) {
+    number = ('0' * (-pad)) + number;
+  }
+  String right = number.substring(number.length - decimal, number.length);
+  final left = number.substring(0, number.length - decimal);
+  if (right.length > limit) {
+    right = right.substring(0, limit);
+  }
+  return left + '.' + right;
 }

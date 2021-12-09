@@ -35,9 +35,10 @@ class _WalletDetailState extends State<WalletDetail> with SingleTickerProviderSt
   List<Token> _tokens = [];
 
   List tokens = [
+    ['ETH', '2000', '2000', 'assets/logo/logo_eth.png'],
     ['USDT', '2000', '2000', 'assets/logo/logo_tether.png'],
-    ['XXX', '100', '1000', 'assets/logo/logo_eth.png'],
-    ['FFF', '100', '1000', 'assets/logo/logo_eth.png'],
+    ['XXX', '100', '1000', 'assets/logo/logo_erc20.png'],
+    ['wBTC', '100', '1000', 'assets/logo/logo_btc.png'],
   ];
 
   @override
@@ -59,22 +60,24 @@ class _WalletDetailState extends State<WalletDetail> with SingleTickerProviderSt
     });
     if (isNew) {
       this._addresses.add(address);
+      _changeAddress(address);
       setState(() {});
     }
   }
 
   _walletBalance(List params) {
-    print(params);
     final address = params[0];
     final network = NetworkExtension.fromInt(params[1]);
-    final contract = params[2];
-    final balance = params[3];
+    if (address == this._selectedAddress!.address && network == this._selectedNetwork!) {
+      final contract = params[2];
+      final balance = params[3];
 
-    // TODO check token.
+      // TODO check token.
 
-    this._mainToken = Token.eth(network);
-    this._mainToken.balance(balance);
-    setState(() {});
+      this._mainToken = Token.eth(network);
+      this._mainToken.balance(balance);
+      setState(() {});
+    }
   }
 
   _load() async {
@@ -99,6 +102,10 @@ class _WalletDetailState extends State<WalletDetail> with SingleTickerProviderSt
     this._networks = address.networks();
     if (!this._networks.contains(this._selectedNetwork)) {
       _changeNetwork(this._networks[0]);
+    } else {
+      rpc.send('wallet-balance', [
+          this._selectedNetwork!.toInt(), this._selectedAddress!.address
+      ]);
     }
   }
 
@@ -107,7 +114,6 @@ class _WalletDetailState extends State<WalletDetail> with SingleTickerProviderSt
     rpc.send('wallet-balance', [
         this._selectedNetwork!.toInt(), this._selectedAddress!.address
     ]);
-    print('sended balances');
   }
 
   @override
@@ -151,6 +157,11 @@ class _WalletDetailState extends State<WalletDetail> with SingleTickerProviderSt
       _changeAddress(this._addresses[0]);
     }
 
+    List<PopupMenuEntry<int>> addressWidges = [];
+    this._addresses.asMap().forEach((index, value) {
+        addressWidges.add(_menuItem(index + 3, value, color, value == this._selectedAddress));
+    });
+
     return Scaffold(
       appBar: AppBar(
         title: DropdownButton<Network>(
@@ -186,33 +197,58 @@ class _WalletDetailState extends State<WalletDetail> with SingleTickerProviderSt
         ),
         actions: [
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10.0),
-            child: DropdownButton<Address>(
-              icon: Container(),
-              underline: Container(),
-              value: this._selectedAddress,
-              onChanged: (Address? value) {
-                if (value != null) {
+            padding: const EdgeInsets.symmetric(horizontal: 20.0),
+            child: PopupMenuButton<int>(
+              child: Container(
+                margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 8.0),
+                width: 40.0,
+                decoration:  BoxDecoration(
+                  color: color.surface,
+                  borderRadius: BorderRadius.circular(25.0)
+                ),
+                child: Center(child: Text(this._selectedAddress!.icon()))
+              ),
+              onSelected: (int value) {
+                if (value == 0) {
+                  rpc.send('wallet-generate', [this._selectedAddress!.chain.toInt(), ""]);
+                } else if (value == 1) {
+                  //
+                } else if (value == 2) {
+                  //
+                } else {
                   setState(() {
-                      _changeAddress(value);
+                      _changeAddress(this._addresses[value - 3]);
                   });
                 }
               },
-              items: this._addresses.map((Address addr) {
-                  return  DropdownMenuItem<Address>(
-                    value: addr,
-                    child: Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 10.0),
-                      width: 40.0,
-                      height: 40.0,
-                      decoration:  BoxDecoration(
-                        color: color.surface,
-                        borderRadius: BorderRadius.circular(25.0)
-                      ),
-                      child: Center(child: Text(addr.icon()))
+              itemBuilder: (context) {
+                return addressWidges + <PopupMenuEntry<int>>[
+                  PopupMenuItem<int>(
+                    value: 0,
+                    child: ListTile(
+                      leading: Icon(Icons.add, color: const Color(0xFF6174FF)),
+                      title: Text(lang.createAccount,
+                        style: TextStyle(color: const Color(0xFF6174FF))),
                     ),
-                  );
-              }).toList(),
+                  ),
+                  PopupMenuItem<int>(
+                    value: 1,
+                    child: ListTile(
+                      leading: Icon(Icons.vertical_align_bottom, color: const Color(0xFF6174FF)),
+                      title: Text(lang.importAccount,
+                        style: TextStyle(color: const Color(0xFF6174FF))),
+                    ),
+                  ),
+                  PopupMenuItem<int>(
+                    value: 2,
+                    child: ListTile(
+                      leading: Icon(Icons.settings, color: const Color(0xFF6174FF)),
+                      title: Text(lang.setting,
+                        style: TextStyle(color: const Color(0xFF6174FF))),
+                    ),
+                  )
+                ];
+              },
             ),
           )
         ]
@@ -323,24 +359,36 @@ class _WalletDetailState extends State<WalletDetail> with SingleTickerProviderSt
                 children: [
                   ListView.separated(
                     separatorBuilder: (BuildContext context, int index) => const Divider(),
-                    itemCount: tokens.length,
+                    itemCount: tokens.length + 1,
                     itemBuilder: (BuildContext context, int index) {
-                      return ListTile(
-                        leading: Container(
-                          width: 36.0,
-                          height: 36.0,
-                          decoration: BoxDecoration(
-                            image: DecorationImage(
-                              image: AssetImage(tokens[index][3]),
-                              fit: BoxFit.cover,
+                      if (index == tokens.length) {
+                        return TextButton(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 10.0),
+                            child: Text('Add new Token' + ' ( ERC20 / ERC721 )')
+                          ),
+                          onPressed: () {
+                            //
+                          },
+                        );
+                      } else {
+                        return ListTile(
+                          leading: Container(
+                            width: 36.0,
+                            height: 36.0,
+                            decoration: BoxDecoration(
+                              image: DecorationImage(
+                                image: AssetImage(tokens[index][3]),
+                                fit: BoxFit.cover,
+                              ),
                             ),
                           ),
-                        ),
-                        title: Text(tokens[index][1] + ' ' + tokens[index][0]),
-                        subtitle: Text('\$' + tokens[index][2]),
-                        trailing: IconButton(icon: Icon(Icons.arrow_forward_ios),
-                          onPressed: () {}),
-                      );
+                          title: Text(tokens[index][1] + ' ' + tokens[index][0]),
+                          subtitle: Text('\$' + tokens[index][2]),
+                          trailing: IconButton(icon: Icon(Icons.arrow_forward_ios),
+                            onPressed: () {}),
+                        );
+                      }
                     }
                   ),
                   ListView.separated(
@@ -361,4 +409,15 @@ class _WalletDetailState extends State<WalletDetail> with SingleTickerProviderSt
       ),
     );
   }
+}
+
+PopupMenuEntry<int> _menuItem(int value, Address address, ColorScheme color, bool selected) {
+  return PopupMenuItem<int>(
+    value: value,
+    child: ListTile(
+      leading: Icon(Icons.check, color: selected ? color.onSurface : Colors.transparent),
+      title: Text(address.name),
+      subtitle: Text(address.balance),
+    ),
+  );
 }

@@ -122,10 +122,10 @@ abstract class AppLocalizations {
   String get portuguese;
 
   // security page (did)
+  String get createAccount;
+  String get importAccount;
   String get loginChooseAccount;
-  String get loginRestore;
   String get loginRestoreOnline;
-  String get loginNew;
   String get loginQuick;
   String get newMnemonicTitle;
   String get newMnemonicInput;

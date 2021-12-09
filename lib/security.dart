@@ -134,7 +134,7 @@ class _SecurityPageState extends State<SecurityPage> {
                                 onPressed: () => Navigator.push(context,
                                   MaterialPageRoute(builder: (_) => AccountRestorePage())),
                                 child: Text(
-                                  lang.loginRestore,
+                                  lang.importAccount,
                                   style: TextStyle(fontSize: 16),
                                 ),
                               ),
@@ -145,7 +145,7 @@ class _SecurityPageState extends State<SecurityPage> {
                                 onPressed: () => Navigator.push(context,
                                   MaterialPageRoute(builder: (_) => AccountGeneratePage())),
                                 child: Text(
-                                  lang.loginNew,
+                                  lang.createAccount,
                                   style: TextStyle(fontSize: 16),
                                 ),
                               ),

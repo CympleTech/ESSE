@@ -163,13 +163,13 @@ class AppLocalizationsZh extends AppLocalizations {
 
   // security page (did)
   @override
+  String get createAccount => '新建账户';
+  @override
+  String get importAccount => '导入账户';
+  @override
   String get loginChooseAccount => '选择账户';
   @override
-  String get loginRestore => '恢复账户';
-  @override
   String get loginRestoreOnline => '账户在线恢复';
-  @override
-  String get loginNew => '新建账户';
   @override
   String get loginQuick => '快速新建';
   @override
