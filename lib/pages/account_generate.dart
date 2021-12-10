@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:esse/l10n/localizations.dart';
-import 'package:esse/utils/device_info.dart';
 import 'package:esse/widgets/button_text.dart';
 import 'package:esse/widgets/shadow_dialog.dart';
 import 'package:esse/widgets/show_pin.dart';
@@ -83,7 +82,6 @@ class _AccountGeneratePageState extends State<AccountGeneratePage> {
     final mnemonic = _mnemoicWords;
     final name = _nameController.text;
     final avatar = _imageBytes != null ? base64.encode(_imageBytes!) : "";
-    final info = await deviceInfo();
 
     if (!_registerChecked) {
       return;
@@ -99,7 +97,7 @@ class _AccountGeneratePageState extends State<AccountGeneratePage> {
           // send to core node service by rpc.
           final res = await httpPost(Global.httpRpc,
             'account-create', [
-              _selectedLang.toInt(), mnemonic, "", name, lock, avatar, info[0], info[1]
+              _selectedLang.toInt(), mnemonic, "", name, lock, avatar
           ]);
 
           if (res.isOk) {

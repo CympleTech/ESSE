@@ -21,7 +21,7 @@ Widget _buildMaterialDialogTransitions(
   );
 }
 
-showShadowDialog(BuildContext context, IconData icon, String text, Widget content, [double height=40.0]) {
+showShadowDialog(BuildContext context, IconData icon, String text, Widget content, [double height=40.0, Widget? right=null]) {
   showGeneralDialog(
     context: context,
     barrierDismissible: true,
@@ -51,6 +51,8 @@ showShadowDialog(BuildContext context, IconData icon, String text, Widget conten
                 ),
               ),
             ),
+            if (right != null)
+            Positioned(right: 0.0, child: right),
             Container(
               child: Row(
                 mainAxisSize: MainAxisSize.min,

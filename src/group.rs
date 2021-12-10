@@ -18,7 +18,7 @@ use crate::event::{InnerEvent, StatusEvent, SyncEvent};
 use crate::layer::Layer;
 use crate::rpc;
 use crate::storage::{account_db, account_init, consensus_db, write_avatar};
-use crate::utils::device_status::device_status as local_device_status;
+use crate::utils::device_status::{device_info, device_status as local_device_status};
 
 pub(crate) mod running;
 
@@ -441,8 +441,6 @@ impl Group {
         name: &str,
         lock: &str,
         avatar_bytes: Vec<u8>,
-        device_name: &str,
-        device_info: &str,
     ) -> Result<(i64, GroupId)> {
         let account_index = self.accounts.len() as u32;
         let (mut account, sk) = Account::generate(
@@ -472,7 +470,8 @@ impl Group {
         let _ = write_avatar(&self.base, &account_id, &account_id, &account.avatar).await;
         self.accounts.insert(account.gid, account);
 
-        let mut device = Device::new(device_name.to_owned(), device_info.to_owned(), self.addr);
+        let (device_name, device_info) = device_info();
+        let mut device = Device::new(device_name, device_info, self.addr);
         let db = consensus_db(&self.base, &account_id)?;
         device.insert(&db)?;
         db.close()?;

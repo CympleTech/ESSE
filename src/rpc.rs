@@ -266,24 +266,12 @@ fn new_rpc_handler(
             let lock = params[4].as_str().ok_or(RpcError::ParseError)?;
             let avatar = params[5].as_str().ok_or(RpcError::ParseError)?;
 
-            let device_name = params[6].as_str().ok_or(RpcError::ParseError)?;
-            let device_info = params[7].as_str().ok_or(RpcError::ParseError)?;
-
             let avatar_bytes = base64::decode(avatar).unwrap_or(vec![]);
             let (id, gid) = state
                 .group
                 .write()
                 .await
-                .add_account(
-                    lang,
-                    seed,
-                    pass,
-                    name,
-                    lock,
-                    avatar_bytes,
-                    device_name,
-                    device_info,
-                )
+                .add_account(lang, seed, pass, name, lock, avatar_bytes)
                 .await?;
             state.layer.write().await.add_running(&gid, gid, id, 0)?;
 
@@ -308,23 +296,12 @@ fn new_rpc_handler(
 
             let some_addr =
                 PeerAddr::from_hex(params[5].as_str().ok_or(RpcError::ParseError)?).ok();
-            let device_name = params[6].as_str().ok_or(RpcError::ParseError)?;
-            let device_info = params[7].as_str().ok_or(RpcError::ParseError)?;
 
             let (id, gid) = state
                 .group
                 .write()
                 .await
-                .add_account(
-                    lang,
-                    seed,
-                    pass,
-                    name,
-                    lock,
-                    vec![],
-                    device_name,
-                    device_info,
-                )
+                .add_account(lang, seed, pass, name, lock, vec![])
                 .await?;
             state.layer.write().await.add_running(&gid, gid, id, 0)?;
 

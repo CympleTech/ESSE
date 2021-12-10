@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:esse/l10n/localizations.dart';
-import 'package:esse/utils/device_info.dart';
 import 'package:esse/utils/better_print.dart';
 import 'package:esse/widgets/button_text.dart';
 import 'package:esse/widgets/shadow_dialog.dart';
@@ -394,7 +393,6 @@ class _AccountRestorePageState extends State<AccountRestorePage> {
     if (addr.length < 2) {
       return;
     }
-    final info = await deviceInfo();
 
     showShadowDialog(
       context,
@@ -405,7 +403,7 @@ class _AccountRestorePageState extends State<AccountRestorePage> {
           Navigator.of(context).pop();
           // send to core node service by rpc.
           final res = await httpPost(Global.httpRpc, 'account-restore', [
-              _selectedLang.toInt(), mnemonic, "", this._name, lock, addr, info[0], info[1]
+              _selectedLang.toInt(), mnemonic, "", this._name, lock, addr
           ]);
 
           if (res.isOk) {

@@ -12,6 +12,7 @@ import 'package:esse/pages/account_restore.dart';
 import 'package:esse/pages/account_quick.dart';
 import 'package:esse/utils/logined_cache.dart';
 import 'package:esse/utils/better_print.dart';
+import 'package:esse/utils/toast.dart';
 import 'package:esse/account.dart';
 import 'package:esse/global.dart';
 import 'package:esse/rpc.dart';
@@ -109,7 +110,7 @@ class _SecurityPageState extends State<SecurityPage> {
                       loginForm(color, lang),
                       const SizedBox(height: 20.0),
                       ButtonText(text: lang.ok, enable: _accountsLoaded,
-                        action: () => loginAction(lang.verifyPin)),
+                        action: () => loginAction(lang.verifyPin, color, lang)),
                       const SizedBox(height: 20.0),
                       InkWell(
                         child: Container(width: 600.0, height: 50.0,
@@ -241,11 +242,11 @@ class _SecurityPageState extends State<SecurityPage> {
       Navigator.of(context).pushNamedAndRemoveUntil("/", (Route<dynamic> route) => false);
     } else {
       // TODO tostor error
-      print(res.error);
+      toast(context, res.error);
     }
   }
 
-  void loginAction(String title) {
+  void loginAction(String title, color, lang) {
     if (this._selectedUserLock.length == 0) {
       _verifyAfter('');
     } else {
@@ -258,7 +259,16 @@ class _SecurityPageState extends State<SecurityPage> {
           callback: (pinWords) async {
             Navigator.of(context).pop();
             _verifyAfter(pinWords);
-      }));
+        }),
+        40.0,
+        InkWell(
+          onTap: () => _verifyAfter(''),
+          child: Container(
+            child: Icon(
+              Icons.arrow_forward,
+              color: color.primary,
+        )))
+      );
     }
   }
 

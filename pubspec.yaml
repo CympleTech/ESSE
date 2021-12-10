@@ -47,7 +47,6 @@ dependencies:
   web_socket_channel: any
   record: any
   just_audio: any
-  device_info_plus: any
   percent_indicator: any
   bottom_navy_bar: any
   flutter_quill: any

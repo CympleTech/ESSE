@@ -129,7 +129,7 @@ class _PinWordsState extends State<PinWords> {
   @override
   Widget build(BuildContext context) {
     final color = Theme.of(context).colorScheme;
-    //final lang = AppLocalizations.of(context);
+    final lang = AppLocalizations.of(context);
 
     return Column(children: [
       this._waiting ? CupertinoActivityIndicator(radius: 10.0, animating: true) : const SizedBox(),
@@ -189,7 +189,7 @@ class _PinWordsState extends State<PinWords> {
                     size: 20.0, color: Colors.white)),
           ),
         ),
-      ])
+      ]),
     ]);
   }
 }

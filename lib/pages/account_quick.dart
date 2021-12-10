@@ -7,7 +7,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:esse/l10n/localizations.dart';
-import 'package:esse/utils/device_info.dart';
 import 'package:esse/widgets/button_text.dart';
 import 'package:esse/widgets/shadow_dialog.dart';
 import 'package:esse/widgets/show_pin.dart';
@@ -132,7 +131,6 @@ class _AccountQuickPageState extends State<AccountQuickPage> {
     final String mnemonic = lang_mnemonic[1];
     final name = _nameController.text;
     final avatar = _imageBytes != null ? base64.encode(_imageBytes!) : "";
-    final info = await deviceInfo();
     final lock = '';
 
     if (!_registerChecked) {
@@ -141,7 +139,7 @@ class _AccountQuickPageState extends State<AccountQuickPage> {
 
     // send to core node service by rpc.
     final res = await httpPost(Global.httpRpc, 'account-create', [
-        language.toInt(), mnemonic, "", name, lock, avatar, info[0], info[1]
+        language.toInt(), mnemonic, "", name, lock, avatar
     ]);
 
     if (res.isOk) {

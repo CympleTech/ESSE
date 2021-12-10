@@ -33,3 +33,11 @@ pub(crate) fn device_status() -> (u32, u32, u32, u32, u16, u16, u16, u16) {
         cpu_n, memory_t, swap_t, disk_t_n, cpu_p, memory_p, swap_p, disk_p,
     )
 }
+
+pub(crate) fn device_info() -> (String, String) {
+    let sys = System::new_all();
+    (
+        sys.name().unwrap_or("Unknown".to_owned()),
+        sys.host_name().unwrap_or("Unknown".to_owned()),
+    )
+}
