@@ -61,7 +61,7 @@ async fn loop_token(
                 .await
                 .unwrap();
             let balance = balance.to_string();
-            let _ = Address::update_balance(&db, &address, &balance);
+            let _ = Address::update_balance(&db, &address, &network, &balance);
             let res = res_balance(gid, &address, &network, "", &balance);
             sender.send(SendMessage::Rpc(0, res, true)).await?;
 

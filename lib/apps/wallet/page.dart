@@ -85,6 +85,7 @@ class _WalletDetailState extends State<WalletDetail> with SingleTickerProviderSt
     if (res.isOk) {
       this._addresses.clear();
       res.params.forEach((param) {
+          print(param);
           this._addresses.add(Address.fromList(param));
       });
       if (this._addresses.length == 0) {
@@ -409,15 +410,15 @@ class _WalletDetailState extends State<WalletDetail> with SingleTickerProviderSt
       ),
     );
   }
-}
 
-PopupMenuEntry<int> _menuItem(int value, Address address, ColorScheme color, bool selected) {
-  return PopupMenuItem<int>(
-    value: value,
-    child: ListTile(
-      leading: Icon(Icons.check, color: selected ? color.onSurface : Colors.transparent),
-      title: Text(address.name),
-      subtitle: Text(address.balance),
-    ),
-  );
+  PopupMenuEntry<int> _menuItem(int value, Address address, ColorScheme color, bool selected) {
+    return PopupMenuItem<int>(
+      value: value,
+      child: ListTile(
+        leading: Icon(Icons.check, color: selected ? color.onSurface : Colors.transparent),
+        title: Text(address.name),
+        subtitle: Text(address.balance(this._selectedNetwork!) + ' ' + address.chain.symbol),
+      ),
+    );
+  }
 }

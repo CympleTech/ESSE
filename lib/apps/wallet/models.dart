@@ -19,6 +19,17 @@ extension ChainTokenExtension on ChainToken {
     }
   }
 
+  String get symbol {
+    switch (this) {
+      case ChainToken.ETH:
+      case ChainToken.ERC20:
+      case ChainToken.ERC721:
+        return 'ETH';
+      case ChainToken.BTC:
+        return 'BTC';
+    }
+  }
+
   int toInt() {
     switch (this) {
       case ChainToken.ETH:
@@ -126,7 +137,7 @@ class Address {
   String name = '';
   String address = '';
   bool isGen = true;
-  String balanceString = '';
+  Map<Network, String> balances = {};
 
   String icon() {
     return this.address.substring(2, 4);
@@ -161,14 +172,31 @@ class Address {
     }
   }
 
-  String get balance {
-    switch (this.chain) {
-      case ChainToken.ETH:
-      case ChainToken.ERC20:
-      case ChainToken.ERC721:
-        return unit_balance(this.balanceString, 18, 4);
-      case ChainToken.BTC:
-        return unit_balance(this.balanceString, 8, 4);
+  String balance(Network network) {
+    if (this.balances.containsKey(network)) {
+      final s = this.balances[network]!;
+      switch (this.chain) {
+        case ChainToken.ETH:
+        case ChainToken.ERC20:
+        case ChainToken.ERC721:
+          return unit_balance(s, 18, 4);
+        case ChainToken.BTC:
+          return unit_balance(s, 8, 4);
+      }
+    } else {
+      return '0.0';
+    }
+  }
+
+  split_balance(String s) {
+    if (s.length > 0) {
+      Map<Network, String> balances = {};
+      s.split(",").forEach((ss) {
+          final sss = ss.split(":");
+          balances[NetworkExtension.fromInt(int.parse(sss[0]))] = sss[1];
+      });
+
+      this.balances = balances;
     }
   }
 
@@ -179,7 +207,7 @@ class Address {
     this.name = params[3];
     this.address = params[4];
     this.isGen = params[5];
-    this.balanceString = params[6];
+    this.split_balance(params[6]);
   }
 }
 

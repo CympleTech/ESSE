@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+use std::ops::AddAssign;
 use tdn::types::{
     primitive::Result,
     rpc::{json, RpcParam},
@@ -128,6 +130,47 @@ impl Address {
         self.secret.len() == 0
     }
 
+    fn merge_balance(old: &str, network: &Network, add: &str) -> String {
+        let mut balances: HashMap<i64, &str> = old
+            .split(",")
+            .flat_map(|s| {
+                if s.len() > 2 {
+                    let mut ss = s.split(":");
+                    Some((
+                        ss.next().and_then(|s| s.parse().ok()).unwrap_or(0),
+                        ss.next().unwrap_or(""),
+                    ))
+                } else {
+                    None
+                }
+            })
+            .collect();
+        balances
+            .entry(network.to_i64())
+            .and_modify(|old| *old = add)
+            .or_insert(add);
+
+        let mut last: Vec<String> = vec![];
+        for (key, balance) in balances {
+            last.push(format!("{}:{}", key, balance));
+        }
+        last.join(",")
+    }
+
+    fn _get_balance(network: &Network, balance: &str) -> String {
+        let balances: HashMap<i64, &str> = balance
+            .split(",")
+            .map(|s| {
+                let mut ss = s.split(":");
+                (
+                    ss.next().and_then(|s| s.parse().ok()).unwrap_or(0),
+                    ss.next().unwrap_or(""),
+                )
+            })
+            .collect();
+        balances.get(&network.to_i64()).unwrap_or(&"").to_string()
+    }
+
     pub fn new(chain: ChainToken, index: i64, address: String) -> Self {
         Self {
             chain,
@@ -204,12 +247,28 @@ impl Address {
         }
     }
 
-    pub fn update_balance(db: &DStorage, address: &str, balance: &str) -> Result<()> {
-        let sql = format!(
-            "UPDATE addresses SET balance = '{}' WHERE address = {}",
-            balance, address
-        );
-        db.update(&sql)?;
+    pub fn update_balance(
+        db: &DStorage,
+        address: &str,
+        network: &Network,
+        balance: &str,
+    ) -> Result<()> {
+        let mut matrix = db.query(&format!(
+            "SELECT balance FROM addresses where address = '{}'",
+            address
+        ))?;
+        if matrix.len() > 0 {
+            let mut values = matrix.pop().unwrap(); // safe unwrap()
+            let old = values.pop().unwrap(); // safe unwrap()
+            let new_b = Address::merge_balance(old.as_str(), network, balance);
+
+            let sql = format!(
+                "UPDATE addresses SET balance = '{}' WHERE address = '{}'",
+                new_b, address
+            );
+            db.update(&sql)?;
+        }
+
         Ok(())
     }
 
