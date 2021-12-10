@@ -5,7 +5,7 @@ use tdn::types::{
     primitive::{HandleResult, Result},
     rpc::{json, rpc_response, RpcError, RpcHandler, RpcParam},
 };
-use tdn_did::{generate_btc_account, generate_eth_account};
+use tdn_did::{generate_btc_account, generate_eth_account, secp256k1::SecretKey};
 use tdn_storage::local::DStorage;
 use tokio::sync::mpsc::Sender;
 use web3::signing::Key;
@@ -136,6 +136,27 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
                 }
             };
 
+            address.insert(&db)?;
+            Ok(HandleResult::rpc(address.to_rpc()))
+        },
+    );
+
+    handler.add_method(
+        "wallet-import",
+        |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
+            let chain = ChainToken::from_i64(params[0].as_i64().ok_or(RpcError::ParseError)?);
+            let _lock = params[1].as_str().ok_or(RpcError::ParseError)?;
+            let secret = params[2].as_str().ok_or(RpcError::ParseError)?;
+
+            let sk: SecretKey = secret.parse().or(Err(RpcError::ParseError))?;
+            let addr = format!("{:?}", (&sk).address());
+
+            let group_lock = state.group.read().await;
+            let encrypt_secret = "".to_owned();
+            let db = wallet_db(group_lock.base(), &gid)?;
+            drop(group_lock);
+
+            let mut address = Address::import(chain, addr, encrypt_secret);
             address.insert(&db)?;
             Ok(HandleResult::rpc(address.to_rpc()))
         },

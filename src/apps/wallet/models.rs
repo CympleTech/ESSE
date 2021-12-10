@@ -183,6 +183,18 @@ impl Address {
         }
     }
 
+    pub fn import(chain: ChainToken, address: String, secret: String) -> Self {
+        Self {
+            name: format!("Import {}", &address[2..4]),
+            chain,
+            address,
+            secret,
+            index: 0,
+            balance: "".to_owned(),
+            id: 0,
+        }
+    }
+
     pub fn to_rpc(&self) -> RpcParam {
         json!([
             self.id,
