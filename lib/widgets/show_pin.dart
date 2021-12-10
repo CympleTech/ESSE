@@ -1,9 +1,9 @@
-import 'dart:convert';
-
-import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart' show CupertinoActivityIndicator;
 
 import 'package:esse/l10n/localizations.dart';
+import 'package:esse/rpc.dart';
+import 'package:esse/global.dart';
 
 const pinLength = 6;
 
@@ -66,27 +66,45 @@ class PinWords extends StatefulWidget {
 }
 
 class _PinWordsState extends State<PinWords> {
-  String pinWords = '';
-  bool isError = false;
+  String _pinWords = '';
+  bool _isError = false;
+  bool _waiting = false;
+
+  _checkPin() async {
+    bool check = false;
+    final res = await httpPost(Global.httpRpc, 'account-pin-check', [_pinWords]);
+    if (res.isOk) {
+      check = res.params[0];
+    } else {
+      print(res.error);
+    }
+
+    if (widget.hashPin != "" && !check) {
+      setState(() {
+          _waiting = false;
+          _pinWords = '';
+          _isError = true;
+      });
+    } else {
+      setState(() {});
+      widget.callback(_pinWords);
+    }
+  }
 
   _inputCallback(String text) {
-    isError = false;
-    pinWords += text;
-    if (pinWords.length < pinLength) {
+    if (this._waiting) {
+      return;
+    }
+
+    _isError = false;
+    _pinWords += text;
+    if (_pinWords.length < pinLength) {
       setState(() {});
     } else {
-      final bytes = utf8.encode(pinWords);
-      final lock = "${sha256.convert(bytes)}";
-
-      if (widget.hashPin != "" && widget.hashPin != lock) {
-        setState(() {
-          pinWords = '';
-          isError = true;
-        });
-      } else {
-        setState(() {});
-        widget.callback(pinWords, lock);
-      }
+      setState(() {
+          this._waiting = true;
+      });
+      _checkPin();
     }
   }
 
@@ -97,8 +115,8 @@ class _PinWordsState extends State<PinWords> {
         Container(
           margin: EdgeInsets.all(6.0),
           child: _circle(
-            isError,
-            i < pinWords.length,
+            _isError,
+            i < _pinWords.length,
             color.primary,
             color.primaryVariant,
           ),
@@ -114,6 +132,7 @@ class _PinWordsState extends State<PinWords> {
     //final lang = AppLocalizations.of(context);
 
     return Column(children: [
+      this._waiting ? CupertinoActivityIndicator(radius: 10.0, animating: true) : const SizedBox(),
       Container(
         margin: const EdgeInsets.only(bottom: 20.0),
         height: 40,
@@ -141,9 +160,9 @@ class _PinWordsState extends State<PinWords> {
         _keyboradInput(color.primary, color.background, '0', _inputCallback),
         GestureDetector(
           onTap: () {
-            if (pinWords.length > 0) {
+            if (_pinWords.length > 0) {
               setState(() {
-                pinWords = pinWords.substring(0, pinWords.length - 1);
+                _pinWords = _pinWords.substring(0, _pinWords.length - 1);
               });
             }
           },
@@ -213,10 +232,7 @@ class _SetPinWordsState extends State<SetPinWords> {
               this._pinWords = '';
           });
         } else {
-          setState(() {});
-          final bytes = utf8.encode(this._pinWords);
-          final lock = "${sha256.convert(bytes)}";
-          widget.callback(this._pinWords, lock);
+          widget.callback(this._pinWords);
         }
       }
     }

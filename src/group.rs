@@ -259,12 +259,24 @@ impl Group {
         &self.addr
     }
 
+    pub fn secret(&self) -> &[u8] {
+        &self.secret
+    }
+
     pub fn base(&self) -> &PathBuf {
         &self.base
     }
 
     pub fn sender(&self) -> Sender<SendMessage> {
         self.sender.clone()
+    }
+
+    pub fn check_lock(&self, gid: &GroupId, lock: &str) -> bool {
+        if let Some(account) = self.accounts.get(gid) {
+            account.check_lock(&self.secret, lock).is_ok()
+        } else {
+            false
+        }
     }
 
     pub fn account(&self, gid: &GroupId) -> Result<&Account> {

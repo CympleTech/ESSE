@@ -10,9 +10,11 @@ use tdn_storage::local::DStorage;
 use tokio::sync::mpsc::Sender;
 use web3::signing::Key;
 
-use crate::{rpc::RpcState, storage::wallet_db};
+use crate::{rpc::RpcState, storage::wallet_db, utils::crypto::encrypt};
 
 use super::models::{Address, ChainToken, Network, Token};
+
+const WALLET_DEFAULT_PIN: &'static str = "walletissafe";
 
 #[inline]
 fn wallet_list(devices: Vec<Address>) -> RpcParam {
@@ -145,18 +147,17 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
         "wallet-import",
         |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
             let chain = ChainToken::from_i64(params[0].as_i64().ok_or(RpcError::ParseError)?);
-            let _lock = params[1].as_str().ok_or(RpcError::ParseError)?;
-            let secret = params[2].as_str().ok_or(RpcError::ParseError)?;
+            let secret = params[1].as_str().ok_or(RpcError::ParseError)?;
 
             let sk: SecretKey = secret.parse().or(Err(RpcError::ParseError))?;
             let addr = format!("{:?}", (&sk).address());
 
             let group_lock = state.group.read().await;
-            let encrypt_secret = "".to_owned();
+            let cbytes = encrypt(&group_lock.secret(), WALLET_DEFAULT_PIN, sk.as_ref())?;
             let db = wallet_db(group_lock.base(), &gid)?;
             drop(group_lock);
 
-            let mut address = Address::import(chain, addr, encrypt_secret);
+            let mut address = Address::import(chain, addr, cbytes);
             address.insert(&db)?;
             Ok(HandleResult::rpc(address.to_rpc()))
         },

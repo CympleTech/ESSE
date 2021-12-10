@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::ops::AddAssign;
 use tdn::types::{
     primitive::Result,
     rpc::{json, RpcParam},
@@ -121,7 +120,7 @@ pub(crate) struct Address {
     /// Encrypted secret key.
     /// if this address is imported, has this field,
     /// if this address is generated, no this field.
-    pub secret: String,
+    pub secret: Vec<u8>,
     pub balance: String,
 }
 
@@ -177,13 +176,13 @@ impl Address {
             index,
             address,
             name: format!("Account {}", index),
-            secret: "".to_owned(),
+            secret: vec![],
             balance: "".to_owned(),
             id: 0,
         }
     }
 
-    pub fn import(chain: ChainToken, address: String, secret: String) -> Self {
+    pub fn import(chain: ChainToken, address: String, secret: Vec<u8>) -> Self {
         Self {
             name: format!("Import {}", &address[2..4]),
             chain,
@@ -210,7 +209,7 @@ impl Address {
     fn from_values(mut v: Vec<DsValue>) -> Self {
         Self {
             balance: v.pop().unwrap().as_string(),
-            secret: v.pop().unwrap().as_string(),
+            secret: base64::decode(v.pop().unwrap().as_str()).unwrap_or(vec![]),
             address: v.pop().unwrap().as_string(),
             name: v.pop().unwrap().as_string(),
             index: v.pop().unwrap().as_i64(),
@@ -226,7 +225,7 @@ impl Address {
             self.index,
             self.name,
             self.address,
-            self.secret,
+            base64::encode(&self.secret),
             self.balance,
         );
         let id = db.insert(&sql)?;

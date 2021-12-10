@@ -255,9 +255,9 @@ class _SecurityPageState extends State<SecurityPage> {
         title,
         PinWords(
           hashPin: this._selectedUserLock,
-          callback: (pinWords, lock) async {
+          callback: (pinWords) async {
             Navigator.of(context).pop();
-            _verifyAfter(lock);
+            _verifyAfter(pinWords);
       }));
     }
   }

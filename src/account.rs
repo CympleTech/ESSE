@@ -1,5 +1,3 @@
-use aes_gcm::aead::{generic_array::GenericArray, Aead, NewAead};
-use aes_gcm::Aes256Gcm;
 use std::time::{SystemTime, UNIX_EPOCH};
 use tdn::types::{
     group::{EventId, GroupId},
@@ -7,6 +5,8 @@ use tdn::types::{
 };
 use tdn_did::{generate_id, Keypair, Language};
 use tdn_storage::local::{DStorage, DsValue};
+
+use crate::utils::crypto::{check_pin, decrypt, decrypt_multiple, encrypt_multiple, hash_pin};
 
 fn mnemonic_lang_to_i64(lang: Language) -> i64 {
     match lang {
@@ -48,7 +48,7 @@ pub(crate) struct Account {
     pub pass: String,
     pub name: String,
     pub avatar: Vec<u8>,
-    pub lock: String,    // hashed-key.
+    pub lock: Vec<u8>,   // hashed-lock.
     pub secret: Vec<u8>, // encrypted value.
     pub height: u64,
     pub event: EventId,
@@ -62,7 +62,7 @@ impl Account {
         lang: i64,
         pass: String,
         name: String,
-        lock: String,
+        lock: Vec<u8>,
         avatar: Vec<u8>,
         mnemonic: Vec<u8>,
         secret: Vec<u8>,
@@ -96,7 +96,7 @@ impl Account {
 
     pub fn generate(
         index: u32,
-        skey: &[u8], // &[u8; 32]
+        salt: &[u8], // &[u8; 32]
         lang: i64,
         mnemonic: &str,
         pass: &str,
@@ -112,90 +112,56 @@ impl Account {
             if pass.len() > 0 { Some(pass) } else { None },
         )?;
 
-        let cipher = Aes256Gcm::new(GenericArray::from_slice(skey)); // 256-bit key.
-        let hash_nonce = blake3::hash(lock.as_bytes());
-        let nonce = GenericArray::from_slice(&hash_nonce.as_bytes()[0..12]); // 96-bit key.
-
-        let mnemonic_bytes = cipher
-            .encrypt(nonce, mnemonic.as_bytes())
-            .map_err(|_e| anyhow!("mnemonic lock invalid."))?;
-
-        let sk_bytes = cipher
-            .encrypt(nonce, sk.to_bytes().as_ref())
-            .map_err(|_e| anyhow!("secret lock invalid."))?;
+        let mut ebytes = encrypt_multiple(salt, lock, vec![&sk.to_bytes(), mnemonic.as_bytes()])?;
+        let mnemonic = ebytes.pop().unwrap_or(vec![]);
+        let secret = ebytes.pop().unwrap_or(vec![]);
+        let index = index as i64;
 
         Ok((
             Account::new(
                 gid,
-                index as i64,
+                index,
                 lang,
                 pass.to_string(),
                 name.to_string(),
-                lock.to_string(),
+                hash_pin(salt, lock, index),
                 avatar,
-                mnemonic_bytes,
-                sk_bytes,
+                mnemonic,
+                secret,
             ),
             sk,
         ))
     }
 
-    pub fn _check_lock(&self, _lock: &str) -> bool {
-        // TODO
-        true
+    pub fn check_lock(&self, salt: &[u8], lock: &str) -> Result<()> {
+        if check_pin(salt, lock, self.index, &self.lock) {
+            Ok(())
+        } else {
+            Err(anyhow!("lock is invalid!"))
+        }
     }
 
-    pub fn pin(&mut self, skey: &[u8], old: &str, new: &str) -> Result<()> {
-        self.lock = new.to_string();
-
-        let cipher = Aes256Gcm::new(GenericArray::from_slice(skey)); // 256-bit key.
-
-        let hash_old_nonce = blake3::hash(old.as_bytes());
-        let hash_new_nonce = blake3::hash(new.as_bytes());
-        let old_nonce = GenericArray::from_slice(&hash_old_nonce.as_bytes()[0..12]); // 96-bit key.
-        let new_nonce = GenericArray::from_slice(&hash_new_nonce.as_bytes()[0..12]); // 96-bit key.
-
-        let mnemonic = cipher
-            .decrypt(old_nonce, self.mnemonic.as_ref())
-            .map_err(|_e| anyhow!("mnemonic unlock invalid."))?;
-
-        self.mnemonic = cipher
-            .encrypt(new_nonce, mnemonic.as_ref())
-            .map_err(|_e| anyhow!("mnemonic lock invalid."))?;
-
-        let secret = cipher
-            .decrypt(old_nonce, self.secret.as_ref())
-            .map_err(|_e| anyhow!("secret unlock invalid."))?;
-
-        self.secret = cipher
-            .encrypt(new_nonce, secret.as_ref())
-            .map_err(|_e| anyhow!("secret lock invalid."))?;
+    pub fn pin(&mut self, salt: &[u8], old: &str, new: &str) -> Result<()> {
+        self.check_lock(salt, old)?;
+        let pbytes = decrypt_multiple(salt, old, vec![&self.secret, &self.mnemonic])?;
+        let mut ebytes = encrypt_multiple(salt, new, pbytes.iter().map(|v| v.as_ref()).collect())?;
+        self.mnemonic = ebytes.pop().unwrap_or(vec![]);
+        self.secret = ebytes.pop().unwrap_or(vec![]);
+        self.lock = hash_pin(salt, new, self.index);
 
         Ok(())
     }
 
-    pub fn mnemonic(&self, skey: &[u8], lock: &str) -> Result<String> {
-        let cipher = Aes256Gcm::new(GenericArray::from_slice(skey)); // 256-bit key.
-        let hash_nonce = blake3::hash(lock.as_bytes());
-        let nonce = GenericArray::from_slice(&hash_nonce.as_bytes()[0..12]); // 96-bit key.
-
-        let plaintext = cipher
-            .decrypt(nonce, self.mnemonic.as_ref())
-            .map_err(|_e| anyhow!("mnemonic unlock invalid."))?;
-
-        String::from_utf8(plaintext).map_err(|_e| anyhow!("mnemonic unlock invalid."))
+    pub fn mnemonic(&self, salt: &[u8], lock: &str) -> Result<String> {
+        self.check_lock(salt, lock)?;
+        let pbytes = decrypt(salt, lock, &self.mnemonic)?;
+        String::from_utf8(pbytes).or(Err(anyhow!("mnemonic unlock invalid.")))
     }
 
-    pub fn secret(&self, skey: &[u8], lock: &str) -> Result<Keypair> {
-        let cipher = Aes256Gcm::new(GenericArray::from_slice(skey)); // 256-bit key.
-        let hash_nonce = blake3::hash(lock.as_bytes());
-        let nonce = GenericArray::from_slice(&hash_nonce.as_bytes()[0..12]); // 96-bit key.
-
-        let plaintext = cipher
-            .decrypt(nonce, self.secret.as_ref())
-            .map_err(|_e| anyhow!("secret unlock invalid."))?;
-
-        Keypair::from_bytes(&plaintext).map_err(|_e| anyhow!("secret unlock invalid."))
+    pub fn secret(&self, salt: &[u8], lock: &str) -> Result<Keypair> {
+        self.check_lock(salt, lock)?;
+        let pbytes = decrypt(salt, lock, &self.secret)?;
+        Keypair::from_bytes(&pbytes).or(Err(anyhow!("secret unlock invalid.")))
     }
 
     /// here is zero-copy and unwrap is safe. checked.
@@ -204,10 +170,10 @@ impl Account {
             datetime: v.pop().unwrap().as_i64(),
             event: EventId::from_hex(v.pop().unwrap().as_str()).unwrap_or(EventId::default()),
             height: v.pop().unwrap().as_i64() as u64,
-            avatar: base64::decode(v.pop().unwrap().as_string()).unwrap_or(vec![]),
-            secret: base64::decode(v.pop().unwrap().as_string()).unwrap_or(vec![]),
-            mnemonic: base64::decode(v.pop().unwrap().as_string()).unwrap_or(vec![]),
-            lock: v.pop().unwrap().as_string(),
+            avatar: base64::decode(v.pop().unwrap().as_str()).unwrap_or(vec![]),
+            secret: base64::decode(v.pop().unwrap().as_str()).unwrap_or(vec![]),
+            mnemonic: base64::decode(v.pop().unwrap().as_str()).unwrap_or(vec![]),
+            lock: base64::decode(v.pop().unwrap().as_string()).unwrap_or(vec![]),
             name: v.pop().unwrap().as_string(),
             pass: v.pop().unwrap().as_string(),
             lang: v.pop().unwrap().as_i64(),
@@ -261,7 +227,7 @@ impl Account {
             self.lang,
             self.pass,
             self.name,
-            self.lock,
+            base64::encode(&self.lock),
             base64::encode(&self.mnemonic),
             base64::encode(&self.secret),
             base64::encode(&self.avatar),
@@ -278,7 +244,7 @@ impl Account {
     pub fn update(&self, db: &DStorage) -> Result<usize> {
         let sql = format!("UPDATE accounts SET name='{}', lock='{}', mnemonic='{}', secret='{}', avatar='{}', height={}, event='{}', datetime={} WHERE id = {}",
             self.name,
-            self.lock,
+            base64::encode(&self.lock),
             base64::encode(&self.mnemonic),
             base64::encode(&self.secret),
             base64::encode(&self.avatar),

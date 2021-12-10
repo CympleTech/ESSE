@@ -235,7 +235,7 @@ fn new_rpc_handler(
                 users.push(vec![
                     gid.to_hex(),
                     user.name.clone(),
-                    user.lock.clone(),
+                    base64::encode(&user.lock),
                     base64::encode(&user.avatar),
                 ]);
             }
@@ -370,6 +370,15 @@ fn new_rpc_handler(
             drop(group_lock);
 
             Ok(results)
+        },
+    );
+
+    handler.add_method(
+        "account-pin-check",
+        |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
+            let lock = params[0].as_str().ok_or(RpcError::ParseError)?;
+            let res = state.group.read().await.check_lock(&gid, lock);
+            Ok(HandleResult::rpc(json!([res])))
         },
     );
 

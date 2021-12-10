@@ -250,7 +250,7 @@ class _ProfileDetailState extends State<ProfileDetail> {
       context,
       Icons.security_rounded,
       title,
-      SetPinWords(callback: (key, lock2) async {
+      SetPinWords(callback: (lock2) async {
           Navigator.of(context).pop();
           final res = await httpPost(Global.httpRpc, 'account-pin', [lock, lock2]);
           if (res.isOk) {
@@ -286,7 +286,7 @@ class _ProfileDetailState extends State<ProfileDetail> {
         title,
         PinWords(
           hashPin: hash,
-          callback: (_key, _hash) async {
+          callback: (_) async {
             Navigator.of(context).pop();
             callback();
       }));

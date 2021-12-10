@@ -40,7 +40,6 @@ dependencies:
       url: git://github.com/google/flutter-desktop-embedding.git
       path: plugins/file_selector/file_selector_windows
   open_file: any # open file in mobile.
-  crypto: any
   crop: any
   unorm_dart: any
   qr_flutter: any

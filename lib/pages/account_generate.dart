@@ -94,7 +94,7 @@ class _AccountGeneratePageState extends State<AccountGeneratePage> {
       Icons.security_rounded,
       title,
       SetPinWords(
-        callback: (key, lock) async {
+        callback: (lock) async {
           Navigator.of(context).pop();
           // send to core node service by rpc.
           final res = await httpPost(Global.httpRpc,
