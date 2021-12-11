@@ -326,7 +326,7 @@ class DrawerWidget extends StatelessWidget {
             ? () {
                 Navigator.of(context).pop();
                 Provider.of<AccountProvider>(context, listen: false)
-                    .updateActivedAccount(account.gid);
+                    .updateActivedAccount(account.gid, account.pin);
                 Provider.of<DeviceProvider>(context, listen: false)
                     .updateActived();
                 Provider.of<ChatProvider>(context, listen: false)
@@ -354,17 +354,19 @@ class DrawerWidget extends StatelessWidget {
                   onChanged: (value) {
                     if (value) {
                       showShadowDialog(
-                          context,
-                          Icons.security_rounded,
-                          lang.verifyPin,
-                          PinWords(
-                              hashPin: account.lock,
-                              callback: (key, hash) async {
-                                Navigator.of(context).pop();
-                                Provider.of<AccountProvider>(context,
-                                        listen: false)
-                                    .onlineAccount(account.gid, hash);
-                              }));
+                        context,
+                        Icons.security_rounded,
+                        lang.verifyPin,
+                        PinWords(
+                          gid: account.gid,
+                          callback: (key) async {
+                            Navigator.of(context).pop();
+                            Provider.of<AccountProvider>(context,
+                              listen: false)
+                            .onlineAccount(account.gid, key);
+                        }),
+                        0.0,
+                      );
                     } else {
                       Provider.of<AccountProvider>(context, listen: false)
                           .offlineAccount(account.gid);

@@ -410,7 +410,7 @@ class _AccountRestorePageState extends State<AccountRestorePage> {
             // save this User
             final account = Account(res.params[0], this._name, lock);
 
-            Provider.of<AccountProvider>(context, listen: false).addAccount(account);
+            Provider.of<AccountProvider>(context, listen: false).addAccount(account, lock);
             Provider.of<DeviceProvider>(context, listen: false).updateActived();
             Provider.of<ChatProvider>(context, listen: false).updateActived();
             Provider.of<GroupChatProvider>(context, listen: false).updateActived();
@@ -421,7 +421,7 @@ class _AccountRestorePageState extends State<AccountRestorePage> {
             print(res.error);
           }
       }),
-      20.0,
+      0.0
     );
   }
 }

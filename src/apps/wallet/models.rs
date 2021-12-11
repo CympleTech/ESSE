@@ -220,7 +220,7 @@ impl Address {
 
     pub fn insert(&mut self, db: &DStorage) -> Result<()> {
         let sql = format!(
-            "INSERT INTO addresses (chain, indx, name, address, secret) VALUES ({}, {}, '{}', '{}', '{}', '{}')",
+            "INSERT INTO addresses (chain, indx, name, address, secret, balance) VALUES ({}, {}, '{}', '{}', '{}', '{}')",
             self.chain.to_i64(),
             self.index,
             self.name,

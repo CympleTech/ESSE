@@ -57,9 +57,9 @@ Widget _keyboradInput(Color color, Color bg, String text, Function callback) {
 
 class PinWords extends StatefulWidget {
   final Function callback;
-  final String hashPin;
+  final String gid;
 
-  PinWords({Key? key, required this.hashPin, required this.callback}) : super(key: key);
+  PinWords({Key? key, required this.gid, required this.callback}) : super(key: key);
 
   @override
   _PinWordsState createState() => _PinWordsState();
@@ -72,14 +72,14 @@ class _PinWordsState extends State<PinWords> {
 
   _checkPin() async {
     bool check = false;
-    final res = await httpPost(Global.httpRpc, 'account-pin-check', [_pinWords]);
+    final res = await httpPost(Global.httpRpc, 'account-pin-check', [widget.gid, _pinWords]);
     if (res.isOk) {
       check = res.params[0];
     } else {
       print(res.error);
     }
 
-    if (widget.hashPin != "" && !check) {
+    if (!check) {
       setState(() {
           _waiting = false;
           _pinWords = '';
@@ -93,6 +93,10 @@ class _PinWordsState extends State<PinWords> {
 
   _inputCallback(String text) {
     if (this._waiting) {
+      return;
+    }
+
+    if (_pinWords.length >= pinLength) {
       return;
     }
 
@@ -190,6 +194,25 @@ class _PinWordsState extends State<PinWords> {
           ),
         ),
       ]),
+      Padding(
+        padding: const EdgeInsets.symmetric(vertical: 10.0),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            Text(lang.none, style: TextStyle(color: color.primary, fontStyle: FontStyle.italic)),
+            IconButton(
+              icon: Icon(Icons.skip_next, color: color.primary),
+              onPressed: () {
+                setState(() {
+                    this._pinWords = '';
+                    this._waiting = true;
+                });
+                _checkPin();
+              }
+            ),
+          ]
+        )
+      ),
     ]);
   }
 }
@@ -325,7 +348,20 @@ class _SetPinWordsState extends State<SetPinWords> {
                     size: 20.0, color: Colors.white)),
           ),
         ),
-      ])
+      ]),
+      Padding(
+        padding: const EdgeInsets.symmetric(vertical: 10.0),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            Text(lang.none, style: TextStyle(color: color.primary, fontStyle: FontStyle.italic)),
+            IconButton(
+              icon: Icon(Icons.skip_next, color: color.primary),
+              onPressed: () => widget.callback(''),
+            ),
+          ]
+        )
+      ),
     ]);
   }
 }

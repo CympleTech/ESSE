@@ -35,7 +35,6 @@ class _SecurityPageState extends State<SecurityPage> {
   bool _accountsLoaded = false;
 
   String _selectedUserId = '';
-  String _selectedUserLock = '';
 
   SystemUiOverlayStyle style = SystemUiOverlayStyle.dark;
 
@@ -166,6 +165,14 @@ class _SecurityPageState extends State<SecurityPage> {
     );
   }
 
+  _handleLogined(String mainId, String mainPin, Map<String, Account> accounts) {
+    Provider.of<AccountProvider>(context, listen: false).autoAccounts(mainId, mainPin, accounts);
+    Provider.of<DeviceProvider>(context, listen: false).updateActived();
+    Provider.of<ChatProvider>(context, listen: false).updateActived();
+    Provider.of<GroupChatProvider>(context, listen: false).updateActived();
+    Navigator.of(context).pushNamedAndRemoveUntil("/", (Route<dynamic> route) => false);
+  }
+
   void loadAccounts() async {
     // init rpc.
     if (!rpc.isLinked()) {
@@ -180,25 +187,28 @@ class _SecurityPageState extends State<SecurityPage> {
     if (loginedAccounts.length != 0) {
       print("INFO: START LOGINED USE CACHE");
       final mainAccount = loginedAccounts[0];
-      final res = await httpPost(Global.httpRpc, 'account-login', [mainAccount.gid, mainAccount.lock]);
-
+      Map<String, Account> accounts = {};
+      loginedAccounts.forEach((account) {
+          accounts[account.gid] = account;
+      });
+      final res = await httpPost(Global.httpRpc, 'account-login', [mainAccount.gid, ""]);
       if (res.isOk) {
-        Map<String, Account> accounts = {};
-        loginedAccounts.forEach((account) {
-            accounts[account.gid] = account;
-        });
-
-        Provider.of<AccountProvider>(context, listen: false).autoAccounts(mainAccount.gid, accounts);
-        Provider.of<DeviceProvider>(context, listen: false).updateActived();
-        Provider.of<ChatProvider>(context, listen: false).updateActived();
-        Provider.of<GroupChatProvider>(context, listen: false).updateActived();
-
-        Navigator.of(context).pushNamedAndRemoveUntil("/", (Route<dynamic> route) => false);
+        _handleLogined(mainAccount.gid, "", accounts);
         return;
       } else {
-        // TODO tostor error
-        print(res.error);
-        await clearLogined();
+        showShadowDialog(
+          context,
+          Icons.security_rounded,
+          "PIN",
+          PinWords(
+            gid: mainAccount.gid,
+            callback: (key) async {
+              Navigator.of(context).pop();
+              _handleLogined(mainAccount.gid, key, accounts);
+              return;
+          }),
+          0.0
+        );
       }
     }
 
@@ -207,19 +217,16 @@ class _SecurityPageState extends State<SecurityPage> {
     if (res.isOk) {
       this._accounts.clear();
       res.params.forEach((param) {
-          this._accounts[param[0]] = Account(param[0], param[1], param[2], param[3]);
+          this._accounts[param[0]] = Account(param[0], param[1], param[2]);
       });
-      Provider.of<AccountProvider>(context, listen: false).initAccounts(this._accounts);
 
       if (this._accounts.length > 0) {
         final accountId = this._accounts.keys.first;
         this._selectedUserId = this._accounts[accountId]!.gid;
-        this._selectedUserLock = this._accounts[accountId]!.lock;
         this._accountsLoaded = true;
       }
     } else {
-      // TODO tostor error
-      print(res.error);
+      toast(context, res.error);
     }
 
     setState(() {
@@ -228,48 +235,27 @@ class _SecurityPageState extends State<SecurityPage> {
   }
 
   void _verifyAfter(String lock) async {
-    final res = await httpPost(Global.httpRpc, 'account-login',
-      [this._selectedUserId, lock]);
-
+    final res = await httpPost(Global.httpRpc, 'account-login', [this._selectedUserId, lock]);
     if (res.isOk) {
-      final mainAccount = this._accounts[this._selectedUserId]!;
-
-      Provider.of<AccountProvider>(context, listen: false).updateActivedAccount(mainAccount.gid);
-      Provider.of<DeviceProvider>(context, listen: false).updateActived();
-      Provider.of<ChatProvider>(context, listen: false).updateActived();
-      Provider.of<GroupChatProvider>(context, listen: false).updateActived();
-
-      Navigator.of(context).pushNamedAndRemoveUntil("/", (Route<dynamic> route) => false);
+      _handleLogined(this._selectedUserId, lock, this._accounts);
     } else {
-      // TODO tostor error
       toast(context, res.error);
     }
   }
 
   void loginAction(String title, color, lang) {
-    if (this._selectedUserLock.length == 0) {
-      _verifyAfter('');
-    } else {
-      showShadowDialog(
-        context,
-        Icons.security_rounded,
-        title,
-        PinWords(
-          hashPin: this._selectedUserLock,
-          callback: (pinWords) async {
-            Navigator.of(context).pop();
-            _verifyAfter(pinWords);
-        }),
-        40.0,
-        InkWell(
-          onTap: () => _verifyAfter(''),
-          child: Container(
-            child: Icon(
-              Icons.arrow_forward,
-              color: color.primary,
-        )))
-      );
-    }
+    showShadowDialog(
+      context,
+      Icons.security_rounded,
+      title,
+      PinWords(
+        gid: this._selectedUserId,
+        callback: (pinWords) async {
+          Navigator.of(context).pop();
+          _verifyAfter(pinWords);
+      }),
+      0.0,
+    );
   }
 
   Widget loginForm(ColorScheme color, AppLocalizations lang) {
@@ -293,7 +279,6 @@ class _SecurityPageState extends State<SecurityPage> {
               if (gid != null) {
                 setState(() {
                     this._selectedUserId = gid;
-                    this._selectedUserLock = this._accounts[gid]!.lock;
                   });
               }
             },

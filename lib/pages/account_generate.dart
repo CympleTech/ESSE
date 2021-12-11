@@ -102,9 +102,9 @@ class _AccountGeneratePageState extends State<AccountGeneratePage> {
 
           if (res.isOk) {
             // save this User
-            final account = Account(res.params[0], name, lock, avatar);
+            final account = Account(res.params[0], name, avatar);
 
-            Provider.of<AccountProvider>(context, listen: false).addAccount(account);
+            Provider.of<AccountProvider>(context, listen: false).addAccount(account, lock);
             Provider.of<DeviceProvider>(context, listen: false).updateActived();
             Provider.of<ChatProvider>(context, listen: false).updateActived();
             Provider.of<GroupChatProvider>(context, listen: false).updateActived();
@@ -117,7 +117,7 @@ class _AccountGeneratePageState extends State<AccountGeneratePage> {
             print(res.error);
           }
       }),
-      20.0,
+      0.0
     );
   }
 

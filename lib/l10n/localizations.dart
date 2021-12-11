@@ -98,6 +98,7 @@ abstract class AppLocalizations {
   String get waiting;
   String get notExist;
   String get skip;
+  String get none;
   String get register;
   String get gallery;
   String get link;

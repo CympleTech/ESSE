@@ -177,9 +177,9 @@ class _ProfileDetailState extends State<ProfileDetail> {
                             size: 20.0, color: color.primary),
                           const SizedBox(width: 20.0),
                           TextButton(
-                            onPressed: () => _pinCheck(account.lock,
-                              () => _changePin(context, account.gid, account.lock, lang.setPin),
-                              lang.verifyPin,
+                            onPressed: () => _pinCheck(account.gid,
+                              (key) => _changePin(context, account.gid, key, lang.setPin),
+                              lang.verifyPin, color
                             ),
                             child: Text(lang.change + ' PIN'),
                           ),
@@ -200,8 +200,8 @@ class _ProfileDetailState extends State<ProfileDetail> {
                             child: Text(lang.hide + ' ' + lang.mnemonic),
                           )
                           : TextButton(
-                            onPressed: () => _pinCheck(account.lock,
-                              () => _showMnemonic(account.gid, account.lock), lang.verifyPin),
+                            onPressed: () => _pinCheck(account.gid,
+                              (key) => _showMnemonic(account.gid, key), lang.verifyPin, color),
                             child: Text(lang.show + ' ' + lang.mnemonic),
                           ),
                       ]),
@@ -260,7 +260,7 @@ class _ProfileDetailState extends State<ProfileDetail> {
             print(res.error);
           }
       }),
-      20.0, // height.
+      0.0, // height.
     );
   }
 
@@ -278,20 +278,18 @@ class _ProfileDetailState extends State<ProfileDetail> {
     }
   }
 
-  _pinCheck(String hash, Function callback, String title) {
-    if (hash.length > 0) {
-      showShadowDialog(
-        context,
-        Icons.security_rounded,
-        title,
-        PinWords(
-          hashPin: hash,
-          callback: (_) async {
-            Navigator.of(context).pop();
-            callback();
-      }));
-    } else {
-      callback();
-    }
+  _pinCheck(String gid, Function callback, String title, color) {
+    showShadowDialog(
+      context,
+      Icons.security_rounded,
+      title,
+      PinWords(
+        gid: gid,
+        callback: (key) async {
+          Navigator.of(context).pop();
+          callback(key);
+      }),
+      0.0,
+    );
   }
 }

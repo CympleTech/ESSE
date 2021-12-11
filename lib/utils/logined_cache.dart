@@ -16,9 +16,8 @@ Future<List<Account>> getLogined() async {
         accounts.add(Account(
           fields[0], // gid
           fields[1], // name
-          fields[2], // lock
-          fields[3], // avatar
-          fields[4] == "1", // online
+          fields[2], // avatar
+          false,
         ));
       } else {
         prefs.remove(id);
@@ -29,7 +28,7 @@ Future<List<Account>> getLogined() async {
   return accounts;
 }
 
-initLogined(List<Account> accounts) async {
+initLogined(String gid, List<Account> accounts) async {
   SharedPreferences prefs = await SharedPreferences.getInstance();
   final ids = prefs.getStringList(LOGINED_CACHE_NAME);
   if (ids != null) {
@@ -38,17 +37,18 @@ initLogined(List<Account> accounts) async {
     });
   }
 
-  List<String> newIds = [];
+  List<String> newIds = [gid];
   accounts.forEach((account) {
     final List<String> fields = [
       account.gid,
       account.name,
-      account.lock,
       account.encodeAvatar(),
-      account.online ? "1" : "0",
     ];
 
-    newIds.add(account.gid);
+    if (account.gid != gid) {
+      newIds.add(account.gid);
+    }
+
     prefs.setStringList(account.gid, fields);
   });
 
@@ -72,9 +72,7 @@ updateLogined(Account account) async {
   final List<String> fields = [
     account.gid,
     account.name,
-    account.lock,
     account.encodeAvatar(),
-    account.online ? "1" : "0",
   ];
 
   prefs.setStringList(account.gid, fields);

@@ -121,6 +121,8 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get skip => 'Skip';
   @override
+  String get none => 'None';
+  @override
   String get register => 'Register';
   @override
   String get gallery => 'Gallery';

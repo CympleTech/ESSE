@@ -63,49 +63,44 @@ class AccountProvider extends ChangeNotifier {
     rpc.addListener('session-lost', _sessionLost, false);
   }
 
-  /// when security load accounts from rpc.
-  initAccounts(Map<String, Account> accounts) {
-    this.accounts = accounts;
-    initLogined(this.accounts.values.toList());
-  }
-
   /// when security load accounts from cache.
-  autoAccounts(String gid, Map<String, Account> accounts) {
+  autoAccounts(String gid, String pin, Map<String, Account> accounts) {
     Global.changeGid(gid);
-    this.activedAccountId = gid;
     this.accounts = accounts;
 
+    this.activedAccountId = gid;
     this.activedAccount.online = true;
-    rpc.send('session-list', []);
+    this.activedAccount.pin = pin;
 
+    rpc.send('session-list', []);
     new Future.delayed(Duration(seconds: DEFAULT_ONLINE_INIT),
       () => rpc.send('account-online', [gid]));
 
-    // online other keep-online account.
-    this.accounts.forEach((k, v) {
-      if (k != gid && v.online) {
-        rpc.send('account-login', [v.gid, v.lock]);
-        new Future.delayed(Duration(seconds: DEFAULT_ONLINE_INIT),
-            () => rpc.send('account-online', [v.gid]));
-      }
-    });
+    initLogined(gid, this.accounts.values.toList());
   }
 
   /// when security add account.
-  addAccount(Account account) {
+  addAccount(Account account, String pin) {
     Global.changeGid(account.gid);
-    this.activedAccountId = account.gid;
     this.accounts[account.gid] = account;
+
+    this.activedAccountId = account.gid;
+    this.activedAccount.online = true;
+    this.activedAccount.pin = pin;
 
     rpc.send('session-list', []);
     updateLogined(account);
   }
 
-  updateActivedAccount(String gid) {
+  updateActivedAccount(String gid, String pin) {
     Global.changeGid(gid);
     this.clearActivedAccount();
+
     this.activedAccountId = gid;
+    this.activedAccount.online = true;
+    this.activedAccount.pin = pin;
     this.activedAccount.hasNew = false;
+
     this.coreShowWidget = DefaultCoreShow();
 
     // load sessions.
@@ -136,11 +131,11 @@ class AccountProvider extends ChangeNotifier {
     clearLogined();
   }
 
-  onlineAccount(String gid, String lock) {
+  onlineAccount(String gid, String pin) {
     this.accounts[gid]!.online = true;
-    updateLogined(this.accounts[gid]!);
+    this.accounts[gid]!.pin = pin;
 
-    rpc.send('account-login', [gid, lock]);
+    rpc.send('account-login', [gid, pin]);
 
     new Future.delayed(Duration(seconds: DEFAULT_ONLINE_DELAY),
         () => rpc.send('account-online', [gid]));
@@ -149,7 +144,7 @@ class AccountProvider extends ChangeNotifier {
 
   offlineAccount(String gid) {
     this.accounts[gid]!.online = false;
-    updateLogined(this.accounts[gid]!);
+    this.accounts[gid]!.pin = '';
 
     if (gid == this.activedAccountId) {
       this.clearActivedAccount();
@@ -177,9 +172,8 @@ class AccountProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  accountPin(String lock) {
-    this.activedAccount.lock = lock;
-    updateLogined(this.activedAccount);
+  accountPin(String pin) {
+    this.activedAccount.pin = pin;
     notifyListeners();
   }
 

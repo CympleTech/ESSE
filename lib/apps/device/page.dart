@@ -207,18 +207,20 @@ class _DevicesPageState extends State<DevicesPage> {
                   Icons.security_rounded,
                   lang.verifyPin,
                   PinWords(
-                    hashPin: account.lock,
-                    callback: (_key, _hash) async {
+                    gid: account.gid,
+                    callback: (key) async {
                       Navigator.of(context).pop();
                       _showQrCode(
                         account.name,
                         account.gid,
                         Global.addr,
-                        account.lock,
+                        key,
                         color,
                         lang,
                       );
-                }));
+                  }),
+                  0.0
+                );
               }
             },
             itemBuilder: (context) {

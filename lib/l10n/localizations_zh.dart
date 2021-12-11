@@ -121,6 +121,8 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String get skip => '跳过';
   @override
+  String get none => '无';
+  @override
   String get register => '注册';
   @override
   String get gallery => '图库';

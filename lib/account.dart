@@ -126,15 +126,14 @@ extension LanguageExtension on Language {
 class Account {
   String gid = '';
   String name = '';
-  String lock = '';
   Uint8List? avatar;
   bool online = false;
   bool hasNew = false;
+  String pin = '';
 
-  Account(String gid, String name, [String lock = "", String avatar = "", bool online = false]) {
+  Account(String gid, String name, [String avatar = "", bool online = false]) {
     this.gid = gid;
     this.name = name;
-    this.lock = lock;
     this.updateAvatar(avatar);
     this.online = online;
     this.hasNew = false;
