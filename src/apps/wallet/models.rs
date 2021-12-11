@@ -50,6 +50,7 @@ impl ChainToken {
     }
 }
 
+#[derive(Clone, Copy)]
 pub(crate) enum Network {
     EthMain,
     EthTestRopsten,
@@ -219,6 +220,15 @@ impl Address {
     }
 
     pub fn insert(&mut self, db: &DStorage) -> Result<()> {
+        let matrix = db.query(&format!(
+            "SELECT id FROM addresses WHERE chain = {} AND address = '{}'",
+            self.chain.to_i64(),
+            self.address
+        ))?;
+        if matrix.len() > 0 {
+            return Ok(());
+        }
+
         let sql = format!(
             "INSERT INTO addresses (chain, indx, name, address, secret, balance) VALUES ({}, {}, '{}', '{}', '{}', '{}')",
             self.chain.to_i64(),
@@ -340,6 +350,16 @@ impl Token {
     }
 
     pub fn insert(&mut self, db: &DStorage) -> Result<()> {
+        let matrix = db.query(&format!(
+            "SELECT id FROM tokens WHERE network = {} AND contract = '{}'",
+            self.network.to_i64(),
+            self.contract
+        ))?;
+        if matrix.len() > 0 {
+            return Ok(());
+        }
+
+        // check exists
         let sql = format!(
             "INSERT INTO tokens (chain, network, name, contract, decimal) VALUES ({}, {}, '{}', '{}', {})",
             self.chain.to_i64(),
@@ -363,6 +383,18 @@ impl Token {
             tokens.push(Self::from_values(values));
         }
         Ok(tokens)
+    }
+
+    pub fn get(db: &DStorage, id: &i64) -> Result<Self> {
+        let mut matrix = db.query(&format!(
+            "SELECT id, chain, network, name, contract, decimal FROM tokens where id = {}",
+            id
+        ))?;
+        if matrix.len() > 0 {
+            let values = matrix.pop().unwrap(); // safe unwrap()
+            return Ok(Self::from_values(values));
+        }
+        Err(anyhow!("token is missing!"))
     }
 
     pub fn _delete(db: &DStorage, id: &i64) -> Result<()> {

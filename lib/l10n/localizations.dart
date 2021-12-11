@@ -263,6 +263,8 @@ abstract class AppLocalizations {
 
   String get wallet;
   String get walletIntro;
+  String get secretKey;
+  String get contract;
 }
 
 class _AppLocalizationsDelegate

@@ -79,7 +79,7 @@ extension NetworkExtension on Network {
       case Network.EthTestRinkeby:
         return ['Rinkeby Test Network', Colors.orange];
       case Network.EthTestKovan:
-        return ['Rinkeby Test Network', Colors.orange];
+        return ['Kovan Test Network', Colors.orange];
       case Network.EthLocal:
         return ['Localhost 8545', Color(0xFF6174FF)];
       case Network.BtcMain:
@@ -188,6 +188,25 @@ class Address {
     }
   }
 
+  Token mainToken(Network network) {
+    switch (this.chain) {
+      case ChainToken.ETH:
+      case ChainToken.ERC20:
+      case ChainToken.ERC721:
+        Token token = Token.eth(network);
+        if (this.balances.containsKey(network)) {
+          token.balance(this.balances[network]!);
+        }
+        return token;
+      case ChainToken.BTC:
+        Token token = Token.btc(network);
+        if (this.balances.containsKey(network)) {
+          token.balance(this.balances[network]!);
+        }
+        return token;
+    }
+  }
+
   split_balance(String s) {
     if (s.length > 0) {
       Map<Network, String> balances = {};
@@ -240,13 +259,14 @@ class Token {
     }
   }
 
-  Token.fromList(List params) {
+  Token.fromList(List params, String balance) {
     this.id = params[0];
     this.chain = ChainTokenExtension.fromInt(params[1]);
     this.network = NetworkExtension.fromInt(params[2]);
     this.name = params[3];
     this.contract = params[4];
     this.decimal = params[5];
+    this.balance(balance);
   }
 
   Token.eth(Network network) {
@@ -257,6 +277,15 @@ class Token {
     this.network = network;
     this.name = 'BTC';
     this.decimal = 8;
+  }
+
+  String short() {
+    final len = this.contract.length;
+    if (len > 10) {
+      return this.contract.substring(0, 6) + '...' + this.contract.substring(len - 4, len);
+    } else {
+      return this.contract;
+    }
   }
 
   balance(String number) {

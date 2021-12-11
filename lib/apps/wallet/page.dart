@@ -7,9 +7,11 @@ import 'package:esse/utils/better_print.dart';
 import 'package:esse/l10n/localizations.dart';
 import 'package:esse/widgets/button_text.dart';
 import 'package:esse/widgets/input_text.dart';
+import 'package:esse/widgets/shadow_dialog.dart';
 import 'package:esse/widgets/default_core_show.dart';
-import 'package:esse/global.dart';
+import 'package:esse/provider.dart';
 import 'package:esse/options.dart';
+import 'package:esse/global.dart';
 import 'package:esse/rpc.dart';
 
 import 'package:esse/apps/wallet/models.dart';
@@ -34,18 +36,14 @@ class _WalletDetailState extends State<WalletDetail> with SingleTickerProviderSt
   Token _mainToken = Token();
   List<Token> _tokens = [];
 
-  List tokens = [
-    ['ETH', '2000', '2000', 'assets/logo/logo_eth.png'],
-    ['USDT', '2000', '2000', 'assets/logo/logo_tether.png'],
-    ['XXX', '100', '1000', 'assets/logo/logo_erc20.png'],
-    ['wBTC', '100', '1000', 'assets/logo/logo_btc.png'],
-  ];
-
   @override
   void initState() {
     _tabController = new TabController(length: 2, vsync: this);
+
     rpc.addListener('wallet-generate', _walletGenerate, false);
+    rpc.addListener('wallet-import', _walletGenerate, false);
     rpc.addListener('wallet-balance', _walletBalance, false);
+
     super.initState();
     Future.delayed(Duration.zero, _load);
   }
@@ -69,13 +67,27 @@ class _WalletDetailState extends State<WalletDetail> with SingleTickerProviderSt
     final address = params[0];
     final network = NetworkExtension.fromInt(params[1]);
     if (address == this._selectedAddress!.address && network == this._selectedNetwork!) {
-      final contract = params[2];
-      final balance = params[3];
+      final balance = params[2];
 
-      // TODO check token.
-
-      this._mainToken = Token.eth(network);
-      this._mainToken.balance(balance);
+      if (params.length == 4) {
+        final token = Token.fromList(params[3], balance);
+        bool isNew = true;
+        int key = 0;
+        this._tokens.asMap().forEach((k, t) {
+            if (t.contract == token.contract) {
+              isNew = false;
+              key = k;
+            }
+        });
+        if (isNew) {
+          this._tokens.add(token);
+        } else {
+          this._tokens[key].balance(balance);
+        }
+      } else {
+        this._mainToken = Token.eth(network);
+        this._mainToken.balance(balance);
+      }
       setState(() {});
     }
   }
@@ -108,6 +120,10 @@ class _WalletDetailState extends State<WalletDetail> with SingleTickerProviderSt
           this._selectedNetwork!.toInt(), this._selectedAddress!.address
       ]);
     }
+    this._mainToken = address.mainToken(this._selectedNetwork!);
+    for (var i = 0; i < this._tokens.length; i++) {
+      this._tokens[i].balance('0');
+    }
   }
 
   _changeNetwork(Network network) {
@@ -115,6 +131,7 @@ class _WalletDetailState extends State<WalletDetail> with SingleTickerProviderSt
     rpc.send('wallet-balance', [
         this._selectedNetwork!.toInt(), this._selectedAddress!.address
     ]);
+    this._tokens.clear();
   }
 
   @override
@@ -136,7 +153,8 @@ class _WalletDetailState extends State<WalletDetail> with SingleTickerProviderSt
           child: ElevatedButton(
             style: ElevatedButton.styleFrom(onPrimary: color.surface),
             onPressed: () {
-              rpc.send('wallet-generate', [ChainToken.ETH.toInt(), ""]);
+              final pin = context.read<AccountProvider>().activedAccount.pin;
+              rpc.send('wallet-generate', [ChainToken.ETH.toInt(), pin]);
             },
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
@@ -213,7 +231,9 @@ class _WalletDetailState extends State<WalletDetail> with SingleTickerProviderSt
                 if (value == 0) {
                   rpc.send('wallet-generate', [this._selectedAddress!.chain.toInt(), ""]);
                 } else if (value == 1) {
-                  //
+                  showShadowDialog(context, Icons.vertical_align_bottom, lang.importAccount,
+                    _ImportAccount(chain: this._selectedAddress!.chain), 20.0
+                  );
                 } else if (value == 2) {
                   //
                 } else {
@@ -360,32 +380,37 @@ class _WalletDetailState extends State<WalletDetail> with SingleTickerProviderSt
                 children: [
                   ListView.separated(
                     separatorBuilder: (BuildContext context, int index) => const Divider(),
-                    itemCount: tokens.length + 1,
+                    itemCount: this._tokens.length + 1,
                     itemBuilder: (BuildContext context, int index) {
-                      if (index == tokens.length) {
+                      if (index == this._tokens.length) {
                         return TextButton(
                           child: Padding(
                             padding: const EdgeInsets.symmetric(vertical: 10.0),
                             child: Text('Add new Token' + ' ( ERC20 / ERC721 )')
                           ),
-                          onPressed: () {
-                            //
-                          },
+                          onPressed: () => showShadowDialog(
+                            context, Icons.paid, 'Token', _ImportToken(
+                              chain: this._selectedAddress!.chain,
+                              network: this._selectedNetwork!,
+                              address: this._selectedAddress!.address
+                            ), 10.0
+                          ),
                         );
                       } else {
+                        final token = this._tokens[index];
                         return ListTile(
                           leading: Container(
                             width: 36.0,
                             height: 36.0,
                             decoration: BoxDecoration(
                               image: DecorationImage(
-                                image: AssetImage(tokens[index][3]),
+                                image: AssetImage(token.logo),
                                 fit: BoxFit.cover,
                               ),
                             ),
                           ),
-                          title: Text(tokens[index][1] + ' ' + tokens[index][0]),
-                          subtitle: Text('\$' + tokens[index][2]),
+                          title: Text("${token.amount} ${token.name}",),
+                          subtitle: Text(token.short()),
                           trailing: IconButton(icon: Icon(Icons.arrow_forward_ios),
                             onPressed: () {}),
                         );
@@ -419,6 +444,123 @@ class _WalletDetailState extends State<WalletDetail> with SingleTickerProviderSt
         title: Text(address.name),
         subtitle: Text(address.balance(this._selectedNetwork!) + ' ' + address.chain.symbol),
       ),
+    );
+  }
+}
+
+class _ImportAccount extends StatelessWidget {
+  final ChainToken chain;
+  TextEditingController _nameController = TextEditingController();
+  FocusNode _nameFocus = FocusNode();
+
+  _ImportAccount({Key? key, required this.chain}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    final color = Theme.of(context).colorScheme;
+    final lang = AppLocalizations.of(context);
+    _nameFocus.requestFocus();
+
+    return Column(
+      children: [
+        Container(
+          padding: EdgeInsets.only(bottom: 20.0),
+          child: InputText(
+            icon: Icons.vpn_key,
+            text: lang.secretKey,
+            controller: _nameController,
+            focus: _nameFocus),
+        ),
+        ButtonText(
+          text: lang.send,
+          action: () {
+            final secret = _nameController.text.trim();
+            if (secret.length < 32) {
+              return;
+            }
+            rpc.send('wallet-import', [chain.toInt(), secret]);
+            Navigator.pop(context);
+        }),
+      ]
+    );
+  }
+}
+
+class _ImportToken extends StatefulWidget {
+  final ChainToken chain;
+  final Network network;
+  final String address;
+  _ImportToken({Key? key, required this.chain, required this.network, required this.address}) : super(key: key);
+
+  @override
+  _ImportTokenState createState() => _ImportTokenState();
+}
+
+class _ImportTokenState extends State<_ImportToken> {
+  TextEditingController _nameController = TextEditingController();
+  FocusNode _nameFocus = FocusNode();
+  ChainToken _selectedChain = ChainToken.ERC20;
+
+  Widget _chain(ChainToken value, String show, color) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Radio(
+          value: value,
+          groupValue: _selectedChain,
+          onChanged: (ChainToken? n) => setState(() {
+              if (n != null) {
+                _selectedChain = n;
+              }
+        })),
+        _selectedChain == value
+        ? Text(show, style: TextStyle(color: color.primary))
+        : Text(show),
+      ]
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final color = Theme.of(context).colorScheme;
+    final lang = AppLocalizations.of(context);
+    final params = widget.network.params();
+    _nameFocus.requestFocus();
+
+    return Column(
+      children: [
+        Text(params[0], style: TextStyle(color: params[1], fontWeight: FontWeight.bold)),
+        const SizedBox(height: 20.0),
+        if (widget.chain.isEth())
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            _chain(ChainToken.ERC20, "ERC20", color),
+            _chain(ChainToken.ERC721, "ERC721", color),
+          ]
+        ),
+        const SizedBox(height: 10.0),
+        Container(
+          padding: EdgeInsets.only(bottom: 20.0),
+          child: InputText(
+            icon: Icons.location_on,
+            text: lang.contract + ' (0x...)',
+            controller: _nameController,
+            focus: _nameFocus),
+        ),
+        ButtonText(
+          text: lang.send,
+          action: () {
+            final contract = _nameController.text.trim();
+            if (contract.length < 20) {
+              return;
+            }
+            rpc.send('wallet-token-import', [
+                _selectedChain.toInt(), widget.network.toInt(), widget.address, contract
+            ]);
+            Navigator.pop(context);
+        }),
+      ]
     );
   }
 }

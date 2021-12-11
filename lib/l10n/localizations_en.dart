@@ -429,4 +429,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get wallet => 'Wallet';
   @override
   String get walletIntro => 'Manage your own cryptocurrency.';
+  @override
+  String get secretKey => 'Secret Key';
+  @override
+  String get contract => 'Contract Address';
 }

@@ -8,7 +8,7 @@ use tdn_storage::local::{DStorage, DsValue};
 
 use crate::utils::crypto::{check_pin, decrypt, decrypt_multiple, encrypt_multiple, hash_pin};
 
-fn mnemonic_lang_to_i64(lang: Language) -> i64 {
+fn _mnemonic_lang_to_i64(lang: Language) -> i64 {
     match lang {
         Language::English => 0,
         Language::SimplifiedChinese => 1,

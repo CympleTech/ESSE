@@ -429,4 +429,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get wallet => '钱包';
   @override
   String get walletIntro => '管理自己的加密货币。';
+  @override
+  String get secretKey => '私钥';
+  @override
+  String get contract => '合约地址';
 }
