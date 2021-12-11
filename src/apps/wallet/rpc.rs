@@ -20,12 +20,21 @@ use super::{
 const WALLET_DEFAULT_PIN: &'static str = "walletissafe";
 
 #[inline]
-fn wallet_list(devices: Vec<Address>) -> RpcParam {
+fn wallet_list(wallets: Vec<Address>) -> RpcParam {
     let mut results = vec![];
-    for wallet in devices {
+    for wallet in wallets {
         results.push(wallet.to_rpc());
     }
     json!(results)
+}
+
+#[inline]
+fn token_list(network: Network, tokens: Vec<Token>) -> RpcParam {
+    let mut results = vec![];
+    for token in tokens {
+        results.push(token.to_rpc());
+    }
+    json!([network.to_i64(), results])
 }
 
 #[inline]
@@ -244,7 +253,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
     );
 
     handler.add_method(
-        "wallet-balance",
+        "wallet-token",
         |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
             let network = Network::from_i64(params[0].as_i64().ok_or(RpcError::ParseError)?);
             let address = params[1].as_str().ok_or(RpcError::ParseError)?.to_owned();
@@ -262,9 +271,9 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
                 None
             };
 
+            let tokens = Token::list(&db, &network)?;
             tokio::spawn(loop_token(sender, db, gid, network, address, c_str));
-
-            Ok(HandleResult::new())
+            Ok(HandleResult::rpc(token_list(network, tokens)))
         },
     );
 

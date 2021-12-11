@@ -42,6 +42,7 @@ class _WalletDetailState extends State<WalletDetail> with SingleTickerProviderSt
 
     rpc.addListener('wallet-generate', _walletGenerate, false);
     rpc.addListener('wallet-import', _walletGenerate, false);
+    rpc.addListener('wallet-token', _walletToken, false);
     rpc.addListener('wallet-balance', _walletBalance, false);
 
     super.initState();
@@ -61,6 +62,17 @@ class _WalletDetailState extends State<WalletDetail> with SingleTickerProviderSt
       _changeAddress(address);
       setState(() {});
     }
+  }
+
+  _walletToken(List params) {
+    final network = NetworkExtension.fromInt(params[0]);
+    if (network == this._selectedNetwork!) {
+      this._tokens.clear();
+      params[1].forEach((param) {
+          this._tokens.add(Token.fromList(param, '0'));
+      });
+    }
+    setState(() {});
   }
 
   _walletBalance(List params) {
@@ -116,22 +128,18 @@ class _WalletDetailState extends State<WalletDetail> with SingleTickerProviderSt
     if (!this._networks.contains(this._selectedNetwork)) {
       _changeNetwork(this._networks[0]);
     } else {
-      rpc.send('wallet-balance', [
+      rpc.send('wallet-token', [
           this._selectedNetwork!.toInt(), this._selectedAddress!.address
       ]);
     }
     this._mainToken = address.mainToken(this._selectedNetwork!);
-    for (var i = 0; i < this._tokens.length; i++) {
-      this._tokens[i].balance('0');
-    }
   }
 
   _changeNetwork(Network network) {
     this._selectedNetwork = network;
-    rpc.send('wallet-balance', [
+    rpc.send('wallet-token', [
         this._selectedNetwork!.toInt(), this._selectedAddress!.address
     ]);
-    this._tokens.clear();
   }
 
   @override
