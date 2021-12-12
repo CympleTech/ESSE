@@ -244,14 +244,25 @@ impl Address {
     }
 
     pub fn list(db: &DStorage) -> Result<Vec<Self>> {
-        let matrix = db.query(&format!(
-            "SELECT id, chain, indx, name, address, secret, balance FROM addresses"
-        ))?;
+        let matrix =
+            db.query("SELECT id, chain, indx, name, address, secret, balance FROM addresses")?;
         let mut addresses = vec![];
         for values in matrix {
             addresses.push(Self::from_values(values));
         }
         Ok(addresses)
+    }
+
+    pub fn get(db: &DStorage, id: &i64) -> Result<Self> {
+        let mut matrix = db.query(&format!(
+            "SELECT id, chain, indx, name, address, secret, balance FROM addresses WHERE id = {}",
+            id
+        ))?;
+        if matrix.len() > 0 {
+            let values = matrix.pop().unwrap(); // safe unwrap()
+            return Ok(Self::from_values(values));
+        }
+        Err(anyhow!("address is missing!"))
     }
 
     pub fn next_index(db: &DStorage, chain: &ChainToken) -> Result<u32> {

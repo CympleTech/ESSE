@@ -8,9 +8,18 @@ use tdn::types::{
 use tdn_did::{generate_btc_account, generate_eth_account, secp256k1::SecretKey};
 use tdn_storage::local::DStorage;
 use tokio::sync::mpsc::Sender;
-use web3::{contract::Contract, signing::Key, types::Address as EthAddress, Web3};
+use web3::{
+    contract::{tokens::Tokenize, Contract},
+    signing::Key,
+    types::{Address as EthAddress, Bytes, CallRequest, TransactionParameters, U256},
+    Web3,
+};
 
-use crate::{rpc::RpcState, storage::wallet_db, utils::crypto::encrypt};
+use crate::{
+    rpc::RpcState,
+    storage::wallet_db,
+    utils::crypto::{decrypt, encrypt},
+};
 
 use super::{
     models::{Address, ChainToken, Network, Token},
@@ -145,7 +154,7 @@ async fn token_check(
     let mut token = Token::new(chain, network, symbol, c_str, decimal as i64);
     token.insert(&db)?;
 
-    let balance: web3::types::U256 = contract
+    let balance: U256 = contract
         .query("balanceOf", (account,), None, Default::default(), None)
         .await?;
     let balance = balance.to_string();
@@ -163,6 +172,7 @@ async fn token_balance(
 ) -> Result<String> {
     let addr: EthAddress = c_str.parse()?;
     let account: EthAddress = address.parse()?;
+
     let abi = match chain {
         ChainToken::ERC20 => ERC20_ABI,
         ChainToken::ERC721 => ERC721_ABI,
@@ -173,10 +183,123 @@ async fn token_balance(
     let web3 = Web3::new(transport);
     let contract = Contract::from_json(web3.eth(), addr, abi.as_bytes())?;
 
-    let balance: web3::types::U256 = contract
+    let balance: U256 = contract
         .query("balanceOf", (account,), None, Default::default(), None)
         .await?;
     Ok(balance.to_string())
+}
+
+async fn token_transfer(
+    from_str: &str,
+    to_str: &str,
+    amount_str: &str,
+    c_str: &str,
+    secret: &SecretKey,
+    network: &Network,
+    chain: &ChainToken,
+) -> Result<String> {
+    let from: EthAddress = from_str.parse()?;
+    let to: EthAddress = to_str.parse()?;
+    let amount = U256::from_dec_str(amount_str)?;
+
+    let node = network.node();
+    let transport = web3::transports::Http::new(node)?;
+    let web3 = Web3::new(transport);
+
+    let tx = match chain {
+        ChainToken::ERC20 => {
+            let addr: EthAddress = c_str.parse()?;
+            let contract = Contract::from_json(web3.eth(), addr, ERC20_ABI.as_bytes())?;
+            let fn_data = contract
+                .abi()
+                .function("transfer")
+                .and_then(|function| function.encode_input(&(to, amount).into_tokens()))?;
+            TransactionParameters {
+                to: Some(addr),
+                data: Bytes(fn_data),
+                ..Default::default()
+            }
+        }
+        ChainToken::ERC721 => {
+            let addr: EthAddress = c_str.parse()?;
+            let contract = Contract::from_json(web3.eth(), addr, ERC721_ABI.as_bytes())?;
+            let fn_data = contract
+                .abi()
+                .function("safeTransferFrom")
+                .and_then(|function| function.encode_input(&(from, to, amount).into_tokens()))?;
+            TransactionParameters {
+                to: Some(addr),
+                data: Bytes(fn_data),
+                ..Default::default()
+            }
+        }
+        ChainToken::ETH => TransactionParameters {
+            to: Some(to),
+            value: amount,
+            ..Default::default()
+        },
+        _ => return Err(anyhow!("not supported")),
+    };
+
+    let signed = web3.accounts().sign_transaction(tx, secret).await?;
+    let result = web3
+        .eth()
+        .send_raw_transaction(signed.raw_transaction)
+        .await?;
+    Ok(format!("{:?}", result))
+}
+
+async fn token_gas(
+    from_str: &str,
+    to_str: &str,
+    amount_str: &str,
+    c_str: &str,
+    network: &Network,
+    chain: &ChainToken,
+) -> Result<(String, String)> {
+    let from: EthAddress = from_str.parse()?;
+    let to: EthAddress = to_str.parse()?;
+    let amount = U256::from_dec_str(amount_str)?;
+    let node = network.node();
+
+    let transport = web3::transports::Http::new(node)?;
+    let web3 = Web3::new(transport);
+    let price = web3.eth().gas_price().await?;
+
+    let gas = match chain {
+        ChainToken::ERC20 => {
+            let addr: EthAddress = c_str.parse()?;
+            let contract = Contract::from_json(web3.eth(), addr, ERC20_ABI.as_bytes())?;
+            let gas = contract
+                .estimate_gas("transfer", (to, amount), from, Default::default())
+                .await?;
+            gas * price
+        }
+        ChainToken::ERC721 => {
+            let addr: EthAddress = c_str.parse()?;
+            let contract = Contract::from_json(web3.eth(), addr, ERC721_ABI.as_bytes())?;
+            let gas = contract
+                .estimate_gas(
+                    "safeTransferFrom",
+                    (from, to, amount),
+                    from,
+                    Default::default(),
+                )
+                .await?;
+            gas * price
+        }
+        ChainToken::ETH => {
+            let tx = CallRequest {
+                to: Some(to),
+                value: Some(amount),
+                ..Default::default()
+            };
+            let gas = web3.eth().estimate_gas(tx, None).await?;
+            price * gas
+        }
+        _ => return Err(anyhow!("not supported")),
+    };
+    Ok((price.to_string(), gas.to_string()))
 }
 
 pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
@@ -293,6 +416,96 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             tokio::spawn(token_check(sender, db, gid, chain, network, address, c_str));
 
             Ok(HandleResult::new())
+        },
+    );
+
+    handler.add_method(
+        "wallet-gas-price",
+        |_gid: GroupId, params: Vec<RpcParam>, _state: Arc<RpcState>| async move {
+            let chain = ChainToken::from_i64(params[0].as_i64().ok_or(RpcError::ParseError)?);
+            let network = Network::from_i64(params[1].as_i64().ok_or(RpcError::ParseError)?);
+            let from = params[2].as_str().ok_or(RpcError::ParseError)?;
+            let to = params[3].as_str().ok_or(RpcError::ParseError)?;
+            let amount = params[4].as_str().ok_or(RpcError::ParseError)?;
+            let c_str = params[5].as_str().ok_or(RpcError::ParseError)?;
+
+            let (price, gas) = token_gas(from, to, amount, c_str, &network, &chain).await?;
+            Ok(HandleResult::rpc(json!([price, gas])))
+        },
+    );
+
+    handler.add_method(
+        "wallet-transfer",
+        |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
+            let chain = ChainToken::from_i64(params[0].as_i64().ok_or(RpcError::ParseError)?);
+            let network = Network::from_i64(params[1].as_i64().ok_or(RpcError::ParseError)?);
+            let from = params[2].as_i64().ok_or(RpcError::ParseError)?;
+            let to = params[3].as_str().ok_or(RpcError::ParseError)?;
+            let amount = params[4].as_str().ok_or(RpcError::ParseError)?;
+            let c_str = params[5].as_str().ok_or(RpcError::ParseError)?;
+            let lock = params[6].as_str().ok_or(RpcError::ParseError)?;
+
+            let group_lock = state.group.read().await;
+            if !group_lock.check_lock(&gid, &lock) {
+                return Err(RpcError::Custom("Lock is invalid!".to_owned()));
+            }
+            let db = wallet_db(group_lock.base(), &gid)?;
+            let address = Address::get(&db, &from)?;
+
+            let (mnemonic, pbytes) = if address.is_gen() {
+                (group_lock.mnemonic(&gid, lock)?, vec![])
+            } else {
+                let pbytes = decrypt(
+                    &group_lock.secret(),
+                    WALLET_DEFAULT_PIN,
+                    address.secret.as_ref(),
+                )?;
+                (String::new(), pbytes)
+            };
+            let account = group_lock.account(&gid)?;
+            let lang = account.lang();
+            let pass = account.pass.to_string();
+            let account_index = account.index as u32;
+            drop(group_lock);
+            let pass = if pass.len() > 0 {
+                Some(pass.as_ref())
+            } else {
+                None
+            };
+
+            let sk: SecretKey = if address.is_gen() {
+                match chain {
+                    ChainToken::ETH | ChainToken::ERC20 | ChainToken::ERC721 => {
+                        generate_eth_account(
+                            lang,
+                            &mnemonic,
+                            account_index,
+                            address.index as u32,
+                            pass,
+                        )?
+                    }
+                    ChainToken::BTC => {
+                        todo!();
+                    }
+                }
+            } else {
+                let sk = SecretKey::from_slice(&pbytes)
+                    .or(Err(RpcError::Custom("Secret is invalid!".to_owned())))?;
+                if format!("{:?}", (&sk).address()) != address.address {
+                    return Err(RpcError::Custom("Secret is invalid!".to_owned()));
+                }
+                sk
+            };
+
+            let hash = token_transfer(&address.address, to, amount, c_str, &sk, &network, &chain)
+                .await
+                .map_err(|e| RpcError::Custom(format!("{:?}", e)))?;
+
+            Ok(HandleResult::rpc(json!([
+                from,
+                network.to_i64(),
+                [hash, to],
+            ])))
         },
     );
 }

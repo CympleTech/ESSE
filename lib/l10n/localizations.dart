@@ -61,6 +61,7 @@ abstract class AppLocalizations {
   String get address;
   String get remark;
   String get send;
+  String get receive;
   String get sended;
   String get resend;
   String get ignore;
@@ -104,6 +105,7 @@ abstract class AppLocalizations {
   String get link;
   String get rename;
   String get moveTo;
+  String get check;
 
   // theme
   String get themeDark;

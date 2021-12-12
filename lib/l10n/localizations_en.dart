@@ -47,6 +47,8 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get send => 'Send';
   @override
+  String get receive => 'Receive';
+  @override
   String get sended => 'Sended';
   @override
   String get resend => 'Resend';
@@ -132,6 +134,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get rename => 'Rename';
   @override
   String get moveTo => 'Move to';
+  @override
+  String get check => 'Check';
 
   // theme
   @override

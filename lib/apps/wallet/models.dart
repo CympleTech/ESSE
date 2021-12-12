@@ -19,6 +19,18 @@ extension ChainTokenExtension on ChainToken {
     }
   }
 
+  bool isMain() {
+    switch (this) {
+      case ChainToken.ETH:
+        return true;
+      case ChainToken.ERC20:
+      case ChainToken.ERC721:
+        return false;
+      case ChainToken.BTC:
+        return true;
+    }
+  }
+
   String get symbol {
     switch (this) {
       case ChainToken.ETH:
@@ -86,6 +98,25 @@ extension NetworkExtension on Network {
         return ['Bitcoin Mainnet', Colors.purple];
       case Network.BtcLocal:
         return ['Localhost 8333', Color(0xFF6174FF)];
+    }
+  }
+
+  String txUrl() {
+    switch (this) {
+      case Network.EthMain:
+        return 'https://etherscan.io/tx/';
+      case Network.EthTestRopsten:
+        return 'https://ropsten.etherscan.io/tx/';
+      case Network.EthTestRinkeby:
+        return 'https://rinkeby.etherscan.io/tx/';
+      case Network.EthTestKovan:
+        return 'https://kovan.etherscan.io/tx/';
+      case Network.EthLocal:
+        return 'https://etherscan.io/tx/';
+      case Network.BtcMain:
+        return 'https://www.blockchain.com/btc/tx/';
+      case Network.BtcLocal:
+        return 'https://www.blockchain.com/btc/tx/';
     }
   }
 
@@ -179,9 +210,9 @@ class Address {
         case ChainToken.ETH:
         case ChainToken.ERC20:
         case ChainToken.ERC721:
-          return unit_balance(s, 18, 4);
+          return unitBalance(s, 18, 4);
         case ChainToken.BTC:
-          return unit_balance(s, 8, 4);
+          return unitBalance(s, 8, 4);
       }
     } else {
       return '0.0';
@@ -290,19 +321,73 @@ class Token {
 
   balance(String number) {
     this.balanceString = number;
-    this.amount = double.parse(unit_balance(number, this.decimal, 8));
+    this.amount = double.parse(unitBalance(number, this.decimal, 8));
   }
 }
 
-String unit_balance(String number, int decimal, int limit) {
+class Transaction {
+  String hash = '';
+  String to = '';
+
+  String short_hash() {
+    final len = this.hash.length;
+    if (len > 12) {
+      return this.hash.substring(0, 8) + '...' + this.hash.substring(len - 4, len);
+    } else {
+      return this.hash;
+    }
+  }
+
+  String short_to() {
+    final len = this.to.length;
+    if (len > 10) {
+      return this.to.substring(0, 6) + '...' + this.to.substring(len - 4, len);
+    } else {
+      return this.to;
+    }
+  }
+
+  Transaction.fromList(List params) {
+    this.hash = params[0];
+    this.to = params[1];
+  }
+}
+
+String unitBalance(String number, int decimal, int limit) {
   final pad = number.length - (decimal + 1); // 0.00..00
   if (pad < 0) {
     number = ('0' * (-pad)) + number;
   }
   String right = number.substring(number.length - decimal, number.length);
   final left = number.substring(0, number.length - decimal);
+  if (limit == 0) {
+    return left;
+  }
+
   if (right.length > limit) {
     right = right.substring(0, limit);
   }
   return left + '.' + right;
+}
+
+String restoreBalance(String number, int decimal) {
+  if (decimal == 0) {
+    return number;
+  }
+
+  final s = number.split('.');
+  int pad = decimal;
+  String right = '';
+
+  if (s.length > 1 && s[1].length > 0) {
+    if (s[1].length > decimal) {
+      right = s[1].substring(0, decimal);
+    } else {
+      right = s[1] + ('0' * (decimal - s[1].length));
+    }
+  } else {
+    right = '0' * decimal;
+  }
+
+  return s[0] + right;
 }

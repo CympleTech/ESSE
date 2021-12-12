@@ -47,6 +47,8 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String get send => '发送';
   @override
+  String get receive => '接收';
+  @override
   String get sended => '已发送';
   @override
   String get resend => '重新发送';
@@ -132,6 +134,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get rename => '重命名';
   @override
   String get moveTo => '移动到';
+  @override
+  String get check => '检查';
 
   // theme
   @override
