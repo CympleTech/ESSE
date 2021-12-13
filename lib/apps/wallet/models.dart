@@ -282,8 +282,10 @@ class Token {
       case 'USDT':
         return 'assets/logo/logo_tether.png';
       default:
-        if (chain.isEth()) {
+        if (chain == ChainToken.ERC20) {
           return 'assets/logo/logo_erc20.png';
+        } else if (chain == ChainToken.ERC721) {
+          return 'assets/logo/logo_nft.png';
         } else {
           return 'assets/logo/logo_btc.png';
         }
