@@ -11,6 +11,7 @@ use tokio::sync::mpsc::Sender;
 use web3::{
     contract::{tokens::Tokenize, Contract},
     signing::Key,
+    transports::http::Http,
     types::{Address as EthAddress, Bytes, CallRequest, TransactionParameters, U256},
     Web3,
 };
@@ -22,7 +23,7 @@ use crate::{
 };
 
 use super::{
-    models::{Address, ChainToken, Network, Token},
+    models::{Address, Balance, ChainToken, Network, Token},
     ERC20_ABI, ERC721_ABI,
 };
 
@@ -85,13 +86,15 @@ async fn loop_token(
     let tokens = Token::list(&db, &network)?;
 
     if let Some(token) = c_token {
-        let balance = token_balance(&token.contract, &address, &node, &token.chain).await?;
+        let transport = Http::new(node)?;
+        let web3 = Web3::new(transport);
+        let balance = token_balance(&web3, &token.contract, &address, &token.chain).await?;
         let res = res_balance(gid, &address, &network, &balance, Some(&token));
         sender.send(SendMessage::Rpc(0, res, true)).await?;
     } else {
         match chain {
             ChainToken::ETH => {
-                let transport = web3::transports::Http::new(node)?;
+                let transport = Http::new(node)?;
                 let web3 = Web3::new(transport);
                 let balance = web3.eth().balance(address.parse()?, None).await?;
                 let balance = balance.to_string();
@@ -100,8 +103,9 @@ async fn loop_token(
                 sender.send(SendMessage::Rpc(0, res, true)).await?;
 
                 for token in tokens {
+                    //tokio::time::sleep(std::time::Duration::from_secs(1)).await;
                     let balance =
-                        token_balance(&token.contract, &address, &node, &token.chain).await?;
+                        token_balance(&web3, &token.contract, &address, &token.chain).await?;
                     let res = res_balance(gid, &address, &network, &balance, Some(&token));
                     sender.send(SendMessage::Rpc(0, res, true)).await?;
                 }
@@ -134,7 +138,7 @@ async fn token_check(
         _ => return Err(anyhow!("not supported")),
     };
     let node = network.node();
-    let transport = web3::transports::Http::new(node)?;
+    let transport = Http::new(node)?;
     let web3 = Web3::new(transport);
     let contract = Contract::from_json(web3.eth(), addr, abi.as_bytes())?;
 
@@ -148,7 +152,7 @@ async fn token_check(
                 .query("decimals", (), None, Default::default(), None)
                 .await?
         }
-        _ => 0,
+        _ => 0, // NFT default no decimal.
     };
 
     let mut token = Token::new(chain, network, symbol, c_str, decimal as i64);
@@ -165,9 +169,9 @@ async fn token_check(
 }
 
 async fn token_balance(
+    web3: &Web3<Http>,
     c_str: &str,
     address: &str,
-    node: &str,
     chain: &ChainToken,
 ) -> Result<String> {
     let addr: EthAddress = c_str.parse()?;
@@ -179,8 +183,6 @@ async fn token_balance(
         _ => return Err(anyhow!("not supported")),
     };
 
-    let transport = web3::transports::Http::new(node)?;
-    let web3 = Web3::new(transport);
     let contract = Contract::from_json(web3.eth(), addr, abi.as_bytes())?;
 
     let balance: U256 = contract
@@ -203,7 +205,7 @@ async fn token_transfer(
     let amount = U256::from_dec_str(amount_str)?;
 
     let node = network.node();
-    let transport = web3::transports::Http::new(node)?;
+    let transport = Http::new(node)?;
     let web3 = Web3::new(transport);
 
     let tx = match chain {
@@ -262,7 +264,7 @@ async fn token_gas(
     let amount = U256::from_dec_str(amount_str)?;
     let node = network.node();
 
-    let transport = web3::transports::Http::new(node)?;
+    let transport = Http::new(node)?;
     let web3 = Web3::new(transport);
     let price = web3.eth().gas_price().await?;
 
@@ -300,6 +302,20 @@ async fn token_gas(
         _ => return Err(anyhow!("not supported")),
     };
     Ok((price.to_string(), gas.to_string()))
+}
+
+async fn nft_check(node: &str, c_str: &str, hash: &str) -> Result<String> {
+    let addr: EthAddress = c_str.parse()?;
+    let tokenid = U256::from_dec_str(&hash)?;
+    let transport = Http::new(node)?;
+    let web3 = Web3::new(transport);
+    let contract = Contract::from_json(web3.eth(), addr, ERC721_ABI.as_bytes())?;
+
+    let owner: EthAddress = contract
+        .query("ownerOf", (tokenid,), None, Default::default(), None)
+        .await?;
+
+    Ok(format!("{:?}", owner))
 }
 
 pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
@@ -506,6 +522,51 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
                 network.to_i64(),
                 [hash, to],
             ])))
+        },
+    );
+
+    handler.add_method(
+        "wallet-nft",
+        |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
+            let address = params[0].as_i64().ok_or(RpcError::ParseError)?;
+            let token = params[1].as_i64().ok_or(RpcError::ParseError)?;
+
+            let db = wallet_db(state.layer.read().await.base(), &gid)?;
+            let nfts = Balance::list(&db, &address, &token)?;
+
+            let mut results = vec![];
+            for nft in nfts {
+                results.push(nft.value);
+            }
+            Ok(HandleResult::rpc(json!([address, token, results])))
+        },
+    );
+
+    handler.add_method(
+        "wallet-nft-add",
+        |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
+            let address = params[0].as_i64().ok_or(RpcError::ParseError)?;
+            let token = params[1].as_i64().ok_or(RpcError::ParseError)?;
+            let hash = params[2].as_str().ok_or(RpcError::ParseError)?.to_owned();
+
+            let db = wallet_db(state.layer.read().await.base(), &gid)?;
+            let t = Token::get(&db, &token)?;
+            let a = Address::get(&db, &address)?;
+
+            if t.chain != ChainToken::ERC721 {
+                return Err(RpcError::Custom("token is not erc721".to_owned()));
+            }
+
+            let owner = nft_check(t.network.node(), &t.contract, &hash)
+                .await
+                .map_err(|e| RpcError::Custom(format!("{:?}", e)))?;
+
+            if owner == a.address {
+                let balance = Balance::add(&db, address, token, hash)?;
+                Ok(HandleResult::rpc(json!([address, token, balance.value])))
+            } else {
+                Err(RpcError::Custom("address is not NFT owner".to_owned()))
+            }
         },
     );
 }

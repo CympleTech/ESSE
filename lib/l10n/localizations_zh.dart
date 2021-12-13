@@ -169,6 +169,8 @@ class AppLocalizationsZh extends AppLocalizations {
 
   // security page (did)
   @override
+  String get account => '账户';
+  @override
   String get createAccount => '新建账户';
   @override
   String get importAccount => '导入账户';

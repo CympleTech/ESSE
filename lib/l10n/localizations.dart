@@ -125,6 +125,7 @@ abstract class AppLocalizations {
   String get portuguese;
 
   // security page (did)
+  String get account;
   String get createAccount;
   String get importAccount;
   String get loginChooseAccount;

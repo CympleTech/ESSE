@@ -226,13 +226,13 @@ class Address {
       case ChainToken.ERC721:
         Token token = Token.eth(network);
         if (this.balances.containsKey(network)) {
-          token.balance(this.balances[network]!);
+          token.updateBalance(this.balances[network]!);
         }
         return token;
       case ChainToken.BTC:
         Token token = Token.btc(network);
         if (this.balances.containsKey(network)) {
-          token.balance(this.balances[network]!);
+          token.updateBalance(this.balances[network]!);
         }
         return token;
     }
@@ -270,10 +270,12 @@ class Token {
   int decimal = 18;
 
   String balanceString = '';
-  double amount = 0.0;
-  double fiat = 0.0;
+  String balance = '0';
+  double fiat = 0;
 
   Token() {}
+
+  double get amount => double.parse(this.balance);
 
   String get logo {
     switch (name.toUpperCase()) {
@@ -281,6 +283,8 @@ class Token {
         return 'assets/logo/logo_eth.png';
       case 'USDT':
         return 'assets/logo/logo_tether.png';
+      case 'ESNFT':
+        return 'assets/logo/logo_esse_nft.png';
       default:
         if (chain == ChainToken.ERC20) {
           return 'assets/logo/logo_erc20.png';
@@ -292,6 +296,15 @@ class Token {
     }
   }
 
+  bool isNft() {
+    switch (this.chain) {
+      case ChainToken.ERC721:
+        return true;
+      default:
+        return false;
+    }
+  }
+
   Token.fromList(List params, String balance) {
     this.id = params[0];
     this.chain = ChainTokenExtension.fromInt(params[1]);
@@ -299,7 +312,7 @@ class Token {
     this.name = params[3];
     this.contract = params[4];
     this.decimal = params[5];
-    this.balance(balance);
+    this.updateBalance(balance);
   }
 
   Token.eth(Network network) {
@@ -321,9 +334,14 @@ class Token {
     }
   }
 
-  balance(String number) {
+  updateBalance(String number) {
     this.balanceString = number;
-    this.amount = double.parse(unitBalance(number, this.decimal, 8));
+
+    if (number.length == 0 || number == '0') {
+      this.balance = this.decimal > 0 ? '0.0' : '0';
+    } else {
+      this.balance = this.decimal == 0 ? number : unitBalance(number, this.decimal, 8);
+    }
   }
 }
 

@@ -77,6 +77,7 @@ class AccountProvider extends ChangeNotifier {
       () => rpc.send('account-online', [gid]));
 
     initLogined(gid, this.accounts.values.toList());
+    this.coreShowWidget = DefaultCoreShow();
   }
 
   /// when security add account.

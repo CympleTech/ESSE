@@ -22,6 +22,7 @@ pub const ETH_KOVAN: &'static str =
 pub const ETH_LOCAL: &'static str =
     "http://localhost:8545";
 
+#[derive(Eq, PartialEq)]
 pub(crate) enum ChainToken {
     ETH,
     ERC20,
@@ -307,6 +308,7 @@ impl Address {
     pub fn _delete(db: &DStorage, id: &i64) -> Result<()> {
         let sql = format!("DELETE FROM addresses WHERE id = {}", id);
         db.delete(&sql)?;
+        Balance::delete_by_address(db, id)?;
         Ok(())
     }
 }
@@ -410,6 +412,127 @@ impl Token {
 
     pub fn _delete(db: &DStorage, id: &i64) -> Result<()> {
         let sql = format!("DELETE FROM tokens WHERE id = {}", id);
+        db.delete(&sql)?;
+        Balance::delete_by_token(db, id)?;
+        Ok(())
+    }
+}
+
+pub(crate) struct Balance {
+    id: i64,
+    address: i64,
+    token: i64,
+    pub value: String,
+}
+
+impl Balance {
+    pub fn new(address: i64, token: i64, value: String) -> Self {
+        Self {
+            address,
+            token,
+            value,
+            id: 0,
+        }
+    }
+    fn from_values(mut v: Vec<DsValue>) -> Self {
+        Self {
+            value: v.pop().unwrap().as_string(),
+            token: v.pop().unwrap().as_i64(),
+            address: v.pop().unwrap().as_i64(),
+            id: v.pop().unwrap().as_i64(),
+        }
+    }
+
+    pub fn list(db: &DStorage, address: &i64, token: &i64) -> Result<Vec<Self>> {
+        let matrix = db.query(&format!(
+            "SELECT id, address, token, value FROM balances WHERE address = {} AND token = {}",
+            address, token
+        ))?;
+        let mut balances = vec![];
+        for values in matrix {
+            balances.push(Self::from_values(values));
+        }
+        Ok(balances)
+    }
+
+    /// use for common and erc20.
+    pub fn update(db: &DStorage, address: &i64, token: &i64, value: &str) -> Result<()> {
+        let matrix = db.query(&format!(
+            "SELECT id FROM balances WHERE address = {} AND token = {}",
+            address, token,
+        ))?;
+        if matrix.len() > 0 {
+            let sql = format!(
+                "UPDATE balances SET value = '{}' WHERE address = {} AND token = {}",
+                value, address, token
+            );
+            db.update(&sql)?;
+            return Ok(());
+        }
+
+        let sql = format!(
+            "INSERT INTO balances (address, token, value) VALUES ({}, {}, '{}')",
+            address, token, value,
+        );
+        let _id = db.insert(&sql)?;
+        Ok(())
+    }
+
+    /// use for erc721 (NFT).
+    pub fn add(db: &DStorage, address: i64, token: i64, value: String) -> Result<Self> {
+        let mut matrix = db.query(&format!(
+            "SELECT id FROM balances WHERE address = {} AND token = {} AND value = '{}'",
+            address, token, value
+        ))?;
+        if matrix.len() > 0 {
+            let id = matrix.pop().unwrap().pop().unwrap().as_i64(); // safe unwrap()
+            return Ok(Self {
+                id,
+                address,
+                token,
+                value,
+            });
+        }
+
+        let sql = format!(
+            "INSERT INTO balances (address, token, value) VALUES ({}, {}, '{}')",
+            address, token, value
+        );
+        let id = db.insert(&sql)?;
+        Ok(Self {
+            id,
+            address,
+            token,
+            value,
+        })
+    }
+
+    pub fn _get(db: &DStorage, id: &i64) -> Result<Self> {
+        let mut matrix = db.query(&format!(
+            "SELECT id, address, token, value FROM balances where id = {}",
+            id
+        ))?;
+        if matrix.len() > 0 {
+            let values = matrix.pop().unwrap(); // safe unwrap()
+            return Ok(Self::from_values(values));
+        }
+        Err(anyhow!("balance is missing!"))
+    }
+
+    pub fn _delete(db: &DStorage, id: &i64) -> Result<()> {
+        let sql = format!("DELETE FROM balances WHERE id = {}", id);
+        db.delete(&sql)?;
+        Ok(())
+    }
+
+    pub fn delete_by_address(db: &DStorage, address: &i64) -> Result<()> {
+        let sql = format!("DELETE FROM balances WHERE address = {}", address);
+        db.delete(&sql)?;
+        Ok(())
+    }
+
+    pub fn delete_by_token(db: &DStorage, token: &i64) -> Result<()> {
+        let sql = format!("DELETE FROM balances WHERE token = {}", token);
         db.delete(&sql)?;
         Ok(())
     }

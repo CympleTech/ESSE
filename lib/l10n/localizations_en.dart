@@ -169,6 +169,8 @@ class AppLocalizationsEn extends AppLocalizations {
 
   // security page (did)
   @override
+  String get account => 'Account';
+  @override
   String get createAccount => 'Create Account';
   @override
   String get importAccount => 'Import Account';

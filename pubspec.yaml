@@ -87,6 +87,7 @@ flutter:
     - assets/logo/logo_erc20.png
     - assets/logo/logo_nft.png
     - assets/logo/logo_btc.png
+    - assets/logo/logo_esse_nft.png
     - assets/images/background_light.jpg
     - assets/images/background_dark.jpg
     - assets/images/image_missing.png
