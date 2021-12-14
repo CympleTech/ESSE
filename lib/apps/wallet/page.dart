@@ -147,6 +147,7 @@ class _WalletDetailState extends State<WalletDetail> with SingleTickerProviderSt
   _changeAddress(Address address) {
     this._selectedAddress = address;
     this._networks = address.networks();
+    this._txs.clear();
     if (!this._networks.contains(this._selectedNetwork)) {
       _changeNetwork(this._networks[0]);
     } else {
@@ -159,6 +160,7 @@ class _WalletDetailState extends State<WalletDetail> with SingleTickerProviderSt
 
   _changeNetwork(Network network) {
     this._selectedNetwork = network;
+    this._txs.clear();
     rpc.send('wallet-token', [
         this._selectedNetwork!.toInt(), this._selectedAddress!.address
     ]);
@@ -519,15 +521,16 @@ class _WalletDetailState extends State<WalletDetail> with SingleTickerProviderSt
                     itemCount: this._txs.length + 1,
                     itemBuilder: (BuildContext context, int index) {
                       if (index == this._txs.length) {
-                        return TextButton(
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 10.0),
-                            child: Text(lang.loadMore)
-                          ),
-                          onPressed: () {
-                            //
-                          }
-                        );
+                        return SizedBox();
+                        // return TextButton(
+                        //   child: Padding(
+                        //     padding: const EdgeInsets.symmetric(vertical: 10.0),
+                        //     child: Text(lang.loadMore)
+                        //   ),
+                        //   onPressed: () {
+                        //     //
+                        //   }
+                        // );
                       } else {
                         final tx = this._txs[index];
                         return ListTile(
@@ -900,10 +903,12 @@ class _TransferTokenState extends State<_TransferToken> {
                   focus: _nameFocus
               )),
               SizedBox(width: 80.0,
-                child: IconButton(icon: Icon(Icons.qr_code, color: color.primary),
+                child: IconButton(
+                  icon: Icon(Icons.qr_code, color: color.primary),
                   onPressed: () {
-                    //
-                })
+                    // TODO
+                  }
+                )
               )
           ])
         ),
@@ -1008,7 +1013,7 @@ class _TransferTokenState extends State<_TransferToken> {
               to = this._selectAddress;
             }
             String a = _amountController.text.trim();
-            if (!_nftInput) {
+            if (widget.token.isNft() && !_nftInput) {
               a = this._selectNft;
             }
             if (a.length == 0 || (!widget.token.isNft() && double.parse(a) == 0)) {
@@ -1048,7 +1053,7 @@ class _TransferTokenState extends State<_TransferToken> {
               to = this._selectAddress;
             }
             String a = _amountController.text.trim();
-            if (!_nftInput) {
+            if (widget.token.isNft() && !_nftInput) {
               a = this._selectNft;
             }
             if (a.length == 0 || (!widget.token.isNft() && double.parse(a) == 0)) {
