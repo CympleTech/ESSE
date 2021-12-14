@@ -266,6 +266,18 @@ impl Address {
         Err(anyhow!("address is missing!"))
     }
 
+    pub fn get_by_address(db: &DStorage, address: &str) -> Result<Self> {
+        let mut matrix = db.query(&format!(
+            "SELECT id, chain, indx, name, address, secret, balance FROM addresses WHERE address = '{}'",
+            address
+        ))?;
+        if matrix.len() > 0 {
+            let values = matrix.pop().unwrap(); // safe unwrap()
+            return Ok(Self::from_values(values));
+        }
+        Err(anyhow!("address is missing!"))
+    }
+
     pub fn next_index(db: &DStorage, chain: &ChainToken) -> Result<u32> {
         let mut matrix = db.query(&format!(
             "SELECT indx FROM addresses where chain = {} AND secret = '' ORDER BY indx ASC",
@@ -410,6 +422,18 @@ impl Token {
         Err(anyhow!("token is missing!"))
     }
 
+    pub fn get_by_contract(db: &DStorage, network: &Network, c: &str) -> Result<Self> {
+        let mut matrix = db.query(&format!(
+            "SELECT id, chain, network, name, contract, decimal FROM tokens WHERE network = {} AND contract = '{}'",
+            network.to_i64(), c
+        ))?;
+        if matrix.len() > 0 {
+            let values = matrix.pop().unwrap(); // safe unwrap()
+            return Ok(Self::from_values(values));
+        }
+        Err(anyhow!("token is missing!"))
+    }
+
     pub fn _delete(db: &DStorage, id: &i64) -> Result<()> {
         let sql = format!("DELETE FROM tokens WHERE id = {}", id);
         db.delete(&sql)?;
@@ -519,8 +543,8 @@ impl Balance {
         Err(anyhow!("balance is missing!"))
     }
 
-    pub fn _delete(db: &DStorage, id: &i64) -> Result<()> {
-        let sql = format!("DELETE FROM balances WHERE id = {}", id);
+    pub fn delete_by_hash(db: &DStorage, hash: &str) -> Result<()> {
+        let sql = format!("DELETE FROM balances WHERE value = '{}'", hash);
         db.delete(&sql)?;
         Ok(())
     }

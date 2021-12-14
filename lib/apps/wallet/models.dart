@@ -101,23 +101,31 @@ extension NetworkExtension on Network {
     }
   }
 
-  String txUrl() {
+  String url() {
     switch (this) {
       case Network.EthMain:
-        return 'https://etherscan.io/tx/';
+        return 'https://etherscan.io/';
       case Network.EthTestRopsten:
-        return 'https://ropsten.etherscan.io/tx/';
+        return 'https://ropsten.etherscan.io/';
       case Network.EthTestRinkeby:
-        return 'https://rinkeby.etherscan.io/tx/';
+        return 'https://rinkeby.etherscan.io/';
       case Network.EthTestKovan:
-        return 'https://kovan.etherscan.io/tx/';
+        return 'https://kovan.etherscan.io/';
       case Network.EthLocal:
-        return 'https://etherscan.io/tx/';
+        return 'https://etherscan.io/';
       case Network.BtcMain:
-        return 'https://www.blockchain.com/btc/tx/';
+        return 'https://www.blockchain.com/btc/';
       case Network.BtcLocal:
-        return 'https://www.blockchain.com/btc/tx/';
+        return 'https://www.blockchain.com/btc/';
     }
+  }
+
+  String txUrl() {
+    return this.url() + '/tx/';
+  }
+
+  String tokenUrl() {
+    return this.url() + '/token/';
   }
 
   int toInt() {
@@ -303,6 +311,10 @@ class Token {
       default:
         return false;
     }
+  }
+
+  String nftUrl(String hash) {
+    return this.network.tokenUrl() + this.contract + '?a=' + hash;
   }
 
   Token.fromList(List params, String balance) {

@@ -5,8 +5,9 @@ class InputText extends StatelessWidget {
   final String text;
   final TextEditingController controller;
   final FocusNode focus;
+  final bool enabled;
 
-  const InputText({Key? key, required this.icon, required this.text, required this.controller, required this.focus})
+  const InputText({Key? key, required this.icon, required this.text, required this.controller, required this.focus, this.enabled = true})
   : super(key: key);
   @override
   Widget build(BuildContext context) {
@@ -17,7 +18,7 @@ class InputText extends StatelessWidget {
       height: 50.0,
       width: 600.0,
       decoration: BoxDecoration(
-        color: color.surface,
+        color: enabled ? color.surface : Color(0x26ADB0BB),
         border: Border.all(color: focus.hasFocus ? color.primary : color.surface),
         borderRadius: BorderRadius.circular(10.0)
       ),
@@ -33,6 +34,7 @@ class InputText extends StatelessWidget {
           )),
           Expanded(
             child: TextField(
+              enabled: enabled,
               style: TextStyle(fontSize: 16.0),
               controller: controller,
               focusNode: focus,

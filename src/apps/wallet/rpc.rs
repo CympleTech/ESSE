@@ -107,6 +107,10 @@ async fn loop_token(
                     let balance =
                         token_balance(&web3, &token.contract, &address, &token.chain).await?;
                     let res = res_balance(gid, &address, &network, &balance, Some(&token));
+
+                    // update & clean balances.
+                    // TODO
+
                     sender.send(SendMessage::Rpc(0, res, true)).await?;
                 }
             }
@@ -306,7 +310,11 @@ async fn token_gas(
 
 async fn nft_check(node: &str, c_str: &str, hash: &str) -> Result<String> {
     let addr: EthAddress = c_str.parse()?;
-    let tokenid = U256::from_dec_str(&hash)?;
+    let tokenid = if hash.starts_with("0x") {
+        U256::from_str_radix(&hash, 16)?
+    } else {
+        U256::from_dec_str(&hash)?
+    };
     let transport = Http::new(node)?;
     let web3 = Web3::new(transport);
     let contract = Contract::from_json(web3.eth(), addr, ERC721_ABI.as_bytes())?;
@@ -516,6 +524,17 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             let hash = token_transfer(&address.address, to, amount, c_str, &sk, &network, &chain)
                 .await
                 .map_err(|e| RpcError::Custom(format!("{:?}", e)))?;
+
+            // NFT: delete old, add new if needed (between accounts).
+            if let Ok(token) = Token::get_by_contract(&db, &network, c_str) {
+                if token.chain == ChainToken::ERC721 {
+                    let _ = Balance::delete_by_hash(&db, amount);
+
+                    if let Ok(new) = Address::get_by_address(&db, to) {
+                        let _ = Balance::add(&db, new.id, token.id, amount.to_owned());
+                    }
+                }
+            }
 
             Ok(HandleResult::rpc(json!([
                 from,

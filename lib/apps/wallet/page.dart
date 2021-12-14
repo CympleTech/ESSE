@@ -485,17 +485,31 @@ class _WalletDetailState extends State<WalletDetail> with SingleTickerProviderSt
                           ),
                           title: Text("${token.balance} ${token.name}",),
                           subtitle: Text(token.short()),
-                          trailing: IconButton(icon: Icon(Icons.input, color: color.primary),
-                            onPressed: () => showShadowDialog(
-                              context, Icons.input, token.name, _TransferToken(
-                                chain: this._selectedAddress!.chain,
-                                network: this._selectedNetwork!,
-                                address: this._selectedAddress!,
-                                token: token,
-                                addresses: this._addresses,
-                              ), 0.0
-                            ),
-                          ),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (token.isNft())
+                              IconButton(icon: Icon(Icons.travel_explore, color: color.primary),
+                                onPressed: () => showShadowDialog(
+                                  context, Icons.travel_explore, token.name, _ImportNft(
+                                    address: this._selectedAddress!,
+                                    token: token,
+                                  ), 0.0
+                                ),
+                              ),
+                              IconButton(icon: Icon(Icons.input, color: color.primary),
+                                onPressed: () => showShadowDialog(
+                                  context, Icons.input, token.name, _TransferToken(
+                                    chain: this._selectedAddress!.chain,
+                                    network: this._selectedNetwork!,
+                                    address: this._selectedAddress!,
+                                    token: token,
+                                    addresses: this._addresses,
+                                  ), 0.0
+                                ),
+                              ),
+                            ]
+                          )
                         );
                       }
                     }
@@ -692,6 +706,7 @@ class _TransferTokenState extends State<_TransferToken> {
   String _gas = '0';
   String _networkError = '';
   bool _checked = false;
+  bool _checking = false;
 
   List<String> _nft = [];
   String _selectNft = '-';
@@ -703,11 +718,13 @@ class _TransferTokenState extends State<_TransferToken> {
     _nameController.addListener(() {
         setState(() {
             this._checked = false;
+            this._checking = false;
         });
     });
     _amountController.addListener(() {
         setState(() {
             this._checked = false;
+            this._checking = false;
         });
     });
     if (widget.token.isNft()) {
@@ -722,9 +739,12 @@ class _TransferTokenState extends State<_TransferToken> {
     if (res.isOk) {
       final a = res.params[0];
       final t = res.params[1];
-      res.params[2].forEach((hash) {
-          this._nft.add(hash);
-      });
+      if (a == widget.address.id && t == widget.token.id) {
+        this._nft.clear();
+        res.params[2].forEach((hash) {
+            this._nft.add(hash);
+        });
+      }
       if (this._nft.length > 0) {
         this._selectNft = this._nft[0];
         this._nftInput = false;
@@ -751,7 +771,7 @@ class _TransferTokenState extends State<_TransferToken> {
     } else {
       this._networkError = res.error;
     }
-
+    this._checking = false;
     setState(() {});
   }
 
@@ -911,36 +931,36 @@ class _TransferTokenState extends State<_TransferToken> {
                 child: this._nftInput
                 ? InputText(
                   icon: Icons.verified,
-                  text: '0xAa..',
+                  text: 'TokenID',
                   controller: _amountController,
                   focus: _amountFocus)
-                : DropdownButtonHideUnderline(
-                  child: Theme(
-                    data: Theme.of(context).copyWith(
-                      canvasColor: color.background,
+                : Padding(
+                  padding: const EdgeInsets.only(left: 20.0),
+                  child: DropdownButtonHideUnderline(
+                    child: Theme(
+                      data: Theme.of(context).copyWith(
+                        canvasColor: color.background,
+                      ),
+                      child: DropdownButton<String>(
+                        iconEnabledColor: Color(0xFFADB0BB),
+                        isExpanded: true,
+                        value: this._selectNft,
+                        onChanged: (String? value) {
+                          if (value != null) {
+                            setState(() {
+                                this._selectNft = value;
+                            });
+                          }
+                        },
+                        items: this._nft.map((value) {
+                            return DropdownMenuItem<String>(
+                              value: value,
+                              child: Text(gidPrint(value, '', 6)),
+                            );
+                        }).toList(),
+                      ),
                     ),
-                    child: DropdownButton<String>(
-                      iconEnabledColor: Color(0xFFADB0BB),
-                      isExpanded: true,
-                      value: this._selectNft,
-                      onChanged: (String? value) {
-                        if (value != null) {
-                          setState(() {
-                              this._selectNft = value;
-                          });
-                        }
-                      },
-                      items: this._nft.map((value) {
-                          return DropdownMenuItem<String>(
-                            value: value,
-                            child: Text(value, maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(fontSize: 16)
-                            ),
-                          );
-                      }).toList(),
-                    ),
-                  ),
+                  )
                 )
               ),
               SizedBox(width: 80.0,
@@ -987,8 +1007,11 @@ class _TransferTokenState extends State<_TransferToken> {
             if (_myAccount) {
               to = this._selectAddress;
             }
-            final a = _amountController.text.trim();
-            if (double.parse(a) == 0) {
+            String a = _amountController.text.trim();
+            if (!_nftInput) {
+              a = this._selectNft;
+            }
+            if (a.length == 0 || (!widget.token.isNft() && double.parse(a) == 0)) {
               _amountFocus.requestFocus();
               return;
             }
@@ -1017,14 +1040,18 @@ class _TransferTokenState extends State<_TransferToken> {
             );
         })
         : ButtonText(
-          text: lang.check,
+          enable: !this._checking,
+          text: this._checking ? lang.waiting : lang.check,
           action: () {
             String to = _nameController.text.trim();
             if (_myAccount) {
               to = this._selectAddress;
             }
-            final a = _amountController.text.trim();
-            if (a.length == 0 || double.parse(a) == 0) {
+            String a = _amountController.text.trim();
+            if (!_nftInput) {
+              a = this._selectNft;
+            }
+            if (a.length == 0 || (!widget.token.isNft() && double.parse(a) == 0)) {
               _amountFocus.requestFocus();
               return;
             }
@@ -1034,7 +1061,137 @@ class _TransferTokenState extends State<_TransferToken> {
             }
             final amount = restoreBalance(a, widget.token.decimal);
             _gasPrice(to, amount);
+            setState(() {
+                this._checking = true;
+            });
         })
+      ]
+    );
+  }
+}
+
+class _ImportNft extends StatefulWidget {
+  final Address address;
+  final Token token;
+  _ImportNft({Key? key, required this.address, required this.token}) : super(key: key);
+
+  @override
+  _ImportNftState createState() => _ImportNftState();
+}
+
+class _ImportNftState extends State<_ImportNft> {
+  TextEditingController _nameController = TextEditingController();
+  FocusNode _nameFocus = FocusNode();
+  List<String> _nft = [];
+  bool _searching = false;
+  String _error = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController.addListener(() {
+        setState(() {
+            this._error = '';
+        });
+    });
+    _getNft();
+  }
+
+  _getNft() async {
+    final res = await httpPost(Global.httpRpc, 'wallet-nft', [
+        widget.address.id, widget.token.id,
+    ]);
+    if (res.isOk) {
+      final a = res.params[0];
+      final t = res.params[1];
+      if (a == widget.address.id && t == widget.token.id) {
+        this._nft.clear();
+        res.params[2].forEach((hash) {
+            this._nft.add(hash);
+        });
+      }
+      setState(() {});
+    }
+  }
+
+  _search(String hash) async {
+    final res = await httpPost(Global.httpRpc, 'wallet-nft-add', [
+        widget.address.id, widget.token.id, hash
+    ]);
+    if (res.isOk) {
+      final a = res.params[0];
+      final t = res.params[1];
+      if (a == widget.address.id && t == widget.token.id) {
+        if (!this._nft.contains(res.params[2])) {
+          this._nft.add(res.params[2]);
+        }
+      }
+      this._searching = false;
+      this._error = '';
+    } else {
+      this._searching = false;
+      this._error = res.error;
+    }
+    setState(() {});
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final color = Theme.of(context).colorScheme;
+    final lang = AppLocalizations.of(context);
+    final height = MediaQuery.of(context).size.height;
+
+    return Column(
+      children: [
+        InputText(
+          icon: Icons.verified,
+          text: 'TokenID',
+          controller: _nameController,
+          focus: _nameFocus,
+          enabled: !this._searching
+        ),
+        Padding(
+          padding: EdgeInsets.symmetric(vertical: this._error.length > 1 ? 8.0 : 0),
+          child: Text(this._error, style: TextStyle(color: Colors.red)),
+        ),
+        ButtonText(
+          enable: !this._searching,
+          text: this._searching ? lang.waiting : lang.add,
+          action: () {
+            final hash = _nameController.text.trim();
+            if (hash.length < 1) {
+              return;
+            }
+            _search(hash);
+            setState(() {
+                this._searching = true;
+            });
+        }),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(top: 20.0, bottom: 10.0),
+              child: Text('NFT:', textAlign: TextAlign.left),
+        )]),
+        Container(
+          height: height-300 < 200 ?  height-300: 200,
+          child: ListView.separated(
+            separatorBuilder: (BuildContext context, int index) => const Divider(),
+            itemCount: this._nft.length,
+            itemBuilder: (BuildContext context, int index) {
+              final hash = this._nft[index];
+              return ListTile(
+                title: Text('TokenID: ' + gidPrint(hash, '', 6)),
+                trailing: IconButton(icon: Icon(Icons.link, color: color.primary),
+                  onPressed: () {
+                    launch(widget.token.nftUrl(hash));
+                  }
+                ),
+              );
+            }
+          ),
+        )
       ]
     );
   }

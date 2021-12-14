@@ -5,15 +5,15 @@ String gidText(String? gid, [String pre='EH']) {
   return pre + gid.toUpperCase();
 }
 
-String gidPrint(String? gid, [String pre='EH']) {
+String gidPrint(String? gid, [String pre='EH', int n = 4]) {
   if (gid == null) {
     return '';
   }
 
   final info = gid.toUpperCase();
   final len = info.length;
-  if (len > 8) {
-    return pre + info.substring(0, 4) + '...' + info.substring(len - 4, len);
+  if (len > n+n) {
+    return pre + info.substring(0, n) + '...' + info.substring(len - n, len);
   } else {
     return info;
   }
