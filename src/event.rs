@@ -6,7 +6,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use tdn::types::{
     group::{EventId, GroupId},
     message::{SendMessage, SendType},
-    primitive::{HandleResult, PeerAddr, Result},
+    primitive::{HandleResult, PeerId, Result},
 };
 use tdn_did::user::User;
 use tdn_storage::local::DStorage;
@@ -44,7 +44,7 @@ pub(crate) enum InnerEvent {
     SessionRequestDelete(GroupId),
     /// Session's friend update by friend.
     /// params: f_gid, addr, name, avatar. (TODO addrs as list to store. keep others device)
-    SessionFriendInfo(GroupId, PeerAddr, String, Vec<u8>),
+    SessionFriendInfo(GroupId, PeerId, String, Vec<u8>),
     /// Session's friend update by me.
     /// params: f_gid, remark
     SessionFriendUpdate(GroupId, String),
@@ -60,13 +60,13 @@ pub(crate) enum InnerEvent {
     SessionMessageDelete(EventId),
     /// create a file.
     /// params: file_id, file_parent_id, file_directory, file_name, file_desc, device_addr.
-    FileCreate(FileDid, FileDid, RootDirectory, String, String, PeerAddr),
+    FileCreate(FileDid, FileDid, RootDirectory, String, String, PeerId),
     /// update file info. file_id, file_name, file_desc.
     FileUpdate(FileDid, String, String),
     /// update file's parent id (move file to other directory).
     FileParent(FileDid, FileDid),
     /// backup file in new device.
-    FileBackup(FileDid, PeerAddr),
+    FileBackup(FileDid, PeerId),
     /// delete a file.
     FileDelete(FileDid),
 }
@@ -90,7 +90,7 @@ pub(crate) enum SyncEvent {
     Request(
         EventId,
         GroupId,
-        PeerAddr,
+        PeerId,
         String,
         Vec<u8>,
         String,
@@ -104,7 +104,7 @@ pub(crate) enum SyncEvent {
     Friend(
         EventId,
         GroupId,
-        PeerAddr,
+        PeerId,
         String,
         Vec<u8>,
         String,
@@ -153,7 +153,7 @@ impl InnerEvent {
 
     pub fn merge_event(
         db: &DStorage,
-        addr: &PeerAddr,
+        addr: &PeerId,
         results: &mut HandleResult,
         our_height: u64,
         our_event: EventId,
@@ -211,7 +211,7 @@ impl InnerEvent {
         self,
         group: &mut Group,
         gid: GroupId,
-        addr: PeerAddr,
+        addr: PeerId,
         eheight: u64,
         eid: EventId,
         pre_event: EventId,
@@ -390,7 +390,7 @@ impl InnerEvent {
                     tokio::spawn(async move {
                         let online = layer_lock.write().await.remove_online(&ggid, &f.gid);
                         if let Some(faddr) = online {
-                            let mut addrs: HashMap<PeerAddr, GroupId> = HashMap::new();
+                            let mut addrs: HashMap<PeerId, GroupId> = HashMap::new();
                             addrs.insert(faddr, f.gid);
                             tokio::spawn(rpc::sleep_waiting_close_stable(
                                 sender,
@@ -418,7 +418,7 @@ impl InnerEvent {
                     tokio::spawn(async move {
                         let online = layer_lock.write().await.remove_online(&ggid, &f.gid);
                         if let Some(faddr) = online {
-                            let mut addrs: HashMap<PeerAddr, GroupId> = HashMap::new();
+                            let mut addrs: HashMap<PeerId, GroupId> = HashMap::new();
                             addrs.insert(faddr, f.gid);
                             tokio::spawn(rpc::sleep_waiting_close_stable(
                                 sender,
@@ -473,7 +473,7 @@ impl StatusEvent {
         self,
         group: &mut Group,
         gid: GroupId,
-        addr: PeerAddr,
+        addr: PeerId,
         _results: &mut HandleResult,
         layer: &Arc<RwLock<Layer>>,
         _uid: u64,
@@ -669,7 +669,7 @@ impl SyncEvent {
         group: &mut Group,
         layer: &Arc<RwLock<Layer>>,
         results: &mut HandleResult,
-        addr: PeerAddr,
+        addr: PeerId,
     ) -> Result<()> {
         if events.len() as u64 != to + 1 - from {
             return Ok(());
@@ -811,7 +811,7 @@ impl SyncEvent {
                             tokio::spawn(async move {
                                 let online = layer_lock.write().await.remove_online(&ggid, &fgid);
                                 if let Some(faddr) = online {
-                                    let mut addrs: HashMap<PeerAddr, GroupId> = HashMap::new();
+                                    let mut addrs: HashMap<PeerId, GroupId> = HashMap::new();
                                     addrs.insert(faddr, fgid);
                                     tokio::spawn(rpc::sleep_waiting_close_stable(
                                         sender,

@@ -2,7 +2,7 @@ use std::sync::Arc;
 use tdn::types::{
     group::GroupId,
     message::{NetworkType, SendType},
-    primitive::{HandleResult, PeerAddr},
+    primitive::{HandleResult, PeerId},
     rpc::{json, rpc_response, RpcError, RpcHandler, RpcParam},
 };
 use tdn_did::Proof;
@@ -82,7 +82,7 @@ pub(crate) fn member_info(
     mgid: GroupId,
     id: i64,
     mid: i64,
-    addr: PeerAddr,
+    addr: PeerId,
     name: String,
 ) -> RpcParam {
     rpc_response(
@@ -94,7 +94,7 @@ pub(crate) fn member_info(
 }
 
 #[inline]
-pub(crate) fn member_online(mgid: GroupId, gid: i64, mid: GroupId, maddr: PeerAddr) -> RpcParam {
+pub(crate) fn member_online(mgid: GroupId, gid: i64, mid: GroupId, maddr: PeerId) -> RpcParam {
     rpc_response(
         0,
         "group-chat-member-online",
@@ -202,7 +202,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
         "group-chat-provider-check",
         |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
             let id = params[0].as_i64().ok_or(RpcError::ParseError)?;
-            let addr = PeerAddr::from_hex(params[1].as_str().ok_or(RpcError::ParseError)?)?;
+            let addr = PeerId::from_hex(params[1].as_str().ok_or(RpcError::ParseError)?)?;
 
             if id == 0 {
                 // insert into database.
@@ -249,7 +249,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             let db = group_chat_db(&base, &gid)?;
             let addr = match glocation {
                 GroupLocation::Remote => {
-                    PeerAddr::from_hex(params[3].as_str().ok_or(RpcError::ParseError)?)?
+                    PeerId::from_hex(params[3].as_str().ok_or(RpcError::ParseError)?)?
                 }
                 GroupLocation::Local => state.layer.read().await.addr.clone(),
             };
@@ -364,7 +364,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
         |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
             let gtype = GroupType::from_u32(params[0].as_i64().ok_or(RpcError::ParseError)? as u32);
             let gcd = GroupId::from_hex(params[1].as_str().ok_or(RpcError::ParseError)?)?;
-            let gaddr = PeerAddr::from_hex(params[2].as_str().ok_or(RpcError::ParseError)?)?;
+            let gaddr = PeerId::from_hex(params[2].as_str().ok_or(RpcError::ParseError)?)?;
             let gname = params[3].as_str().ok_or(RpcError::ParseError)?.to_owned();
             let gremark = params[4].as_str().ok_or(RpcError::ParseError)?;
             let gproof = params[5].as_str().ok_or(RpcError::ParseError)?;

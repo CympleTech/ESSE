@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
 use tdn::types::{
     group::GroupId,
-    primitive::{PeerAddr, Result},
+    primitive::{Peer, PeerId, Result},
 };
 
 use tdn_did::Keypair;
@@ -19,7 +19,7 @@ pub(crate) struct RunningAccount {
     /// device's info.
     pub device_info: String,
     /// distribute connected devices.
-    pub distributes: HashMap<PeerAddr, (i64, bool)>,
+    pub distributes: HashMap<PeerId, (Peer, i64, bool)>,
     /// uptime
     pub uptime: u32,
 }
@@ -47,19 +47,19 @@ impl RunningAccount {
         })
     }
 
-    pub fn add_online(&mut self, addr: &PeerAddr) -> Result<i64> {
+    pub fn add_online(&mut self, addr: &PeerId) -> Result<i64> {
         if let Some(v) = self.distributes.get_mut(addr) {
-            v.1 = true;
-            Ok(v.0)
+            v.2 = true;
+            Ok(v.1)
         } else {
             Err(anyhow!("device missing"))
         }
     }
 
-    pub fn offline(&mut self, addr: &PeerAddr) -> Result<i64> {
+    pub fn offline(&mut self, addr: &PeerId) -> Result<i64> {
         if let Some(v) = self.distributes.get_mut(addr) {
-            v.1 = false;
-            Ok(v.0)
+            v.2 = false;
+            Ok(v.1)
         } else {
             Err(anyhow!("device missing"))
         }

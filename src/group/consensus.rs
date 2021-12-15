@@ -6,7 +6,7 @@ struct RunningAccount {
     /// device's info.
     device_info: String,
     /// distribute connected devices.
-    distributes: HashMap<PeerAddr, (i64, bool)>,
+    distributes: HashMap<PeerId, (i64, bool)>,
     /// uptime
     uptime: u32,
     /// pool to store consensus event.
@@ -14,7 +14,7 @@ struct RunningAccount {
     /// voting block.
     vote_block: BlockId,
     /// voting confirm.
-    vote_confirm: Vec<PeerAddr>,
+    vote_confirm: Vec<PeerId>,
     /// next block miner.
     next_miner: PeerAdr,
 }
@@ -37,7 +37,7 @@ pub(crate) enum ConsensusEvent {
     /// Consensus: confirm block.
     MineConfirm(u64),
     /// miner lost, need new.
-    MinerNew(PeerAddr),
+    MinerNew(PeerId),
     /// confirm miner is lost.
     MinerNewConfirm(bool),
     /// Consensus: Miner lost, re-vote.

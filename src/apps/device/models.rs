@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use std::time::{SystemTime, UNIX_EPOCH};
-use tdn::types::primitive::{PeerAddr, Result};
+use tdn::types::primitive::{Peer, PeerId, Result};
 use tdn::types::rpc::{json, RpcParam};
 use tdn_storage::local::{DStorage, DsValue};
 
@@ -8,13 +8,13 @@ pub(crate) struct Device {
     pub id: i64,
     pub name: String,
     pub info: String,
-    pub addr: PeerAddr,
+    pub addr: PeerId,
     pub lasttime: i64,
     pub online: bool,
 }
 
 impl Device {
-    pub fn new(name: String, info: String, addr: PeerAddr) -> Self {
+    pub fn new(name: String, info: String, addr: PeerId) -> Self {
         let start = SystemTime::now();
         let lasttime = start
             .duration_since(UNIX_EPOCH)
@@ -35,7 +35,7 @@ impl Device {
     fn from_values(mut v: Vec<DsValue>) -> Device {
         Device {
             lasttime: v.pop().unwrap().as_i64(),
-            addr: PeerAddr::from_hex(v.pop().unwrap().as_str()).unwrap_or(PeerAddr::default()),
+            addr: PeerId::from_hex(v.pop().unwrap().as_str()).unwrap_or(PeerId::default()),
             info: v.pop().unwrap().as_string(),
             name: v.pop().unwrap().as_string(),
             id: v.pop().unwrap().as_i64(),
@@ -67,15 +67,15 @@ impl Device {
         Ok(devices)
     }
 
-    pub fn distributes(db: &DStorage) -> Result<HashMap<PeerAddr, (i64, bool)>> {
+    pub fn distributes(db: &DStorage) -> Result<HashMap<PeerId, (Peer, i64, bool)>> {
         let matrix = db.query("SELECT id, addr FROM devices where is_deleted = false")?;
         let mut devices = HashMap::new();
         for mut values in matrix {
             if values.len() == 2 {
-                let addr = PeerAddr::from_hex(values.pop().unwrap().as_str())
-                    .unwrap_or(PeerAddr::default());
+                let addr =
+                    PeerId::from_hex(values.pop().unwrap().as_str()).unwrap_or(PeerId::default());
                 let id = values.pop().unwrap().as_i64();
-                devices.insert(addr, (id, false));
+                devices.insert(addr, (Peer::peer(addr), id, false));
             }
         }
         Ok(devices)

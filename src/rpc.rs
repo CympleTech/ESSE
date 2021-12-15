@@ -4,7 +4,7 @@ use std::sync::Arc;
 use tdn::types::{
     group::GroupId,
     message::{NetworkType, SendMessage, SendType, StateRequest, StateResponse},
-    primitive::{HandleResult, PeerAddr, Result},
+    primitive::{HandleResult, Peer, PeerId, Result},
     rpc::{json, rpc_response, RpcError, RpcHandler, RpcParam},
 };
 use tdn_did::{generate_mnemonic, Count};
@@ -23,7 +23,7 @@ use crate::session::{connect_session, Session, SessionType};
 use crate::storage::{group_chat_db, session_db};
 
 pub(crate) fn init_rpc(
-    addr: PeerAddr,
+    addr: PeerId,
     group: Arc<RwLock<Group>>,
     layer: Arc<RwLock<Layer>>,
 ) -> RpcHandler<RpcState> {
@@ -38,7 +38,7 @@ pub(crate) struct RpcState {
 }
 
 #[inline]
-pub(crate) fn network_stable(peers: Vec<(PeerAddr, bool)>) -> RpcParam {
+pub(crate) fn network_stable(peers: Vec<(PeerId, bool)>) -> RpcParam {
     let s_peers: Vec<Vec<String>> = peers
         .iter()
         .map(|(p, is_d)| {
@@ -54,7 +54,7 @@ pub(crate) fn network_stable(peers: Vec<(PeerAddr, bool)>) -> RpcParam {
 }
 
 #[inline]
-pub(crate) fn network_dht(peers: Vec<PeerAddr>) -> RpcParam {
+pub(crate) fn network_dht(peers: Vec<PeerId>) -> RpcParam {
     let s_peers: Vec<String> = peers.iter().map(|p| p.to_hex()).collect();
     rpc_response(0, "network-dht", json!(s_peers), GroupId::default())
 }
@@ -89,7 +89,7 @@ pub(crate) fn session_last(
 pub(crate) fn _session_update(
     mgid: GroupId,
     id: &i64,
-    addr: &PeerAddr,
+    addr: &PeerId,
     name: &str,
     is_top: bool,
 ) -> RpcParam {
@@ -102,7 +102,7 @@ pub(crate) fn _session_update(
 }
 
 #[inline]
-pub(crate) fn session_connect(mgid: GroupId, id: &i64, addr: &PeerAddr) -> RpcParam {
+pub(crate) fn session_connect(mgid: GroupId, id: &i64, addr: &PeerId) -> RpcParam {
     rpc_response(0, "session-connect", json!([id, addr.to_hex()]), mgid)
 }
 
@@ -138,8 +138,8 @@ fn session_list(sessions: Vec<Session>) -> RpcParam {
 #[inline]
 pub(crate) async fn sleep_waiting_close_stable(
     sender: Sender<SendMessage>,
-    groups: HashMap<PeerAddr, ()>,
-    layers: HashMap<PeerAddr, GroupId>,
+    groups: HashMap<PeerId, ()>,
+    layers: HashMap<PeerId, GroupId>,
 ) -> std::result::Result<(), SendError<SendMessage>> {
     tokio::time::sleep(std::time::Duration::from_secs(10)).await;
     for (addr, _) in groups {
@@ -200,7 +200,7 @@ pub(crate) async fn inner_rpc(uid: u64, method: &str, sender: &Sender<SendMessag
 }
 
 fn new_rpc_handler(
-    addr: PeerAddr,
+    addr: PeerId,
     group: Arc<RwLock<Group>>,
     layer: Arc<RwLock<Layer>>,
 ) -> RpcHandler<RpcState> {
@@ -218,8 +218,12 @@ fn new_rpc_handler(
         "add-bootstrap",
         |_gid, params: Vec<RpcParam>, _| async move {
             let socket = params[0].as_str().ok_or(RpcError::ParseError)?;
+            let transport = params[1].as_str().ok_or(RpcError::ParseError)?;
+
             if let Ok(addr) = socket.parse::<SocketAddr>() {
-                Ok(HandleResult::network(NetworkType::Connect(addr)))
+                Ok(HandleResult::network(NetworkType::Connect(
+                    Peer::socket_transport(addr, transport),
+                )))
             } else {
                 Err(RpcError::InvalidRequest)
             }
@@ -293,8 +297,7 @@ fn new_rpc_handler(
             let name = params[3].as_str().ok_or(RpcError::ParseError)?;
             let lock = params[4].as_str().ok_or(RpcError::ParseError)?;
 
-            let some_addr =
-                PeerAddr::from_hex(params[5].as_str().ok_or(RpcError::ParseError)?).ok();
+            let some_addr = PeerId::from_hex(params[5].as_str().ok_or(RpcError::ParseError)?).ok();
 
             let (id, gid) = state
                 .group
@@ -312,7 +315,7 @@ fn new_rpc_handler(
             if let Some(addr) = some_addr {
                 let group_lock = state.group.read().await;
                 let sender = group_lock.sender();
-                let msg = group_lock.create_message(&gid, addr)?;
+                let msg = group_lock.create_message(&gid, Peer::peer(addr))?;
                 drop(group_lock);
                 tokio::spawn(async move {
                     tokio::time::sleep(std::time::Duration::from_secs(2)).await;
@@ -561,11 +564,17 @@ fn new_rpc_handler(
             match s.s_type {
                 SessionType::Chat => {
                     let proof = group_lock.prove_addr(&gid, &s.addr)?;
-                    results.layers.push((gid, s.gid, chat_conn(proof, s.addr)));
+                    results
+                        .layers
+                        .push((gid, s.gid, chat_conn(proof, Peer::peer(s.addr))));
                 }
                 SessionType::Group => {
                     let proof = group_lock.prove_addr(&gid, &s.addr)?;
-                    add_layer(&mut results, gid, group_chat_conn(proof, s.addr, s.gid));
+                    add_layer(
+                        &mut results,
+                        gid,
+                        group_chat_conn(proof, Peer::peer(s.addr), s.gid),
+                    );
                 }
                 _ => {}
             }

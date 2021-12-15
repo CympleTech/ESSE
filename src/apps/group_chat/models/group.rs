@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
 use tdn::types::{
     group::GroupId,
-    primitive::{PeerAddr, Result},
+    primitive::{PeerId, Result},
     rpc::{json, RpcParam},
 };
 use tdn_storage::local::{DStorage, DsValue};
@@ -28,7 +28,7 @@ pub(crate) struct GroupChat {
     /// group chat type.
     pub g_type: GroupType,
     /// group chat server addresse.
-    pub g_addr: PeerAddr,
+    pub g_addr: PeerId,
     /// group chat name.
     pub g_name: String,
     /// group chat simple intro.
@@ -51,7 +51,7 @@ impl GroupChat {
     pub fn new(
         owner: GroupId,
         g_type: GroupType,
-        g_addr: PeerAddr,
+        g_addr: PeerId,
         g_name: String,
         g_bio: String,
         is_need_agree: bool,
@@ -91,7 +91,7 @@ impl GroupChat {
         height: i64,
         owner: GroupId,
         g_type: GroupType,
-        g_addr: PeerAddr,
+        g_addr: PeerId,
         g_name: String,
         g_bio: String,
         is_need_agree: bool,
@@ -126,7 +126,7 @@ impl GroupChat {
         key: GroupChatKey,
         info: GroupInfo,
         height: i64,
-        addr: PeerAddr,
+        addr: PeerId,
         base: &PathBuf,
         mgid: &GroupId,
         is_remote: bool,
@@ -220,7 +220,7 @@ impl GroupChat {
             is_ok: v.pop().unwrap().as_bool(),
             g_bio: v.pop().unwrap().as_string(),
             g_name: v.pop().unwrap().as_string(),
-            g_addr: PeerAddr::from_hex(v.pop().unwrap().as_string()).unwrap_or(Default::default()),
+            g_addr: PeerId::from_hex(v.pop().unwrap().as_string()).unwrap_or(Default::default()),
             g_type: GroupType::from_u32(v.pop().unwrap().as_i64() as u32),
             g_id: GroupId::from_hex(v.pop().unwrap().as_string()).unwrap_or(Default::default()),
             owner: GroupId::from_hex(v.pop().unwrap().as_string()).unwrap_or(Default::default()),

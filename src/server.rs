@@ -47,7 +47,11 @@ pub async fn start(db_path: String) -> Result<()> {
 
     info!("Config RPC HTTP : {:?}", config.rpc_addr);
     info!("Config RPC WS   : {:?}", config.rpc_ws);
-    info!("Config P2P      : {:?}", config.p2p_addr);
+    info!(
+        "Config P2P      : {} {:?}",
+        config.p2p_peer.transport.to_str(),
+        config.p2p_peer.socket
+    );
 
     let rand_secret = config.secret.clone();
 
@@ -155,7 +159,7 @@ async fn sleep_waiting_reboot(
 }
 
 async fn session_remain(
-    self_addr: PeerAddr,
+    self_addr: PeerId,
     layer: Arc<RwLock<Layer>>,
     sender: Sender<SendMessage>,
 ) -> Result<()> {

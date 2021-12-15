@@ -1,5 +1,5 @@
 use tdn::types::{
-    primitive::{PeerAddr, Result},
+    primitive::{PeerId, Result},
     rpc::{json, RpcParam},
 };
 use tdn_storage::local::{DStorage, DsValue};
@@ -11,7 +11,7 @@ pub(crate) struct Provider {
     /// name.
     name: String,
     /// address.
-    pub addr: PeerAddr,
+    pub addr: PeerId,
     /// is add ok.
     is_ok: bool,
     /// is default.
@@ -23,7 +23,7 @@ pub(crate) struct Provider {
 }
 
 impl Provider {
-    pub fn prepare(addr: PeerAddr) -> Self {
+    pub fn prepare(addr: PeerId) -> Self {
         Self {
             id: 0,
             name: addr.to_hex(),
@@ -53,7 +53,7 @@ impl Provider {
             is_proxy: v.pop().unwrap().as_bool(),
             is_default: v.pop().unwrap().as_bool(),
             is_ok: v.pop().unwrap().as_bool(),
-            addr: PeerAddr::from_hex(v.pop().unwrap().as_string()).unwrap_or(Default::default()),
+            addr: PeerId::from_hex(v.pop().unwrap().as_string()).unwrap_or(Default::default()),
             name: v.pop().unwrap().as_string(),
             id: v.pop().unwrap().as_i64(),
         }
@@ -96,7 +96,7 @@ impl Provider {
     }
 
     /// insert a new provider.
-    pub fn get_by_addr(db: &DStorage, addr: &PeerAddr) -> Result<Self> {
+    pub fn get_by_addr(db: &DStorage, addr: &PeerId) -> Result<Self> {
         let sql = format!(
             "SELECT id, name, addr, is_ok, is_default, is_proxy, is_actived FROM providers WHERE addr = '{}'",
             addr.to_hex()

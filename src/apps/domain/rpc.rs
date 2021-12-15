@@ -1,7 +1,7 @@
 use std::sync::Arc;
 use tdn::types::{
     group::GroupId,
-    primitive::{HandleResult, PeerAddr},
+    primitive::{HandleResult, PeerId},
     rpc::{json, rpc_response, RpcError, RpcHandler, RpcParam},
 };
 
@@ -40,7 +40,7 @@ pub(crate) fn search_result(
     mgid: GroupId,
     name: &str,
     gid: &GroupId,
-    addr: &PeerAddr,
+    addr: &PeerId,
     bio: &str,
     avatar: &Vec<u8>,
 ) -> RpcParam {
@@ -87,7 +87,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
     handler.add_method(
         "domain-provider-add",
         |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
-            let provider = PeerAddr::from_hex(params[0].as_str().ok_or(RpcError::ParseError)?)?;
+            let provider = PeerId::from_hex(params[0].as_str().ok_or(RpcError::ParseError)?)?;
 
             let mut results = HandleResult::new();
             let db = domain_db(state.layer.read().await.base(), &gid)?;
@@ -137,7 +137,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
         "domain-register",
         |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
             let provider = params[0].as_i64().ok_or(RpcError::ParseError)?;
-            let addr = PeerAddr::from_hex(params[1].as_str().ok_or(RpcError::ParseError)?)?;
+            let addr = PeerId::from_hex(params[1].as_str().ok_or(RpcError::ParseError)?)?;
             let name = params[2].as_str().ok_or(RpcError::ParseError)?.to_string();
             let bio = params[3].as_str().ok_or(RpcError::ParseError)?.to_string();
 
@@ -160,7 +160,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
         "domain-active",
         |gid: GroupId, params: Vec<RpcParam>, _state: Arc<RpcState>| async move {
             let name = params[0].as_str().ok_or(RpcError::ParseError)?.to_owned();
-            let provider = PeerAddr::from_hex(params[1].as_str().ok_or(RpcError::ParseError)?)?;
+            let provider = PeerId::from_hex(params[1].as_str().ok_or(RpcError::ParseError)?)?;
             let active = params[2].as_bool().ok_or(RpcError::ParseError)?;
 
             let mut results = HandleResult::new();
@@ -179,7 +179,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
         "domain-remove",
         |gid: GroupId, params: Vec<RpcParam>, _state: Arc<RpcState>| async move {
             let name = params[0].as_str().ok_or(RpcError::ParseError)?.to_owned();
-            let provider = PeerAddr::from_hex(params[1].as_str().ok_or(RpcError::ParseError)?)?;
+            let provider = PeerId::from_hex(params[1].as_str().ok_or(RpcError::ParseError)?)?;
 
             let mut results = HandleResult::new();
             let event = PeerEvent::Delete(name);
@@ -192,7 +192,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
     handler.add_method(
         "domain-search",
         |gid: GroupId, params: Vec<RpcParam>, _state: Arc<RpcState>| async move {
-            let addr = PeerAddr::from_hex(params[0].as_str().ok_or(RpcError::ParseError)?)?;
+            let addr = PeerId::from_hex(params[0].as_str().ok_or(RpcError::ParseError)?)?;
             let name = params[1].as_str().ok_or(RpcError::ParseError)?.to_owned();
 
             let mut results = HandleResult::new();

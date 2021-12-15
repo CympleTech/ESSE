@@ -21,6 +21,8 @@ class _NetworkDetailState extends State<NetworkDetail> {
   List<String> networkDht = [];
   List<List<String>> networkStable = [];
 
+  String _selectedTrans = "quic";
+
   changeWs() async {
     Global.changeWs(wsController.text);
     await rpc.init(wsController.text);
@@ -34,7 +36,7 @@ class _NetworkDetailState extends State<NetworkDetail> {
   }
 
   addBootstrap() {
-    rpc.send('add-bootstrap', [addController.text]);
+    rpc.send('add-bootstrap', [addController.text, _selectedTrans]);
     setState(() {});
   }
 
@@ -64,6 +66,25 @@ class _NetworkDetailState extends State<NetworkDetail> {
       // TODO tostor error
       print(res.error);
     }
+  }
+
+  Widget _trans(String value, color) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Radio(
+          value: value,
+          groupValue: _selectedTrans,
+          onChanged: (String? n) => setState(() {
+              if (n != null) {
+                _selectedTrans = n;
+              }
+        })),
+        _selectedTrans == value
+        ? Text(value.toUpperCase(), style: TextStyle(color: color.primary))
+        : Text(value.toUpperCase()),
+      ]
+    );
   }
 
   @override
@@ -139,6 +160,13 @@ class _NetworkDetailState extends State<NetworkDetail> {
                 child: Column(
                   children: [
                     _settingHead(lang.networkAdd),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        _trans("quic", color), _trans("tcp", color),
+                      ]
+                    ),
+                    const SizedBox(height: 5.0),
                     SocketInputText(controller: addController, action: addBootstrap, state: true),
                     const SizedBox(height: 15.0),
                   ]

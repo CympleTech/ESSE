@@ -4,7 +4,7 @@ use std::sync::Arc;
 use tdn::types::{
     group::{EventId, GroupId},
     message::{RecvType, SendType},
-    primitive::{DeliveryType, HandleResult, PeerAddr, Result},
+    primitive::{DeliveryType, HandleResult, Peer, PeerId, Result},
     rpc::RpcError,
 };
 use tdn_did::{user::User, Proof};
@@ -67,7 +67,7 @@ pub(crate) async fn handle(
         RecvType::Connect(addr, data) | RecvType::ResultConnect(addr, data) => {
             // ESSE chat layer connect date structure.
             if handle_connect(&mgid, &fgid, &addr, data, &mut layer, &mut results)? {
-                let proof = layer.group.read().await.prove_addr(&mgid, &addr)?;
+                let proof = layer.group.read().await.prove_addr(&mgid, &addr.id)?;
                 let data = bincode::serialize(&proof).unwrap_or(vec![]);
                 let msg = SendType::Result(0, addr, true, false, data);
                 results.layers.push((mgid, fgid, msg));
@@ -86,7 +86,7 @@ pub(crate) async fn handle(
             } else {
                 let db = chat_db(&layer.base, &mgid)?;
                 if let Some(friend) = Friend::get_it(&db, &fgid)? {
-                    if friend.contains_addr(&addr) {
+                    if friend.contains_addr(&addr.id) {
                         results.rpcs.push(rpc::friend_close(mgid, friend.id));
                         friend.close(&db)?;
                     }
@@ -134,7 +134,7 @@ pub(crate) async fn handle(
 fn handle_connect(
     mgid: &GroupId,
     fgid: &GroupId,
-    addr: &PeerAddr,
+    addr: &Peer,
     data: Vec<u8>,
     layer: &mut Layer,
     results: &mut HandleResult,
@@ -143,17 +143,17 @@ fn handle_connect(
     let proof: Proof = bincode::deserialize(&data)?;
 
     // 1. check verify.
-    proof.verify(fgid, addr, &layer.addr)?;
+    proof.verify(fgid, &addr.id, &layer.addr)?;
 
     // 2. check friendship.
-    let friend = update_friend(&layer.base, mgid, fgid, addr)?;
+    let friend = update_friend(&layer.base, mgid, fgid, &addr.id)?;
     if friend.is_none() {
         return Ok(false);
     }
     let fid = friend.unwrap().id; // safe.
 
     // 3. get session.
-    let session_some = connect_session(&layer.base, mgid, &SessionType::Chat, &fid, addr)?;
+    let session_some = connect_session(&layer.base, mgid, &SessionType::Chat, &fid, &addr.id)?;
     if session_some.is_none() {
         return Ok(false);
     }
@@ -162,10 +162,10 @@ fn handle_connect(
     // 4. active this session.
     layer
         .running_mut(mgid)?
-        .check_add_online(*fgid, Online::Direct(*addr), sid, fid)?;
+        .check_add_online(*fgid, Online::Direct(addr.id), sid, fid)?;
 
     // 5. session online to UI.
-    results.rpcs.push(session_connect(*mgid, &sid, addr));
+    results.rpcs.push(session_connect(*mgid, &sid, &addr.id));
     Ok(true)
 }
 
@@ -174,7 +174,7 @@ impl LayerEvent {
         fgid: GroupId,
         mgid: GroupId,
         layer: &mut Layer,
-        addr: PeerAddr,
+        addr: PeerId,
         bytes: Vec<u8>,
     ) -> Result<HandleResult> {
         let event: LayerEvent = bincode::deserialize(&bytes)?;
@@ -464,7 +464,7 @@ fn update_friend(
     base: &PathBuf,
     mgid: &GroupId,
     fgid: &GroupId,
-    addr: &PeerAddr,
+    addr: &PeerId,
 ) -> Result<Option<Friend>> {
     let db = chat_db(base, mgid)?;
     if let Some(friend) = Friend::get(&db, fgid)? {
@@ -489,7 +489,7 @@ pub(super) fn req_message(layer: &mut Layer, me: User, request: Request) -> Send
 pub(super) fn reject_message(
     layer: &mut Layer,
     tid: i64,
-    addr: PeerAddr,
+    addr: PeerId,
     me_id: GroupId,
 ) -> SendType {
     let data = bincode::serialize(&LayerEvent::Reject).unwrap_or(vec![]);
@@ -502,7 +502,7 @@ pub(crate) fn event_message(
     layer: &mut Layer,
     tid: i64,
     me_id: GroupId,
-    addr: PeerAddr,
+    addr: PeerId,
     event: &LayerEvent,
 ) -> SendType {
     let data = bincode::serialize(event).unwrap_or(vec![]);
@@ -511,12 +511,12 @@ pub(crate) fn event_message(
     SendType::Event(uid, addr, data)
 }
 
-pub(crate) fn chat_conn(proof: Proof, addr: PeerAddr) -> SendType {
+pub(crate) fn chat_conn(proof: Proof, addr: Peer) -> SendType {
     let data = bincode::serialize(&proof).unwrap_or(vec![]);
-    SendType::Connect(0, addr, None, None, data)
+    SendType::Connect(0, addr, data)
 }
 
-pub(super) fn agree_message(proof: Proof, me: User, addr: PeerAddr) -> Result<SendType> {
+pub(super) fn agree_message(proof: Proof, me: User, addr: PeerId) -> Result<SendType> {
     let data = bincode::serialize(&LayerEvent::Agree(me, proof)).unwrap_or(vec![]);
     Ok(SendType::Event(0, addr, data))
 }

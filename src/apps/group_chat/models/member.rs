@@ -1,7 +1,7 @@
 use std::time::{SystemTime, UNIX_EPOCH};
 use tdn::types::{
     group::GroupId,
-    primitive::{PeerAddr, Result},
+    primitive::{PeerId, Result},
     rpc::{json, RpcParam},
 };
 use tdn_storage::local::{DStorage, DsValue};
@@ -15,7 +15,7 @@ pub(crate) struct Member {
     /// member's Did(GroupId)
     pub m_id: GroupId,
     /// member's addresse.
-    pub m_addr: PeerAddr,
+    pub m_addr: PeerId,
     /// member's name.
     pub m_name: String,
     /// is group chat manager.
@@ -30,7 +30,7 @@ impl Member {
     pub fn new_notime(
         fid: i64,
         m_id: GroupId,
-        m_addr: PeerAddr,
+        m_addr: PeerId,
         m_name: String,
         is_manager: bool,
     ) -> Self {
@@ -55,7 +55,7 @@ impl Member {
     pub fn new(
         fid: i64,
         m_id: GroupId,
-        m_addr: PeerAddr,
+        m_addr: PeerId,
         m_name: String,
         is_manager: bool,
         datetime: i64,
@@ -90,7 +90,7 @@ impl Member {
             is_block: v.pop().unwrap().as_bool(),
             is_manager: v.pop().unwrap().as_bool(),
             m_name: v.pop().unwrap().as_string(),
-            m_addr: PeerAddr::from_hex(v.pop().unwrap().as_string()).unwrap_or(Default::default()),
+            m_addr: PeerId::from_hex(v.pop().unwrap().as_string()).unwrap_or(Default::default()),
             m_id: GroupId::from_hex(v.pop().unwrap().as_string()).unwrap_or(Default::default()),
             fid: v.pop().unwrap().as_i64(),
             id: v.pop().unwrap().as_i64(),
@@ -182,7 +182,7 @@ impl Member {
         }
     }
 
-    pub fn addr_update(db: &DStorage, fid: &i64, mid: &GroupId, addr: &PeerAddr) -> Result<usize> {
+    pub fn addr_update(db: &DStorage, fid: &i64, mid: &GroupId, addr: &PeerId) -> Result<usize> {
         let sql = format!(
             "UPDATE members SET addr='{}' WHERE fid = {} AND mid = '{}'",
             addr.to_hex(),
@@ -192,7 +192,7 @@ impl Member {
         db.update(&sql)
     }
 
-    pub fn update(db: &DStorage, id: &i64, addr: &PeerAddr, name: &str) -> Result<usize> {
+    pub fn update(db: &DStorage, id: &i64, addr: &PeerId, name: &str) -> Result<usize> {
         let sql = format!(
             "UPDATE members SET addr='{}', name='{}' WHERE id = {}",
             addr.to_hex(),

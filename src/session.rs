@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 use tdn::types::{
     group::GroupId,
-    primitive::{PeerAddr, Result},
+    primitive::{PeerId, Result},
     rpc::{json, RpcParam},
 };
 use tdn_storage::local::{DStorage, DsValue};
@@ -40,7 +40,7 @@ pub(crate) struct Session {
     pub id: i64,
     fid: i64,
     pub gid: GroupId,
-    pub addr: PeerAddr,
+    pub addr: PeerId,
     pub s_type: SessionType,
     name: String,
     is_top: bool,
@@ -54,7 +54,7 @@ impl Session {
     pub fn new(
         fid: i64,
         gid: GroupId,
-        addr: PeerAddr,
+        addr: PeerId,
         s_type: SessionType,
         name: String,
         datetime: i64,
@@ -99,7 +99,7 @@ impl Session {
             is_top: v.pop().unwrap().as_bool(),
             name: v.pop().unwrap().as_string(),
             s_type: SessionType::from_int(v.pop().unwrap().as_i64()),
-            addr: PeerAddr::from_hex(v.pop().unwrap().as_str()).unwrap_or(PeerAddr::default()),
+            addr: PeerId::from_hex(v.pop().unwrap().as_str()).unwrap_or(PeerId::default()),
             gid: GroupId::from_hex(v.pop().unwrap().as_str()).unwrap_or(GroupId::default()),
             fid: v.pop().unwrap().as_i64(),
             id: v.pop().unwrap().as_i64(),
@@ -241,7 +241,7 @@ pub(crate) fn connect_session(
     mgid: &GroupId,
     s_type: &SessionType,
     fid: &i64,
-    addr: &PeerAddr,
+    addr: &PeerId,
 ) -> Result<Option<Session>> {
     let db = session_db(base, mgid)?;
 

@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
 use tdn::types::{
     group::{EventId, GroupId},
-    primitive::{PeerAddr, Result},
+    primitive::{PeerId, Result},
     rpc::{json, RpcParam},
 };
 use tdn_storage::local::{DStorage, DsValue};
@@ -17,7 +17,7 @@ use crate::storage::{
 pub(crate) struct Friend {
     pub id: i64,
     pub gid: GroupId,
-    pub addr: PeerAddr,
+    pub addr: PeerId,
     pub name: String,
     pub remark: String,
     pub is_closed: bool,
@@ -29,7 +29,7 @@ pub(crate) struct Friend {
 pub(crate) struct Request {
     pub id: i64,
     pub gid: GroupId,
-    pub addr: PeerAddr,
+    pub addr: PeerId,
     pub name: String,
     pub remark: String,
     pub is_me: bool,
@@ -43,11 +43,11 @@ pub(crate) struct Request {
 /// message type use in network.
 #[derive(Serialize, Deserialize, Clone)]
 pub(crate) enum NetworkMessage {
-    String(String),                              // content
-    Image(Vec<u8>),                              // image bytes.
-    File(String, Vec<u8>),                       // filename, file bytes.
-    Contact(String, GroupId, PeerAddr, Vec<u8>), // name, gid, addr, avatar bytes.
-    Record(Vec<u8>, u32),                        // record audio bytes.
+    String(String),                            // content
+    Image(Vec<u8>),                            // image bytes.
+    File(String, Vec<u8>),                     // filename, file bytes.
+    Contact(String, GroupId, PeerId, Vec<u8>), // name, gid, addr, avatar bytes.
+    Record(Vec<u8>, u32),                      // record audio bytes.
     Emoji,
     Phone,
     Video,
@@ -146,7 +146,7 @@ impl NetworkMessage {
                 }
                 let cname = v[0].to_owned();
                 let cgid = GroupId::from_hex(v[1])?;
-                let caddr = PeerAddr::from_hex(v[2])?;
+                let caddr = PeerId::from_hex(v[2])?;
                 let avatar_bytes = read_avatar_sync(base, gid, &cgid)?;
                 Ok(NetworkMessage::Contact(cname, cgid, caddr, avatar_bytes))
             }
@@ -225,7 +225,7 @@ pub(crate) struct Message {
 }
 
 impl Friend {
-    pub fn new(gid: GroupId, addr: PeerAddr, name: String, remark: String) -> Friend {
+    pub fn new(gid: GroupId, addr: PeerId, name: String, remark: String) -> Friend {
         let start = SystemTime::now();
         let datetime = start
             .duration_since(UNIX_EPOCH)
@@ -244,7 +244,7 @@ impl Friend {
         }
     }
 
-    pub fn contains_addr(&self, addr: &PeerAddr) -> bool {
+    pub fn contains_addr(&self, addr: &PeerId) -> bool {
         &self.addr == addr
     }
 
@@ -262,7 +262,7 @@ impl Friend {
             is_closed: v.pop().unwrap().as_bool(),
             remark: v.pop().unwrap().as_string(),
             name: v.pop().unwrap().as_string(),
-            addr: PeerAddr::from_hex(v.pop().unwrap().as_str()).unwrap_or(PeerAddr::default()),
+            addr: PeerId::from_hex(v.pop().unwrap().as_str()).unwrap_or(PeerId::default()),
             gid: GroupId::from_hex(v.pop().unwrap().as_str()).unwrap_or(GroupId::default()),
             id: v.pop().unwrap().as_i64(),
         }
@@ -400,7 +400,7 @@ impl Friend {
         db.update(&sql)
     }
 
-    pub fn addr_update(db: &DStorage, id: i64, addr: &PeerAddr) -> Result<usize> {
+    pub fn addr_update(db: &DStorage, id: i64, addr: &PeerId) -> Result<usize> {
         let sql = format!(
             "UPDATE friends SET addr='{}' WHERE id = {}",
             addr.to_hex(),
@@ -453,7 +453,7 @@ impl Friend {
 impl Request {
     pub fn new(
         gid: GroupId,
-        addr: PeerAddr,
+        addr: PeerId,
         name: String,
         remark: String,
         is_me: bool,
@@ -501,7 +501,7 @@ impl Request {
             is_me: v.pop().unwrap().as_bool(),
             remark: v.pop().unwrap().as_string(),
             name: v.pop().unwrap().as_string(),
-            addr: PeerAddr::from_hex(v.pop().unwrap().as_str()).unwrap_or(PeerAddr::default()),
+            addr: PeerId::from_hex(v.pop().unwrap().as_str()).unwrap_or(PeerId::default()),
             gid: GroupId::from_hex(v.pop().unwrap().as_str()).unwrap_or(GroupId::default()),
             id: v.pop().unwrap().as_i64(),
         }

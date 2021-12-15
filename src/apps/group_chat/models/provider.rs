@@ -1,5 +1,5 @@
 use tdn::types::{
-    primitive::{PeerAddr, Result},
+    primitive::{PeerId, Result},
     rpc::{json, RpcParam},
 };
 use tdn_storage::local::{DStorage, DsValue};
@@ -10,7 +10,7 @@ use group_chat_types::GroupType;
 pub(crate) struct Provider {
     pub id: i64,
     name: String,
-    addr: PeerAddr,
+    addr: PeerId,
     kinds: Vec<GroupType>,
     remain: i64,
     is_ok: bool,
@@ -40,7 +40,7 @@ fn kinds_print(kinds: &Vec<GroupType>) -> i64 {
 }
 
 impl Provider {
-    pub fn new(addr: PeerAddr) -> Self {
+    pub fn new(addr: PeerId) -> Self {
         Self {
             addr,
             name: String::new(),
@@ -68,7 +68,7 @@ impl Provider {
             is_ok: v.pop().unwrap().as_bool(),
             remain: v.pop().unwrap().as_i64(),
             kinds: parse_kinds(v.pop().unwrap().as_i64()),
-            addr: PeerAddr::from_hex(v.pop().unwrap().as_string()).unwrap_or(Default::default()),
+            addr: PeerId::from_hex(v.pop().unwrap().as_string()).unwrap_or(Default::default()),
             name: v.pop().unwrap().as_string(),
             id: v.pop().unwrap().as_i64(),
         }
@@ -83,7 +83,7 @@ impl Provider {
         Ok(providers)
     }
 
-    pub fn get_by_addr(db: &DStorage, addr: &PeerAddr) -> Result<Self> {
+    pub fn get_by_addr(db: &DStorage, addr: &PeerId) -> Result<Self> {
         let sql = format!(
             "SELECT id, name, addr, kinds, remain, is_ok FROM providers WHERE addr = '{}'",
             addr.to_hex()

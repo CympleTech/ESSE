@@ -5,7 +5,7 @@ use std::sync::Arc;
 use tdn::types::{
     group::GroupId,
     message::SendType,
-    primitive::{PeerAddr, Result},
+    primitive::{Peer, PeerId, Result},
 };
 use tokio::sync::RwLock;
 
@@ -36,13 +36,13 @@ pub(crate) struct Layer {
     /// storage base path.
     pub base: PathBuf,
     /// self peer addr.
-    pub addr: PeerAddr,
+    pub addr: PeerId,
     /// group info.
     pub group: Arc<RwLock<Group>>,
 }
 
 impl Layer {
-    pub async fn init(base: PathBuf, addr: PeerAddr, group: Arc<RwLock<Group>>) -> Result<Layer> {
+    pub async fn init(base: PathBuf, addr: PeerId, group: Arc<RwLock<Group>>) -> Result<Layer> {
         Ok(Layer {
             base,
             group,
@@ -79,9 +79,9 @@ impl Layer {
         Ok(())
     }
 
-    pub fn remove_running(&mut self, gid: &GroupId) -> HashMap<PeerAddr, GroupId> {
+    pub fn remove_running(&mut self, gid: &GroupId) -> HashMap<PeerId, GroupId> {
         // check close the stable connection.
-        let mut addrs: HashMap<PeerAddr, GroupId> = HashMap::new();
+        let mut addrs: HashMap<PeerId, GroupId> = HashMap::new();
         if let Some(running) = self.runnings.remove(gid) {
             for (addr, fgid) in running.remove_onlines() {
                 addrs.insert(addr, fgid);
@@ -103,8 +103,8 @@ impl Layer {
         addrs
     }
 
-    pub fn remove_all_running(&mut self) -> HashMap<PeerAddr, GroupId> {
-        let mut addrs: HashMap<PeerAddr, GroupId> = HashMap::new();
+    pub fn remove_all_running(&mut self) -> HashMap<PeerId, GroupId> {
+        let mut addrs: HashMap<PeerId, GroupId> = HashMap::new();
         for (_, running) in self.runnings.drain() {
             for (addr, fgid) in running.remove_onlines() {
                 addrs.insert(addr, fgid);
@@ -118,7 +118,7 @@ impl Layer {
         self.running(mgid)?.get_online_id(fgid)
     }
 
-    pub fn remove_online(&mut self, gid: &GroupId, fgid: &GroupId) -> Option<PeerAddr> {
+    pub fn remove_online(&mut self, gid: &GroupId, fgid: &GroupId) -> Option<PeerId> {
         self.running_mut(gid).ok()?.remove_online(fgid)
     }
 
@@ -136,11 +136,11 @@ impl Layer {
                 match s.s_type {
                     SessionType::Chat => {
                         let proof = group_lock.prove_addr(mgid, &s.addr)?;
-                        vecs.push((s.gid, chat_conn(proof, s.addr)));
+                        vecs.push((s.gid, chat_conn(proof, Peer::peer(s.addr))));
                     }
                     SessionType::Group => {
                         let proof = group_lock.prove_addr(mgid, &s.addr)?;
-                        vecs.push((GROUP_ID, group_chat_conn(proof, s.addr, s.gid)));
+                        vecs.push((GROUP_ID, group_chat_conn(proof, Peer::peer(s.addr), s.gid)));
                     }
                     _ => {}
                 }
@@ -152,7 +152,7 @@ impl Layer {
         Ok(conns)
     }
 
-    pub fn is_online(&self, faddr: &PeerAddr) -> bool {
+    pub fn is_online(&self, faddr: &PeerId) -> bool {
         for (_, running) in &self.runnings {
             running.check_addr_online(faddr);
         }
@@ -164,13 +164,13 @@ impl Layer {
 #[derive(Eq, PartialEq)]
 pub(crate) enum Online {
     /// connected to this device.
-    Direct(PeerAddr),
+    Direct(PeerId),
     /// connected to other device.
-    _Relay(PeerAddr),
+    _Relay(PeerId),
 }
 
 impl Online {
-    fn addr(&self) -> &PeerAddr {
+    fn addr(&self) -> &PeerId {
         match self {
             Online::Direct(ref addr) | Online::_Relay(ref addr) => addr,
         }
@@ -243,7 +243,7 @@ impl RunningLayer {
         self.consensus
     }
 
-    pub fn active(&mut self, gid: &GroupId, is_me: bool) -> Option<PeerAddr> {
+    pub fn active(&mut self, gid: &GroupId, is_me: bool) -> Option<PeerId> {
         if let Some(online) = self.sessions.get_mut(gid) {
             if is_me {
                 online.suspend_me = false;
@@ -291,14 +291,14 @@ impl RunningLayer {
     }
 
     /// get online peer's addr.
-    pub fn online(&self, gid: &GroupId) -> Result<PeerAddr> {
+    pub fn online(&self, gid: &GroupId) -> Result<PeerId> {
         self.sessions
             .get(gid)
             .map(|online| *online.online.addr())
             .ok_or(anyhow!("remote not online"))
     }
 
-    pub fn online_direct(&self, gid: &GroupId) -> Result<PeerAddr> {
+    pub fn online_direct(&self, gid: &GroupId) -> Result<PeerId> {
         if let Some(online) = self.sessions.get(gid) {
             match online.online {
                 Online::Direct(addr) => return Ok(addr),
@@ -309,7 +309,7 @@ impl RunningLayer {
     }
 
     /// get all online peer.
-    pub fn onlines(&self) -> Vec<(&GroupId, &PeerAddr)> {
+    pub fn onlines(&self) -> Vec<(&GroupId, &PeerId)> {
         self.sessions
             .iter()
             .map(|(fgid, online)| (fgid, online.online.addr()))
@@ -341,7 +341,7 @@ impl RunningLayer {
     }
 
     /// check offline, and return is direct.
-    pub fn check_offline(&mut self, gid: &GroupId, addr: &PeerAddr) -> bool {
+    pub fn check_offline(&mut self, gid: &GroupId, addr: &PeerId) -> bool {
         if let Some(online) = self.sessions.remove(gid) {
             if online.online.addr() != addr {
                 return false;
@@ -357,14 +357,14 @@ impl RunningLayer {
         false
     }
 
-    pub fn remove_online(&mut self, gid: &GroupId) -> Option<PeerAddr> {
+    pub fn remove_online(&mut self, gid: &GroupId) -> Option<PeerId> {
         self.sessions
             .remove(gid)
             .map(|online| *online.online.addr())
     }
 
     /// remove all onlines peer.
-    pub fn remove_onlines(self) -> Vec<(PeerAddr, GroupId)> {
+    pub fn remove_onlines(self) -> Vec<(PeerId, GroupId)> {
         let mut peers = vec![];
         for (fgid, online) in self.sessions {
             match online.online {
@@ -376,7 +376,7 @@ impl RunningLayer {
     }
 
     /// check if addr is online.
-    pub fn check_addr_online(&self, addr: &PeerAddr) -> bool {
+    pub fn check_addr_online(&self, addr: &PeerId) -> bool {
         for (_, online) in &self.sessions {
             if online.online.addr() == addr {
                 return true;
@@ -386,7 +386,7 @@ impl RunningLayer {
     }
 
     /// peer leave, remove online peer.
-    pub fn peer_leave(&mut self, addr: &PeerAddr) -> Vec<i64> {
+    pub fn peer_leave(&mut self, addr: &PeerId) -> Vec<i64> {
         let mut peers = vec![];
         let mut deletes = vec![];
         for (fgid, online) in &self.sessions {
@@ -403,7 +403,7 @@ impl RunningLayer {
     }
 
     /// list all onlines groups.
-    pub fn close_suspend(&mut self, self_addr: &PeerAddr) -> Vec<(GroupId, PeerAddr, i64)> {
+    pub fn close_suspend(&mut self, self_addr: &PeerId) -> Vec<(GroupId, PeerId, i64)> {
         let mut needed = vec![];
         for (fgid, online) in &mut self.sessions {
             // when online is self. skip.

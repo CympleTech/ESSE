@@ -6,7 +6,7 @@ use domain_types::{LayerPeerEvent, PeerEvent};
 use tdn::types::{
     group::GroupId,
     message::SendType,
-    primitive::{HandleResult, PeerAddr, Result},
+    primitive::{HandleResult, PeerId, Result},
 };
 use tdn_did::Proof;
 
@@ -14,7 +14,7 @@ use tdn_did::Proof;
 #[inline]
 pub(crate) fn add_layer(
     results: &mut HandleResult,
-    addr: PeerAddr,
+    addr: PeerId,
     event: PeerEvent,
     ogid: GroupId,
 ) -> Result<()> {

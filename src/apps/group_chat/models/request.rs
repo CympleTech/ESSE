@@ -1,7 +1,7 @@
 use std::time::{SystemTime, UNIX_EPOCH};
 use tdn::types::{
     group::GroupId,
-    primitive::{PeerAddr, Result},
+    primitive::{PeerId, Result},
     rpc::{json, RpcParam},
 };
 use tdn_storage::local::{DStorage, DsValue};
@@ -15,7 +15,7 @@ pub(crate) struct Request {
     fid: i64,
     pub rid: i64,
     pub gid: GroupId,
-    pub addr: PeerAddr,
+    pub addr: PeerId,
     pub name: String,
     key: GroupChatKey,
     remark: String,
@@ -29,7 +29,7 @@ impl Request {
         fid: i64,
         rid: i64,
         gid: GroupId,
-        addr: PeerAddr,
+        addr: PeerId,
         name: String,
         remark: String,
         datetime: i64,
@@ -52,7 +52,7 @@ impl Request {
     pub fn new_by_server(
         fid: i64,
         gid: GroupId,
-        addr: PeerAddr,
+        addr: PeerId,
         name: String,
         remark: String,
     ) -> Self {
@@ -79,7 +79,7 @@ impl Request {
 
     pub fn new_by_me(
         gid: GroupId,
-        addr: PeerAddr,
+        addr: PeerId,
         name: String,
         remark: String,
         key: GroupChatKey,
@@ -128,7 +128,7 @@ impl Request {
             is_ok: v.pop().unwrap().as_bool(),
             remark: v.pop().unwrap().as_string(),
             name: v.pop().unwrap().as_string(),
-            addr: PeerAddr::from_hex(v.pop().unwrap().as_string()).unwrap_or(Default::default()),
+            addr: PeerId::from_hex(v.pop().unwrap().as_string()).unwrap_or(Default::default()),
             gid: GroupId::from_hex(v.pop().unwrap().as_string()).unwrap_or(Default::default()),
             rid: v.pop().unwrap().as_i64(),
             fid: v.pop().unwrap().as_i64(),

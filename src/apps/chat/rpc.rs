@@ -3,7 +3,7 @@ use std::sync::Arc;
 use tdn::types::{
     group::GroupId,
     message::SendType,
-    primitive::{HandleResult, PeerAddr},
+    primitive::{HandleResult, PeerId},
     rpc::{json, rpc_response, RpcError, RpcHandler, RpcParam},
 };
 use tdn_did::user::User;
@@ -163,7 +163,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             drop(layer_lock);
 
             if let Some(faddr) = online {
-                let mut addrs: HashMap<PeerAddr, GroupId> = HashMap::new();
+                let mut addrs: HashMap<PeerId, GroupId> = HashMap::new();
                 addrs.insert(faddr, friend.gid);
                 let sender = state.group.read().await.sender();
                 tokio::spawn(sleep_waiting_close_stable(sender, HashMap::new(), addrs));
@@ -203,7 +203,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             drop(layer_lock);
 
             if let Some(faddr) = online {
-                let mut addrs: HashMap<PeerAddr, GroupId> = HashMap::new();
+                let mut addrs: HashMap<PeerId, GroupId> = HashMap::new();
                 addrs.insert(faddr, friend.gid);
                 let sender = state.group.read().await.sender();
                 tokio::spawn(sleep_waiting_close_stable(sender, HashMap::new(), addrs));
@@ -241,7 +241,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
         "chat-request-create",
         |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
             let remote_gid = GroupId::from_hex(params[0].as_str().ok_or(RpcError::ParseError)?)?;
-            let remote_addr = PeerAddr::from_hex(params[1].as_str().ok_or(RpcError::ParseError)?)?;
+            let remote_addr = PeerId::from_hex(params[1].as_str().ok_or(RpcError::ParseError)?)?;
             let remote_name = params[2].as_str().ok_or(RpcError::ParseError)?.to_string();
             let remark = params[3].as_str().ok_or(RpcError::ParseError)?.to_string();
 

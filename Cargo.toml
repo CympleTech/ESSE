@@ -36,8 +36,8 @@ sysinfo = "0.21"
 serde = { version = "1", features = ["derive"] }
 tokio = { version = "1", features = ["full"] }
 web3 = { version = "0.17", default-features = false, features = ["http-tls", "signing"] }
-tdn = { version = "0.5", default-features = false, features = ["full"] }
-tdn_did = { version = "0.5" }
+tdn = { version = "0.6", default-features = false, features = ["full"] }
+tdn_did = { version = "0.6" }
 tdn_storage = { git = "https://github.com/cypherlink/tdn_storage", branch="main" }
 group-chat_types = { git = "https://github.com/cympletech/esse_types", branch="main" }
 domain_types = { git = "https://github.com/cympletech/esse_types", branch="main" }

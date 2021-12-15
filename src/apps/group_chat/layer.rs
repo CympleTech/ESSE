@@ -3,7 +3,7 @@ use std::sync::Arc;
 use tdn::types::{
     group::GroupId,
     message::{RecvType, SendType},
-    primitive::{HandleResult, PeerAddr, Result},
+    primitive::{HandleResult, Peer, PeerId, Result},
 };
 use tokio::sync::RwLock;
 
@@ -63,21 +63,23 @@ pub(crate) async fn handle(
                     if let Ok((mid, _)) = Member::get_id(&db, &id, &fgid) {
                         let res = LayerResult(gcd, height);
                         let data = bincode::serialize(&res).unwrap_or(vec![]);
-                        let s = SendType::Result(0, addr, true, false, data);
+                        let s = SendType::Result(0, addr.clone(), true, false, data);
                         add_server_layer(&mut results, fgid, s);
 
                         layer.write().await.running_mut(&gcd)?.check_add_online(
                             fgid,
-                            Online::Direct(addr),
+                            Online::Direct(addr.id),
                             id,
                             mid,
                         )?;
 
-                        let _ = Member::addr_update(&db, &id, &fgid, &addr);
-                        results.rpcs.push(rpc::member_online(ogid, id, fgid, addr));
+                        let _ = Member::addr_update(&db, &id, &fgid, &addr.id);
+                        results
+                            .rpcs
+                            .push(rpc::member_online(ogid, id, fgid, addr.id));
 
                         let new_data =
-                            bincode::serialize(&LayerEvent::MemberOnline(gcd, fgid, addr))?;
+                            bincode::serialize(&LayerEvent::MemberOnline(gcd, fgid, addr.id))?;
 
                         for (mid, maddr) in layer.read().await.running(&gcd)?.onlines() {
                             let s = SendType::Event(0, *maddr, new_data.clone());
@@ -101,7 +103,7 @@ pub(crate) async fn handle(
             // only cleint handle it. IMPORTANT !!! tgid IS ogid.
             if !is_server && is_ok {
                 let mut layer_lock = layer.write().await;
-                handle_connect(tgid, addr, data, &mut layer_lock, &mut results)?;
+                handle_connect(tgid, &addr, data, &mut layer_lock, &mut results)?;
             } else {
                 let msg = SendType::Result(0, addr, false, false, vec![]);
                 add_layer(&mut results, tgid, msg);
@@ -110,12 +112,12 @@ pub(crate) async fn handle(
         RecvType::ResultConnect(addr, data) => {
             // only cleint handle it. IMPORTANT !!! tgid IS ogid.
             if is_server {
-                let msg = SendType::Result(0, addr, false, false, vec![]);
+                let msg = SendType::Result(0, addr.clone(), false, false, vec![]);
                 add_layer(&mut results, tgid, msg);
             }
 
             let mut layer_lock = layer.write().await;
-            if handle_connect(tgid, addr, data, &mut layer_lock, &mut results)? {
+            if handle_connect(tgid, &addr, data, &mut layer_lock, &mut results)? {
                 let msg = SendType::Result(0, addr, true, false, vec![]);
                 add_layer(&mut results, tgid, msg);
             }
@@ -140,7 +142,7 @@ pub(crate) async fn handle(
 
 fn handle_connect(
     ogid: GroupId,
-    addr: PeerAddr,
+    addr: &Peer,
     data: Vec<u8>,
     layer: &mut Layer,
     results: &mut HandleResult,
@@ -152,13 +154,18 @@ fn handle_connect(
     let db = group_chat_db(layer.base(), &ogid)?;
     if let Some(group) = GroupChat::get(&db, &gcd)? {
         // 1.0 check address.
-        if group.g_addr != addr {
+        if group.g_addr != addr.id {
             return Ok(false);
         }
 
         // 1.1 get session.
-        let session_some =
-            connect_session(layer.base(), &ogid, &SessionType::Group, &group.id, &addr)?;
+        let session_some = connect_session(
+            layer.base(),
+            &ogid,
+            &SessionType::Group,
+            &group.id,
+            &addr.id,
+        )?;
         if session_some.is_none() {
             return Ok(false);
         }
@@ -167,18 +174,18 @@ fn handle_connect(
         // 1.2 online this group.
         layer
             .running_mut(&ogid)?
-            .check_add_online(gcd, Online::Direct(addr), sid, group.id)?;
+            .check_add_online(gcd, Online::Direct(addr.id), sid, group.id)?;
 
         // 1.3 online to UI.
-        results.rpcs.push(session_connect(ogid, &sid, &addr));
+        results.rpcs.push(session_connect(ogid, &sid, &addr.id));
 
         println!("will sync remote: {}, my: {}", height, group.height);
         // 1.4 sync group height.
         if group.height < height {
-            add_layer(results, ogid, sync(gcd, addr, group.height));
+            add_layer(results, ogid, sync(gcd, addr.id, group.height));
         } else {
             // sync online members.
-            add_layer(results, ogid, sync_online(gcd, addr));
+            add_layer(results, ogid, sync_online(gcd, addr.id));
         }
         Ok(true)
     } else {
@@ -198,7 +205,7 @@ async fn handle_event(
     fgid: GroupId, // server use fgid is remote account.
     tgid: GroupId, // client user tgid is my account.
     is_server: bool,
-    addr: PeerAddr,
+    addr: PeerId,
     event: LayerEvent,
     layer: &Arc<RwLock<Layer>>,
     results: &mut HandleResult,
@@ -349,7 +356,7 @@ async fn handle_event(
                 .read()
                 .await
                 .prove_addr(&ogid, &addr)?;
-            add_layer(results, ogid, group_chat_conn(proof, addr, gcd));
+            add_layer(results, ogid, group_chat_conn(proof, Peer::peer(addr), gcd));
         }
         LayerEvent::Reject(gcd, efficacy) => {
             // only client handle it.
@@ -672,19 +679,19 @@ async fn broadcast(
     Ok(())
 }
 
-pub(crate) fn group_chat_conn(proof: Proof, addr: PeerAddr, gid: GroupId) -> SendType {
+pub(crate) fn group_chat_conn(proof: Proof, addr: Peer, gid: GroupId) -> SendType {
     let data =
         bincode::serialize(&LayerConnect(gid, ConnectProof::Common(proof))).unwrap_or(vec![]);
-    SendType::Connect(0, addr, None, None, data)
+    SendType::Connect(0, addr, data)
 }
 
-fn sync(gcd: GroupId, addr: PeerAddr, height: i64) -> SendType {
+fn sync(gcd: GroupId, addr: PeerId, height: i64) -> SendType {
     println!("Send sync request...");
     let data = bincode::serialize(&LayerEvent::SyncReq(gcd, height + 1)).unwrap_or(vec![]);
     SendType::Event(0, addr, data)
 }
 
-fn sync_online(gcd: GroupId, addr: PeerAddr) -> SendType {
+fn sync_online(gcd: GroupId, addr: PeerId) -> SendType {
     let data = bincode::serialize(&LayerEvent::MemberOnlineSync(gcd)).unwrap_or(vec![]);
     SendType::Event(0, addr, data)
 }
@@ -694,7 +701,7 @@ async fn agree(
     ogid: &GroupId,
     gcd: &GroupId,
     group: GroupChat,
-    addr: PeerAddr,
+    addr: PeerId,
 ) -> SendType {
     let gavatar = read_avatar(base, ogid, gcd).await.unwrap_or(vec![]);
     let group_info = group.to_group_info("".to_owned(), gavatar, vec![]);
@@ -703,7 +710,7 @@ async fn agree(
     SendType::Event(0, addr, d)
 }
 
-fn reject(gcd: GroupId, addr: PeerAddr, lost: bool) -> SendType {
+fn reject(gcd: GroupId, addr: PeerId, lost: bool) -> SendType {
     let d = bincode::serialize(&LayerEvent::Reject(gcd, lost)).unwrap_or(vec![]);
     SendType::Event(0, addr, d)
 }
@@ -713,7 +720,7 @@ fn handle_sync(
     ogid: GroupId,
     id: i64,
     gcd: GroupId,
-    addr: PeerAddr,
+    addr: PeerId,
     height: i64,
     mut from: i64,
     to: i64,
