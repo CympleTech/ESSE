@@ -176,6 +176,7 @@ class Address {
   String name = '';
   String address = '';
   bool isGen = true;
+  bool isMain = false;
   Map<Network, String> balances = {};
 
   String icon() {
@@ -265,7 +266,8 @@ class Address {
     this.name = params[3];
     this.address = params[4];
     this.isGen = params[5];
-    this.split_balance(params[6]);
+    this.isMain = params[6];
+    this.split_balance(params[7]);
   }
 }
 

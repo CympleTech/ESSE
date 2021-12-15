@@ -117,6 +117,7 @@ pub(crate) struct Address {
     pub id: i64,
     pub chain: ChainToken,
     pub index: i64,
+    pub main: bool,
     pub name: String,
     pub address: String,
     /// Encrypted secret key.
@@ -177,6 +178,7 @@ impl Address {
             chain,
             index,
             address,
+            main: false,
             name: format!("Account {}", index),
             secret: vec![],
             balance: "".to_owned(),
@@ -191,6 +193,7 @@ impl Address {
             address,
             secret,
             index: 0,
+            main: false,
             balance: "".to_owned(),
             id: 0,
         }
@@ -204,6 +207,7 @@ impl Address {
             self.name,
             self.address,
             self.is_gen(),
+            self.main,
             self.balance,
         ])
     }
@@ -214,6 +218,7 @@ impl Address {
             secret: base64::decode(v.pop().unwrap().as_str()).unwrap_or(vec![]),
             address: v.pop().unwrap().as_string(),
             name: v.pop().unwrap().as_string(),
+            main: v.pop().unwrap().as_bool(),
             index: v.pop().unwrap().as_i64(),
             chain: ChainToken::from_i64(v.pop().unwrap().as_i64()),
             id: v.pop().unwrap().as_i64(),
@@ -231,9 +236,10 @@ impl Address {
         }
 
         let sql = format!(
-            "INSERT INTO addresses (chain, indx, name, address, secret, balance) VALUES ({}, {}, '{}', '{}', '{}', '{}')",
+            "INSERT INTO addresses (chain, indx, main, name, address, secret, balance) VALUES ({}, {}, {}, '{}', '{}', '{}', '{}')",
             self.chain.to_i64(),
             self.index,
+            self.main,
             self.name,
             self.address,
             base64::encode(&self.secret),
@@ -245,8 +251,8 @@ impl Address {
     }
 
     pub fn list(db: &DStorage) -> Result<Vec<Self>> {
-        let matrix =
-            db.query("SELECT id, chain, indx, name, address, secret, balance FROM addresses")?;
+        let matrix = db
+            .query("SELECT id, chain, indx, main, name, address, secret, balance FROM addresses")?;
         let mut addresses = vec![];
         for values in matrix {
             addresses.push(Self::from_values(values));
@@ -256,7 +262,7 @@ impl Address {
 
     pub fn get(db: &DStorage, id: &i64) -> Result<Self> {
         let mut matrix = db.query(&format!(
-            "SELECT id, chain, indx, name, address, secret, balance FROM addresses WHERE id = {}",
+            "SELECT id, chain, indx, main, name, address, secret, balance FROM addresses WHERE id = {}",
             id
         ))?;
         if matrix.len() > 0 {
@@ -268,7 +274,7 @@ impl Address {
 
     pub fn get_by_address(db: &DStorage, address: &str) -> Result<Self> {
         let mut matrix = db.query(&format!(
-            "SELECT id, chain, indx, name, address, secret, balance FROM addresses WHERE address = '{}'",
+            "SELECT id, chain, indx, main, name, address, secret, balance FROM addresses WHERE address = '{}'",
             address
         ))?;
         if matrix.len() > 0 {
@@ -314,6 +320,15 @@ impl Address {
             db.update(&sql)?;
         }
 
+        Ok(())
+    }
+
+    pub fn main(db: &DStorage, id: &i64) -> Result<()> {
+        db.update("UPDATE addresses SET main = false")?;
+        db.update(&format!(
+            "UPDATE addresses SET main = true WHERE id = {}",
+            id
+        ))?;
         Ok(())
     }
 

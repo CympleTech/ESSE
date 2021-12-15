@@ -439,4 +439,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get secretKey => 'Secret Key';
   @override
   String get contract => 'Contract Address';
+  @override
+  String get main => 'Main';
+  @override
+  String get setMain => 'Set to main';
 }

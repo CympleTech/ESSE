@@ -588,4 +588,14 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             }
         },
     );
+
+    handler.add_method(
+        "wallet-main",
+        |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
+            let id = params[0].as_i64().ok_or(RpcError::ParseError)?;
+            let db = wallet_db(state.layer.read().await.base(), &gid)?;
+            Address::main(&db, &id)?;
+            Ok(HandleResult::new())
+        },
+    );
 }

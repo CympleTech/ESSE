@@ -439,4 +439,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get secretKey => '私钥';
   @override
   String get contract => '合约地址';
+  @override
+  String get main => '主';
+  @override
+  String get setMain => '设为主账户';
 }

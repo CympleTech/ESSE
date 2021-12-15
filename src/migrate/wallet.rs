@@ -4,6 +4,7 @@ pub(super) const WALLET_VERSIONS: [&str; 5] = [
     id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
     chain INTEGER NOT NULL,
     indx INTEGER NOT NULL,
+    main INTEGER NOT NULL,
     name TEXT NOT NULL,
     address TEXT NOT NULL,
     secret TEXT NOT NULL,

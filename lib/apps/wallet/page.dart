@@ -131,8 +131,11 @@ class _WalletDetailState extends State<WalletDetail> with SingleTickerProviderSt
     if (res.isOk) {
       this._addresses.clear();
       res.params.forEach((param) {
-          print(param);
-          this._addresses.add(Address.fromList(param));
+          final address = Address.fromList(param);
+          this._addresses.add(address);
+          if (address.isMain) {
+            _changeAddress(address);
+          }
       });
       if (this._addresses.length == 0) {
         this._needGenerate = true;
@@ -164,6 +167,15 @@ class _WalletDetailState extends State<WalletDetail> with SingleTickerProviderSt
     rpc.send('wallet-token', [
         this._selectedNetwork!.toInt(), this._selectedAddress!.address
     ]);
+  }
+
+  _setMain() {
+    rpc.send('wallet-main', [this._selectedAddress!.id]);
+    for (int i=0;i<this._addresses.length;i++) {
+      this._addresses[i].isMain = false;
+    }
+    this._selectedAddress!.isMain = !this._selectedAddress!.isMain;
+    setState(() {});
   }
 
   @override
@@ -210,7 +222,7 @@ class _WalletDetailState extends State<WalletDetail> with SingleTickerProviderSt
 
     List<PopupMenuEntry<int>> addressWidges = [];
     this._addresses.asMap().forEach((index, value) {
-        addressWidges.add(_menuItem(index + 3, value, color, value == this._selectedAddress));
+        addressWidges.add(_menuItem(index + 3, value, color, value == this._selectedAddress, lang));
     });
 
     return Scaffold(
@@ -247,6 +259,10 @@ class _WalletDetailState extends State<WalletDetail> with SingleTickerProviderSt
           }).toList(),
         ),
         actions: [
+          TextButton(
+            onPressed: this._selectedAddress!.isMain ? null : _setMain,
+            child: Text(this._selectedAddress!.isMain ? lang.main : lang.setMain)
+          ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20.0),
             child: PopupMenuButton<int>(
@@ -555,13 +571,15 @@ class _WalletDetailState extends State<WalletDetail> with SingleTickerProviderSt
     );
   }
 
-  PopupMenuEntry<int> _menuItem(int value, Address address, ColorScheme color, bool selected) {
+  PopupMenuEntry<int> _menuItem(int value, Address address, ColorScheme color, bool selected, lang) {
     return PopupMenuItem<int>(
       value: value,
       child: ListTile(
         leading: Icon(Icons.check, color: selected ? color.onSurface : Colors.transparent),
         title: Text(address.name),
         subtitle: Text(address.balance(this._selectedNetwork!) + ' ' + address.chain.symbol),
+        trailing: Text(address.isMain ? lang.main : '',
+          style: TextStyle(fontStyle: FontStyle.italic)),
       ),
     );
   }
