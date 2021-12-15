@@ -173,12 +173,12 @@ impl Address {
         balances.get(&network.to_i64()).unwrap_or(&"").to_string()
     }
 
-    pub fn new(chain: ChainToken, index: i64, address: String) -> Self {
+    pub fn new(chain: ChainToken, index: i64, address: String, is_main: bool) -> Self {
         Self {
             chain,
             index,
             address,
-            main: false,
+            main: is_main,
             name: format!("Account {}", index),
             secret: vec![],
             balance: "".to_owned(),

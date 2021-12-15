@@ -169,12 +169,16 @@ class _WalletDetailState extends State<WalletDetail> with SingleTickerProviderSt
     ]);
   }
 
-  _setMain() {
-    rpc.send('wallet-main', [this._selectedAddress!.id]);
+  _setMain(int id) {
+    rpc.send('wallet-main', [id]);
     for (int i=0;i<this._addresses.length;i++) {
-      this._addresses[i].isMain = false;
+      if (this._addresses[i].id == id) {
+        this._addresses[i].isMain = true;
+      } else {
+        this._addresses[i].isMain = false;
+      }
     }
-    this._selectedAddress!.isMain = !this._selectedAddress!.isMain;
+    Navigator.pop(context);
     setState(() {});
   }
 
@@ -225,6 +229,12 @@ class _WalletDetailState extends State<WalletDetail> with SingleTickerProviderSt
         addressWidges.add(_menuItem(index + 3, value, color, value == this._selectedAddress, lang));
     });
 
+    final max = MediaQuery.of(context).size.height;
+    double maxHeight = max - 360;
+    if (maxHeight < 200) {
+      maxHeight = 200;
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: DropdownButton<Network>(
@@ -259,10 +269,6 @@ class _WalletDetailState extends State<WalletDetail> with SingleTickerProviderSt
           }).toList(),
         ),
         actions: [
-          TextButton(
-            onPressed: this._selectedAddress!.isMain ? null : _setMain,
-            child: Text(this._selectedAddress!.isMain ? lang.main : lang.setMain)
-          ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20.0),
             child: PopupMenuButton<int>(
@@ -294,26 +300,37 @@ class _WalletDetailState extends State<WalletDetail> with SingleTickerProviderSt
                 return addressWidges + <PopupMenuEntry<int>>[
                   PopupMenuItem<int>(
                     value: 0,
-                    child: ListTile(
-                      leading: Icon(Icons.add, color: const Color(0xFF6174FF)),
-                      title: Text(lang.createAccount,
-                        style: TextStyle(color: const Color(0xFF6174FF))),
-                    ),
+                    child: Column(
+                      children: [
+                        const Divider(),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            const Icon(Icons.add, color: Color(0xFF6174FF)),
+                            Text(lang.createAccount, style: TextStyle(color: const Color(0xFF6174FF))),
+                          ]
+                        ),
+                      ]
+                    )
                   ),
                   PopupMenuItem<int>(
                     value: 1,
-                    child: ListTile(
-                      leading: Icon(Icons.vertical_align_bottom, color: const Color(0xFF6174FF)),
-                      title: Text(lang.importAccount,
-                        style: TextStyle(color: const Color(0xFF6174FF))),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        const Icon(Icons.vertical_align_bottom, color: Color(0xFF6174FF)),
+                        Text(lang.importAccount, style: TextStyle(color: const Color(0xFF6174FF))),
+                      ]
                     ),
                   ),
                   PopupMenuItem<int>(
                     value: 2,
-                    child: ListTile(
-                      leading: Icon(Icons.settings, color: const Color(0xFF6174FF)),
-                      title: Text(lang.setting,
-                        style: TextStyle(color: const Color(0xFF6174FF))),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        const Icon(Icons.settings, color: Color(0xFF6174FF)),
+                        Text(lang.setting, style: TextStyle(color: const Color(0xFF6174FF))),
+                      ]
                     ),
                   )
                 ];
@@ -322,264 +339,292 @@ class _WalletDetailState extends State<WalletDetail> with SingleTickerProviderSt
           )
         ]
       ),
-      body: Container(
-        alignment: Alignment.topCenter,
-        padding: const EdgeInsets.symmetric(horizontal: 20.0),
-        child: Column(
-          children:[
-            InkWell(
-              onTap: () {
-                Clipboard.setData(ClipboardData(text: this._selectedAddress!.address));
-              },
-              child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 10.0),
-                alignment: Alignment.center,
-                decoration: new BoxDecoration(
-                  border: new Border(bottom:
-                    const BorderSide(width: 1.0, color: Color(0xA0ADB0BB)))),
+      body: SingleChildScrollView(
+        child: Container(
+          alignment: Alignment.topCenter,
+          padding: const EdgeInsets.symmetric(horizontal: 20.0),
+          child: Column(
+            children:[
+              InkWell(
+                onTap: () {
+                  Clipboard.setData(ClipboardData(text: this._selectedAddress!.address));
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 10.0),
+                  alignment: Alignment.center,
+                  decoration: new BoxDecoration(
+                    border: new Border(bottom:
+                      const BorderSide(width: 1.0, color: Color(0xA0ADB0BB)))),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(this._selectedAddress!.name, style: TextStyle(fontSize: 18.0)),
+                      const SizedBox(height: 4.0),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(this._selectedAddress!.short(),
+                            style: TextStyle(color: Color(0xFFADB0BB))),
+                          const SizedBox(width: 8.0),
+                          Icon(Icons.copy, size: 16.0, color: color.primary),
+                        ]
+                      )
+                    ]
+                  ),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(vertical: 20.0),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text(this._selectedAddress!.name, style: TextStyle(fontSize: 18.0)),
-                    const SizedBox(height: 4.0),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(this._selectedAddress!.short(),
-                          style: TextStyle(color: Color(0xFFADB0BB))),
-                        const SizedBox(width: 8.0),
-                        Icon(Icons.copy, size: 16.0, color: color.primary),
-                      ]
-                    )
-                  ]
-                ),
-              ),
-            ),
-            Container(
-              padding: const EdgeInsets.symmetric(vertical: 20.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Container(
-                    width: 36.0,
-                    height: 36.0,
-                    decoration: BoxDecoration(
-                      image: DecorationImage(
-                        image: AssetImage(this._mainToken.logo),
-                        fit: BoxFit.cover,
+                    Container(
+                      width: 36.0,
+                      height: 36.0,
+                      decoration: BoxDecoration(
+                        image: DecorationImage(
+                          image: AssetImage(this._mainToken.logo),
+                          fit: BoxFit.cover,
+                        ),
                       ),
                     ),
-                  ),
-                  Container(
-                    height: 60.0,
-                    alignment: Alignment.center,
-                    child: Text(
-                      "${this._mainToken.amount} ${this._mainToken.name}",
-                      style: TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold)),
-                  ),
-                  //Text('\$0.0', style: TextStyle(color: Color(0xFFADB0BB))),
-                  const SizedBox(height: 8.0),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      TextButton(
-                        onPressed: () => showShadowDialog(
-                          context, Icons.input, this._mainToken.name, _TransferToken(
-                            chain: this._selectedAddress!.chain,
-                            network: this._selectedNetwork!,
-                            address: this._selectedAddress!,
-                            token: this._mainToken,
-                            addresses: this._addresses,
-                          ), 0.0
-                        ),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
-                          decoration:  BoxDecoration(
-                            color: Color(0xFF6174FF),
-                            borderRadius: BorderRadius.circular(25.0)
-                          ),
-                          child: Center(child:
-                            Row(
-                              children: [
-                                Icon(Icons.input, color: Colors.white, size: 18.0),
-                                const SizedBox(width: 10.0),
-                                Text(lang.send, style: TextStyle(color: Colors.white))
-                              ]
-                            )
-                          )
-                        )
-                      ),
-                      TextButton(
-                        onPressed: () {
-                          showShadowDialog(context, Icons.qr_code, lang.receive,
-                            Column(
-                              children: [
-                                Container(
-                                  width: 200.0,
-                                  padding: const EdgeInsets.all(2.0),
-                                  margin: const EdgeInsets.only(bottom: 20.0),
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(5.0),
-                                    border: Border.all(color: Color(0x40ADB0BB)),
-                                    color: Colors.white,
-                                  ),
-                                  child: Center(
-                                    child: QrImage(
-                                      data: this._selectedAddress!.address,
-                                      version: QrVersions.auto,
-                                      foregroundColor: Colors.black,
-                                    ),
-                                  ),
-                                ),
-                                Text(this._selectedAddress!.address)
-                              ]
-                          ));
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
-                          decoration:  BoxDecoration(
-                            color: Color(0xFF6174FF),
-                            borderRadius: BorderRadius.circular(25.0)
-                          ),
-                          child: Center(child:
-                            Row(
-                              children: [
-                                Icon(Icons.qr_code, color: Colors.white, size: 18.0),
-                                const SizedBox(width: 10.0),
-                                Text(lang.receive, style: TextStyle(color: Colors.white))
-                              ]
-                            )
-                          )
-                        )
-                      ),
-                    ]
-                  ),
-                ]
-              )
-            ),
-            TabBar(
-              unselectedLabelColor: color.onSurface,
-              labelColor: Color(0xFF6174FF),
-              tabs: [
-                Tab(text: 'Assets'),
-                Tab(text: 'Activity'),
-              ],
-              controller: _tabController!,
-              indicatorSize: TabBarIndicatorSize.tab,
-            ),
-            Expanded(
-              child: TabBarView(
-                children: [
-                  ListView.separated(
-                    separatorBuilder: (BuildContext context, int index) => const Divider(),
-                    itemCount: this._tokens.length + 1,
-                    itemBuilder: (BuildContext context, int index) {
-                      if (index == this._tokens.length) {
-                        return TextButton(
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 10.0),
-                            child: Text('Add new Token' + ' ( ERC20 / ERC721 )')
-                          ),
+                    Container(
+                      height: 60.0,
+                      alignment: Alignment.center,
+                      child: Text(
+                        "${this._mainToken.amount} ${this._mainToken.name}",
+                        style: TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold)),
+                    ),
+                    //Text('\$0.0', style: TextStyle(color: Color(0xFFADB0BB))),
+                    const SizedBox(height: 8.0),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        TextButton(
                           onPressed: () => showShadowDialog(
-                            context, Icons.paid, 'Token', _ImportToken(
+                            context, Icons.input, this._mainToken.name, _TransferToken(
                               chain: this._selectedAddress!.chain,
                               network: this._selectedNetwork!,
-                              address: this._selectedAddress!.address
-                            ), 10.0
+                              address: this._selectedAddress!,
+                              token: this._mainToken,
+                              addresses: this._addresses,
+                            ), 0.0
                           ),
-                        );
-                      } else {
-                        final token = this._tokens[index];
-                        return ListTile(
-                          leading: Container(
-                            width: 36.0,
-                            height: 36.0,
-                            decoration: BoxDecoration(
-                              image: DecorationImage(
-                                image: AssetImage(token.logo),
-                                fit: BoxFit.cover,
-                              ),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
+                            decoration:  BoxDecoration(
+                              color: Color(0xFF6174FF),
+                              borderRadius: BorderRadius.circular(25.0)
                             ),
-                          ),
-                          title: Text("${token.balance} ${token.name}",),
-                          subtitle: Text(token.short()),
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              if (token.isNft())
-                              IconButton(icon: Icon(Icons.travel_explore, color: color.primary),
-                                onPressed: () => showShadowDialog(
-                                  context, Icons.travel_explore, token.name, _ImportNft(
-                                    address: this._selectedAddress!,
-                                    token: token,
-                                  ), 0.0
-                                ),
-                              ),
-                              IconButton(icon: Icon(Icons.input, color: color.primary),
-                                onPressed: () => showShadowDialog(
-                                  context, Icons.input, token.name, _TransferToken(
-                                    chain: this._selectedAddress!.chain,
-                                    network: this._selectedNetwork!,
-                                    address: this._selectedAddress!,
-                                    token: token,
-                                    addresses: this._addresses,
-                                  ), 0.0
-                                ),
-                              ),
-                            ]
+                            child: Center(child:
+                              Row(
+                                children: [
+                                  Icon(Icons.input, color: Colors.white, size: 18.0),
+                                  const SizedBox(width: 10.0),
+                                  Text(lang.send, style: TextStyle(color: Colors.white))
+                                ]
+                              )
+                            )
                           )
-                        );
-                      }
-                    }
-                  ),
-                  ListView.separated(
-                    separatorBuilder: (BuildContext context, int index) => const Divider(),
-                    itemCount: this._txs.length + 1,
-                    itemBuilder: (BuildContext context, int index) {
-                      if (index == this._txs.length) {
-                        return SizedBox();
-                        // return TextButton(
-                        //   child: Padding(
-                        //     padding: const EdgeInsets.symmetric(vertical: 10.0),
-                        //     child: Text(lang.loadMore)
-                        //   ),
-                        //   onPressed: () {
-                        //     //
-                        //   }
-                        // );
-                      } else {
-                        final tx = this._txs[index];
-                        return ListTile(
-                          title: Text('Hash: ' + tx.short_hash()),
-                          subtitle: Text('To: ' + tx.short_to()),
-                          trailing: IconButton(icon: Icon(Icons.link, color: color.primary),
-                            onPressed: () {
-                              launch(this._selectedNetwork!.txUrl() + tx.hash);
-                            }
-                          ),
-                        );
-                      }
-                    }
-                  ),
+                        ),
+                        TextButton(
+                          onPressed: () {
+                            showShadowDialog(context, Icons.qr_code, lang.receive,
+                              Column(
+                                children: [
+                                  Container(
+                                    width: 200.0,
+                                    padding: const EdgeInsets.all(2.0),
+                                    margin: const EdgeInsets.only(bottom: 20.0),
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(5.0),
+                                      border: Border.all(color: Color(0x40ADB0BB)),
+                                      color: Colors.white,
+                                    ),
+                                    child: Center(
+                                      child: QrImage(
+                                        data: this._selectedAddress!.address,
+                                        version: QrVersions.auto,
+                                        foregroundColor: Colors.black,
+                                      ),
+                                    ),
+                                  ),
+                                  Text(this._selectedAddress!.address)
+                                ]
+                            ));
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
+                            decoration:  BoxDecoration(
+                              color: Color(0xFF6174FF),
+                              borderRadius: BorderRadius.circular(25.0)
+                            ),
+                            child: Center(child:
+                              Row(
+                                children: [
+                                  Icon(Icons.qr_code, color: Colors.white, size: 18.0),
+                                  const SizedBox(width: 10.0),
+                                  Text(lang.receive, style: TextStyle(color: Colors.white))
+                                ]
+                              )
+                            )
+                          )
+                        ),
+                      ]
+                    ),
+                  ]
+                )
+              ),
+              TabBar(
+                unselectedLabelColor: color.onSurface,
+                labelColor: Color(0xFF6174FF),
+                tabs: [
+                  Tab(text: 'Assets'),
+                  Tab(text: 'Activity'),
                 ],
                 controller: _tabController!,
+                indicatorSize: TabBarIndicatorSize.tab,
               ),
-            ),
-          ]
-        )
-      ),
-    );
+              Container(
+                height: maxHeight,
+                child: TabBarView(
+                  children: [
+                    ListView.separated(
+                      separatorBuilder: (BuildContext context, int index) => const Divider(),
+                      itemCount: this._tokens.length + 1,
+                      itemBuilder: (BuildContext context, int index) {
+                        if (index == this._tokens.length) {
+                          return TextButton(
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 10.0),
+                              child: Text('Add new Token' + ' ( ERC20 / ERC721 )')
+                            ),
+                            onPressed: () => showShadowDialog(
+                              context, Icons.paid, 'Token', _ImportToken(
+                                chain: this._selectedAddress!.chain,
+                                network: this._selectedNetwork!,
+                                address: this._selectedAddress!.address
+                              ), 10.0
+                            ),
+                          );
+                        } else {
+                          final token = this._tokens[index];
+                          return ListTile(
+                            leading: Container(
+                              width: 36.0,
+                              height: 36.0,
+                              decoration: BoxDecoration(
+                                image: DecorationImage(
+                                  image: AssetImage(token.logo),
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                            ),
+                            title: Text("${token.balance} ${token.name}",),
+                            subtitle: Text(token.short()),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                if (token.isNft())
+                                IconButton(icon: Icon(Icons.travel_explore, color: color.primary),
+                                  onPressed: () => showShadowDialog(
+                                    context, Icons.travel_explore, token.name, _ImportNft(
+                                      address: this._selectedAddress!,
+                                      token: token,
+                                    ), 0.0
+                                  ),
+                                ),
+                                IconButton(icon: Icon(Icons.input, color: color.primary),
+                                  onPressed: () => showShadowDialog(
+                                    context, Icons.input, token.name, _TransferToken(
+                                      chain: this._selectedAddress!.chain,
+                                      network: this._selectedNetwork!,
+                                      address: this._selectedAddress!,
+                                      token: token,
+                                      addresses: this._addresses,
+                                    ), 0.0
+                                  ),
+                                ),
+                              ]
+                            )
+                          );
+                        }
+                      }
+                    ),
+                    ListView.separated(
+                      separatorBuilder: (BuildContext context, int index) => const Divider(),
+                      itemCount: this._txs.length + 1,
+                      itemBuilder: (BuildContext context, int index) {
+                        if (index == this._txs.length) {
+                          return SizedBox();
+                          // return TextButton(
+                          //   child: Padding(
+                          //     padding: const EdgeInsets.symmetric(vertical: 10.0),
+                          //     child: Text(lang.loadMore)
+                          //   ),
+                          //   onPressed: () {
+                          //     //
+                          //   }
+                          // );
+                        } else {
+                          final tx = this._txs[index];
+                          return ListTile(
+                            title: Text('Hash: ' + tx.short_hash()),
+                            subtitle: Text('To: ' + tx.short_to()),
+                            trailing: IconButton(icon: Icon(Icons.link, color: color.primary),
+                              onPressed: () {
+                                launch(this._selectedNetwork!.txUrl() + tx.hash);
+                              }
+                            ),
+                          );
+                        }
+                      }
+                    ),
+                  ],
+                  controller: _tabController!,
+                ),
+              ),
+            ]
+          )
+    )));
   }
 
   PopupMenuEntry<int> _menuItem(int value, Address address, ColorScheme color, bool selected, lang) {
     return PopupMenuItem<int>(
       value: value,
-      child: ListTile(
-        leading: Icon(Icons.check, color: selected ? color.onSurface : Colors.transparent),
-        title: Text(address.name),
-        subtitle: Text(address.balance(this._selectedNetwork!) + ' ' + address.chain.symbol),
-        trailing: Text(address.isMain ? lang.main : '',
-          style: TextStyle(fontStyle: FontStyle.italic)),
+      child: Row(
+        children: [
+          Icon(Icons.check, color: selected ? color.onSurface : Colors.transparent),
+          const SizedBox(width: 10.0),
+          Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(address.name),
+                const SizedBox(height: 4.0),
+                Text(
+                  address.balance(this._selectedNetwork!) + ' ' + address.chain.symbol,
+                  style: TextStyle(fontSize: 14.0, color: Color(0xFFADB0BB))
+                ),
+              ]
+            ),
+          ),
+          InkWell(
+            onTap: address.isMain ? null : () => _setMain(address.id),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 5.0),
+              decoration: address.isMain
+              ? BoxDecoration()
+              : BoxDecoration(
+                color: Color(0x266174FF),
+                borderRadius: BorderRadius.circular(15.0)
+              ),
+              child: Text(address.isMain ? lang.main : lang.setMain,
+                style: TextStyle(fontSize: 14.0))
+            )
+          )
+        ]
       ),
     );
   }
@@ -842,22 +887,26 @@ class _TransferTokenState extends State<_TransferToken> {
                 children: [
                   Icon(Icons.arrow_forward, color: Colors.green),
                   const SizedBox(width: 10.0),
-                  (this._networkError.length > 1)
-                  ? Text(this._networkError, style: TextStyle(color: Colors.red))
-                  : RichText(
-                    text: TextSpan(
-                      text: 'Estimated Price = ',
-                      style: TextStyle(
-                        fontSize: 14.0, fontStyle: FontStyle.italic, color: Colors.green),
-                      children: <TextSpan>[
-                        TextSpan(text: this._price + ' Gwei',
-                          style: TextStyle(fontWeight: FontWeight.bold)),
-                        TextSpan(text: ', Gas ≈ '),
-                        TextSpan(text: this._gas + ' ETH',
-                          style: TextStyle(fontWeight: FontWeight.bold)),
-                      ],
-                    ),
-                  )
+                  Expanded(
+                    child: this._networkError.length > 1
+                    ? Text(this._networkError,
+                      textAlign: TextAlign.center, style: TextStyle(color: Colors.red))
+                    : RichText(
+                      textAlign: TextAlign.center,
+                      text: TextSpan(
+                        text: 'Estimated Price = ',
+                        style: TextStyle(
+                          fontSize: 14.0, fontStyle: FontStyle.italic, color: Colors.green),
+                        children: <TextSpan>[
+                          TextSpan(text: this._price + ' Gwei',
+                            style: TextStyle(fontWeight: FontWeight.bold)),
+                          TextSpan(text: ', Gas ≈ '),
+                          TextSpan(text: this._gas + ' ETH',
+                            style: TextStyle(fontWeight: FontWeight.bold)),
+                        ],
+                      ),
+                    )
+                  ),
                 ]
               )
             ]

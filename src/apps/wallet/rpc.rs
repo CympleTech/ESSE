@@ -366,7 +366,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
                 ChainToken::ETH | ChainToken::ERC20 | ChainToken::ERC721 => {
                     let sk = generate_eth_account(lang, &mnemonic, account_index, index, pass)?;
                     let address = format!("{:?}", (&sk).address());
-                    Address::new(chain, index as i64, address)
+                    Address::new(chain, index as i64, address, index == 0)
                 }
                 ChainToken::BTC => {
                     let _sk = generate_btc_account(lang, &mnemonic, account_index, index, pass)?;

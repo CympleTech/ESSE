@@ -440,7 +440,7 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String get contract => '合约地址';
   @override
-  String get main => '主';
+  String get main => '主账户';
   @override
   String get setMain => '设为主账户';
 }

@@ -6,6 +6,7 @@ pub(super) const CHAT_VERSIONS: [&str; 3] = [
     addr TEXT NOT NULL,
     name TEXT NOT NULL,
     remark TEXT,
+    eth TEXT,
     is_closed INTEGER NOT NULL,
     datetime INTEGER NOT NULL,
     is_deleted INTEGER NOT NULL);",
