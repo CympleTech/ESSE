@@ -443,4 +443,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get main => '主账户';
   @override
   String get setMain => '设为主账户';
+  @override
+  String get transfer => '转账';
 }

@@ -36,49 +36,35 @@ fn build_cipher(salt: &[u8], pin: &str) -> Aes256Gcm {
     Aes256Gcm::new(GenericArray::from_slice(hash_key.as_bytes())) // 256-bit key.
 }
 
-/// encrypted bytes.
-pub fn encrypt(salt: &[u8], pin: &str, ptext: &[u8]) -> anyhow::Result<Vec<u8>> {
+fn build_keycipher(key: &[u8]) -> Aes256Gcm {
+    let mut hasher = blake3::Hasher::new();
+    hasher.update(key);
+    let hash_key = hasher.finalize();
+    Aes256Gcm::new(GenericArray::from_slice(hash_key.as_bytes())) // 256-bit key.
+}
+
+/// encrypted key bytes.
+pub fn encrypt_key(salt: &[u8], pin: &str, ptext: &[u8]) -> anyhow::Result<Vec<u8>> {
     let cipher = build_cipher(salt, pin);
 
-    let mut nonce = Sha256::new();
-    nonce.update(pin.as_bytes());
-    nonce.update(&FIX_PADDING);
-    let res = nonce.finalize();
+    let mut hasher = Sha256::new();
+    hasher.update(pin.as_bytes());
+    hasher.update(&FIX_PADDING);
+    let res = hasher.finalize();
     let nonce = GenericArray::from_slice(&res[0..12]); // 96-bit key.
-
     cipher
         .encrypt(nonce, ptext)
         .or(Err(anyhow!("encrypt data failure.")))
 }
 
-pub fn encrypt_multiple(salt: &[u8], pin: &str, ptext: Vec<&[u8]>) -> anyhow::Result<Vec<Vec<u8>>> {
+/// decrypted key bytes.
+pub fn decrypt_key(salt: &[u8], pin: &str, ctext: &[u8]) -> anyhow::Result<Vec<u8>> {
     let cipher = build_cipher(salt, pin);
 
-    let mut nonce = Sha256::new();
-    nonce.update(pin.as_bytes());
-    nonce.update(&FIX_PADDING);
-    let res = nonce.finalize();
-    let nonce = GenericArray::from_slice(&res[0..12]); // 96-bit key.
-
-    let mut ebytes = vec![];
-    for p in ptext {
-        ebytes.push(
-            cipher
-                .encrypt(nonce, p)
-                .or(Err(anyhow!("encrypt data failure.")))?,
-        );
-    }
-    Ok(ebytes)
-}
-
-/// decrypted bytes.
-pub fn decrypt(salt: &[u8], pin: &str, ctext: &[u8]) -> anyhow::Result<Vec<u8>> {
-    let cipher = build_cipher(salt, pin);
-
-    let mut nonce = Sha256::new();
-    nonce.update(pin.as_bytes());
-    nonce.update(&FIX_PADDING);
-    let res = nonce.finalize();
+    let mut hasher = Sha256::new();
+    hasher.update(pin.as_bytes());
+    hasher.update(&FIX_PADDING);
+    let res = hasher.finalize();
     let nonce = GenericArray::from_slice(&res[0..12]); // 96-bit key.
 
     cipher
@@ -86,20 +72,120 @@ pub fn decrypt(salt: &[u8], pin: &str, ctext: &[u8]) -> anyhow::Result<Vec<u8>> 
         .or(Err(anyhow!("decrypt data failure.")))
 }
 
-pub fn decrypt_multiple(salt: &[u8], pin: &str, ctext: Vec<&[u8]>) -> anyhow::Result<Vec<Vec<u8>>> {
+/// encrypted bytes.
+pub fn encrypt(salt: &[u8], pin: &str, ckey: &[u8], ptext: &[u8]) -> anyhow::Result<Vec<u8>> {
     let cipher = build_cipher(salt, pin);
 
-    let mut nonce = Sha256::new();
-    nonce.update(pin.as_bytes());
-    nonce.update(&FIX_PADDING);
-    let res = nonce.finalize();
+    let mut hasher = Sha256::new();
+    hasher.update(pin.as_bytes());
+    hasher.update(&FIX_PADDING);
+    let res = hasher.finalize();
     let nonce = GenericArray::from_slice(&res[0..12]); // 96-bit key.
+
+    let key = cipher
+        .decrypt(nonce, ckey)
+        .or(Err(anyhow!("decrypt data failure.")))?;
+    let c_cipher = build_keycipher(&key);
+    let mut c_hasher = Sha256::new();
+    c_hasher.update(salt);
+    c_hasher.update(&FIX_PADDING);
+    let c_res = c_hasher.finalize();
+    let c_nonce = GenericArray::from_slice(&c_res[0..12]); // 96-bit key.
+
+    c_cipher
+        .encrypt(c_nonce, ptext)
+        .or(Err(anyhow!("encrypt data failure.")))
+}
+
+pub fn encrypt_multiple(
+    salt: &[u8],
+    pin: &str,
+    ckey: &[u8],
+    ptext: Vec<&[u8]>,
+) -> anyhow::Result<Vec<Vec<u8>>> {
+    let cipher = build_cipher(salt, pin);
+
+    let mut hasher = Sha256::new();
+    hasher.update(pin);
+    hasher.update(&FIX_PADDING);
+    let res = hasher.finalize();
+    let nonce = GenericArray::from_slice(&res[0..12]); // 96-bit key.
+
+    let key = cipher
+        .decrypt(nonce, ckey)
+        .or(Err(anyhow!("decrypt data failure.")))?;
+    let c_cipher = build_keycipher(&key);
+    let mut c_hasher = Sha256::new();
+    c_hasher.update(salt);
+    c_hasher.update(&FIX_PADDING);
+    let c_res = c_hasher.finalize();
+    let c_nonce = GenericArray::from_slice(&c_res[0..12]); // 96-bit key.
+
+    let mut ebytes = vec![];
+    for p in ptext {
+        ebytes.push(
+            c_cipher
+                .encrypt(c_nonce, p)
+                .or(Err(anyhow!("encrypt data failure.")))?,
+        );
+    }
+    Ok(ebytes)
+}
+
+/// decrypted bytes.
+pub fn decrypt(salt: &[u8], pin: &str, ckey: &[u8], ctext: &[u8]) -> anyhow::Result<Vec<u8>> {
+    let cipher = build_cipher(salt, pin);
+
+    let mut hasher = Sha256::new();
+    hasher.update(pin.as_bytes());
+    hasher.update(&FIX_PADDING);
+    let res = hasher.finalize();
+    let nonce = GenericArray::from_slice(&res[0..12]); // 96-bit key.
+
+    let key = cipher
+        .decrypt(nonce, ckey)
+        .or(Err(anyhow!("decrypt data failure.")))?;
+    let c_cipher = build_keycipher(&key);
+    let mut c_hasher = Sha256::new();
+    c_hasher.update(salt);
+    c_hasher.update(&FIX_PADDING);
+    let c_res = c_hasher.finalize();
+    let c_nonce = GenericArray::from_slice(&c_res[0..12]); // 96-bit key.
+
+    c_cipher
+        .decrypt(c_nonce, ctext)
+        .or(Err(anyhow!("decrypt data failure.")))
+}
+
+pub fn _decrypt_multiple(
+    salt: &[u8],
+    pin: &str,
+    ckey: &[u8],
+    ctext: Vec<&[u8]>,
+) -> anyhow::Result<Vec<Vec<u8>>> {
+    let cipher = build_cipher(salt, pin);
+
+    let mut hasher = Sha256::new();
+    hasher.update(pin.as_bytes());
+    hasher.update(&FIX_PADDING);
+    let res = hasher.finalize();
+    let nonce = GenericArray::from_slice(&res[0..12]); // 96-bit key.
+
+    let key = cipher
+        .decrypt(nonce, ckey)
+        .or(Err(anyhow!("decrypt data failure.")))?;
+    let c_cipher = build_keycipher(&key);
+    let mut c_hasher = Sha256::new();
+    c_hasher.update(salt);
+    c_hasher.update(&FIX_PADDING);
+    let c_res = c_hasher.finalize();
+    let c_nonce = GenericArray::from_slice(&c_res[0..12]); // 96-bit key.
 
     let mut pbytes = vec![];
     for c in ctext {
         pbytes.push(
-            cipher
-                .decrypt(nonce, c)
+            c_cipher
+                .decrypt(c_nonce, c)
                 .or(Err(anyhow!("decrypt data failure.")))?,
         );
     }

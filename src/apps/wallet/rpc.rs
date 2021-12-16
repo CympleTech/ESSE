@@ -16,18 +16,12 @@ use web3::{
     Web3,
 };
 
-use crate::{
-    rpc::RpcState,
-    storage::wallet_db,
-    utils::crypto::{decrypt, encrypt},
-};
+use crate::{rpc::RpcState, storage::wallet_db};
 
 use super::{
     models::{Address, Balance, ChainToken, Network, Token},
     ERC20_ABI, ERC721_ABI,
 };
-
-const WALLET_DEFAULT_PIN: &'static str = "walletissafe";
 
 #[inline]
 fn wallet_list(wallets: Vec<Address>) -> RpcParam {
@@ -384,12 +378,13 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
         |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
             let chain = ChainToken::from_i64(params[0].as_i64().ok_or(RpcError::ParseError)?);
             let secret = params[1].as_str().ok_or(RpcError::ParseError)?;
+            let lock = params[2].as_str().ok_or(RpcError::ParseError)?;
 
             let sk: SecretKey = secret.parse().or(Err(RpcError::ParseError))?;
             let addr = format!("{:?}", (&sk).address());
 
             let group_lock = state.group.read().await;
-            let cbytes = encrypt(&group_lock.secret(), WALLET_DEFAULT_PIN, sk.as_ref())?;
+            let cbytes = group_lock.encrypt(&gid, lock, sk.as_ref())?;
             let db = wallet_db(group_lock.base(), &gid)?;
             drop(group_lock);
 
@@ -479,11 +474,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             let (mnemonic, pbytes) = if address.is_gen() {
                 (group_lock.mnemonic(&gid, lock)?, vec![])
             } else {
-                let pbytes = decrypt(
-                    &group_lock.secret(),
-                    WALLET_DEFAULT_PIN,
-                    address.secret.as_ref(),
-                )?;
+                let pbytes = group_lock.decrypt(&gid, lock, address.secret.as_ref())?;
                 (String::new(), pbytes)
             };
             let account = group_lock.account(&gid)?;

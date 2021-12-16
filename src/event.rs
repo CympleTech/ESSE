@@ -8,11 +8,10 @@ use tdn::types::{
     message::{SendMessage, SendType},
     primitive::{HandleResult, PeerId, Result},
 };
-use tdn_did::user::User;
 use tdn_storage::local::DStorage;
 use tokio::sync::{mpsc::Sender, RwLock};
 
-use crate::account::Account;
+use crate::account::{Account, User};
 use crate::apps::chat::LayerEvent;
 use crate::consensus::Event;
 use crate::group::{Group, GroupEvent};

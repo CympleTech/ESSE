@@ -6,8 +6,8 @@ use tdn::types::{
     primitive::{HandleResult, PeerId},
     rpc::{json, rpc_response, RpcError, RpcHandler, RpcParam},
 };
-use tdn_did::user::User;
 
+use crate::account::User;
 use crate::event::InnerEvent;
 use crate::migrate::consensus::{FRIEND_TABLE_PATH, MESSAGE_TABLE_PATH, REQUEST_TABLE_PATH};
 use crate::rpc::{session_create, session_last, sleep_waiting_close_stable, RpcState};
@@ -277,7 +277,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
                 &gid,
                 InnerEvent::SessionRequestCreate(
                     true,
-                    User::new(remote_gid, remote_addr, remote_name, vec![])?,
+                    User::simple(remote_gid, remote_addr, remote_name, vec![]),
                     remark,
                 ),
                 REQUEST_TABLE_PATH,

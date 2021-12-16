@@ -9,6 +9,7 @@ pub(super) const ACCOUNT_VERSIONS: [&str; 11] = [
     name TEXT NOT NULL,
     lock TEXT NOT NULL,
     secret TEXT NOT NULL,
+    encrypt TEXT NOT NULL,
     mnemonic TEXT NOT NULL,
     avatar TEXT NOT NULL,
     height INTEGER NOT NULL,

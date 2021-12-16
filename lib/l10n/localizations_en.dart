@@ -443,4 +443,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get main => 'Main';
   @override
   String get setMain => 'Set to main';
+  @override
+  String get transfer => 'Transfer';
 }

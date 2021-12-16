@@ -270,6 +270,7 @@ abstract class AppLocalizations {
   String get contract;
   String get main;
   String get setMain;
+  String get transfer;
 }
 
 class _AppLocalizationsDelegate

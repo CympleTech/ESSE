@@ -9,6 +9,7 @@ import 'package:esse/widgets/emoji.dart';
 import 'package:esse/widgets/shadow_dialog.dart';
 import 'package:esse/widgets/audio_recorder.dart';
 import 'package:esse/widgets/show_contact.dart';
+import 'package:esse/widgets/transfer.dart';
 import 'package:esse/global.dart';
 import 'package:esse/options.dart';
 
@@ -146,6 +147,29 @@ class _AssistantDetailState extends State<AssistantDetail> {
       Icons.person_rounded,
       lang.contact,
       ContactList(callback: _callback, multiple: false)
+    );
+  }
+
+  _tokenCallback(String hash, String to, String amount, String name) {
+    //context.read<AssistantProvider>().create(MessageType.Transfer, "");
+    setState(() {
+        textFocus.requestFocus();
+        emojiShow = false;
+        sendShow = false;
+        menuShow = false;
+        recordShow = false;
+    });
+  }
+
+  // TEST CODE.
+  void _sendToken(ColorScheme color, AppLocalizations lang) {
+    return;
+    showShadowDialog(
+      context,
+      Icons.paid,
+      lang.transfer,
+      Transfer(callback: _tokenCallback, to: "0xdac17f958d2ee523a2206206994597c13d831ec7"),
+      0.0
     );
   }
 
@@ -388,6 +412,12 @@ class _AssistantDetailState extends State<AssistantDetail> {
                     icon: Icons.person_rounded,
                     text: lang.contact,
                     action: () => _sendContact(color, lang),
+                    bgColor: color.surface,
+                    iconColor: color.primary),
+                  ExtensionButton(
+                    icon: Icons.paid_rounded,
+                    text: lang.transfer,
+                    action: () => _sendToken(color, lang),
                     bgColor: color.surface,
                     iconColor: color.primary),
                 ],

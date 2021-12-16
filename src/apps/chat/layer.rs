@@ -7,9 +7,10 @@ use tdn::types::{
     primitive::{DeliveryType, HandleResult, Peer, PeerId, Result},
     rpc::RpcError,
 };
-use tdn_did::{user::User, Proof};
+use tdn_did::Proof;
 use tokio::sync::RwLock;
 
+use crate::account::User;
 use crate::event::InnerEvent;
 use crate::layer::{Layer, Online};
 use crate::migrate::consensus::{FRIEND_TABLE_PATH, MESSAGE_TABLE_PATH, REQUEST_TABLE_PATH};
@@ -32,15 +33,15 @@ pub(crate) enum LayerEvent {
     Suspend(GroupId),
     /// actived. extend BaseLayerEvent.
     Actived(GroupId),
-    /// make friendship request.
+    /// make friendship request. user is simple.
     Request(User, String),
-    /// agree friendship request.
+    /// agree friendship request. user is simple.
     Agree(User, Proof),
     /// reject friendship request.
     Reject,
     /// receiver gid, sender gid, message.
     Message(EventId, NetworkMessage),
-    /// receiver gid, sender user.
+    /// user full info.
     Info(User),
     /// close friendship.
     Close,
@@ -332,6 +333,7 @@ impl LayerEvent {
                 let mut f = Friend::get_id(&db, fid)?.ok_or(anyhow!("friend not found"))?;
                 f.name = remote.name;
                 f.addr = remote.addr;
+                f.wallet = remote.wallet;
                 f.remote_update(&db)?;
                 drop(db);
                 write_avatar_sync(&layer.base, &mgid, &remote.id, remote.avatar)?;

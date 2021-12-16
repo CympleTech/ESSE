@@ -9,6 +9,7 @@ class Friend {
   String gid = '';
   String name = '';
   String addr = '';
+  String wallet = '';
   String remark = '';
   bool isClosed = false;
   RelativeTime time = RelativeTime();
@@ -26,9 +27,10 @@ class Friend {
     this.gid = params[1];
     this.addr = params[2];
     this.name = params[3];
-    this.remark = params[4];
-    this.isClosed = params[5];
-    this.time = RelativeTime.fromInt(params[6]);
+    this.wallet = params[4];
+    this.remark = params[5];
+    this.isClosed = params[6];
+    this.time = RelativeTime.fromInt(params[7]);
   }
 }
 

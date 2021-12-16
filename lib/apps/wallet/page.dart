@@ -660,7 +660,8 @@ class _ImportAccount extends StatelessWidget {
             if (secret.length < 32) {
               return;
             }
-            rpc.send('wallet-import', [chain.toInt(), secret]);
+            final pin = context.read<AccountProvider>().activedAccount.pin;
+            rpc.send('wallet-import', [chain.toInt(), secret, pin]);
             Navigator.pop(context);
         }),
       ]

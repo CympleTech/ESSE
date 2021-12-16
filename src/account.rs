@@ -1,12 +1,16 @@
+use rand::Rng;
+use serde::{Deserialize, Serialize};
 use std::time::{SystemTime, UNIX_EPOCH};
 use tdn::types::{
     group::{EventId, GroupId},
-    primitive::Result,
+    primitive::{PeerId, Result},
 };
 use tdn_did::{generate_id, Keypair, Language};
 use tdn_storage::local::{DStorage, DsValue};
 
-use crate::utils::crypto::{check_pin, decrypt, decrypt_multiple, encrypt_multiple, hash_pin};
+use crate::utils::crypto::{
+    check_pin, decrypt, decrypt_key, encrypt_key, encrypt_multiple, hash_pin,
+};
 
 fn _mnemonic_lang_to_i64(lang: Language) -> i64 {
     match lang {
@@ -48,8 +52,9 @@ pub(crate) struct Account {
     pub pass: String,
     pub name: String,
     pub avatar: Vec<u8>,
-    pub lock: Vec<u8>,   // hashed-lock.
-    pub secret: Vec<u8>, // encrypted value.
+    pub lock: Vec<u8>,    // hashed-lock.
+    pub secret: Vec<u8>,  // encrypted value.
+    pub encrypt: Vec<u8>, // encrypted encrypt key.
     pub height: u64,
     pub event: EventId,
     pub datetime: i64,
@@ -66,6 +71,7 @@ impl Account {
         avatar: Vec<u8>,
         mnemonic: Vec<u8>,
         secret: Vec<u8>,
+        encrypt: Vec<u8>,
     ) -> Self {
         let start = SystemTime::now();
         let datetime = start
@@ -85,6 +91,7 @@ impl Account {
             lock,
             mnemonic,
             secret,
+            encrypt,
             avatar,
             datetime,
         }
@@ -112,7 +119,10 @@ impl Account {
             if pass.len() > 0 { Some(pass) } else { None },
         )?;
 
-        let mut ebytes = encrypt_multiple(salt, lock, vec![&sk.to_bytes(), mnemonic.as_bytes()])?;
+        let key = rand::thread_rng().gen::<[u8; 32]>();
+        let ckey = encrypt_key(salt, lock, &key)?;
+        let mut ebytes =
+            encrypt_multiple(salt, lock, &ckey, vec![&sk.to_bytes(), mnemonic.as_bytes()])?;
         let mnemonic = ebytes.pop().unwrap_or(vec![]);
         let secret = ebytes.pop().unwrap_or(vec![]);
         let index = index as i64;
@@ -128,6 +138,7 @@ impl Account {
                 avatar,
                 mnemonic,
                 secret,
+                ckey,
             ),
             sk,
         ))
@@ -143,24 +154,22 @@ impl Account {
 
     pub fn pin(&mut self, salt: &[u8], old: &str, new: &str) -> Result<()> {
         self.check_lock(salt, old)?;
-        let pbytes = decrypt_multiple(salt, old, vec![&self.secret, &self.mnemonic])?;
-        let mut ebytes = encrypt_multiple(salt, new, pbytes.iter().map(|v| v.as_ref()).collect())?;
-        self.mnemonic = ebytes.pop().unwrap_or(vec![]);
-        self.secret = ebytes.pop().unwrap_or(vec![]);
         self.lock = hash_pin(salt, new, self.index);
+        let key = decrypt_key(salt, old, &self.encrypt)?;
+        self.encrypt = encrypt_key(salt, new, &key)?;
 
         Ok(())
     }
 
     pub fn mnemonic(&self, salt: &[u8], lock: &str) -> Result<String> {
         self.check_lock(salt, lock)?;
-        let pbytes = decrypt(salt, lock, &self.mnemonic)?;
+        let pbytes = decrypt(salt, lock, &self.encrypt, &self.mnemonic)?;
         String::from_utf8(pbytes).or(Err(anyhow!("mnemonic unlock invalid.")))
     }
 
     pub fn secret(&self, salt: &[u8], lock: &str) -> Result<Keypair> {
         self.check_lock(salt, lock)?;
-        let pbytes = decrypt(salt, lock, &self.secret)?;
+        let pbytes = decrypt(salt, lock, &self.encrypt, &self.secret)?;
         Keypair::from_bytes(&pbytes).or(Err(anyhow!("secret unlock invalid.")))
     }
 
@@ -171,6 +180,7 @@ impl Account {
             event: EventId::from_hex(v.pop().unwrap().as_str()).unwrap_or(EventId::default()),
             height: v.pop().unwrap().as_i64() as u64,
             avatar: base64::decode(v.pop().unwrap().as_str()).unwrap_or(vec![]),
+            encrypt: base64::decode(v.pop().unwrap().as_str()).unwrap_or(vec![]),
             secret: base64::decode(v.pop().unwrap().as_str()).unwrap_or(vec![]),
             mnemonic: base64::decode(v.pop().unwrap().as_str()).unwrap_or(vec![]),
             lock: base64::decode(v.pop().unwrap().as_string()).unwrap_or(vec![]),
@@ -185,28 +195,24 @@ impl Account {
 
     pub fn _get(db: &DStorage, gid: &GroupId) -> Result<Option<Account>> {
         let sql = format!(
-            "SELECT id, gid, indx, lang, pass, name, lock, mnemonic, secret, avatar, height, event, datetime FROM accounts WHERE gid = '{}'",
+            "SELECT id, gid, indx, lang, pass, name, lock, mnemonic, secret, encrypt, avatar, height, event, datetime FROM accounts WHERE gid = '{}'",
             gid.to_hex()
         );
         let mut matrix = db.query(&sql)?;
         if matrix.len() > 0 {
             let values = matrix.pop().unwrap(); // safe unwrap()
-            if values.len() == 13 {
-                return Ok(Some(Account::from_values(values)));
-            }
+            return Ok(Some(Account::from_values(values)));
         }
         Ok(None)
     }
 
     pub fn all(db: &DStorage) -> Result<Vec<Account>> {
         let matrix = db.query(
-            "SELECT id, gid, indx, lang, pass, name, lock, mnemonic, secret, avatar, height, event, datetime FROM accounts ORDER BY datetime DESC",
+            "SELECT id, gid, indx, lang, pass, name, lock, mnemonic, secret, encrypt, avatar, height, event, datetime FROM accounts ORDER BY datetime DESC",
         )?;
         let mut accounts = vec![];
         for values in matrix {
-            if values.len() == 13 {
-                accounts.push(Account::from_values(values));
-            }
+            accounts.push(Account::from_values(values));
         }
         Ok(accounts)
     }
@@ -221,7 +227,7 @@ impl Account {
             self.id = id;
             self.update(db)?;
         } else {
-            let sql = format!("INSERT INTO accounts (gid, indx, lang, pass, name, lock, mnemonic, secret, avatar, height,event, datetime) VALUES ('{}', {}, {}, '{}', '{}', '{}', '{}', '{}', '{}', {}, '{}', {})",
+            let sql = format!("INSERT INTO accounts (gid, indx, lang, pass, name, lock, mnemonic, secret, encrypt, avatar, height, event, datetime) VALUES ('{}', {}, {}, '{}', '{}', '{}', '{}', '{}', '{}', '{}', {}, '{}', {})",
             self.gid.to_hex(),
             self.index,
             self.lang,
@@ -230,6 +236,7 @@ impl Account {
             base64::encode(&self.lock),
             base64::encode(&self.mnemonic),
             base64::encode(&self.secret),
+            base64::encode(&self.encrypt),
             base64::encode(&self.avatar),
             self.height,
             self.event.to_hex(),
@@ -242,11 +249,10 @@ impl Account {
     }
 
     pub fn update(&self, db: &DStorage) -> Result<usize> {
-        let sql = format!("UPDATE accounts SET name='{}', lock='{}', mnemonic='{}', secret='{}', avatar='{}', height={}, event='{}', datetime={} WHERE id = {}",
+        let sql = format!("UPDATE accounts SET name='{}', lock='{}', encrypt='{}', avatar='{}', height={}, event='{}', datetime={} WHERE id = {}",
             self.name,
             base64::encode(&self.lock),
-            base64::encode(&self.mnemonic),
-            base64::encode(&self.secret),
+            base64::encode(&self.encrypt),
             base64::encode(&self.avatar),
             self.height,
             self.datetime,
@@ -281,5 +287,42 @@ impl Account {
             self.id,
         );
         db.update(&sql)
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+pub(crate) struct User {
+    pub id: GroupId,
+    pub addr: PeerId,
+    pub name: String,
+    pub wallet: String,
+    pub avatar: Vec<u8>,
+}
+
+impl User {
+    pub fn simple(id: GroupId, addr: PeerId, name: String, avatar: Vec<u8>) -> Self {
+        Self {
+            id,
+            addr,
+            name,
+            avatar,
+            wallet: String::new(),
+        }
+    }
+
+    pub fn full(
+        id: GroupId,
+        addr: PeerId,
+        name: String,
+        wallet: String,
+        avatar: Vec<u8>,
+    ) -> Result<Self> {
+        Ok(Self {
+            id,
+            addr,
+            name,
+            wallet,
+            avatar,
+        })
     }
 }

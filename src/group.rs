@@ -7,10 +7,10 @@ use tdn::types::{
     message::{RecvType, SendMessage, SendType},
     primitive::{HandleResult, Peer, PeerId, Result},
 };
-use tdn_did::{user::User, Proof};
+use tdn_did::Proof;
 use tokio::sync::{mpsc::Sender, RwLock};
 
-use crate::account::Account;
+use crate::account::{Account, User};
 use crate::apps::device::rpc as device_rpc;
 use crate::apps::device::Device;
 use crate::consensus::Event;
@@ -18,6 +18,7 @@ use crate::event::{InnerEvent, StatusEvent, SyncEvent};
 use crate::layer::Layer;
 use crate::rpc;
 use crate::storage::{account_db, account_init, consensus_db, write_avatar};
+use crate::utils::crypto::{decrypt, encrypt};
 use crate::utils::device_status::{device_info, device_status as local_device_status};
 
 pub(crate) mod running;
@@ -266,10 +267,6 @@ impl Group {
         &self.addr
     }
 
-    pub fn secret(&self) -> &[u8] {
-        &self.secret
-    }
-
     pub fn base(&self) -> &PathBuf {
         &self.base
     }
@@ -430,7 +427,12 @@ impl Group {
 
     pub fn clone_user(&self, gid: &GroupId) -> Result<User> {
         if let Some(u) = self.accounts.get(gid) {
-            User::new(u.gid, self.addr, u.name.clone(), u.avatar.clone())
+            Ok(User::simple(
+                u.gid,
+                self.addr,
+                u.name.clone(),
+                u.avatar.clone(),
+            ))
         } else {
             Err(anyhow!("user missing."))
         }
@@ -519,6 +521,15 @@ impl Group {
         } else {
             Err(anyhow!("user missing."))
         }
+    }
+
+    pub fn encrypt(&self, gid: &GroupId, lock: &str, bytes: &[u8]) -> Result<Vec<u8>> {
+        let ckey = &self.account(gid)?.encrypt;
+        encrypt(&self.secret, lock, ckey, bytes)
+    }
+    pub fn decrypt(&self, gid: &GroupId, lock: &str, bytes: &[u8]) -> Result<Vec<u8>> {
+        let ckey = &self.account(gid)?.encrypt;
+        decrypt(&self.secret, lock, ckey, bytes)
     }
 
     pub fn create_message(&self, gid: &GroupId, addr: Peer) -> Result<SendType> {
