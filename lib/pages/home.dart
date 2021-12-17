@@ -67,7 +67,7 @@ class HomePage extends StatelessWidget {
             child: isDesktop
             ? Row(children: [
                 Container(
-                  width: 350.0,
+                  width: 320.0,
                   decoration: BoxDecoration(color: colorScheme.secondary),
                   child: HomeList()
                 ),

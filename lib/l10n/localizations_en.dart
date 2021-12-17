@@ -315,13 +315,13 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get assistantBio => 'Jarvis is a robot, only belongs to you';
   @override
-  String get groupChat => 'Group Chat';
+  String get groupChat => 'Group Chats';
   @override
   String get groupChats => 'Groups';
   @override
   String get groupChatAdd => 'Add Group';
   @override
-  String get groupChatIntro => 'Multiple group chats';
+  String get groupChatIntro => 'Temporary groups in local';
   @override
   String get groupChatId => 'Group ID';
   @override
@@ -445,4 +445,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get setMain => 'Set to main';
   @override
   String get transfer => 'Transfer';
+
+  @override
+  String get organization => 'Organization';
+  @override
+  String get organizationIntro => 'DAO groups and channels';
 }

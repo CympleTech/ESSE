@@ -80,6 +80,7 @@ flutter:
     - assets/logo/logo_assistant.png
     - assets/logo/logo_group_chat.png
     - assets/logo/logo_domain.png
+    - assets/logo/logo_organization.png
     - assets/logo/logo_cloud.png
     - assets/logo/logo_wallet.png
     - assets/logo/logo_eth.png

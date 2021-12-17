@@ -315,13 +315,13 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String get assistantBio => 'Jarvis 是个机器人，只属于你';
   @override
-  String get groupChat => '群聊';
+  String get groupChat => '多人聊天';
   @override
-  String get groupChats => '群聊';
+  String get groupChats => '多人聊天';
   @override
   String get groupChatAdd => '添加群聊';
   @override
-  String get groupChatIntro => '各种各样的群聊';
+  String get groupChatIntro => '本地临时的多人聊天';
   @override
   String get groupChatId => '群ID';
   @override
@@ -445,4 +445,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get setMain => '设为主账户';
   @override
   String get transfer => '转账';
+
+  @override
+  String get organization => '群组';
+  @override
+  String get organizationIntro => '去中心化群聊与组织';
 }

@@ -107,7 +107,9 @@ class _NetworkDetailState extends State<NetworkDetail> {
         child: Container(
           padding: const EdgeInsets.all(20.0),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
+              Row(),
               Container(
                 width: 600.0,
                 padding: const EdgeInsets.all(20.0),
@@ -175,6 +177,12 @@ class _NetworkDetailState extends State<NetworkDetail> {
               _settingHead(lang.networkStable),
               Container(
                 height: this.networkStable.length > 0 ? 100.0 : 50.0,
+                width: 600.0,
+                padding: const EdgeInsets.all(10.0),
+                decoration: BoxDecoration(
+                  color: const Color(0x40ADB0BB),
+                  borderRadius: BorderRadius.circular(15.0)
+                ),
                 child: ListView.builder(
                   itemCount: this.networkStable.length,
                   itemBuilder: (context, index) {
@@ -199,6 +207,12 @@ class _NetworkDetailState extends State<NetworkDetail> {
               _settingHead(lang.networkDht),
               Container(
                 height: this.networkDht.length > 0 ? 100.0 : 50.0,
+                width: 600.0,
+                padding: const EdgeInsets.all(10.0),
+                decoration: BoxDecoration(
+                  color: const Color(0x40ADB0BB),
+                  borderRadius: BorderRadius.circular(15.0)
+                ),
                 child: ListView.builder(
                   itemCount: this.networkDht.length,
                   itemBuilder: (context, index) {
