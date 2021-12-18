@@ -10,6 +10,8 @@ use tdn::types::{
 use tdn_did::Proof;
 use tokio::sync::RwLock;
 
+use chat_types::{MessageType, NetworkMessage};
+
 use crate::account::User;
 use crate::event::InnerEvent;
 use crate::layer::{Layer, Online};
@@ -21,7 +23,7 @@ use crate::storage::{
     write_image,
 };
 
-use super::models::{Friend, Message, MessageType, NetworkMessage, Request};
+use super::models::{handle_nmsg, Friend, Message, Request};
 use super::rpc;
 
 /// ESSE chat layer Event.
@@ -300,7 +302,7 @@ impl LayerEvent {
                 let db = chat_db(&layer.base, &mgid)?;
                 if !Message::exist(&db, &hash)? {
                     let (msg, scontent) =
-                        m.clone().handle(false, mgid, &layer.base, &db, fid, hash)?;
+                        handle_nmsg(m.clone(), false, mgid, &layer.base, &db, fid, hash)?;
                     layer.group.write().await.broadcast(
                         &mgid,
                         InnerEvent::SessionMessageCreate(fgid, false, hash, m),

@@ -11,6 +11,8 @@ use tdn::types::{
 use tdn_storage::local::DStorage;
 use tokio::sync::{mpsc::Sender, RwLock};
 
+use chat_types::NetworkMessage;
+
 use crate::account::{Account, User};
 use crate::apps::chat::LayerEvent;
 use crate::consensus::Event;
@@ -21,7 +23,7 @@ use crate::migrate::consensus::{
 };
 
 use crate::apps::chat::rpc as chat_rpc;
-use crate::apps::chat::{Friend, Message, NetworkMessage, Request};
+use crate::apps::chat::{from_model, handle_nmsg, Friend, Message, Request};
 use crate::apps::file::{FileDid, RootDirectory};
 use crate::rpc;
 use crate::storage::{
@@ -331,7 +333,7 @@ impl InnerEvent {
                         ));
                     }
 
-                    let (msg, _) = m.handle(is_me, gid, group.base(), &db, f.id, hash)?;
+                    let (msg, _) = handle_nmsg(m, is_me, gid, group.base(), &db, f.id, hash)?;
                     results.rpcs.push(chat_rpc::message_create(gid, &msg));
                     (MESSAGE_TABLE_PATH, msg.id)
                 } else {
@@ -625,19 +627,12 @@ impl SyncEvent {
 
                         if msg.is_deleted {
                             // eid, friend_gid, msg_id, is_me, message.
-                            SyncEvent::Message(
-                                hash,
-                                fgid,
-                                msg.hash,
-                                msg.is_me,
-                                NetworkMessage::None,
-                            )
+                            SyncEvent::None
                         } else {
                             // create
                             let mid = msg.hash;
                             let is_me = msg.is_me;
-                            let nm = NetworkMessage::from_model(base, gid, msg)
-                                .unwrap_or(NetworkMessage::None);
+                            let nm = from_model(base, gid, msg)?;
                             SyncEvent::Message(hash, fgid, mid, is_me, nm)
                         }
                     } else {
@@ -849,7 +844,7 @@ impl SyncEvent {
                     }
 
                     let id = if let Some(f) = Friend::get_it(&chat_db, &fgid)? {
-                        let (msg, _) = m.handle(is_me, gid, &base, &chat_db, f.id, eid)?;
+                        let (msg, _) = handle_nmsg(m, is_me, gid, &base, &chat_db, f.id, eid)?;
                         results.rpcs.push(chat_rpc::message_create(gid, &msg));
                         msg.id
                     } else {

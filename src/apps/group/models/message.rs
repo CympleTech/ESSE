@@ -7,9 +7,9 @@ use tdn::types::{
 };
 use tdn_storage::local::{DStorage, DsValue};
 
-use group_types::NetworkMessage;
+use chat_types::{MessageType, NetworkMessage};
 
-use crate::apps::chat::{Friend, MessageType};
+use crate::apps::chat::Friend;
 use crate::storage::{
     chat_db, group_db, read_avatar, read_file, read_record, write_avatar_sync, write_file_sync,
     write_image_sync, write_record_sync,
@@ -214,7 +214,7 @@ pub(crate) async fn to_network_message(
             // TODO
             NetworkMessage::Video
         }
-        MessageType::Invite => NetworkMessage::None,
+        MessageType::Invite => NetworkMessage::Invite(content.to_owned()),
     };
 
     Ok((nmsg, datetime))
@@ -265,19 +265,6 @@ pub(crate) fn from_network_message(
         NetworkMessage::Video => {
             // TODO
             (MessageType::Video, "".to_owned())
-        }
-        NetworkMessage::None => {
-            return Ok((
-                Message::new(
-                    height,
-                    gdid,
-                    mdid,
-                    is_me,
-                    MessageType::String,
-                    "".to_owned(),
-                ),
-                "".to_owned(),
-            ));
         }
     };
 

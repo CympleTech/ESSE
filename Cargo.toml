@@ -41,6 +41,7 @@ tdn_did = { version = "0.6" }
 tdn_storage = { git = "https://github.com/cypherlink/tdn_storage", branch="main" }
 #group-chat_types = { git = "https://github.com/cympletech/esse_types", branch="main" }
 #domain_types = { git = "https://github.com/cympletech/esse_types", branch="main" }
+chat_types = { path = "../esse_types/chat" }
 group_types = { path = "../esse_types/group" }
 organization_types = { path = "../esse_types/organization" }
 domain_types = { path = "../esse_types/domain" }

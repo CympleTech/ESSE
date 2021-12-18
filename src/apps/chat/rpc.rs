@@ -7,6 +7,8 @@ use tdn::types::{
     rpc::{json, rpc_response, RpcError, RpcHandler, RpcParam},
 };
 
+use chat_types::MessageType;
+
 use crate::account::User;
 use crate::event::InnerEvent;
 use crate::migrate::consensus::{FRIEND_TABLE_PATH, MESSAGE_TABLE_PATH, REQUEST_TABLE_PATH};
@@ -15,7 +17,7 @@ use crate::session::{Session, SessionType};
 use crate::storage::{chat_db, delete_avatar, session_db};
 
 use super::layer::LayerEvent;
-use super::{Friend, Message, MessageType, Request};
+use super::{Friend, Message, Request};
 
 #[inline]
 pub(crate) fn friend_info(mgid: GroupId, friend: &Friend) -> RpcParam {

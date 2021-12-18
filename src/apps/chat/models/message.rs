@@ -1,4 +1,3 @@
-use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
 use tdn::types::{
@@ -8,180 +7,108 @@ use tdn::types::{
 };
 use tdn_storage::local::{DStorage, DsValue};
 
+use chat_types::{MessageType, NetworkMessage};
+
 use crate::storage::{
     read_avatar_sync, read_file_sync, read_image_sync, read_record_sync, write_avatar_sync,
     write_file_sync, write_image_sync, write_record_sync,
 };
 
-/// message type use in network.
-#[derive(Serialize, Deserialize, Clone)]
-pub(crate) enum NetworkMessage {
-    String(String),                            // content
-    Image(Vec<u8>),                            // image bytes.
-    File(String, Vec<u8>),                     // filename, file bytes.
-    Contact(String, GroupId, PeerId, Vec<u8>), // name, gid, addr, avatar bytes.
-    Record(Vec<u8>, u32),                      // record audio bytes.
-    Emoji,
-    Phone,
-    Video,
-    Invite(String),
-    None,
+pub(crate) fn handle_nmsg(
+    nmsg: NetworkMessage,
+    is_me: bool,
+    gid: GroupId,
+    base: &PathBuf,
+    db: &DStorage,
+    fid: i64,
+    hash: EventId,
+) -> Result<(Message, String)> {
+    // handle event.
+    let (m_type, raw) = match nmsg {
+        NetworkMessage::String(content) => (MessageType::String, content),
+        NetworkMessage::Image(bytes) => {
+            let image_name = write_image_sync(base, &gid, bytes)?;
+            (MessageType::Image, image_name)
+        }
+        NetworkMessage::File(old_name, bytes) => {
+            let filename = write_file_sync(base, &gid, &old_name, bytes)?;
+            (MessageType::File, filename)
+        }
+        NetworkMessage::Contact(name, rgid, addr, avatar_bytes) => {
+            write_avatar_sync(base, &gid, &rgid, avatar_bytes)?;
+            let tmp_name = name.replace(";", "-;");
+            let contact_values = format!("{};;{};;{}", tmp_name, rgid.to_hex(), addr.to_hex());
+            (MessageType::Contact, contact_values)
+        }
+        NetworkMessage::Emoji => {
+            // TODO
+            (MessageType::Emoji, "".to_owned())
+        }
+        NetworkMessage::Record(bytes, time) => {
+            let record_name = write_record_sync(base, &gid, fid, time, bytes)?;
+            (MessageType::Record, record_name)
+        }
+        NetworkMessage::Phone => {
+            // TODO
+            (MessageType::Phone, "".to_owned())
+        }
+        NetworkMessage::Video => {
+            // TODO
+            (MessageType::Video, "".to_owned())
+        }
+        NetworkMessage::Invite(content) => (MessageType::Invite, content),
+    };
+
+    let scontent = match m_type {
+        MessageType::String => {
+            format!("{}:{}", m_type.to_int(), raw)
+        }
+        _ => format!("{}:", m_type.to_int()),
+    };
+
+    let mut msg = Message::new_with_id(hash, fid, is_me, m_type, raw, true);
+    msg.insert(db)?;
+
+    Ok((msg, scontent))
 }
 
-impl NetworkMessage {
-    pub(crate) fn handle(
-        self,
-        is_me: bool,
-        gid: GroupId,
-        base: &PathBuf,
-        db: &DStorage,
-        fid: i64,
-        hash: EventId,
-    ) -> Result<(Message, String)> {
-        // handle event.
-        let (m_type, raw) = match self {
-            NetworkMessage::String(content) => (MessageType::String, content),
-            NetworkMessage::Image(bytes) => {
-                let image_name = write_image_sync(base, &gid, bytes)?;
-                (MessageType::Image, image_name)
-            }
-            NetworkMessage::File(old_name, bytes) => {
-                let filename = write_file_sync(base, &gid, &old_name, bytes)?;
-                (MessageType::File, filename)
-            }
-            NetworkMessage::Contact(name, rgid, addr, avatar_bytes) => {
-                write_avatar_sync(base, &gid, &rgid, avatar_bytes)?;
-                let tmp_name = name.replace(";", "-;");
-                let contact_values = format!("{};;{};;{}", tmp_name, rgid.to_hex(), addr.to_hex());
-                (MessageType::Contact, contact_values)
-            }
-            NetworkMessage::Emoji => {
-                // TODO
-                (MessageType::Emoji, "".to_owned())
-            }
-            NetworkMessage::Record(bytes, time) => {
-                let record_name = write_record_sync(base, &gid, fid, time, bytes)?;
-                (MessageType::Record, record_name)
-            }
-            NetworkMessage::Phone => {
-                // TODO
-                (MessageType::Phone, "".to_owned())
-            }
-            NetworkMessage::Video => {
-                // TODO
-                (MessageType::Video, "".to_owned())
-            }
-            NetworkMessage::Invite(content) => (MessageType::Invite, content),
-            NetworkMessage::None => {
-                return Ok((
-                    Message::new_with_id(
-                        hash,
-                        fid,
-                        is_me,
-                        MessageType::String,
-                        "".to_owned(),
-                        true,
-                    ),
-                    "".to_owned(),
-                ));
-            }
-        };
-
-        let scontent = match m_type {
-            MessageType::String => {
-                format!("{}:{}", m_type.to_int(), raw)
-            }
-            _ => format!("{}:", m_type.to_int()),
-        };
-
-        let mut msg = Message::new_with_id(hash, fid, is_me, m_type, raw, true);
-        msg.insert(db)?;
-
-        Ok((msg, scontent))
-    }
-
-    pub fn from_model(base: &PathBuf, gid: &GroupId, model: Message) -> Result<NetworkMessage> {
-        // handle message's type.
-        match model.m_type {
-            MessageType::String => Ok(NetworkMessage::String(model.content)),
-            MessageType::Image => {
-                let bytes = read_image_sync(base, gid, &model.content)?;
-                Ok(NetworkMessage::Image(bytes))
-            }
-            MessageType::File => {
-                let bytes = read_file_sync(base, gid, &model.content)?;
-                Ok(NetworkMessage::File(model.content, bytes))
-            }
-            MessageType::Contact => {
-                let v: Vec<&str> = model.content.split(";;").collect();
-                if v.len() != 3 {
-                    return Ok(NetworkMessage::None);
-                }
-                let cname = v[0].to_owned();
-                let cgid = GroupId::from_hex(v[1])?;
-                let caddr = PeerId::from_hex(v[2])?;
-                let avatar_bytes = read_avatar_sync(base, gid, &cgid)?;
-                Ok(NetworkMessage::Contact(cname, cgid, caddr, avatar_bytes))
-            }
-            MessageType::Record => {
-                let (bytes, time) = if let Some(i) = model.content.find('-') {
-                    let time = model.content[0..i].parse().unwrap_or(0);
-                    let bytes = read_record_sync(base, gid, &model.content[i + 1..])?;
-                    (bytes, time)
-                } else {
-                    (vec![], 0)
-                };
-                Ok(NetworkMessage::Record(bytes, time))
-            }
-            MessageType::Invite => Ok(NetworkMessage::Invite(model.content)),
-            MessageType::Emoji => Ok(NetworkMessage::Emoji),
-            MessageType::Phone => Ok(NetworkMessage::Phone),
-            MessageType::Video => Ok(NetworkMessage::Video),
+pub fn from_model(base: &PathBuf, gid: &GroupId, model: Message) -> Result<NetworkMessage> {
+    // handle message's type.
+    match model.m_type {
+        MessageType::String => Ok(NetworkMessage::String(model.content)),
+        MessageType::Image => {
+            let bytes = read_image_sync(base, gid, &model.content)?;
+            Ok(NetworkMessage::Image(bytes))
         }
-    }
-}
-
-#[derive(Eq, PartialEq)]
-pub(crate) enum MessageType {
-    String,
-    Image,
-    File,
-    Contact,
-    Emoji,
-    Record,
-    Phone,
-    Video,
-    Invite,
-}
-
-impl MessageType {
-    pub fn to_int(&self) -> i64 {
-        match self {
-            MessageType::String => 0,
-            MessageType::Image => 1,
-            MessageType::File => 2,
-            MessageType::Contact => 3,
-            MessageType::Emoji => 4,
-            MessageType::Record => 5,
-            MessageType::Phone => 6,
-            MessageType::Video => 7,
-            MessageType::Invite => 8,
+        MessageType::File => {
+            let bytes = read_file_sync(base, gid, &model.content)?;
+            Ok(NetworkMessage::File(model.content, bytes))
         }
-    }
-
-    pub fn from_int(i: i64) -> MessageType {
-        match i {
-            0 => MessageType::String,
-            1 => MessageType::Image,
-            2 => MessageType::File,
-            3 => MessageType::Contact,
-            4 => MessageType::Emoji,
-            5 => MessageType::Record,
-            6 => MessageType::Phone,
-            7 => MessageType::Video,
-            8 => MessageType::Invite,
-            _ => MessageType::String,
+        MessageType::Contact => {
+            let v: Vec<&str> = model.content.split(";;").collect();
+            if v.len() != 3 {
+                return Err(anyhow!("message is invalid"));
+            }
+            let cname = v[0].to_owned();
+            let cgid = GroupId::from_hex(v[1])?;
+            let caddr = PeerId::from_hex(v[2])?;
+            let avatar_bytes = read_avatar_sync(base, gid, &cgid)?;
+            Ok(NetworkMessage::Contact(cname, cgid, caddr, avatar_bytes))
         }
+        MessageType::Record => {
+            let (bytes, time) = if let Some(i) = model.content.find('-') {
+                let time = model.content[0..i].parse().unwrap_or(0);
+                let bytes = read_record_sync(base, gid, &model.content[i + 1..])?;
+                (bytes, time)
+            } else {
+                (vec![], 0)
+            };
+            Ok(NetworkMessage::Record(bytes, time))
+        }
+        MessageType::Invite => Ok(NetworkMessage::Invite(model.content)),
+        MessageType::Emoji => Ok(NetworkMessage::Emoji),
+        MessageType::Phone => Ok(NetworkMessage::Phone),
+        MessageType::Video => Ok(NetworkMessage::Video),
     }
 }
 

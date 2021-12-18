@@ -6,9 +6,10 @@ use tdn::types::{
     rpc::{json, rpc_response, RpcError, RpcHandler, RpcParam},
 };
 
+use chat_types::MessageType;
 use group_types::{Event, LayerEvent};
 
-use crate::apps::chat::{Friend, MessageType};
+use crate::apps::chat::Friend;
 use crate::layer::Online;
 use crate::rpc::{session_create, session_delete, session_last, RpcState};
 use crate::session::{Session, SessionType};
