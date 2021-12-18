@@ -23,13 +23,13 @@ class Response {
   const Response({required this.isOk, required this.params, required this.error});
 }
 
-Future<Response> httpPost(String addr, String method, List params) async {
+Future<Response> httpPost(String method, List params) async {
   jsonrpc['method'] = method;
   jsonrpc['params'] = params;
   //print(json.encode(jsonrpc));
 
   try {
-    final response = await http.post(Uri.http(addr, ''), body: json.encode(jsonrpc));
+    final response = await http.post(Uri.http(Global.httpRpc, ''), body: json.encode(jsonrpc));
     Map data = json.decode(utf8.decode(response.bodyBytes));
 
     if (data['result'] != null) {

@@ -8,7 +8,6 @@ import 'package:esse/widgets/input_text.dart';
 import 'package:esse/widgets/shadow_dialog.dart';
 import 'package:esse/apps/wallet/models.dart';
 import 'package:esse/provider.dart';
-import 'package:esse/global.dart';
 import 'package:esse/rpc.dart';
 
 class Transfer extends StatefulWidget {
@@ -88,7 +87,7 @@ class _TransferState extends State<Transfer> {
   }
 
   _loadWallet() async {
-    final res = await httpPost(Global.httpRpc, 'wallet-list', []);
+    final res = await httpPost('wallet-list', []);
     if (res.isOk) {
       this._addresses.clear();
       res.params.forEach((param) {
@@ -127,7 +126,7 @@ class _TransferState extends State<Transfer> {
   }
 
   _gasPrice(String amount) async {
-    final res = await httpPost(Global.httpRpc, 'wallet-gas-price', [
+    final res = await httpPost('wallet-gas-price', [
         this._selectedToken.chain.toInt(), this._selectedNetwork.toInt(),
         this._selectedAddress!.address, widget.to, amount,
         this._selectedToken.contract
@@ -305,7 +304,7 @@ class _TransferState extends State<Transfer> {
                 gid: gid,
                 callback: (key) async {
                   Navigator.of(context).pop();
-                  final res = await httpPost(Global.httpRpc, 'wallet-transfer', [
+                  final res = await httpPost('wallet-transfer', [
                       this._selectedToken.chain.toInt(), this._selectedNetwork.toInt(),
                       this._selectedAddress!.id, widget.to, amount,
                       this._selectedToken.contract, key,

@@ -4,7 +4,7 @@ use tdn::types::{
 };
 use tdn_storage::local::{DStorage, DsValue};
 
-use group_chat_types::GroupType;
+use group_types::GroupType;
 
 /// Group Chat Provider Model.
 pub(crate) struct Provider {

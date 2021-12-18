@@ -11,14 +11,11 @@ import 'package:esse/widgets/shadow_dialog.dart';
 import 'package:esse/widgets/show_pin.dart';
 import 'package:esse/widgets/select_avatar.dart';
 import 'package:esse/account.dart';
-import 'package:esse/global.dart';
 import 'package:esse/rpc.dart';
 import 'package:esse/provider.dart';
 
 import 'package:esse/pages/account_domain.dart';
 import 'package:esse/apps/device/provider.dart';
-import 'package:esse/apps/chat/provider.dart';
-import 'package:esse/apps/group_chat/provider.dart';
 
 class AccountGeneratePage extends StatefulWidget {
   const AccountGeneratePage({Key? key}) : super(key: key);
@@ -67,7 +64,7 @@ class _AccountGeneratePageState extends State<AccountGeneratePage> {
   }
 
   void genMnemonic() async {
-    final res = await httpPost(Global.httpRpc, 'account-generate', [_selectedLang.toInt()]);
+    final res = await httpPost('account-generate', [_selectedLang.toInt()]);
     if (res.isOk) {
       this._mnemoicWords = res.params[0];
       this._mnemonicChecked = true;
@@ -95,8 +92,7 @@ class _AccountGeneratePageState extends State<AccountGeneratePage> {
         callback: (lock) async {
           Navigator.of(context).pop();
           // send to core node service by rpc.
-          final res = await httpPost(Global.httpRpc,
-            'account-create', [
+          final res = await httpPost('account-create', [
               _selectedLang.toInt(), mnemonic, "", name, lock, avatar
           ]);
 
@@ -106,8 +102,6 @@ class _AccountGeneratePageState extends State<AccountGeneratePage> {
 
             Provider.of<AccountProvider>(context, listen: false).addAccount(account, lock);
             Provider.of<DeviceProvider>(context, listen: false).updateActived();
-            Provider.of<ChatProvider>(context, listen: false).updateActived();
-            Provider.of<GroupChatProvider>(context, listen: false).updateActived();
 
             Navigator.push(context, MaterialPageRoute(builder: (_) => AccountDomainScreen(
                   name: name,

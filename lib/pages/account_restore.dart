@@ -9,13 +9,10 @@ import 'package:esse/widgets/shadow_dialog.dart';
 import 'package:esse/widgets/show_pin.dart';
 import 'package:esse/widgets/qr_scan.dart';
 import 'package:esse/account.dart';
-import 'package:esse/global.dart';
 import 'package:esse/rpc.dart';
 import 'package:esse/provider.dart';
 
 import 'package:esse/apps/device/provider.dart';
-import 'package:esse/apps/chat/provider.dart';
-import 'package:esse/apps/group_chat/provider.dart';
 
 class AccountRestorePage extends StatefulWidget {
   const AccountRestorePage({Key? key}) : super(key: key);
@@ -402,7 +399,7 @@ class _AccountRestorePageState extends State<AccountRestorePage> {
         callback: (lock) async {
           Navigator.of(context).pop();
           // send to core node service by rpc.
-          final res = await httpPost(Global.httpRpc, 'account-restore', [
+          final res = await httpPost('account-restore', [
               _selectedLang.toInt(), mnemonic, "", this._name, lock, addr
           ]);
 
@@ -412,8 +409,6 @@ class _AccountRestorePageState extends State<AccountRestorePage> {
 
             Provider.of<AccountProvider>(context, listen: false).addAccount(account, lock);
             Provider.of<DeviceProvider>(context, listen: false).updateActived();
-            Provider.of<ChatProvider>(context, listen: false).updateActived();
-            Provider.of<GroupChatProvider>(context, listen: false).updateActived();
 
             Navigator.of(context).pushNamedAndRemoveUntil("/", (Route<dynamic> route) => false);
           } else {

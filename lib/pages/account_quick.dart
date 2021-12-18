@@ -12,15 +12,12 @@ import 'package:esse/widgets/shadow_dialog.dart';
 import 'package:esse/widgets/show_pin.dart';
 import 'package:esse/widgets/select_avatar.dart';
 import 'package:esse/account.dart';
-import 'package:esse/global.dart';
 import 'package:esse/rpc.dart';
 import 'package:esse/provider.dart';
 import 'package:esse/options.dart';
 
 import 'package:esse/pages/account_domain.dart';
 import 'package:esse/apps/device/provider.dart';
-import 'package:esse/apps/chat/provider.dart';
-import 'package:esse/apps/group_chat/provider.dart';
 
 class AccountQuickPage extends StatefulWidget {
   const AccountQuickPage({Key? key}) : super(key: key);
@@ -113,7 +110,7 @@ class _AccountQuickPageState extends State<AccountQuickPage> {
 
   Future<List?> _getMnemonic(Locale locale) async {
     final language = LanguageExtension.fromLocale(locale);
-    final res = await httpPost(Global.httpRpc, 'account-generate', [language.toInt()]);
+    final res = await httpPost('account-generate', [language.toInt()]);
     if (res.isOk) {
       return [language, res.params[0]];
     } else {
@@ -138,7 +135,7 @@ class _AccountQuickPageState extends State<AccountQuickPage> {
     }
 
     // send to core node service by rpc.
-    final res = await httpPost(Global.httpRpc, 'account-create', [
+    final res = await httpPost('account-create', [
         language.toInt(), mnemonic, "", name, lock, avatar
     ]);
 
@@ -148,8 +145,6 @@ class _AccountQuickPageState extends State<AccountQuickPage> {
 
       Provider.of<AccountProvider>(context, listen: false).addAccount(account, lock);
       Provider.of<DeviceProvider>(context, listen: false).updateActived();
-      Provider.of<ChatProvider>(context, listen: false).updateActived();
-      Provider.of<GroupChatProvider>(context, listen: false).updateActived();
 
       Navigator.push(context, MaterialPageRoute(builder: (_) => AccountDomainScreen(
             name: name,

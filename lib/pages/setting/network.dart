@@ -41,7 +41,7 @@ class _NetworkDetailState extends State<NetworkDetail> {
   }
 
   void loadNetworkDht() async {
-    final res = await httpPost(Global.httpRpc, 'network-dht', []);
+    final res = await httpPost('network-dht', []);
     if (res.isOk) {
       this.networkDht.clear();
       res.params.forEach((p) {
@@ -55,7 +55,7 @@ class _NetworkDetailState extends State<NetworkDetail> {
   }
 
   void loadNetworkStable() async {
-    final res = await httpPost(Global.httpRpc, 'network-stable', []);
+    final res = await httpPost('network-stable', []);
     if (res.isOk) {
       this.networkStable.clear();
       res.params.forEach((p) {

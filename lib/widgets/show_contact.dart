@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:esse/l10n/localizations.dart';
 import 'package:esse/apps/chat/models.dart' show Friend;
-import 'package:esse/apps/chat/provider.dart';
+import 'package:esse/rpc.dart';
 
 class ContactList extends StatefulWidget {
   final Function callback;
@@ -17,19 +17,27 @@ class ContactList extends StatefulWidget {
 
 class _ContactListState extends State<ContactList> {
   List<bool> _checks = [];
-  Map<int, Friend> _friends = {};
-  List<int> _keys = [];
+  List<Friend> _friends = [];
 
   @override
   initState() {
     super.initState();
-    new Future.delayed(Duration.zero, () {
-      final provider = context.read<ChatProvider>();
-      _friends = provider.friends;
-      _keys = provider.orderKeys;
-      _checks = List<bool>.generate(_keys.length, (_) => false);
+    _loadFriends();
+  }
+
+  _loadFriends() async {
+    this._friends.clear();
+    final res = await httpPost('chat-friend-list', []);
+    if (res.isOk) {
+      print(res.params);
+      res.params.forEach((params) {
+          this._friends.add(Friend.fromList(params));
+      });
+      _checks = List<bool>.generate(_friends.length, (_) => false);
       setState(() {});
-    });
+    } else {
+      print(res.error);
+    }
   }
 
   Widget _friend(int i, Friend friend) {
@@ -90,7 +98,7 @@ class _ContactListState extends State<ContactList> {
           child: SingleChildScrollView(
               child: Column(
                   children: List<Widget>.generate(
-                    _keys.length, (i) => _friend(i, _friends[_keys[i]]!))))),
+                    _friends.length, (i) => _friend(i, _friends[i]))))),
       const SizedBox(height: 10.0),
       const Divider(height: 1.0, color: Color(0x40ADB0BB)),
       const SizedBox(height: 10.0),
@@ -105,9 +113,9 @@ class _ContactListState extends State<ContactList> {
             onPressed: () {
               Navigator.pop(context);
               List<int> ids = [];
-              _keys.asMap().forEach((i, value) {
+              _friends.asMap().forEach((i, value) {
                 if (_checks[i]) {
-                  ids.add(value);
+                  ids.add(value.id);
                 }
               });
               widget.callback(ids);

@@ -105,6 +105,15 @@ fn message_list(messages: Vec<Message>) -> RpcParam {
     json!(results)
 }
 
+#[inline]
+fn detail_list(friend: Friend, messages: Vec<Message>) -> RpcParam {
+    let mut message_results = vec![];
+    for msg in messages {
+        message_results.push(msg.to_rpc());
+    }
+    json!([friend.to_rpc(), message_results])
+}
+
 pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
     handler.add_method("chat-echo", |_, params, _| async move {
         Ok(HandleResult::rpc(json!(params)))
@@ -391,6 +400,20 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
                 &mut results,
             )?;
             Ok(results)
+        },
+    );
+
+    handler.add_method(
+        "chat-detail",
+        |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
+            let id = params[0].as_i64().ok_or(RpcError::ParseError)?;
+
+            let db = chat_db(state.layer.read().await.base(), &gid)?;
+            let friend = Friend::get_id(&db, id)?.ok_or(RpcError::ParseError)?;
+            let messages = Message::get(&db, &id)?;
+            drop(db);
+
+            Ok(HandleResult::rpc(detail_list(friend, messages)))
         },
     );
 

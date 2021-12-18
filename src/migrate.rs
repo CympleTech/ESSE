@@ -6,19 +6,23 @@ pub mod consensus;
 
 mod account;
 mod chat;
+mod cloud;
 mod domain;
 mod file;
-mod group_chat;
+mod group;
+mod organization;
 mod service;
 mod session;
 mod wallet;
 
 use account::ACCOUNT_VERSIONS;
 use chat::CHAT_VERSIONS;
+use cloud::CLOUD_VERSIONS;
 use consensus::CONSENSUS_VERSIONS;
 use domain::DOMAIN_VERSIONS;
 use file::FILE_VERSIONS;
-use group_chat::GROUP_CHAT_VERSIONS;
+use group::GROUP_VERSIONS;
+use organization::ORGANIZATION_VERSIONS;
 use service::SERVICE_VERSIONS;
 use session::SESSION_VERSIONS;
 use wallet::WALLET_VERSIONS;
@@ -46,14 +50,20 @@ pub(crate) const SERVICE_DB: &'static str = "service.db";
 /// Account's assistant database name
 pub(crate) const ASSISTANT_DB: &'static str = "assistant.db";
 
-/// Account's assistant database name
-pub(crate) const GROUP_CHAT_DB: &'static str = "group_chat.db";
+/// Account's group chat database name
+pub(crate) const GROUP_DB: &'static str = "group.db";
+
+/// Account's organization database name
+pub(crate) const ORGANIZATION_DB: &'static str = "organization.db";
 
 /// Account's domain database name
 pub(crate) const DOMAIN_DB: &'static str = "domain.db";
 
-/// Account's domain database name
+/// Account's wallet database name
 pub(crate) const WALLET_DB: &'static str = "wallet.db";
+
+/// Account's cloud database name
+pub(crate) const CLOUD_DB: &'static str = "cloud.db";
 
 pub(crate) fn main_migrate(path: &PathBuf) -> Result<()> {
     let mut db_path = path.clone();
@@ -120,10 +130,12 @@ pub(crate) fn main_migrate(path: &PathBuf) -> Result<()> {
                 FILE_DB => FILE_VERSIONS.as_ref(),
                 SERVICE_DB => SERVICE_VERSIONS.as_ref(),
                 ASSISTANT_DB => ASSISTANT_VERSIONS.as_ref(),
-                GROUP_CHAT_DB => GROUP_CHAT_VERSIONS.as_ref(),
+                GROUP_DB => GROUP_VERSIONS.as_ref(),
+                ORGANIZATION_DB => ORGANIZATION_VERSIONS.as_ref(),
                 CHAT_DB => CHAT_VERSIONS.as_ref(),
                 DOMAIN_DB => DOMAIN_VERSIONS.as_ref(),
                 WALLET_DB => WALLET_VERSIONS.as_ref(),
+                CLOUD_DB => CLOUD_VERSIONS.as_ref(),
                 _ => {
                     continue;
                 }
@@ -197,8 +209,14 @@ pub(crate) fn main_migrate(path: &PathBuf) -> Result<()> {
 
         db.update(&format!(
             "UPDATE migrates SET version = {} where db_name = '{}'",
-            GROUP_CHAT_VERSIONS.len(),
-            GROUP_CHAT_DB,
+            GROUP_VERSIONS.len(),
+            GROUP_DB,
+        ))?;
+
+        db.update(&format!(
+            "UPDATE migrates SET version = {} where db_name = '{}'",
+            ORGANIZATION_VERSIONS.len(),
+            ORGANIZATION_DB,
         ))?;
 
         db.update(&format!(
@@ -217,6 +235,12 @@ pub(crate) fn main_migrate(path: &PathBuf) -> Result<()> {
             "UPDATE migrates SET version = {} where db_name = '{}'",
             WALLET_VERSIONS.len(),
             WALLET_DB,
+        ))?;
+
+        db.update(&format!(
+            "UPDATE migrates SET version = {} where db_name = '{}'",
+            CLOUD_VERSIONS.len(),
+            CLOUD_DB,
         ))?;
 
         db.close()?;
@@ -267,9 +291,17 @@ pub(crate) fn account_init_migrate(path: &PathBuf) -> Result<()> {
     db.close()?;
 
     let mut db_path = path.clone();
-    db_path.push(GROUP_CHAT_DB);
+    db_path.push(GROUP_DB);
     let db = DStorage::open(db_path)?;
-    for i in &GROUP_CHAT_VERSIONS {
+    for i in &GROUP_VERSIONS {
+        db.execute(i)?;
+    }
+    db.close()?;
+
+    let mut db_path = path.clone();
+    db_path.push(ORGANIZATION_DB);
+    let db = DStorage::open(db_path)?;
+    for i in &ORGANIZATION_VERSIONS {
         db.execute(i)?;
     }
     db.close()?;
@@ -294,6 +326,14 @@ pub(crate) fn account_init_migrate(path: &PathBuf) -> Result<()> {
     db_path.push(WALLET_DB);
     let db = DStorage::open(db_path)?;
     for i in &WALLET_VERSIONS {
+        db.execute(i)?;
+    }
+    db.close()?;
+
+    let mut db_path = path.clone();
+    db_path.push(CLOUD_DB);
+    let db = DStorage::open(db_path)?;
+    for i in &CLOUD_VERSIONS {
         db.execute(i)?;
     }
     db.close()

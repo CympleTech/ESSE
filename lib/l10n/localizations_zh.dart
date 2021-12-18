@@ -277,6 +277,8 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String get addDevice => '添加设备';
   @override
+  String get connecting => '连接中...';
+  @override
   String get reconnect => '重连';
   @override
   String get status => '查看状态';
@@ -317,9 +319,7 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String get groupChat => '多人聊天';
   @override
-  String get groupChats => '多人聊天';
-  @override
-  String get groupChatAdd => '添加群聊';
+  String get groupChatAdd => '拉个小群';
   @override
   String get groupChatIntro => '本地临时的多人聊天';
   @override
@@ -403,7 +403,7 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String get cloud => '云节点';
   @override
-  String get cloudIntro => '专属于个人的云节点服务';
+  String get cloudIntro => '加密安全的个人数据云节点';
   @override
   String get star => '标星';
   @override

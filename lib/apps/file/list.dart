@@ -8,7 +8,6 @@ import 'package:esse/widgets/button_text.dart';
 import 'package:esse/widgets/input_text.dart';
 import 'package:esse/widgets/shadow_dialog.dart';
 import 'package:esse/provider.dart';
-import 'package:esse/global.dart';
 import 'package:esse/rpc.dart';
 
 import 'package:esse/apps/file/models.dart';
@@ -435,8 +434,7 @@ class _MoveToScreenState extends State<_MoveToScreen> {
   }
 
   _loadDirectories() async {
-    final res = await httpPost(Global.httpRpc, 'dc-list',
-      [this.path.last.root.toInt(), this.path.last.id]);
+    final res = await httpPost('dc-list', [this.path.last.root.toInt(), this.path.last.id]);
     if (res.isOk) {
       this._list.clear();
       this._selected = null;

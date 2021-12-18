@@ -3,7 +3,6 @@ import 'package:flutter/cupertino.dart' show CupertinoActivityIndicator;
 
 import 'package:esse/l10n/localizations.dart';
 import 'package:esse/rpc.dart';
-import 'package:esse/global.dart';
 
 const pinLength = 6;
 
@@ -72,7 +71,7 @@ class _PinWordsState extends State<PinWords> {
 
   _checkPin() async {
     bool check = false;
-    final res = await httpPost(Global.httpRpc, 'account-pin-check', [widget.gid, _pinWords]);
+    final res = await httpPost('account-pin-check', [widget.gid, _pinWords]);
     if (res.isOk) {
       check = res.params[0];
     } else {

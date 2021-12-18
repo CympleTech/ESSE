@@ -17,7 +17,7 @@ class Emoji extends StatelessWidget {
     final color = Theme.of(context).colorScheme;
     double maxWidth = MediaQuery.of(context).size.width;
     if (isDisplayDesktop(context)) {
-      maxWidth -= 400.0;
+      maxWidth -= 520.0;
     }
 
     return Container(

@@ -26,7 +26,6 @@ import 'package:esse/session.dart';
 
 import 'package:esse/apps/device/provider.dart';
 import 'package:esse/apps/device/page.dart';
-import 'package:esse/apps/chat/provider.dart';
 import 'package:esse/apps/chat/list.dart';
 import 'package:esse/apps/chat/detail.dart';
 import 'package:esse/apps/chat/add.dart';
@@ -34,9 +33,7 @@ import 'package:esse/apps/file/models.dart';
 import 'package:esse/apps/file/list.dart';
 import 'package:esse/apps/service/models.dart';
 import 'package:esse/apps/assistant/page.dart';
-import 'package:esse/apps/group_chat/add.dart';
-import 'package:esse/apps/group_chat/detail.dart';
-import 'package:esse/apps/group_chat/provider.dart';
+import 'package:esse/apps/group/detail.dart';
 
 class HomePage extends StatelessWidget {
   //final Account account;
@@ -105,7 +102,7 @@ class _HomeListState extends State<HomeList> {
               final id = gidParse(params[0]);
               final addr = addrParse(params[1]);
               final name = params[2].trim();
-              final widget = ChatAddPage(id: id, addr: addr, name: name);
+              final widget = ChatAdd(id: id, addr: addr, name: name);
               Provider.of<AccountProvider>(context, listen: false).systemAppFriendAddNew = false;
               if (isDesktop) {
                 Provider.of<AccountProvider>(context, listen: false).updateActivedWidget(widget);
@@ -160,7 +157,7 @@ class _HomeListState extends State<HomeList> {
                     if (value == 0) {
                       _scanQr(isDesktop);
                     } else if (value == 1) {
-                      final widget = ChatAddPage();
+                      final widget = ChatAdd();
                       provider.systemAppFriendAddNew = false;
                       if (isDesktop) {
                         provider.updateActivedWidget(widget);
@@ -170,14 +167,14 @@ class _HomeListState extends State<HomeList> {
                           MaterialPageRoute(builder: (_) => widget));
                       }
                     } else if (value == 2) {
-                      final widget = GroupAddPage();
-                      if (isDesktop) {
-                        provider.updateActivedWidget(widget);
-                      } else {
-                        setState(() {});
-                        Navigator.push(context,
-                          MaterialPageRoute(builder: (_) => widget));
-                      }
+                      // final widget = GroupAddPage();
+                      // if (isDesktop) {
+                      //   provider.updateActivedWidget(widget);
+                      // } else {
+                      //   setState(() {});
+                      //   Navigator.push(context,
+                      //     MaterialPageRoute(builder: (_) => widget));
+                      // }
                     } else if (value == 3) {
                       showShadowDialog(
                         context,
@@ -328,10 +325,6 @@ class DrawerWidget extends StatelessWidget {
                 Provider.of<AccountProvider>(context, listen: false)
                     .updateActivedAccount(account.gid, account.pin);
                 Provider.of<DeviceProvider>(context, listen: false)
-                    .updateActived();
-                Provider.of<ChatProvider>(context, listen: false)
-                    .updateActived();
-                Provider.of<GroupChatProvider>(context, listen: false)
                     .updateActived();
               }
             : null,
@@ -515,7 +508,6 @@ class DrawerWidget extends StatelessWidget {
                       onTap: () {
                         context.read<AccountProvider>().logout();
                         context.read<DeviceProvider>().clear();
-                        context.read<ChatProvider>().clear();
                         Navigator.of(context).pushNamedAndRemoveUntil(
                             "/security", (Route<dynamic> route) => false);
                       }),
@@ -544,12 +536,10 @@ class _SessionWidget extends StatelessWidget {
 
         switch (session.type) {
           case SessionType.Chat:
-            context.read<ChatProvider>().updateActivedFriend(session.fid);
-            coreWidget = ChatDetail();
+            coreWidget = ChatDetail(id: session.fid);
             break;
           case SessionType.Group:
-            context.read<GroupChatProvider>().updateActivedGroup(session.fid);
-            coreWidget = GroupChatDetail();
+            coreWidget = GroupChatDetail(id: session.fid);
             break;
           case SessionType.Assistant:
             coreWidget = AssistantDetail();

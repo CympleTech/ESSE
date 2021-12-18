@@ -183,6 +183,7 @@ abstract class AppLocalizations {
   String get deviceQrcode;
   String get deviceQrcodeIntro;
   String get addDevice;
+  String get connecting;
   String get reconnect;
   String get status;
   String get uptime;
@@ -205,7 +206,6 @@ abstract class AppLocalizations {
   String get assistantBio;
 
   String get groupChat;
-  String get groupChats;
   String get groupChatAdd;
   String get groupChatIntro;
   String get groupChatId;

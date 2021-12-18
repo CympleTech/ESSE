@@ -126,11 +126,9 @@ class _EditorPageState extends State<EditorPage> {
               onTap: () async {
                 final name = _nameController.text.trim();
                 if (name.length > 0) {
-                  final res = await httpPost(
-                    Global.httpRpc,
-                    'dc-file-update',
-                    [widget.path.id, widget.path.root.toInt(), widget.path.parent,
-                      FilePath.newPostName(name)]
+                  final res = await httpPost('dc-file-update', [widget.path.id,
+                      widget.path.root.toInt(), widget.path.parent, FilePath.newPostName(name)
+                    ]
                   );
                   if (res.isOk) {
                     widget.path = FilePath.fromList(res.params);

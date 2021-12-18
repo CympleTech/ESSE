@@ -22,23 +22,23 @@ import 'package:esse/rpc.dart';
 
 import 'package:esse/apps/chat/models.dart';
 import 'package:esse/apps/chat/list.dart';
-import 'package:esse/apps/chat/provider.dart';
 import 'package:esse/apps/domain/models.dart';
 
-class ChatAddPage extends StatefulWidget {
+class ChatAdd extends StatefulWidget {
   final String id;
   final String addr;
   final String name;
-
-  ChatAddPage({Key? key, this.id = '', this.addr = '', this.name = ''}) : super(key: key);
+  ChatAdd({Key? key, this.id = '', this.addr = '', this.name = ''}) : super(key: key);
 
   @override
-  _ChatAddPageState createState() => _ChatAddPageState();
+  _ChatAddState createState() => _ChatAddState();
 }
 
-class _ChatAddPageState extends State<ChatAddPage> {
+class _ChatAddState extends State<ChatAdd> {
   bool _showHome = true;
   Widget _coreScreen = Text('');
+
+  Map<int, Request> _requests = {};
 
   void _scanCallback(bool isOk, String app, List params) {
     Navigator.of(context).pop();
@@ -136,8 +136,13 @@ class _ChatAddPageState extends State<ChatAddPage> {
   @override
   void initState() {
     super.initState();
+
+    rpc.addListener('chat-request-create', _requestCreate, true, true);
+    rpc.addListener('chat-request-delivery', _requestDelivery, false);
+    rpc.addListener('chat-request-agree', _requestAgree, false);
+    rpc.addListener('chat-request-reject', _requestReject, false);
+
     new Future.delayed(Duration.zero, () {
-        context.read<ChatProvider>().requestList();
         if (widget.id != '') {
           setState(() {
               this._showHome = false;
@@ -153,6 +158,52 @@ class _ChatAddPageState extends State<ChatAddPage> {
           });
         }
     });
+    _loadRequest();
+  }
+
+  _requestCreate(List params) {
+    this._requests[params[0]] = Request.fromList(params);
+    setState(() {});
+  }
+
+  _requestDelivery(List params) {
+    final id = params[0];
+    final isDelivery = params[1];
+    if (this._requests.containsKey(id)) {
+      this._requests[id]!.isDelivery = isDelivery;
+      setState(() {});
+    }
+  }
+
+  _requestAgree(List params) {
+    final id = params[0]; // request's id.
+    if (this._requests.containsKey(id)) {
+      this._requests[id]!.overIt(true);
+      setState(() {});
+    }
+  }
+
+  _requestReject(List params) {
+    final id = params[0];
+    if (this._requests.containsKey(id)) {
+      this._requests[id]!.overIt(false);
+      setState(() {});
+    }
+  }
+
+  _loadRequest() async {
+    this._requests.clear();
+    final res = await httpPost('chat-request-list', []);
+    if (res.isOk) {
+      res.params.forEach((param) {
+          if (param.length == 10) {
+            this._requests[param[0]] = Request.fromList(param);
+          }
+      });
+      setState(() {});
+    } else {
+      print(res.error);
+    }
   }
 
   @override
@@ -165,10 +216,8 @@ class _ChatAddPageState extends State<ChatAddPage> {
       this._coreScreen = _coreShow(color, lang);
     }
 
-    final provider = context.watch<ChatProvider>();
-    final requests = provider.requests;
     final account = context.read<AccountProvider>().activedAccount;
-    final requestKeys = requests.keys.toList().reversed.toList(); // it had sorted.
+    final requestKeys = this._requests.keys.toList().reversed.toList();
 
     return Scaffold(
       appBar: AppBar(
@@ -176,7 +225,6 @@ class _ChatAddPageState extends State<ChatAddPage> {
         leading: isDesktop
         ? IconButton(
           onPressed: () {
-            context.read<ChatProvider>().requestClear();
             context.read<AccountProvider>().updateActivedWidget(ChatList());
           },
           icon: Icon(Icons.arrow_back, color: color.primary),
@@ -213,14 +261,14 @@ class _ChatAddPageState extends State<ChatAddPage> {
                 })),
               ),
               this._coreScreen,
-              if (this._showHome && requests.isNotEmpty)
+              if (this._showHome && this._requests.isNotEmpty)
               ListView.builder(
                 itemCount: requestKeys.length,
                 shrinkWrap: true,
                 physics: ClampingScrollPhysics(),
                 scrollDirection: Axis.vertical,
                 itemBuilder: (BuildContext context, int index) =>
-                _RequestItem(request: requests[requestKeys[index]]!),
+                _item(this._requests[requestKeys[index]]!, color, lang),
               ),
             ]
           )
@@ -228,6 +276,237 @@ class _ChatAddPageState extends State<ChatAddPage> {
       ),
     );
   }
+
+  Widget _infoList(icon, color, text) {
+    return Container(
+      width: 300.0,
+      padding: const EdgeInsets.symmetric(vertical: 10.0),
+      child: Row(
+        children: [
+          Icon(icon, size: 20.0, color: color),
+          const SizedBox(width: 20.0),
+          Expanded(child: Text(text)),
+        ]
+      ),
+    );
+  }
+
+  Widget _infoListTooltip(icon, color, text, short) {
+    return Container(
+      width: 300.0,
+      padding: const EdgeInsets.symmetric(vertical: 10.0),
+      child: Row(
+        children: [
+          Icon(icon, size: 20.0, color: color),
+          const SizedBox(width: 20.0),
+          Expanded(
+            child: Tooltip(
+              message: text,
+              child: Text(short),
+            )
+          )
+        ]
+      ),
+    );
+  }
+
+  Widget _info(request, color, lang) {
+    return Column(
+      mainAxisSize: MainAxisSize.max,
+      children: [
+        request.showAvatar(100.0),
+        const SizedBox(height: 10.0),
+        Text(request.name),
+        const SizedBox(height: 10.0),
+        const Divider(height: 1.0, color: Color(0x40ADB0BB)),
+        const SizedBox(height: 10.0),
+        _infoListTooltip(Icons.person, color.primary, gidText(request.gid), gidPrint(request.gid)),
+        _infoListTooltip(Icons.location_on, color.primary, addrText(request.addr), addrPrint(request.addr)),
+        _infoList(Icons.turned_in, color.primary, request.remark),
+        _infoList(Icons.access_time_rounded, color.primary, request.time.toString()),
+        const SizedBox(height: 10.0),
+        if (request.over)
+        InkWell(
+          onTap: () {
+            Navigator.pop(context);
+            rpc.send('chat-request-delete', [request.id]);
+            setState(() {
+                this._requests.remove(request.id);
+            });
+          },
+          hoverColor: Colors.transparent,
+          child: Container(
+            width: 300.0,
+            padding: const EdgeInsets.symmetric(vertical: 10.0),
+            decoration: BoxDecoration(
+              border: Border.all(color: color.primary),
+              borderRadius: BorderRadius.circular(10.0)),
+            child: Center(child: Text(lang.ignore,
+                style: TextStyle(fontSize: 14.0))),
+          )
+        ),
+        if (!request.over && !request.isMe)
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            InkWell(
+              onTap: () {
+                Navigator.pop(context);
+                rpc.send('chat-request-reject', [request.id]);
+                setState(() {
+                    this._requests[request.id]!.overIt(false);
+                });
+              },
+              hoverColor: Colors.transparent,
+              child: Container(
+                width: 100.0,
+                padding: const EdgeInsets.symmetric(vertical: 10.0),
+                decoration: BoxDecoration(
+                  border: Border.all(),
+                  borderRadius: BorderRadius.circular(10.0)),
+                child: Center(child: Text(lang.reject,
+                    style: TextStyle(fontSize: 14.0))),
+              )
+            ),
+            InkWell(
+              onTap: () {
+                Navigator.pop(context);
+                rpc.send('chat-request-agree', [request.id]);
+                setState(() {
+                    this._requests[request.id]!.overIt(true);
+                });
+              },
+              hoverColor: Colors.transparent,
+              child: Container(
+                width: 100.0,
+                padding: const EdgeInsets.symmetric(vertical: 10.0),
+                decoration: BoxDecoration(
+                  border: Border.all(color: color.primary),
+                  borderRadius: BorderRadius.circular(10.0)),
+                child: Center(child: Text(lang.agree,
+                    style: TextStyle(fontSize: 14.0, color: color.primary))),
+              )
+            ),
+          ]
+        ),
+        if (!request.over && request.isMe)
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            InkWell(
+              onTap: () {
+                Navigator.pop(context);
+                rpc.send('chat-request-delete', [request.id]);
+                setState(() {
+                    this._requests.remove(request.id);
+                });
+              },
+              hoverColor: Colors.transparent,
+              child: Container(
+                width: 100.0,
+                padding: const EdgeInsets.symmetric(vertical: 10.0),
+                decoration: BoxDecoration(
+                  border: Border.all(),
+                  borderRadius: BorderRadius.circular(10.0)),
+                child: Center(child: Text(lang.ignore,
+                    style: TextStyle(fontSize: 14.0))),
+              )
+            ),
+            InkWell(
+              onTap: () {
+                Navigator.pop(context);
+                rpc.send('chat-request-create', [
+                    request.gid, request.addr, request.name, request.remark
+                ]);
+                setState(() {
+                    this._requests.remove(request.id);
+                });
+              },
+              hoverColor: Colors.transparent,
+              child: Container(
+                width: 100.0,
+                padding: const EdgeInsets.symmetric(vertical: 10.0),
+                decoration: BoxDecoration(
+                  border: Border.all(color: color.primary),
+                  borderRadius: BorderRadius.circular(10.0)),
+                child: Center(child: Text(lang.resend,
+                    style: TextStyle(fontSize: 14.0, color: color.primary))),
+              )
+            ),
+          ]
+        )
+      ]
+    );
+  }
+
+  Widget _item(request, color, lang) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => showShadowDialog(context, Icons.info, lang.info, _info(request, color, lang)),
+      child: SizedBox(
+        height: 55.0,
+        child: Row(
+          children: [
+            Container(
+              width: 45.0,
+              height: 45.0,
+              margin: const EdgeInsets.only(right: 15.0),
+              child: request.showAvatar(),
+            ),
+            Expanded(
+              child: Container(
+                height: 55.0,
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(request.name, maxLines: 1, overflow: TextOverflow.ellipsis,
+                            style: TextStyle(fontSize: 16.0)),
+                          Text(request.remark, maxLines: 1, overflow: TextOverflow.ellipsis,
+                            style: TextStyle(color: Color(0xFFADB0BB),
+                              fontSize: 12.0)),
+                        ],
+                      ),
+                    ),
+                    SizedBox(width: 10.0),
+                    if (request.over || request.isMe)
+                    Container(
+                      child: Text(
+                        request.ok ? lang.added : (request.over ? lang.rejected : lang.sended),
+                        style: TextStyle(color: Color(0xFFADB0BB), fontSize: 14.0),
+                    )),
+                    if (!request.over && !request.isMe)
+                    InkWell(
+                      onTap: () {
+                        rpc.send('chat-request-agree', [request.id]);
+                        setState(() {
+                            this._requests[request.id]!.overIt(true);
+                        });
+                      },
+                      hoverColor: Colors.transparent,
+                      child: Container(
+                        height: 35.0,
+                        padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: color.primary),
+                          borderRadius: BorderRadius.circular(10.0)),
+                        child: Center(child: Text(lang.agree,
+                            style: TextStyle(fontSize: 14.0, color: color.primary))),
+                      )
+                    ),
+                  ]
+                )
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
 }
 
 class _DomainSearchScreen extends StatefulWidget {
@@ -410,7 +689,7 @@ class _InputScreenState extends State<_InputScreen> {
     final name = nameEditingController.text.trim();
     final remark = remarkEditingController.text.trim();
 
-    context.read<ChatProvider>().requestCreate(Request(id, addr, name, remark));
+    rpc.send('chat-request-create', [id, addr, name, remark]);
     setState(() {
         userIdEditingController.text = '';
         addrEditingController.text = '';
@@ -518,232 +797,12 @@ class _InfoScreen extends StatelessWidget {
           TextButton(
             child: Text(lang.addFriend, style: TextStyle(fontSize: 20.0)),
             onPressed: () {
-              context.read<ChatProvider>().requestCreate(
-                Request(this.id, this.addr, this.name, '')
-              );
+              rpc.send('chat-request-create', [this.id, this.addr, this.name, '']);
               this.callback();
             }
           ),
         ]
       )
-    );
-  }
-}
-
-class _RequestItem extends StatelessWidget {
-  final Request request;
-
-  const _RequestItem({Key? key, required this.request}) : super(key: key);
-
-  Widget _infoList(icon, color, text) {
-    return Container(
-      width: 300.0,
-      padding: const EdgeInsets.symmetric(vertical: 10.0),
-      child: Row(
-        children: [
-          Icon(icon, size: 20.0, color: color),
-          const SizedBox(width: 20.0),
-          Expanded(child: Text(text)),
-        ]
-      ),
-    );
-  }
-
-  Widget _infoListTooltip(icon, color, text, short) {
-    return Container(
-      width: 300.0,
-      padding: const EdgeInsets.symmetric(vertical: 10.0),
-      child: Row(
-        children: [
-          Icon(icon, size: 20.0, color: color),
-          const SizedBox(width: 20.0),
-          Expanded(
-            child: Tooltip(
-              message: text,
-              child: Text(short),
-            )
-          )
-        ]
-      ),
-    );
-  }
-
-  Widget _info(color, lang, context) {
-    return Column(
-      mainAxisSize: MainAxisSize.max,
-      children: [
-        request.showAvatar(100.0),
-        const SizedBox(height: 10.0),
-        Text(request.name),
-        const SizedBox(height: 10.0),
-        const Divider(height: 1.0, color: Color(0x40ADB0BB)),
-        const SizedBox(height: 10.0),
-        _infoListTooltip(Icons.person, color.primary, gidText(request.gid), gidPrint(request.gid)),
-        _infoListTooltip(Icons.location_on, color.primary, addrText(request.addr), addrPrint(request.addr)),
-        _infoList(Icons.turned_in, color.primary, request.remark),
-        _infoList(Icons.access_time_rounded, color.primary, request.time.toString()),
-        const SizedBox(height: 10.0),
-        if (request.over)
-        InkWell(
-          onTap: () {
-            Navigator.pop(context);
-            Provider.of<ChatProvider>(context, listen: false).requestDelete(request.id);
-          },
-          hoverColor: Colors.transparent,
-          child: Container(
-            width: 300.0,
-            padding: const EdgeInsets.symmetric(vertical: 10.0),
-            decoration: BoxDecoration(
-              border: Border.all(color: color.primary),
-              borderRadius: BorderRadius.circular(10.0)),
-            child: Center(child: Text(lang.ignore,
-                style: TextStyle(fontSize: 14.0))),
-          )
-        ),
-        if (!request.over && !request.isMe)
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            InkWell(
-              onTap: () {
-                Navigator.pop(context);
-                Provider.of<ChatProvider>(context, listen: false).requestReject(request.id);
-              },
-              hoverColor: Colors.transparent,
-              child: Container(
-                width: 100.0,
-                padding: const EdgeInsets.symmetric(vertical: 10.0),
-                decoration: BoxDecoration(
-                  border: Border.all(),
-                  borderRadius: BorderRadius.circular(10.0)),
-                child: Center(child: Text(lang.reject,
-                    style: TextStyle(fontSize: 14.0))),
-              )
-            ),
-            InkWell(
-              onTap: () {
-                Navigator.pop(context);
-                Provider.of<ChatProvider>(context, listen: false).requestAgree(request.id);
-              },
-              hoverColor: Colors.transparent,
-              child: Container(
-                width: 100.0,
-                padding: const EdgeInsets.symmetric(vertical: 10.0),
-                decoration: BoxDecoration(
-                  border: Border.all(color: color.primary),
-                  borderRadius: BorderRadius.circular(10.0)),
-                child: Center(child: Text(lang.agree,
-                    style: TextStyle(fontSize: 14.0, color: color.primary))),
-              )
-            ),
-          ]
-        ),
-        if (!request.over && request.isMe)
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            InkWell(
-              onTap: () {
-                Navigator.pop(context);
-                Provider.of<ChatProvider>(context, listen: false).requestDelete(request.id);
-              },
-              hoverColor: Colors.transparent,
-              child: Container(
-                width: 100.0,
-                padding: const EdgeInsets.symmetric(vertical: 10.0),
-                decoration: BoxDecoration(
-                  border: Border.all(),
-                  borderRadius: BorderRadius.circular(10.0)),
-                child: Center(child: Text(lang.ignore,
-                    style: TextStyle(fontSize: 14.0))),
-              )
-            ),
-            InkWell(
-              onTap: () {
-                Navigator.pop(context);
-                Provider.of<ChatProvider>(context, listen: false).requestCreate(request);
-              },
-              hoverColor: Colors.transparent,
-              child: Container(
-                width: 100.0,
-                padding: const EdgeInsets.symmetric(vertical: 10.0),
-                decoration: BoxDecoration(
-                  border: Border.all(color: color.primary),
-                  borderRadius: BorderRadius.circular(10.0)),
-                child: Center(child: Text(lang.resend,
-                    style: TextStyle(fontSize: 14.0, color: color.primary))),
-              )
-            ),
-          ]
-        )
-      ]
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final color = Theme.of(context).colorScheme;
-    final lang = AppLocalizations.of(context);
-
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: () => showShadowDialog(context, Icons.info, lang.info, _info(color, lang, context)),
-      child: SizedBox(
-        height: 55.0,
-        child: Row(
-          children: [
-            Container(
-              width: 45.0,
-              height: 45.0,
-              margin: const EdgeInsets.only(right: 15.0),
-              child: request.showAvatar(),
-            ),
-            Expanded(
-              child: Container(
-                height: 55.0,
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(request.name, maxLines: 1, overflow: TextOverflow.ellipsis,
-                            style: TextStyle(fontSize: 16.0)),
-                          Text(request.remark, maxLines: 1, overflow: TextOverflow.ellipsis,
-                            style: TextStyle(color: Color(0xFFADB0BB),
-                              fontSize: 12.0)),
-                        ],
-                      ),
-                    ),
-                    SizedBox(width: 10.0),
-                    if (request.over || request.isMe)
-                    Container(
-                      child: Text(
-                        request.ok ? lang.added : (request.over ? lang.rejected : lang.sended),
-                        style: TextStyle(color: Color(0xFFADB0BB), fontSize: 14.0),
-                    )),
-                    if (!request.over && !request.isMe)
-                    InkWell(
-                      onTap: () => context.read<ChatProvider>().requestAgree(request.id),
-                      hoverColor: Colors.transparent,
-                      child: Container(
-                        height: 35.0,
-                        padding: const EdgeInsets.symmetric(horizontal: 10.0),
-                        decoration: BoxDecoration(
-                          border: Border.all(color: color.primary),
-                          borderRadius: BorderRadius.circular(10.0)),
-                        child: Center(child: Text(lang.agree,
-                            style: TextStyle(fontSize: 14.0, color: color.primary))),
-                      )
-                    ),
-                  ]
-                )
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

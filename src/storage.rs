@@ -8,8 +8,8 @@ use tdn::types::{group::GroupId, primitive::Result};
 use tdn_storage::local::DStorage;
 
 use crate::migrate::{
-    account_init_migrate, ACCOUNT_DB, ASSISTANT_DB, CHAT_DB, CONSENSUS_DB, DOMAIN_DB, FILE_DB,
-    GROUP_CHAT_DB, SERVICE_DB, SESSION_DB, WALLET_DB,
+    account_init_migrate, ACCOUNT_DB, ASSISTANT_DB, CHAT_DB, CLOUD_DB, CONSENSUS_DB, DOMAIN_DB,
+    FILE_DB, GROUP_DB, ORGANIZATION_DB, SERVICE_DB, SESSION_DB, WALLET_DB,
 };
 
 const FILES_DIR: &'static str = "files";
@@ -385,10 +385,18 @@ pub(crate) fn assistant_db(base: &PathBuf, gid: &GroupId) -> Result<DStorage> {
 }
 
 #[inline]
-pub(crate) fn group_chat_db(base: &PathBuf, gid: &GroupId) -> Result<DStorage> {
+pub(crate) fn group_db(base: &PathBuf, gid: &GroupId) -> Result<DStorage> {
     let mut db_path = base.clone();
     db_path.push(gid.to_hex());
-    db_path.push(GROUP_CHAT_DB);
+    db_path.push(GROUP_DB);
+    DStorage::open(db_path)
+}
+
+#[inline]
+pub(crate) fn organization_db(base: &PathBuf, gid: &GroupId) -> Result<DStorage> {
+    let mut db_path = base.clone();
+    db_path.push(gid.to_hex());
+    db_path.push(ORGANIZATION_DB);
     DStorage::open(db_path)
 }
 
@@ -405,6 +413,14 @@ pub(crate) fn wallet_db(base: &PathBuf, gid: &GroupId) -> Result<DStorage> {
     let mut db_path = base.clone();
     db_path.push(gid.to_hex());
     db_path.push(WALLET_DB);
+    DStorage::open(db_path)
+}
+
+#[inline]
+pub(crate) fn cloud_db(base: &PathBuf, gid: &GroupId) -> Result<DStorage> {
+    let mut db_path = base.clone();
+    db_path.push(gid.to_hex());
+    db_path.push(CLOUD_DB);
     DStorage::open(db_path)
 }
 

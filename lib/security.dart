@@ -19,8 +19,6 @@ import 'package:esse/rpc.dart';
 import 'package:esse/provider.dart';
 
 import 'package:esse/apps/device/provider.dart';
-import 'package:esse/apps/chat/provider.dart';
-import 'package:esse/apps/group_chat/provider.dart';
 
 class SecurityPage extends StatefulWidget {
   const SecurityPage({Key? key}) : super(key: key);
@@ -168,8 +166,6 @@ class _SecurityPageState extends State<SecurityPage> {
   _handleLogined(String mainId, String mainPin, Map<String, Account> accounts) {
     Provider.of<AccountProvider>(context, listen: false).autoAccounts(mainId, mainPin, accounts);
     Provider.of<DeviceProvider>(context, listen: false).updateActived();
-    Provider.of<ChatProvider>(context, listen: false).updateActived();
-    Provider.of<GroupChatProvider>(context, listen: false).updateActived();
     Navigator.of(context).pushNamedAndRemoveUntil("/", (Route<dynamic> route) => false);
   }
 
@@ -191,7 +187,7 @@ class _SecurityPageState extends State<SecurityPage> {
       loginedAccounts.forEach((account) {
           accounts[account.gid] = account;
       });
-      final res = await httpPost(Global.httpRpc, 'account-login', [mainAccount.gid, ""]);
+      final res = await httpPost('account-login', [mainAccount.gid, ""]);
       if (res.isOk) {
         _handleLogined(mainAccount.gid, "", accounts);
         return;
@@ -213,7 +209,7 @@ class _SecurityPageState extends State<SecurityPage> {
     }
 
     print("INFO: START LOGINED WITH ACCOUNTS");
-    final res = await httpPost(Global.httpRpc, 'account-list', []);
+    final res = await httpPost('account-list', []);
     if (res.isOk) {
       this._accounts.clear();
       res.params.forEach((param) {
@@ -235,7 +231,7 @@ class _SecurityPageState extends State<SecurityPage> {
   }
 
   void _verifyAfter(String lock) async {
-    final res = await httpPost(Global.httpRpc, 'account-login', [this._selectedUserId, lock]);
+    final res = await httpPost('account-login', [this._selectedUserId, lock]);
     if (res.isOk) {
       _handleLogined(this._selectedUserId, lock, this._accounts);
     } else {

@@ -7,12 +7,12 @@ use tdn::types::{
 };
 use tdn_storage::local::{DStorage, DsValue};
 
-use group_chat_types::NetworkMessage;
+use group_types::NetworkMessage;
 
 use crate::apps::chat::{Friend, MessageType};
 use crate::storage::{
-    chat_db, group_chat_db, read_avatar, read_file, read_record, write_avatar_sync,
-    write_file_sync, write_image_sync, write_record_sync,
+    chat_db, group_db, read_avatar, read_file, read_record, write_avatar_sync, write_file_sync,
+    write_image_sync, write_record_sync,
 };
 
 use super::Member;
@@ -117,7 +117,7 @@ impl Message {
     }
 
     pub fn all(db: &DStorage, fid: &i64) -> Result<Vec<Message>> {
-        let matrix = db.query(&format!("SELECT id, height, fid, mid, is_me, m_type, content, is_delivery, datetime FROM messages WHERE is_deleted = false AND fid = {}", fid))?;
+        let matrix = db.query(&format!("SELECT id, height, fid, mid, is_me, m_type, content, is_delivery, datetime FROM messages WHERE fid = {}", fid))?;
         let mut groups = vec![];
         for values in matrix {
             groups.push(Message::from_values(values));
@@ -134,7 +134,7 @@ impl Message {
             let id = unique_check.pop().unwrap().pop().unwrap().as_i64();
             self.id = id;
         } else {
-            let sql = format!("INSERT INTO messages (height, fid, mid, is_me, m_type, content, is_delivery, datetime, is_deleted) VALUES ({}, {}, {}, {}, {}, '{}', {}, {}, false)",
+            let sql = format!("INSERT INTO messages (height, fid, mid, is_me, m_type, content, is_delivery, datetime) VALUES ({}, {}, {}, {}, {}, '{}', {}, {})",
                 self.height,
                 self.fid,
                 self.mid,
@@ -148,6 +148,11 @@ impl Message {
             self.id = id;
         }
         Ok(())
+    }
+
+    pub fn delete(db: &DStorage, fid: &i64) -> Result<usize> {
+        let sql = format!("DELETE FROM messages WHERE fid = {}", fid);
+        db.delete(&sql)
     }
 }
 
@@ -209,7 +214,7 @@ pub(crate) async fn to_network_message(
             // TODO
             NetworkMessage::Video
         }
-        MessageType::Invite => NetworkMessage::Invite(content.to_owned()),
+        MessageType::Invite => NetworkMessage::None,
     };
 
     Ok((nmsg, datetime))
@@ -224,8 +229,8 @@ pub(crate) fn from_network_message(
     datetime: i64,
     base: &PathBuf,
 ) -> Result<(Message, String)> {
-    let db = group_chat_db(base, mgid)?;
-    let mdid = Member::get_ok(&db, &gdid, &mid)?;
+    let db = group_db(base, mgid)?;
+    let mdid = Member::get_id(&db, &gdid, &mid)?;
     let is_me = &mid == mgid;
 
     // handle event.
@@ -261,7 +266,6 @@ pub(crate) fn from_network_message(
             // TODO
             (MessageType::Video, "".to_owned())
         }
-        NetworkMessage::Invite(content) => (MessageType::Invite, content),
         NetworkMessage::None => {
             return Ok((
                 Message::new(

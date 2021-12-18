@@ -49,7 +49,7 @@ class _DevicesPageState extends State<DevicesPage> {
   }
 
   _showQrCode(String name, String id, String addr, String lock, ColorScheme color, lang) async {
-    final res = await httpPost(Global.httpRpc, 'account-mnemonic', [lock]);
+    final res = await httpPost('account-mnemonic', [lock]);
     if (res.isOk) {
       final words = res.params[0];
       final info = json.encode({'app': 'distribute', 'params': [name, gidText(id), addrText(addr), words]});

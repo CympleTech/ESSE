@@ -277,6 +277,8 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get addDevice => 'Add Device';
   @override
+  String get connecting => 'Connecting...';
+  @override
   String get reconnect => 'Re-Connect';
   @override
   String get status => 'View Status';
@@ -316,8 +318,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assistantBio => 'Jarvis is a robot, only belongs to you';
   @override
   String get groupChat => 'Group Chats';
-  @override
-  String get groupChats => 'Groups';
   @override
   String get groupChatAdd => 'Add Group';
   @override
@@ -401,9 +401,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get domainCreateTip => 'Tips: It will be sent to our built-in provider. Others can find your information (avatar, nickname, ESSEID, network address) by search the username, which can be managed and deleted in the personal ID later.';
 
   @override
-  String get cloud => 'Cloud Peer';
+  String get cloud => 'Cloud';
   @override
-  String get cloudIntro => 'Cloud hosting peer belongs to you';
+  String get cloudIntro => 'Encrypted personal data service';
   @override
   String get star => 'Starred';
   @override

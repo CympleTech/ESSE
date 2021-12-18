@@ -2,7 +2,7 @@ use std::path::PathBuf;
 use tdn::types::{group::GroupId, primitive::Result};
 use tdn_storage::local::{DStorage, DsValue};
 
-use group_chat_types::PackedEvent;
+use group_types::PackedEvent;
 
 use super::{to_network_message, Member, Message};
 

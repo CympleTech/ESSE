@@ -1,8 +1,8 @@
 mod layer;
 mod models;
 
-pub use domain_types::DOMAIN_ID as GROUP_ID;
-use domain_types::{LayerPeerEvent, PeerEvent};
+pub use cloud_types::CLOUD_ID as GROUP_ID;
+use cloud_types::{LayerPeerEvent, PeerEvent};
 use tdn::types::{
     group::GroupId,
     message::SendType,

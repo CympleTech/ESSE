@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:image_save/image_save.dart';
-import 'package:provider/provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:open_file/open_file.dart';
 
@@ -14,13 +13,11 @@ import 'package:esse/widgets/audio_player.dart';
 import 'package:esse/widgets/shadow_dialog.dart';
 import 'package:esse/widgets/user_info.dart';
 import 'package:esse/global.dart';
+import 'package:esse/rpc.dart';
 
 import 'package:esse/apps/primitives.dart';
 import 'package:esse/apps/chat/models.dart' show Request;
-import 'package:esse/apps/group_chat/models.dart' show GroupType, GroupTypeExtension;
 import 'package:esse/apps/file/models.dart' show FileType, FileTypeExtension, parseFileType;
-import 'package:esse/apps/chat/provider.dart';
-import 'package:esse/apps/group_chat/provider.dart';
 
 class ChatMessage extends StatelessWidget {
   final Widget? avatar;
@@ -236,9 +233,9 @@ class ChatMessage extends StatelessWidget {
             avatar: Avatar(width: 100.0, name: infos[0], avatarPath: infos[3]),
             callback: () {
               Navigator.pop(context);
-              Provider.of<ChatProvider>(context, listen: false).requestCreate(
-                Request(infos[1], infos[2], infos[0], lang.fromContactCard(name))
-              );
+              rpc.send('chat-request-create', [
+                  infos[1], infos[2], infos[0], lang.fromContactCard(name)
+              ]);
             },
           ),
         ),
@@ -271,9 +268,10 @@ class ChatMessage extends StatelessWidget {
             ),
             callback: () {
               Navigator.pop(context);
-              Provider.of<GroupChatProvider>(context, listen: false).join(
-                gtype, infos[1], infos[2], infos[3], fgid, infos[4], infos[5]
-              );
+              // TOOD join invite.
+              // Provider.of<GroupChatProvider>(context, listen: false).join(
+              //   gtype, infos[1], infos[2], infos[3], fgid, infos[4], infos[5]
+              // );
             },
           ),
         ),

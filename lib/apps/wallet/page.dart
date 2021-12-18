@@ -14,7 +14,6 @@ import 'package:esse/widgets/shadow_dialog.dart';
 import 'package:esse/widgets/default_core_show.dart';
 import 'package:esse/provider.dart';
 import 'package:esse/options.dart';
-import 'package:esse/global.dart';
 import 'package:esse/rpc.dart';
 
 import 'package:esse/apps/wallet/models.dart';
@@ -127,7 +126,7 @@ class _WalletDetailState extends State<WalletDetail> with SingleTickerProviderSt
   }
 
   _load() async {
-    final res = await httpPost(Global.httpRpc, 'wallet-list', []);
+    final res = await httpPost('wallet-list', []);
     if (res.isOk) {
       this._addresses.clear();
       res.params.forEach((param) {
@@ -800,9 +799,7 @@ class _TransferTokenState extends State<_TransferToken> {
   }
 
   _getNft() async {
-    final res = await httpPost(Global.httpRpc, 'wallet-nft', [
-        widget.address.id, widget.token.id,
-    ]);
+    final res = await httpPost('wallet-nft', [widget.address.id, widget.token.id]);
     if (res.isOk) {
       final a = res.params[0];
       final t = res.params[1];
@@ -825,7 +822,7 @@ class _TransferTokenState extends State<_TransferToken> {
   }
 
   _gasPrice(String to, String amount) async {
-    final res = await httpPost(Global.httpRpc, 'wallet-gas-price', [
+    final res = await httpPost('wallet-gas-price', [
         widget.token.chain.toInt(), widget.network.toInt(),
         widget.address.address, to, amount,
         widget.token.contract
@@ -1171,9 +1168,7 @@ class _ImportNftState extends State<_ImportNft> {
   }
 
   _getNft() async {
-    final res = await httpPost(Global.httpRpc, 'wallet-nft', [
-        widget.address.id, widget.token.id,
-    ]);
+    final res = await httpPost('wallet-nft', [widget.address.id, widget.token.id]);
     if (res.isOk) {
       final a = res.params[0];
       final t = res.params[1];
@@ -1188,9 +1183,7 @@ class _ImportNftState extends State<_ImportNft> {
   }
 
   _search(String hash) async {
-    final res = await httpPost(Global.httpRpc, 'wallet-nft-add', [
-        widget.address.id, widget.token.id, hash
-    ]);
+    final res = await httpPost('wallet-nft-add', [widget.address.id, widget.token.id, hash]);
     if (res.isOk) {
       final a = res.params[0];
       final t = res.params[1];

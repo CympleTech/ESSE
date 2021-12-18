@@ -39,10 +39,12 @@ web3 = { version = "0.17", default-features = false, features = ["http-tls", "si
 tdn = { version = "0.6", default-features = false, features = ["full"] }
 tdn_did = { version = "0.6" }
 tdn_storage = { git = "https://github.com/cypherlink/tdn_storage", branch="main" }
-group-chat_types = { git = "https://github.com/cympletech/esse_types", branch="main" }
-domain_types = { git = "https://github.com/cympletech/esse_types", branch="main" }
-#group-chat_types = { path = "../esse_types/group_chat" }
-#domain_types = { path = "../esse_types/domain" }
+#group-chat_types = { git = "https://github.com/cympletech/esse_types", branch="main" }
+#domain_types = { git = "https://github.com/cympletech/esse_types", branch="main" }
+group_types = { path = "../esse_types/group" }
+organization_types = { path = "../esse_types/organization" }
+domain_types = { path = "../esse_types/domain" }
+cloud_types = { path = "../esse_types/cloud" }
 openssl = { version = "0.10", features = ["vendored"] } # Add for cross-compile.
 
 [target.'cfg(target_os="android")'.dependencies]

@@ -13,16 +13,14 @@ import 'package:esse/rpc.dart';
 import 'package:esse/provider.dart';
 import 'package:esse/pages/home.dart';
 import 'package:esse/apps/device/provider.dart';
-import 'package:esse/apps/chat/provider.dart';
 import 'package:esse/apps/assistant/provider.dart';
-import 'package:esse/apps/group_chat/provider.dart';
 
 void coreServer() async {
   final path = await homeDir();
   print("home path: " + path);
   Global.home = path;
 
-  final res = await httpPost(Global.httpRpc, 'echo', []);
+  final res = await httpPost('echo', []);
   if (res.isOk) {
     print('Had running');
   } else {
@@ -42,9 +40,7 @@ void main() {
         }),
         ChangeNotifierProvider(create: (_) => AccountProvider()),
         ChangeNotifierProvider(create: (_) => DeviceProvider()),
-        ChangeNotifierProvider(create: (_) => ChatProvider()),
         ChangeNotifierProvider(create: (_) => AssistantProvider()),
-        ChangeNotifierProvider(create: (_) => GroupChatProvider()),
       ],
       child: MyApp(),
   ));

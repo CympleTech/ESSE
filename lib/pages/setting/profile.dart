@@ -252,7 +252,7 @@ class _ProfileDetailState extends State<ProfileDetail> {
       title,
       SetPinWords(callback: (lock2) async {
           Navigator.of(context).pop();
-          final res = await httpPost(Global.httpRpc, 'account-pin', [lock, lock2]);
+          final res = await httpPost('account-pin', [lock, lock2]);
           if (res.isOk) {
             Provider.of<AccountProvider>(context, listen: false).accountPin(res.params[0]);
           } else {
@@ -265,7 +265,7 @@ class _ProfileDetailState extends State<ProfileDetail> {
   }
 
   _showMnemonic(String id, String lock) async {
-    final res = await httpPost(Global.httpRpc, 'account-mnemonic', [lock]);
+    final res = await httpPost('account-mnemonic', [lock]);
     if (res.isOk) {
       final words = res.params[0];
       _mnemoicWords = words.split(' ');

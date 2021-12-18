@@ -1,6 +1,59 @@
+import 'package:flutter/material.dart';
+import 'package:esse/l10n/localizations.dart';
 import 'package:esse/utils/relative_time.dart';
 import 'package:esse/global.dart';
-import 'package:esse/apps/group_chat/models.dart' show GroupType, GroupTypeExtension;
+
+enum GroupType {
+  Tmp,
+  Open,
+  Private,
+  Encrypted,
+}
+
+extension GroupTypeExtension on GroupType {
+  int toInt() {
+    switch (this) {
+      case GroupType.Tmp:
+        return 0;
+      case GroupType.Open:
+        return 1;
+      case GroupType.Private:
+        return 2;
+      case GroupType.Encrypted:
+        return 3;
+      default:
+        return 0;
+    }
+  }
+
+  String lang(AppLocalizations lang) {
+    switch (this) {
+      case GroupType.Encrypted:
+        return lang.groupTypeEncrypted;
+      case GroupType.Private:
+        return lang.groupTypePrivate;
+      case GroupType.Open:
+        return lang.groupTypeOpen;
+      case GroupType.Tmp:
+        return lang.groupChat;
+    }
+  }
+
+  static GroupType fromInt(int s) {
+    switch (s) {
+      case 0:
+        return GroupType.Tmp;
+      case 1:
+        return GroupType.Open;
+      case 2:
+        return GroupType.Private;
+      case 3:
+        return GroupType.Encrypted;
+      default:
+        return GroupType.Tmp;
+    }
+  }
+}
 
 enum MessageType {
   String,
@@ -95,7 +148,7 @@ class BaseMessage {
   }
 
   List showInvite() {
-    var type = GroupType.Open;
+    //var type = GroupType.Open;
     var gid = '';
     var addr = '';
     var name = '';
@@ -104,7 +157,7 @@ class BaseMessage {
 
     final iType = this.content.indexOf(';;');
     if (iType > 0) {
-      type = GroupTypeExtension.fromInt(int.parse(this.content.substring(0, iType)));
+      //type = GroupTypeExtension.fromInt(int.parse(this.content.substring(0, iType)));
     }
 
     final raw_0 = this.content.substring(iType + 2);
@@ -168,4 +221,19 @@ class BaseMessage {
         return this.content;
     }
   }
+}
+
+PopupMenuEntry<int> menuItem(Color color, int value, IconData icon, String text) {
+  return PopupMenuItem<int>(
+    value: value,
+    child: Row(
+      children: [
+        Icon(icon, color: color),
+        Padding(
+          padding: const EdgeInsets.only(left: 20.0, right: 10.0),
+          child: Text(text, style: TextStyle(color: Colors.black, fontSize: 16.0)),
+        )
+      ]
+    ),
+  );
 }

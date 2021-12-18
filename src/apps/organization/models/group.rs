@@ -8,7 +8,7 @@ use tdn::types::{
 };
 use tdn_storage::local::{DStorage, DsValue};
 
-use group_chat_types::{GroupInfo, GroupType};
+use group_types::{GroupInfo, GroupType};
 
 use crate::session::{Session, SessionType};
 use crate::storage::write_avatar_sync;

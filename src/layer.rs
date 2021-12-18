@@ -10,7 +10,7 @@ use tdn::types::{
 use tokio::sync::RwLock;
 
 use crate::apps::chat::chat_conn;
-use crate::apps::group_chat::{group_chat_conn, GROUP_ID};
+use crate::apps::group::{group_conn, GROUP_ID};
 use crate::group::Group;
 use crate::session::{Session, SessionType};
 use crate::storage::session_db;
@@ -140,7 +140,7 @@ impl Layer {
                     }
                     SessionType::Group => {
                         let proof = group_lock.prove_addr(mgid, &s.addr)?;
-                        vecs.push((GROUP_ID, group_chat_conn(proof, Peer::peer(s.addr), s.gid)));
+                        vecs.push((GROUP_ID, group_conn(proof, Peer::peer(s.addr), s.gid)));
                     }
                     _ => {}
                 }

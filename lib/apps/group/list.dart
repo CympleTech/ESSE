@@ -5,76 +5,43 @@ import 'package:esse/utils/adaptive.dart';
 import 'package:esse/l10n/localizations.dart';
 import 'package:esse/provider.dart';
 import 'package:esse/session.dart';
-import 'package:esse/rpc.dart';
 
-import 'package:esse/apps/chat/models.dart';
-import 'package:esse/apps/chat/detail.dart';
-import 'package:esse/apps/chat/add.dart';
+import 'package:esse/apps/group/detail.dart';
+import 'package:esse/apps/group/models.dart';
 
-class ChatList extends StatefulWidget {
-  const ChatList({Key? key}) : super(key: key);
+class GroupChatList extends StatefulWidget {
+  const GroupChatList({Key? key}) : super(key: key);
 
   @override
-  _ChatListState createState() => _ChatListState();
+  _GroupChatListState createState() => _GroupChatListState();
 }
 
-class _ChatListState extends State<ChatList> {
-  List<Friend> _friends = [];
-
-  @override
-  void initState() {
-    super.initState();
-    _loadFriends();
-  }
-
-  _loadFriends() async {
-    this._friends.clear();
-    final res = await httpPost('chat-friend-list', []);
-    if (res.isOk) {
-      print(res.params);
-      res.params.forEach((params) {
-          this._friends.add(Friend.fromList(params));
-      });
-      setState(() {});
-    } else {
-      print(res.error);
-    }
-  }
-
+class _GroupChatListState extends State<GroupChatList> {
   @override
   Widget build(BuildContext context) {
-    final isDesktop = isDisplayDesktop(context);
+    //final color = Theme.of(context).colorScheme;
     final lang = AppLocalizations.of(context);
+    final isDesktop = isDisplayDesktop(context);
+    //final provider = context.watch<GroupChatProvider>();
+    final orderKeys = []; //provider.orderKeys;
+    final groups = []; //provider.groups;
 
     return Scaffold(
-      appBar: AppBar(title: Text(lang.contact)),
+      appBar: AppBar(title: Text(lang.groupChat)),
       body: Padding(
         padding: const EdgeInsets.symmetric(vertical: 10.0),
         child: ListView.builder(
-          itemCount: this._friends.length,
-          itemBuilder: (BuildContext ctx, int index) => ListChat(friend: this._friends[index]),
+          itemCount: orderKeys.length,
+          itemBuilder: (BuildContext ctx, int index) => ListChat(group: groups[orderKeys[index]]!),
         )
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          final widget = ChatAdd();
-          if (isDesktop) {
-            Provider.of<AccountProvider>(context, listen: false).updateActivedWidget(widget);
-          } else {
-            Navigator.push(context, MaterialPageRoute(builder: (_) => widget));
-          }
-        },
-        child: const Icon(Icons.add, color: Colors.white),
-        backgroundColor: Color(0xFF6174FF),
       ),
     );
   }
 }
 
-
 class ListChat extends StatelessWidget {
-  final Friend friend;
-  const ListChat({Key? key, required this.friend}) : super(key: key);
+  final GroupChat group;
+  const ListChat({Key? key, required this.group}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -85,8 +52,9 @@ class ListChat extends StatelessWidget {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () {
-        context.read<AccountProvider>().updateActivedSession(0, SessionType.Chat, friend.id);
-        final widget = ChatDetail(id: friend.id);
+        context.read<AccountProvider>().updateActivedSession(0, SessionType.Group, group.id);
+        //context.read<GroupChatProvider>().updateActivedGroup(group.id);
+        final widget = GroupChatDetail(id: group.id);
         if (!isDesktop) {
           Navigator.push(context, MaterialPageRoute(builder: (_) => widget));
         } else {
@@ -101,7 +69,7 @@ class ListChat extends StatelessWidget {
               width: 45.0,
               height: 45.0,
               margin: const EdgeInsets.only(left: 20.0, right: 15.0),
-              child: friend.showAvatar(),
+              child: group.showAvatar(),
             ),
             Expanded(
               child: Container(
@@ -111,14 +79,15 @@ class ListChat extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Expanded(
-                          child: Text(friend.name,
+                          child: Text(group.name,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(fontSize: 16.0)),
+                            style: TextStyle(fontSize: 16.0))
                         ),
-                        if (this.friend.isClosed)
+                        if (group.isClosed)
                         Container(
                           margin: const EdgeInsets.only(left: 15.0, right: 20.0),
                           child: Text(lang.closed,

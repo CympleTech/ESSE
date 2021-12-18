@@ -7,7 +7,7 @@ use tdn::types::{
 };
 use tokio::sync::RwLock;
 
-use group_chat_types::{
+use group_types::{
     CheckType, ConnectProof, Event, GroupType, JoinProof, LayerConnect, LayerEvent, LayerResult,
     PackedEvent,
 };
@@ -19,7 +19,7 @@ use crate::layer::{Layer, Online};
 use crate::rpc::{session_connect, session_create, session_last, session_lost, session_suspend};
 use crate::session::{connect_session, Session, SessionType};
 use crate::storage::{
-    chat_db, delete_avatar, group_chat_db, read_avatar, session_db, write_avatar, write_avatar_sync,
+    chat_db, delete_avatar, group_db, read_avatar, session_db, write_avatar, write_avatar_sync,
 };
 
 use super::models::{
@@ -58,7 +58,7 @@ pub(crate) async fn handle(
             match connect {
                 ConnectProof::Common(_proof) => {
                     // check is member.
-                    let db = group_chat_db(&layer.read().await.base, &ogid)?;
+                    let db = group_db(&layer.read().await.base, &ogid)?;
 
                     if let Ok((mid, _)) = Member::get_id(&db, &id, &fgid) {
                         let res = LayerResult(gcd, height);
@@ -151,7 +151,7 @@ fn handle_connect(
     let LayerResult(gcd, height) = bincode::deserialize(&data)?;
 
     // 1. check group.
-    let db = group_chat_db(layer.base(), &ogid)?;
+    let db = group_db(layer.base(), &ogid)?;
     if let Some(group) = GroupChat::get(&db, &gcd)? {
         // 1.0 check address.
         if group.g_addr != addr.id {
@@ -216,7 +216,7 @@ async fn handle_event(
         if is_server {
             let (ogid, height, id) = layer.read().await.running(gcd)?.owner_height_id();
             println!("--- DEBUG server:--- online info ok");
-            let db = group_chat_db(&base, &ogid)?;
+            let db = group_db(&base, &ogid)?;
             println!("--- DEBUG server:--- db ok");
             (0, db, id, height, ogid, fgid)
         } else {
@@ -230,13 +230,13 @@ async fn handle_event(
             };
             println!("--- DEBUG client:--- online info ok");
 
-            let db = group_chat_db(&base, &tgid)?;
+            let db = group_db(&base, &tgid)?;
             println!("--- DEBUG client:--- db ok");
             (sid, db, id, 0, tgid, *gcd)
         }
     } else {
         println!("--- DEBUG --- no group id");
-        let db = group_chat_db(&base, &tgid)?;
+        let db = group_db(&base, &tgid)?;
         (0, db, 0, 0, tgid, fgid)
     };
     println!("Handle variable statement ok.");
@@ -356,7 +356,7 @@ async fn handle_event(
                 .read()
                 .await
                 .prove_addr(&ogid, &addr)?;
-            add_layer(results, ogid, group_chat_conn(proof, Peer::peer(addr), gcd));
+            add_layer(results, ogid, group_conn(proof, Peer::peer(addr), gcd));
         }
         LayerEvent::Reject(gcd, efficacy) => {
             // only client handle it.
@@ -679,7 +679,7 @@ async fn broadcast(
     Ok(())
 }
 
-pub(crate) fn group_chat_conn(proof: Proof, addr: Peer, gid: GroupId) -> SendType {
+pub(crate) fn group_conn(proof: Proof, addr: Peer, gid: GroupId) -> SendType {
     let data =
         bincode::serialize(&LayerConnect(gid, ConnectProof::Common(proof))).unwrap_or(vec![]);
     SendType::Connect(0, addr, data)

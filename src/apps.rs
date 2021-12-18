@@ -12,10 +12,12 @@ use crate::rpc::RpcState;
 
 pub(crate) mod assistant;
 pub(crate) mod chat;
+pub(crate) mod cloud;
 pub(crate) mod device;
 pub(crate) mod domain;
 pub(crate) mod file;
-pub(crate) mod group_chat;
+pub(crate) mod group;
+//pub(crate) mod organization;
 pub(crate) mod wallet;
 
 pub(crate) fn app_rpc_inject(handler: &mut RpcHandler<RpcState>) {
@@ -24,8 +26,10 @@ pub(crate) fn app_rpc_inject(handler: &mut RpcHandler<RpcState>) {
     assistant::new_rpc_handler(handler);
     domain::new_rpc_handler(handler);
     file::new_rpc_handler(handler);
-    group_chat::new_rpc_handler(handler);
+    group::new_rpc_handler(handler);
     wallet::new_rpc_handler(handler);
+    //organization::new_rpc_handler(handler);
+    cloud::new_rpc_handler(handler);
 }
 
 pub(crate) async fn app_layer_handle(
@@ -36,10 +40,12 @@ pub(crate) async fn app_layer_handle(
 ) -> Result<HandleResult> {
     println!("Handle Sync: fgid: {:?}, mgid: {:?}", fgid, mgid);
     match (fgid, mgid) {
-        (group_chat::GROUP_ID, _) => group_chat::layer_handle(layer, fgid, mgid, false, msg).await,
-        (_, group_chat::GROUP_ID) => group_chat::layer_handle(layer, fgid, mgid, true, msg).await,
-        (domain::GROUP_ID, _) => domain::layer_handle(layer, mgid, msg).await,
-        _ => chat::layer_handle(layer, fgid, mgid, msg).await,
+        (group::GROUP_ID, _) => group::handle_peer(layer, mgid, msg).await,
+        (_, group::GROUP_ID) => group::handle_server(layer, fgid, msg).await,
+        //(organization::GROUP_ID, _) => organization::handle(layer, fgid, mgid, false, msg).await,
+        (domain::GROUP_ID, _) => domain::handle(layer, mgid, msg).await,
+        (cloud::GROUP_ID, _) => cloud::handle(layer, mgid, msg).await,
+        _ => chat::handle(layer, fgid, mgid, msg).await,
     }
 }
 
