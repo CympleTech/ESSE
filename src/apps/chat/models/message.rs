@@ -9,10 +9,9 @@ use tdn_storage::local::{DStorage, DsValue};
 
 use chat_types::{MessageType, NetworkMessage};
 
-use crate::storage::{
-    read_avatar_sync, read_file_sync, read_image_sync, read_record_sync, write_avatar_sync,
-    write_file_sync, write_image_sync, write_record_sync,
-};
+use crate::storage::{read_avatar_sync, read_file_sync, read_image_sync, read_record_sync};
+
+use super::from_network_message;
 
 pub(crate) fn handle_nmsg(
     nmsg: NetworkMessage,
@@ -24,40 +23,7 @@ pub(crate) fn handle_nmsg(
     hash: EventId,
 ) -> Result<(Message, String)> {
     // handle event.
-    let (m_type, raw) = match nmsg {
-        NetworkMessage::String(content) => (MessageType::String, content),
-        NetworkMessage::Image(bytes) => {
-            let image_name = write_image_sync(base, &gid, bytes)?;
-            (MessageType::Image, image_name)
-        }
-        NetworkMessage::File(old_name, bytes) => {
-            let filename = write_file_sync(base, &gid, &old_name, bytes)?;
-            (MessageType::File, filename)
-        }
-        NetworkMessage::Contact(name, rgid, addr, avatar_bytes) => {
-            write_avatar_sync(base, &gid, &rgid, avatar_bytes)?;
-            let tmp_name = name.replace(";", "-;");
-            let contact_values = format!("{};;{};;{}", tmp_name, rgid.to_hex(), addr.to_hex());
-            (MessageType::Contact, contact_values)
-        }
-        NetworkMessage::Emoji => {
-            // TODO
-            (MessageType::Emoji, "".to_owned())
-        }
-        NetworkMessage::Record(bytes, time) => {
-            let record_name = write_record_sync(base, &gid, fid, time, bytes)?;
-            (MessageType::Record, record_name)
-        }
-        NetworkMessage::Phone => {
-            // TODO
-            (MessageType::Phone, "".to_owned())
-        }
-        NetworkMessage::Video => {
-            // TODO
-            (MessageType::Video, "".to_owned())
-        }
-        NetworkMessage::Invite(content) => (MessageType::Invite, content),
-    };
+    let (m_type, raw) = from_network_message(nmsg, base, &gid)?;
 
     let scontent = match m_type {
         MessageType::String => {
@@ -72,7 +38,7 @@ pub(crate) fn handle_nmsg(
     Ok((msg, scontent))
 }
 
-pub fn from_model(base: &PathBuf, gid: &GroupId, model: Message) -> Result<NetworkMessage> {
+pub(crate) fn from_model(base: &PathBuf, gid: &GroupId, model: Message) -> Result<NetworkMessage> {
     // handle message's type.
     match model.m_type {
         MessageType::String => Ok(NetworkMessage::String(model.content)),

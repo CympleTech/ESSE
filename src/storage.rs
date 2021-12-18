@@ -295,7 +295,6 @@ pub(crate) fn read_record_sync(base: &PathBuf, gid: &GroupId, name: &str) -> Res
 pub(crate) fn write_record_sync(
     base: &PathBuf,
     gid: &GroupId,
-    fid: i64,
     t: u32,
     bytes: Vec<u8>,
 ) -> Result<String> {
@@ -308,10 +307,10 @@ pub(crate) fn write_record_sync(
     let mut path = base.clone();
     path.push(gid.to_hex());
     path.push(RECORD_DIR);
-    path.push(format!("{}_{}.m4a", fid, datetime));
+    path.push(format!("{}.m4a", datetime));
     tokio::spawn(async move { fs::write(path, bytes).await });
 
-    Ok(format!("{}-{}_{}.m4a", t, fid, datetime))
+    Ok(format!("{}_{}.m4a", t, datetime))
 }
 
 pub(crate) async fn _delete_record(base: &PathBuf, gid: &GroupId, name: &str) -> Result<()> {

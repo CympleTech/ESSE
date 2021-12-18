@@ -223,7 +223,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
                     gid,
                     fid,
                     MessageType::Invite,
-                    contact_values,
+                    &contact_values,
                 )
                 .await?;
                 let event = crate::apps::chat::LayerEvent::Message(msg.hash, nw);

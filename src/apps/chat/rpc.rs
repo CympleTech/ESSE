@@ -440,7 +440,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             let fid = params[0].as_i64().ok_or(RpcError::ParseError)?;
             let fgid = GroupId::from_hex(params[1].as_str().ok_or(RpcError::ParseError)?)?;
             let m_type = MessageType::from_int(params[2].as_i64().ok_or(RpcError::ParseError)?);
-            let content = params[3].as_str().ok_or(RpcError::ParseError)?.to_string();
+            let content = params[3].as_str().ok_or(RpcError::ParseError)?;
 
             let mut layer_lock = state.layer.write().await;
             let base = layer_lock.base();

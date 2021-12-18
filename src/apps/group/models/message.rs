@@ -9,11 +9,8 @@ use tdn_storage::local::{DStorage, DsValue};
 
 use chat_types::{MessageType, NetworkMessage};
 
-use crate::apps::chat::Friend;
-use crate::storage::{
-    chat_db, group_db, read_avatar, read_file, read_record, write_avatar_sync, write_file_sync,
-    write_image_sync, write_record_sync,
-};
+use crate::apps::chat::{from_network_message, raw_to_network_message};
+use crate::storage::group_db;
 
 use super::Member;
 
@@ -168,59 +165,11 @@ pub(crate) async fn to_network_message(
         .map(|s| s.as_secs())
         .unwrap_or(0) as i64; // safe for all life.
 
-    let nmsg = match mtype {
-        MessageType::String => NetworkMessage::String(content.to_owned()),
-        MessageType::Image => {
-            let bytes = read_file(&PathBuf::from(content)).await?;
-            NetworkMessage::Image(bytes)
-        }
-        MessageType::File => {
-            let file_path = PathBuf::from(content);
-            let bytes = read_file(&file_path).await?;
-            let old_name = file_path
-                .file_name()
-                .and_then(|s| s.to_str())
-                .unwrap_or("")
-                .to_owned();
-            NetworkMessage::File(old_name, bytes)
-        }
-        MessageType::Contact => {
-            let cid: i64 = content.parse()?;
-            let db = chat_db(base, gid)?;
-            let contact = Friend::get_id(&db, cid)?.ok_or(anyhow!("contact missind"))?;
-            drop(db);
-            let avatar_bytes = read_avatar(base, &gid, &contact.gid).await?;
-            NetworkMessage::Contact(contact.name, contact.gid, contact.addr, avatar_bytes)
-        }
-        MessageType::Record => {
-            let (bytes, time) = if let Some(i) = content.find('-') {
-                let time = content[0..i].parse().unwrap_or(0);
-                let bytes = read_record(base, &gid, &content[i + 1..]).await?;
-                (bytes, time)
-            } else {
-                (vec![], 0)
-            };
-            NetworkMessage::Record(bytes, time)
-        }
-        MessageType::Emoji => {
-            // TODO
-            NetworkMessage::Emoji
-        }
-        MessageType::Phone => {
-            // TODO
-            NetworkMessage::Phone
-        }
-        MessageType::Video => {
-            // TODO
-            NetworkMessage::Video
-        }
-        MessageType::Invite => NetworkMessage::Invite(content.to_owned()),
-    };
-
+    let (nmsg, _raw) = raw_to_network_message(base, gid, &mtype, content).await?;
     Ok((nmsg, datetime))
 }
 
-pub(crate) fn from_network_message(
+pub(crate) fn handle_network_message(
     height: i64,
     gdid: i64,
     mid: GroupId,
@@ -233,40 +182,7 @@ pub(crate) fn from_network_message(
     let mdid = Member::get_id(&db, &gdid, &mid)?;
     let is_me = &mid == mgid;
 
-    // handle event.
-    let (m_type, raw) = match msg {
-        NetworkMessage::String(content) => (MessageType::String, content),
-        NetworkMessage::Image(bytes) => {
-            let image_name = write_image_sync(base, mgid, bytes)?;
-            (MessageType::Image, image_name)
-        }
-        NetworkMessage::File(old_name, bytes) => {
-            let filename = write_file_sync(base, mgid, &old_name, bytes)?;
-            (MessageType::File, filename)
-        }
-        NetworkMessage::Contact(name, rgid, addr, avatar_bytes) => {
-            write_avatar_sync(base, mgid, &rgid, avatar_bytes)?;
-            let tmp_name = name.replace(";", "-;");
-            let contact_values = format!("{};;{};;{}", tmp_name, rgid.to_hex(), addr.to_hex());
-            (MessageType::Contact, contact_values)
-        }
-        NetworkMessage::Emoji => {
-            // TODO
-            (MessageType::Emoji, "".to_owned())
-        }
-        NetworkMessage::Record(bytes, time) => {
-            let record_name = write_record_sync(base, mgid, gdid, time, bytes)?;
-            (MessageType::Record, record_name)
-        }
-        NetworkMessage::Phone => {
-            // TODO
-            (MessageType::Phone, "".to_owned())
-        }
-        NetworkMessage::Video => {
-            // TODO
-            (MessageType::Video, "".to_owned())
-        }
-    };
+    let (m_type, raw) = from_network_message(msg, base, mgid)?;
 
     let scontent = match m_type {
         MessageType::String => {

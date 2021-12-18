@@ -23,7 +23,7 @@ use crate::storage::{
     write_image,
 };
 
-use super::models::{handle_nmsg, Friend, Message, Request};
+use super::models::{handle_nmsg, raw_to_network_message, Friend, Message, Request};
 use super::rpc;
 
 /// ESSE chat layer Event.
@@ -379,69 +379,12 @@ impl LayerEvent {
         mgid: GroupId,
         fid: i64,
         m_type: MessageType,
-        content: String,
+        content: &str,
     ) -> std::result::Result<(Message, NetworkMessage, String), tdn::types::rpc::RpcError> {
         let db = chat_db(&base, &mgid)?;
 
         // handle message's type.
-        let (nm_type, raw) = match m_type {
-            MessageType::String => (NetworkMessage::String(content.clone()), content),
-            MessageType::Image => {
-                let bytes = read_file(&PathBuf::from(content)).await?;
-                let image_name = write_image(base, &mgid, &bytes).await?;
-                (NetworkMessage::Image(bytes), image_name)
-            }
-            MessageType::File => {
-                let file_path = PathBuf::from(content);
-                let bytes = read_file(&file_path).await?;
-                let old_name = file_path
-                    .file_name()
-                    .ok_or(RpcError::ParseError)?
-                    .to_str()
-                    .ok_or(RpcError::ParseError)?;
-                let filename = write_file(base, &mgid, old_name, &bytes).await?;
-                (NetworkMessage::File(filename.clone(), bytes), filename)
-            }
-            MessageType::Contact => {
-                let cid: i64 = content.parse().map_err(|_| anyhow!("parse i64 failure!"))?;
-                let contact = Friend::get_id(&db, cid)?.ok_or(RpcError::ParseError)?;
-                let avatar_bytes = read_avatar(base, &mgid, &contact.gid).await?;
-                let tmp_name = contact.name.replace(";", "-;");
-                let contact_values = format!(
-                    "{};;{};;{}",
-                    tmp_name,
-                    contact.gid.to_hex(),
-                    contact.addr.to_hex()
-                );
-                (
-                    NetworkMessage::Contact(contact.name, contact.gid, contact.addr, avatar_bytes),
-                    contact_values,
-                )
-            }
-            MessageType::Record => {
-                let (bytes, time) = if let Some(i) = content.find('-') {
-                    let time = content[0..i].parse().unwrap_or(0);
-                    let bytes = read_record(base, &mgid, &content[i + 1..]).await?;
-                    (bytes, time)
-                } else {
-                    (vec![], 0)
-                };
-                (NetworkMessage::Record(bytes, time), content)
-            }
-            MessageType::Emoji => {
-                // TODO
-                (NetworkMessage::Emoji, content)
-            }
-            MessageType::Phone => {
-                // TODO
-                (NetworkMessage::Phone, content)
-            }
-            MessageType::Video => {
-                // TODO
-                (NetworkMessage::Video, content)
-            }
-            MessageType::Invite => (NetworkMessage::Invite(content.clone()), content),
-        };
+        let (nm_type, raw) = raw_to_network_message(base, &mgid, &m_type, content).await?;
 
         let scontent = match m_type {
             MessageType::String => {

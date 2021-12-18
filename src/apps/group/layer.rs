@@ -15,7 +15,7 @@ use crate::rpc::{session_close, session_connect, session_last, session_lost, ses
 use crate::session::{connect_session, Session, SessionType};
 use crate::storage::{chat_db, delete_avatar, group_db, session_db, write_avatar_sync};
 
-use super::models::{from_network_message, GroupChat, Member};
+use super::models::{handle_network_message, GroupChat, Member};
 use super::{add_layer, add_server_layer, rpc};
 
 // variable statement:
@@ -293,7 +293,7 @@ async fn handle_server_event(
                     GroupChat::add_height(&db, id, new_h)?;
 
                     let (msg, scontent) =
-                        from_network_message(new_h, id, mgid, &ogid, nmsg, mtime, &base)?;
+                        handle_network_message(new_h, id, mgid, &ogid, nmsg, mtime, &base)?;
                     results.rpcs.push(rpc::message_create(ogid, &msg));
                     println!("Sync: create message ok");
 
@@ -477,7 +477,7 @@ async fn handle_peer_event(
                     let mdid = Member::get_id(&db, &id, &mgid)?;
 
                     let (msg, scontent) =
-                        from_network_message(height, id, mgid, &ogid, nmsg, mtime, &base)?;
+                        handle_network_message(height, id, mgid, &ogid, nmsg, mtime, &base)?;
                     results.rpcs.push(rpc::message_create(ogid, &msg));
 
                     GroupChat::add_height(&db, id, height)?;
@@ -522,7 +522,7 @@ async fn handle_peer_event(
 
             for (height, mgid, nm, time) in adds {
                 let (msg, scontent) =
-                    from_network_message(height, id, mgid, &ogid, nm, time, &base)?;
+                    handle_network_message(height, id, mgid, &ogid, nm, time, &base)?;
                 results.rpcs.push(rpc::message_create(ogid, &msg));
                 last_scontent = scontent;
                 last_time = time;

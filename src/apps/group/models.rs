@@ -6,4 +6,4 @@ mod message;
 pub(crate) use group::GroupChat;
 pub(crate) use member::Member;
 pub(crate) use message::Message;
-pub(crate) use message::{from_network_message, to_network_message};
+pub(crate) use message::{handle_network_message, to_network_message};
