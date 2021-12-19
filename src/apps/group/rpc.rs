@@ -9,11 +9,11 @@ use tdn::types::{
 use chat_types::MessageType;
 use group_types::{Event, LayerEvent};
 
-use crate::apps::chat::Friend;
+use crate::apps::chat::{Friend, InviteType};
 use crate::layer::Online;
 use crate::rpc::{session_create, session_delete, session_last, RpcState};
 use crate::session::{Session, SessionType};
-use crate::storage::{chat_db, group_db, session_db, write_avatar};
+use crate::storage::{chat_db, group_db, read_avatar, session_db, write_avatar};
 
 use super::layer::{broadcast, update_session};
 use super::models::{to_network_message, GroupChat, Member, Message};
@@ -176,13 +176,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             let gcd = g.g_id;
             let mut results = HandleResult::new();
 
-            let tmp_name = g.g_name.replace(";", "-;");
-            let contact_values = format!(
-                "group;;{};;{};;{}",
-                gcd.to_hex(),
-                g.g_addr.to_hex(),
-                tmp_name
-            );
+            let contact_values = InviteType::Group(gcd, g.g_addr, g.g_name).serialize();
 
             let (msg, nw, sc) = crate::apps::chat::LayerEvent::from_message(
                 &base,
@@ -205,6 +199,33 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
                 results
                     .rpcs
                     .push(session_last(gid, &id, &msg.datetime, &sc, false));
+            }
+
+            let avatar = read_avatar(&base, &gid, &f.gid).await.unwrap_or(vec![]);
+            let event = Event::MemberJoin(f.gid, f.addr, f.name.clone(), avatar);
+
+            if g.local {
+                // local save.
+                let new_h = state.layer.write().await.running_mut(&gcd)?.increased();
+
+                let mut mem = Member::new(new_h, g.id, f.gid, f.addr, f.name);
+                mem.insert(&group_db)?;
+                results.rpcs.push(mem.to_rpc());
+                GroupChat::add_height(&group_db, id, new_h)?;
+
+                // broadcast.
+                broadcast(
+                    &LayerEvent::Sync(gcd, new_h, event),
+                    &state.layer,
+                    &gcd,
+                    &mut results,
+                )
+                .await?;
+            } else {
+                // send to server.
+                let data = bincode::serialize(&LayerEvent::Sync(gcd, 0, event))?;
+                let msg = SendType::Event(0, g.g_addr, data);
+                add_layer(&mut results, gid, msg);
             }
 
             Ok(results)

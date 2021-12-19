@@ -296,8 +296,16 @@ impl LayerEvent {
                 let (_sid, fid) = layer.get_running_remote_id(&mgid, &fgid)?;
                 let db = chat_db(&layer.base, &mgid)?;
                 if !Message::exist(&db, &hash)? {
-                    let (msg, scontent) =
-                        handle_nmsg(m.clone(), false, mgid, &layer.base, &db, fid, hash)?;
+                    let msg = handle_nmsg(
+                        m.clone(),
+                        false,
+                        mgid,
+                        &layer.base,
+                        &db,
+                        fid,
+                        hash,
+                        &mut results,
+                    )?;
                     layer.group.write().await.broadcast(
                         &mgid,
                         InnerEvent::SessionMessageCreate(fgid, false, hash, m),
@@ -308,19 +316,7 @@ impl LayerEvent {
                     results.rpcs.push(rpc::message_create(mgid, &msg));
 
                     // UPDATE SESSION.
-                    let s_db = session_db(&layer.base, &mgid)?;
-                    if let Ok(id) = Session::last(
-                        &s_db,
-                        &fid,
-                        &SessionType::Chat,
-                        &msg.datetime,
-                        &scontent,
-                        true,
-                    ) {
-                        results
-                            .rpcs
-                            .push(session_last(mgid, &id, &msg.datetime, &scontent, false));
-                    }
+                    update_session(&layer.base, &mgid, &fid, &msg, &mut results);
                 }
             }
             LayerEvent::Info(remote) => {
@@ -458,4 +454,35 @@ pub(super) fn agree_message(proof: Proof, me: User, addr: PeerId) -> Result<Send
 // maybe need if gid or addr in blocklist.
 fn _res_reject() -> Vec<u8> {
     bincode::serialize(&LayerEvent::Reject).unwrap_or(vec![])
+}
+
+// UPDATE SESSION.
+pub(crate) fn update_session(
+    base: &PathBuf,
+    gid: &GroupId,
+    id: &i64,
+    msg: &Message,
+    results: &mut HandleResult,
+) {
+    let scontent = match msg.m_type {
+        MessageType::String => {
+            format!("{}:{}", msg.m_type.to_int(), msg.content)
+        }
+        _ => format!("{}:", msg.m_type.to_int()),
+    };
+
+    if let Ok(s_db) = session_db(base, gid) {
+        if let Ok(sid) = Session::last(
+            &s_db,
+            id,
+            &SessionType::Chat,
+            &msg.datetime,
+            &scontent,
+            true,
+        ) {
+            results
+                .rpcs
+                .push(session_last(*gid, &sid, &msg.datetime, &scontent, false));
+        }
+    }
 }

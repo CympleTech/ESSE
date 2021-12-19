@@ -44,7 +44,7 @@ impl GroupChat {
         }
     }
 
-    fn _new_from(g_id: GroupId, height: i64, g_addr: PeerId, g_name: String) -> Self {
+    pub fn from(g_id: GroupId, height: i64, g_addr: PeerId, g_name: String) -> Self {
         Self {
             g_id,
             g_addr,

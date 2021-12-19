@@ -2,7 +2,7 @@ use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
 use tdn::types::{
     group::GroupId,
-    primitive::Result,
+    primitive::{HandleResult, Result},
     rpc::{json, RpcParam},
 };
 use tdn_storage::local::{DStorage, DsValue};
@@ -177,11 +177,12 @@ pub(crate) fn handle_network_message(
     msg: NetworkMessage,
     datetime: i64,
     base: &PathBuf,
+    results: &mut HandleResult,
 ) -> Result<Message> {
     let db = group_db(base, mgid)?;
     let mdid = Member::get_id(&db, &gdid, &mid)?;
     let is_me = &mid == mgid;
-    let (m_type, raw) = from_network_message(msg, base, mgid)?;
+    let (m_type, raw) = from_network_message(msg, base, mgid, results)?;
     let mut msg = Message::new_with_time(height, gdid, mdid, is_me, m_type, raw, datetime);
     msg.insert(&db)?;
     Ok(msg)

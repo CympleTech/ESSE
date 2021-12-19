@@ -1,6 +1,6 @@
 #[rustfmt::skip]
-pub(super) const ORGANIZATION_VERSIONS: [&str; 6] = [
-  "CREATE TABLE IF NOT EXISTS groups(
+pub(super) const ORGANIZATION_VERSIONS: [&str; 8] = [
+  "CREATE TABLE IF NOT EXISTS organizations(
     id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
     height INTEGER NOT NULL,
     owner TEXT NOT NULL,
@@ -14,8 +14,17 @@ pub(super) const ORGANIZATION_VERSIONS: [&str; 6] = [
     is_closed INTEGER NOT NULL,
     key TEXT NOT NULL,
     datetime INTEGER NOT NULL,
-    is_remote INTEGER NOT NULL,
-    is_deleted INTEGER NOT NULL);",
+    is_remote INTEGER NOT NULL);",
+  "CREATE TABLE IF NOT EXISTS categories(
+    id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+    fid INTEGER NOT NULL,
+    name TEXT NOT NULL);",
+  "CREATE TABLE IF NOT EXISTS channels(
+    id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+    fid INTEGER NOT NULL,
+    c_type INTEGER NOT NULL,
+    name TEXT NOT NULL,
+    public INTEGER NOT NULL);",
   "CREATE TABLE IF NOT EXISTS requests(
     id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
     fid INTEGER NOT NULL,
@@ -27,8 +36,7 @@ pub(super) const ORGANIZATION_VERSIONS: [&str; 6] = [
     key TEXT NOT NULL,
     is_ok INTEGER NOT NULL,
     is_over INTEGER NOT NULL,
-    datetime INTEGER NOT NULL,
-    is_deleted INTEGER NOT NULL);",
+    datetime INTEGER NOT NULL);",
   "CREATE TABLE IF NOT EXISTS members(
     id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
     fid INTEGER NOT NULL,
@@ -37,8 +45,7 @@ pub(super) const ORGANIZATION_VERSIONS: [&str; 6] = [
     name TEXT NOT NULL,
     is_manager INTEGER NOT NULL,
     is_block INTEGER NOT NULL,
-    datetime INTEGER NOT NULL,
-    is_deleted INTEGER NOT NULL);",
+    datetime INTEGER NOT NULL);",
   "CREATE TABLE IF NOT EXISTS messages(
     id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
     height INTEGER NOT NULL,
@@ -48,8 +55,7 @@ pub(super) const ORGANIZATION_VERSIONS: [&str; 6] = [
     m_type INTEGER NOT NULL,
     content TEXT NOT NULL,
     is_delivery INTEGER NOT NULL,
-    datetime INTEGER NOT NULL,
-    is_deleted INTEGER NOT NULL);",
+    datetime INTEGER NOT NULL);",
  "CREATE TABLE IF NOT EXISTS consensus(
     id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
     fid INTEGER NOT NULL,

@@ -323,7 +323,7 @@ impl InnerEvent {
                         ));
                     }
 
-                    let (msg, _) = handle_nmsg(m, is_me, gid, group.base(), &db, f.id, hash)?;
+                    let msg = handle_nmsg(m, is_me, gid, group.base(), &db, f.id, hash, results)?;
                     results.rpcs.push(chat_rpc::message_create(gid, &msg));
                     (MESSAGE_TABLE_PATH, msg.id)
                 } else {
@@ -709,9 +709,7 @@ impl SyncEvent {
 
                         // save to db.
                         request.insert(&chat_db)?;
-                        let rid = request.id;
                         results.rpcs.push(chat_rpc::request_create(gid, &request));
-
                         request
                     };
 
@@ -796,7 +794,7 @@ impl SyncEvent {
                     }
 
                     let id = if let Ok(f) = Friend::get_id(&chat_db, &fgid) {
-                        let (msg, _) = handle_nmsg(m, is_me, gid, &base, &chat_db, f.id, eid)?;
+                        let msg = handle_nmsg(m, is_me, gid, &base, &chat_db, f.id, eid, results)?;
                         results.rpcs.push(chat_rpc::message_create(gid, &msg));
                         msg.id
                     } else {

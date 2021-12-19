@@ -55,9 +55,8 @@ impl Device {
     }
 
     /// load account devices.
-    pub fn all(db: &DStorage) -> Result<Vec<Device>> {
-        let matrix = db
-            .query("SELECT id, name, info, addr, lasttime FROM devices where is_deleted = false")?;
+    pub fn list(db: &DStorage) -> Result<Vec<Device>> {
+        let matrix = db.query("SELECT id, name, info, addr, lasttime FROM devices")?;
         let mut devices = vec![];
         for values in matrix {
             if values.len() == 5 {
@@ -68,7 +67,7 @@ impl Device {
     }
 
     pub fn distributes(db: &DStorage) -> Result<HashMap<PeerId, (Peer, i64, bool)>> {
-        let matrix = db.query("SELECT id, addr FROM devices where is_deleted = false")?;
+        let matrix = db.query("SELECT id, addr FROM devices")?;
         let mut devices = HashMap::new();
         for mut values in matrix {
             if values.len() == 2 {
@@ -96,7 +95,7 @@ impl Device {
 
     pub fn insert(&mut self, db: &DStorage) -> Result<()> {
         let sql = format!(
-            "INSERT INTO devices (name, info, addr, lasttime, is_deleted) VALUES ('{}', '{}', '{}', {}, false)",
+            "INSERT INTO devices (name, info, addr, lasttime) VALUES ('{}', '{}', '{}', {})",
             self.name,
             self.info,
             self.addr.to_hex(),
@@ -114,10 +113,7 @@ impl Device {
 
     /// used in rpc, when what to delete a friend.
     pub fn _delete(&self, db: &DStorage) -> Result<usize> {
-        let sql = format!(
-            "UPDATE devices SET is_deleted = true WHERE id = {}",
-            self.id
-        );
+        let sql = format!("DELETE FROM devices WHERE id = {}", self.id);
         db.update(&sql)
     }
 }

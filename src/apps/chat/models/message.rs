@@ -2,7 +2,7 @@ use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
 use tdn::types::{
     group::{EventId, GroupId},
-    primitive::{PeerId, Result},
+    primitive::{HandleResult, PeerId, Result},
     rpc::{json, RpcParam},
 };
 use tdn_storage::local::{DStorage, DsValue};
@@ -21,21 +21,13 @@ pub(crate) fn handle_nmsg(
     db: &DStorage,
     fid: i64,
     hash: EventId,
-) -> Result<(Message, String)> {
+    results: &mut HandleResult,
+) -> Result<Message> {
     // handle event.
-    let (m_type, raw) = from_network_message(nmsg, base, &gid)?;
-
-    let scontent = match m_type {
-        MessageType::String => {
-            format!("{}:{}", m_type.to_int(), raw)
-        }
-        _ => format!("{}:", m_type.to_int()),
-    };
-
+    let (m_type, raw) = from_network_message(nmsg, base, &gid, results)?;
     let mut msg = Message::new_with_id(hash, fid, is_me, m_type, raw, true);
     msg.insert(db)?;
-
-    Ok((msg, scontent))
+    Ok(msg)
 }
 
 pub(crate) fn from_model(base: &PathBuf, gid: &GroupId, model: Message) -> Result<NetworkMessage> {

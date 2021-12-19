@@ -39,13 +39,13 @@ class _GroupAddScreenState extends State<GroupAddScreen> {
     final res = await httpPost('group-create', [name]);
     if (res.isOk) {
       final id = res.params[0];
-      final widget = GroupChatDetail(id: id);
-      if (widget != null) {
+      final w = GroupChatDetail(id: id);
+      if (w != null) {
         if (isDesktop) {
-          Provider.of<AccountProvider>(context, listen: false).updateActivedWidget(widget);
+          Provider.of<AccountProvider>(context, listen: false).updateActivedWidget(w);
           rpc.send('group-member-join', [id, widget.fid]);
         } else {
-          Navigator.push(context, MaterialPageRoute(builder: (_) => widget));
+          Navigator.push(context, MaterialPageRoute(builder: (_) => w));
         }
       }
       Navigator.pop(context);

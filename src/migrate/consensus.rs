@@ -11,8 +11,7 @@ pub(super) const CONSENSUS_VERSIONS: [&str; 9] = [
     name TEXT NOT NULL,
     info TEXT NOT NULL,
     addr TEXT NOT NULL,
-    lasttime INTEGER NOT NULL,
-    is_deleted INTEGER NOT NULL);",
+    lasttime INTEGER NOT NULL);",
   "CREATE TABLE IF NOT EXISTS db_tables(
     id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
     db_name TEXT NOT NULL,

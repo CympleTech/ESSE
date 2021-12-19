@@ -8,17 +8,23 @@ pub(crate) use self::request::Request;
 
 use chat_types::{MessageType, NetworkMessage};
 use std::path::PathBuf;
-use tdn::types::{group::GroupId, primitive::Result};
+use tdn::types::{
+    group::GroupId,
+    primitive::{HandleResult, PeerId, Result},
+};
 
+use crate::apps::group::GroupChat;
+use crate::rpc::session_create;
 use crate::storage::{
-    chat_db, read_avatar, read_file, read_record, write_avatar_sync, write_file, write_file_sync,
-    write_image, write_image_sync, write_record_sync,
+    chat_db, group_db, read_avatar, read_file, read_record, session_db, write_avatar_sync,
+    write_file, write_file_sync, write_image, write_image_sync, write_record_sync,
 };
 
 pub(crate) fn from_network_message(
     nmsg: NetworkMessage,
     base: &PathBuf,
     ogid: &GroupId,
+    results: &mut HandleResult,
 ) -> Result<(MessageType, String)> {
     match nmsg {
         NetworkMessage::String(content) => Ok((MessageType::String, content)),
@@ -44,7 +50,26 @@ pub(crate) fn from_network_message(
             let record_name = write_record_sync(base, ogid, time, bytes)?;
             Ok((MessageType::Record, record_name))
         }
-        NetworkMessage::Invite(content) => Ok((MessageType::Invite, content)),
+        NetworkMessage::Invite(content) => {
+            // check is Tmp group.
+            let itype = InviteType::deserialize(&content)?;
+            match itype {
+                InviteType::Group(gcd, addr, name) => {
+                    // 1 add group chat.
+                    let db = group_db(&base, &ogid)?;
+                    let mut g = GroupChat::from(gcd, 0, addr, name);
+                    g.insert(&db)?;
+
+                    // 2 add new session.
+                    let mut session = g.to_session();
+                    let s_db = session_db(&base, &ogid)?;
+                    session.insert(&s_db)?;
+                    results.rpcs.push(session_create(*ogid, &session));
+                }
+            }
+
+            Ok((MessageType::Invite, content))
+        }
         NetworkMessage::Phone => {
             // TODO
             Ok((MessageType::Phone, "".to_owned()))
@@ -130,11 +155,42 @@ pub(crate) async fn raw_to_network_message(
     }
 }
 
-pub(crate) async fn clear_message(
-    base: &PathBuf,
-    ogid: &GroupId,
-    mtype: &MessageType,
-    content: &str,
+pub(crate) async fn _clear_message(
+    _base: &PathBuf,
+    _ogid: &GroupId,
+    _mtype: &MessageType,
+    _content: &str,
 ) -> Result<()> {
     todo!()
+}
+
+/// Invite types.
+pub(crate) enum InviteType {
+    Group(GroupId, PeerId, String),
+}
+
+impl InviteType {
+    pub fn serialize(&self) -> String {
+        match self {
+            InviteType::Group(gcd, addr, name) => {
+                format!("0;;{};;{};;{}", gcd.to_hex(), addr.to_hex(), name)
+            }
+        }
+    }
+
+    pub fn deserialize(s: &str) -> Result<InviteType> {
+        match &s[0..3] {
+            "0;;" => {
+                if s.len() < 134 {
+                    Err(anyhow!("invite invalid"))
+                } else {
+                    let gcd = GroupId::from_hex(&s[3..67])?;
+                    let addr = PeerId::from_hex(&s[69..133])?;
+                    let name = s[135..].to_owned();
+                    Ok(InviteType::Group(gcd, addr, name))
+                }
+            }
+            _ => Err(anyhow!("invite invalid")),
+        }
+    }
 }

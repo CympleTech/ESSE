@@ -295,7 +295,9 @@ async fn handle_server_event(
                     broadcast(&LayerEvent::Sync(gcd, new_h, new_e), layer, &gcd, results).await?;
                     GroupChat::add_height(&db, id, new_h)?;
 
-                    let msg = handle_network_message(new_h, id, mgid, &ogid, nmsg, mtime, &base)?;
+                    let msg = handle_network_message(
+                        new_h, id, mgid, &ogid, nmsg, mtime, &base, results,
+                    )?;
                     results.rpcs.push(rpc::message_create(ogid, &msg));
                     println!("Sync: create message ok");
 
@@ -466,7 +468,9 @@ async fn handle_peer_event(
                     println!("Sync: create message start");
                     let _mdid = Member::get_id(&db, &id, &mgid)?;
 
-                    let msg = handle_network_message(height, id, mgid, &ogid, nmsg, mtime, &base)?;
+                    let msg = handle_network_message(
+                        height, id, mgid, &ogid, nmsg, mtime, &base, results,
+                    )?;
                     results.rpcs.push(rpc::message_create(ogid, &msg));
 
                     GroupChat::add_height(&db, id, height)?;
@@ -493,7 +497,8 @@ async fn handle_peer_event(
             let mut last_message = None;
 
             for (height, mgid, nm, time) in adds {
-                let msg = handle_network_message(height, id, mgid, &ogid, nm, time, &base)?;
+                let msg =
+                    handle_network_message(height, id, mgid, &ogid, nm, time, &base, results)?;
                 results.rpcs.push(rpc::message_create(ogid, &msg));
                 last_message = Some(msg);
                 from += 1;

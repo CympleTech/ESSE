@@ -71,7 +71,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
         "device-list",
         |gid: GroupId, _params: Vec<RpcParam>, state: Arc<RpcState>| async move {
             let db = consensus_db(state.layer.read().await.base(), &gid)?;
-            let devices = Device::all(&db)?;
+            let devices = Device::list(&db)?;
             drop(db);
             let online_devices = state.group.read().await.online_devices(&gid, devices);
             Ok(HandleResult::rpc(device_list(online_devices)))

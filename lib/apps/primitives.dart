@@ -148,7 +148,7 @@ class BaseMessage {
   }
 
   List showInvite() {
-    //var type = GroupType.Open;
+    var type = GroupType.Tmp;
     var gid = '';
     var addr = '';
     var name = '';
@@ -157,7 +157,7 @@ class BaseMessage {
 
     final iType = this.content.indexOf(';;');
     if (iType > 0) {
-      //type = GroupTypeExtension.fromInt(int.parse(this.content.substring(0, iType)));
+      type = GroupTypeExtension.fromInt(int.parse(this.content.substring(0, iType)));
     }
 
     final raw_0 = this.content.substring(iType + 2);
