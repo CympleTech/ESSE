@@ -107,7 +107,7 @@ impl Request {
     }
 
     pub fn list(db: &DStorage) -> Result<Vec<Request>> {
-        let matrix = db.query("SELECT id, gid, addr, name, remark, is_me, is_ok, is_over, is_delivery, datetime FROM requests WHERE ORDER BY id DESC")?;
+        let matrix = db.query("SELECT id, gid, addr, name, remark, is_me, is_ok, is_over, is_delivery, datetime FROM requests ORDER BY id DESC")?;
         let mut requests = vec![];
         for values in matrix {
             requests.push(Request::from_values(values));

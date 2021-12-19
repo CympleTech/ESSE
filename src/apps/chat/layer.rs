@@ -371,23 +371,14 @@ impl LayerEvent {
         fid: i64,
         m_type: MessageType,
         content: &str,
-    ) -> std::result::Result<(Message, NetworkMessage, String), tdn::types::rpc::RpcError> {
+    ) -> std::result::Result<(Message, NetworkMessage), tdn::types::rpc::RpcError> {
         let db = chat_db(&base, &mgid)?;
-
         // handle message's type.
         let (nm_type, raw) = raw_to_network_message(base, &mgid, &m_type, content).await?;
-
-        let scontent = match m_type {
-            MessageType::String => {
-                format!("{}:{}", m_type.to_int(), raw)
-            }
-            _ => format!("{}:", m_type.to_int()),
-        };
-
         let mut msg = Message::new(&mgid, fid, true, m_type, raw, false);
         msg.insert(&db)?;
         drop(db);
-        Ok((msg, nm_type, scontent))
+        Ok((msg, nm_type))
     }
 }
 

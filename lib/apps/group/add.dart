@@ -38,6 +38,7 @@ class _GroupAddScreenState extends State<GroupAddScreen> {
   _send(String name, bool isDesktop) async {
     final res = await httpPost('group-create', [name]);
     if (res.isOk) {
+      print(res.params);
       final id = res.params[0];
       final w = GroupChatDetail(id: id);
       if (w != null) {

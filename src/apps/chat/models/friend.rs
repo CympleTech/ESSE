@@ -108,7 +108,7 @@ impl Friend {
     }
 
     pub fn get(db: &DStorage, id: &i64) -> Result<Friend> {
-        let sql = format!("SELECT id, gid, addr, name, wallet, remark, is_closed, datetime, is_deleted FROM friends WHERE id = {}", id);
+        let sql = format!("SELECT id, gid, addr, name, wallet, remark, is_closed, datetime FROM friends WHERE id = {}", id);
         let mut matrix = db.query(&sql)?;
         if matrix.len() > 0 {
             Ok(Friend::from_values(matrix.pop().unwrap())) // safe unwrap()

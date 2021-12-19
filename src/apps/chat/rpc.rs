@@ -16,7 +16,7 @@ use crate::rpc::{session_create, session_last, sleep_waiting_close_stable, RpcSt
 use crate::session::{Session, SessionType};
 use crate::storage::{chat_db, delete_avatar, session_db};
 
-use super::layer::LayerEvent;
+use super::layer::{update_session, LayerEvent};
 use super::{Friend, Message, Request};
 
 #[inline]
@@ -436,11 +436,10 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             let content = params[3].as_str().ok_or(RpcError::ParseError)?;
 
             let mut layer_lock = state.layer.write().await;
-            let base = layer_lock.base();
+            let base = layer_lock.base().clone();
             let faddr = layer_lock.running(&gid)?.online(&fgid)?;
 
-            let (msg, nw, scontent) =
-                LayerEvent::from_message(base, gid, fid, m_type, content).await?;
+            let (msg, nw) = LayerEvent::from_message(&base, gid, fid, m_type, content).await?;
             let event = LayerEvent::Message(msg.hash, nw);
             let s = super::layer::event_message(&mut layer_lock, msg.id, gid, faddr, &event);
             drop(layer_lock);
@@ -449,21 +448,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             results.layers.push((gid, fgid, s));
 
             // UPDATE SESSION.
-            let layer_lock = state.layer.read().await;
-            let s_db = session_db(&layer_lock.base, &gid)?;
-            if let Ok(id) = Session::last(
-                &s_db,
-                &fid,
-                &SessionType::Chat,
-                &msg.datetime,
-                &scontent,
-                true,
-            ) {
-                results
-                    .rpcs
-                    .push(session_last(gid, &id, &msg.datetime, &scontent, true));
-            }
-            drop(layer_lock);
+            update_session(&base, &gid, &fid, &msg, &mut results);
 
             match event {
                 LayerEvent::Message(hash, nw) => {

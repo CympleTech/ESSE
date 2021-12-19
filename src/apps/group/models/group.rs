@@ -98,7 +98,7 @@ impl GroupChat {
 
     pub fn local(db: &DStorage) -> Result<Vec<GroupChat>> {
         let matrix = db.query(
-            "SELECT id, height, gcd, addr, name, close, local FROM groups WHERE local = true",
+            "SELECT id, height, gcd, addr, name, is_close, is_local FROM groups WHERE is_local = true",
         )?;
         let mut groups = vec![];
         for values in matrix {
@@ -108,7 +108,8 @@ impl GroupChat {
     }
 
     pub fn all(db: &DStorage) -> Result<Vec<GroupChat>> {
-        let matrix = db.query("SELECT id, height, gcd, addr, name, close, local FROM groups")?;
+        let matrix =
+            db.query("SELECT id, height, gcd, addr, name, is_close, is_local FROM groups")?;
         let mut groups = vec![];
         for values in matrix {
             groups.push(Self::from_values(values));
@@ -118,7 +119,7 @@ impl GroupChat {
 
     pub fn get(db: &DStorage, id: &i64) -> Result<GroupChat> {
         let sql = format!(
-            "SELECT id, height, gcd, addr, name, close, local FROM groups WHERE id = {}",
+            "SELECT id, height, gcd, addr, name, is_close, is_local FROM groups WHERE id = {}",
             id
         );
         let mut matrix = db.query(&sql)?;
@@ -132,7 +133,7 @@ impl GroupChat {
 
     pub fn get_id(db: &DStorage, gid: &GroupId) -> Result<GroupChat> {
         let sql = format!(
-            "SELECT id, height, gcd, addr, name, close, local FROM groups WHERE gcd = '{}'",
+            "SELECT id, height, gcd, addr, name, is_close, is_local FROM groups WHERE gcd = '{}'",
             gid.to_hex()
         );
         let mut matrix = db.query(&sql)?;
@@ -162,12 +163,13 @@ impl GroupChat {
             db.update(&sql)?;
         } else {
             let sql = format!(
-                "INSERT INTO groups (height, gcd, addr, name, close) VALUES ({}, '{}', '{}', '{}', {})",
+                "INSERT INTO groups (height, gcd, addr, name, is_close, is_local) VALUES ({}, '{}', '{}', '{}', {}, {})",
                 self.height,
                 self.g_id.to_hex(),
                 self.g_addr.to_hex(),
                 self.g_name,
                 self.close,
+                self.local,
             );
             let id = db.insert(&sql)?;
             self.id = id;
@@ -182,7 +184,7 @@ impl GroupChat {
 
     pub fn close(db: &DStorage, gcd: &GroupId) -> Result<GroupChat> {
         let group = Self::get_id(db, gcd)?;
-        let sql = format!("UPDATE groups SET close = true WHERE id = {}", group.id);
+        let sql = format!("UPDATE groups SET is_close = true WHERE id = {}", group.id);
         db.update(&sql)?;
         Ok(group)
     }

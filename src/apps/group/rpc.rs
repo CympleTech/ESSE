@@ -1,7 +1,7 @@
 use std::sync::Arc;
 use tdn::types::{
     group::GroupId,
-    message::{NetworkType, SendType},
+    message::{NetworkType, SendMessage, SendType},
     primitive::{HandleResult, PeerId},
     rpc::{json, rpc_response, RpcError, RpcHandler, RpcParam},
 };
@@ -105,9 +105,13 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
         |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
             let name = params[0].as_str().ok_or(RpcError::ParseError)?.to_owned();
 
-            let base = state.layer.read().await.base().clone();
+            let group_lock = state.group.read().await;
+            let base = group_lock.base().clone();
+            let addr = group_lock.addr().clone();
+            let sender = group_lock.sender();
+            let me = group_lock.clone_user(&gid)?;
+            drop(group_lock);
             let db = group_db(&base, &gid)?;
-            let addr = state.layer.read().await.addr.clone();
 
             let mut gc = GroupChat::new(addr, name);
             let gcd = gc.g_id;
@@ -118,7 +122,6 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             let gdid = gc.id;
 
             let mut results = HandleResult::new();
-            let me = state.group.read().await.clone_user(&gid)?;
 
             // add to rpcs.
             results.rpcs.push(json!(gc.to_rpc()));
@@ -129,10 +132,15 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             let _ = write_avatar(&base, &gid, &gid, &me.avatar).await;
 
             // Add new session.
-            let s_db = session_db(state.layer.read().await.base(), &gid)?;
+            let s_db = session_db(&base, &gid)?;
             let mut session = gc.to_session();
             session.insert(&s_db)?;
-            results.rpcs.push(session_create(gid, &session));
+            let sid = session.id;
+            tokio::spawn(async move {
+                let _ = sender
+                    .send(SendMessage::Rpc(0, session_create(gid, &session), true))
+                    .await;
+            });
 
             // Add frist member join.
             let mut layer_lock = state.layer.write().await;
@@ -143,12 +151,9 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             layer_lock
                 .running_mut(&gcd)?
                 .check_add_online(gid, Online::Direct(addr), gdid, mid)?;
-            layer_lock.running_mut(&gid)?.check_add_online(
-                gcd,
-                Online::Direct(addr),
-                session.id,
-                gdid,
-            )?;
+            layer_lock
+                .running_mut(&gid)?
+                .check_add_online(gcd, Online::Direct(addr), sid, gdid)?;
 
             drop(layer_lock);
 
@@ -176,9 +181,9 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             let gcd = g.g_id;
             let mut results = HandleResult::new();
 
+            // handle invite message
             let contact_values = InviteType::Group(gcd, g.g_addr, g.g_name).serialize();
-
-            let (msg, nw, sc) = crate::apps::chat::LayerEvent::from_message(
+            let (msg, nw) = crate::apps::chat::LayerEvent::from_message(
                 &base,
                 gid,
                 fid,
@@ -187,20 +192,13 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             )
             .await?;
             let event = crate::apps::chat::LayerEvent::Message(msg.hash, nw);
-
             let mut layer_lock = state.layer.write().await;
             let s = crate::apps::chat::event_message(&mut layer_lock, msg.id, gid, f.addr, &event);
             drop(layer_lock);
             results.layers.push((gid, f.gid, s));
+            crate::apps::chat::update_session(&base, &gid, &id, &msg, &mut results);
 
-            let s_db = session_db(&base, &gid)?;
-            if let Ok(id) = Session::last(&s_db, &fid, &SessionType::Chat, &msg.datetime, &sc, true)
-            {
-                results
-                    .rpcs
-                    .push(session_last(gid, &id, &msg.datetime, &sc, false));
-            }
-
+            // handle group member
             let avatar = read_avatar(&base, &gid, &f.gid).await.unwrap_or(vec![]);
             let event = Event::MemberJoin(f.gid, f.addr, f.name.clone(), avatar);
 
