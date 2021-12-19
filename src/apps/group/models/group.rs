@@ -25,6 +25,8 @@ pub(crate) struct GroupChat {
     pub g_name: String,
     /// group is delete by owner.
     pub close: bool,
+    /// group is in my device.
+    pub local: bool,
 }
 
 impl GroupChat {
@@ -38,16 +40,18 @@ impl GroupChat {
             id: 0,
             height: 0,
             close: false,
+            local: true,
         }
     }
 
-    fn new_from(g_id: GroupId, height: i64, g_addr: PeerId, g_name: String) -> Self {
+    fn _new_from(g_id: GroupId, height: i64, g_addr: PeerId, g_name: String) -> Self {
         Self {
             g_id,
             g_addr,
             g_name,
             height,
             close: false,
+            local: false,
             id: 0,
         }
     }
@@ -76,11 +80,13 @@ impl GroupChat {
             self.g_addr.to_hex(),
             self.g_name,
             self.close,
+            self.local,
         ])
     }
 
     fn from_values(mut v: Vec<DsValue>) -> Self {
         Self {
+            local: v.pop().unwrap().as_bool(),
             close: v.pop().unwrap().as_bool(),
             g_name: v.pop().unwrap().as_string(),
             g_addr: PeerId::from_hex(v.pop().unwrap().as_string()).unwrap_or(Default::default()),
@@ -90,8 +96,19 @@ impl GroupChat {
         }
     }
 
+    pub fn local(db: &DStorage) -> Result<Vec<GroupChat>> {
+        let matrix = db.query(
+            "SELECT id, height, gcd, addr, name, close, local FROM groups WHERE local = true",
+        )?;
+        let mut groups = vec![];
+        for values in matrix {
+            groups.push(Self::from_values(values));
+        }
+        Ok(groups)
+    }
+
     pub fn all(db: &DStorage) -> Result<Vec<GroupChat>> {
-        let matrix = db.query("SELECT id, height, gcd, addr, name, close FROM groups")?;
+        let matrix = db.query("SELECT id, height, gcd, addr, name, close, local FROM groups")?;
         let mut groups = vec![];
         for values in matrix {
             groups.push(Self::from_values(values));
@@ -101,7 +118,7 @@ impl GroupChat {
 
     pub fn get(db: &DStorage, id: &i64) -> Result<GroupChat> {
         let sql = format!(
-            "SELECT id, height, gcd, addr, name, close FROM groups WHERE id = {}",
+            "SELECT id, height, gcd, addr, name, close, local FROM groups WHERE id = {}",
             id
         );
         let mut matrix = db.query(&sql)?;
@@ -115,7 +132,7 @@ impl GroupChat {
 
     pub fn get_id(db: &DStorage, gid: &GroupId) -> Result<GroupChat> {
         let sql = format!(
-            "SELECT id, height, gcd, addr, name, close FROM groups WHERE gcd = '{}'",
+            "SELECT id, height, gcd, addr, name, close, local FROM groups WHERE gcd = '{}'",
             gid.to_hex()
         );
         let mut matrix = db.query(&sql)?;

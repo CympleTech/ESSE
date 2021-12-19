@@ -36,6 +36,18 @@ impl Member {
         }
     }
 
+    pub fn info(id: i64, fid: i64, m_id: GroupId, m_addr: PeerId, m_name: String) -> Self {
+        Self {
+            id,
+            fid,
+            m_id,
+            m_addr,
+            m_name,
+            leave: false,
+            height: 0,
+        }
+    }
+
     pub fn to_rpc(&self) -> RpcParam {
         json!([
             self.id,
@@ -127,14 +139,16 @@ impl Member {
         }
     }
 
-    pub fn addr_update(db: &DStorage, fid: &i64, mid: &GroupId, addr: &PeerId) -> Result<usize> {
+    pub fn addr_update(db: &DStorage, fid: &i64, mid: &GroupId, addr: &PeerId) -> Result<i64> {
+        let mdid = Self::get_id(db, fid, mid)?;
         let sql = format!(
             "UPDATE members SET addr='{}' WHERE fid = {} AND mid = '{}'",
             addr.to_hex(),
             fid,
             mid.to_hex(),
         );
-        db.update(&sql)
+        db.update(&sql)?;
+        Ok(mdid)
     }
 
     pub fn update(

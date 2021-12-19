@@ -6,7 +6,8 @@ pub(super) const GROUP_VERSIONS: [&str; 3] = [
     gcd TEXT NOT NULL,
     addr TEXT NOT NULL,
     name TEXT NOT NULL,
-    close INTEGER NOT NULL);",
+    close INTEGER NOT NULL
+    local INTEGER NOT NULL);",
   "CREATE TABLE IF NOT EXISTS members(
     id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
     height INTEGER NOT NULL,

@@ -126,7 +126,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
         |gid: GroupId, _params: Vec<RpcParam>, state: Arc<RpcState>| async move {
             let layer_lock = state.layer.read().await;
             let db = chat_db(&layer_lock.base, &gid)?;
-            Ok(HandleResult::rpc(friend_list(Friend::all(&db)?)))
+            Ok(HandleResult::rpc(friend_list(Friend::list(&db)?)))
         },
     );
 
@@ -138,13 +138,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
 
             let mut results = HandleResult::new();
             let db = chat_db(state.layer.read().await.base(), &gid)?;
-            let f = if let Some(mut f) = Friend::get_id(&db, id)? {
-                f.remark = remark.to_owned();
-                f.me_update(&db)?;
-                f
-            } else {
-                return Ok(results);
-            };
+            let mut f = Friend::get(&db, &id)?;
             drop(db);
             state.group.write().await.broadcast(
                 &gid,
@@ -166,7 +160,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             let mut layer_lock = state.layer.write().await;
 
             let db = chat_db(layer_lock.base(), &gid)?;
-            let friend = Friend::get_id(&db, id)?.ok_or(RpcError::ParseError)?;
+            let friend = Friend::get(&db, &id)?;
             friend.close(&db)?;
             drop(db);
 
@@ -205,8 +199,8 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             let mut layer_lock = state.layer.write().await;
 
             let db = chat_db(layer_lock.base(), &gid)?;
-            let friend = Friend::get_id(&db, id)?.ok_or(RpcError::ParseError)?;
-            friend.delete(&db)?;
+            let friend = Friend::get(&db, &id)?;
+            Friend::delete(&db, &id)?;
             drop(db);
 
             let online = layer_lock.remove_online(&gid, &friend.gid);
@@ -242,7 +236,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             let layer_lock = state.layer.read().await;
             let db = chat_db(layer_lock.base(), &gid)?;
             drop(layer_lock);
-            let requests = Request::all(&db)?;
+            let requests = Request::list(&db)?;
             drop(db);
             Ok(HandleResult::rpc(request_list(requests)))
         },
@@ -275,9 +269,9 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
                 return Ok(HandleResult::new());
             }
 
-            if let Some(req) = Request::get(&db, &request.gid)? {
+            if let Ok(req) = Request::get_id(&db, &request.gid) {
                 debug!("Had this request.");
-                req.delete(&db)?;
+                Request::delete(&db, &req.id)?;
             }
             request.insert(&db)?;
             drop(db);
@@ -316,33 +310,32 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             let mut group_lock = state.group.write().await;
             let me = group_lock.clone_user(&gid)?;
             let db = chat_db(group_lock.base(), &gid)?;
+            let mut request = Request::get(&db, &id)?;
             let mut results = HandleResult::new();
 
-            if let Some(mut request) = Request::get_id(&db, id)? {
-                group_lock.broadcast(
-                    &gid,
-                    InnerEvent::SessionRequestHandle(request.gid, true, vec![]),
-                    REQUEST_TABLE_PATH,
-                    request.id,
-                    &mut results,
-                )?;
-                request.is_ok = true;
-                request.is_over = true;
-                request.update(&db)?;
+            group_lock.broadcast(
+                &gid,
+                InnerEvent::SessionRequestHandle(request.gid, true, vec![]),
+                REQUEST_TABLE_PATH,
+                request.id,
+                &mut results,
+            )?;
+            request.is_ok = true;
+            request.is_over = true;
+            request.update(&db)?;
 
-                let friend = Friend::from_request(&db, request)?;
-                results.rpcs.push(json!([id, friend.to_rpc()]));
+            let friend = Friend::from_request(&db, request)?;
+            results.rpcs.push(json!([id, friend.to_rpc()]));
 
-                // ADD NEW SESSION.
-                let s_db = session_db(group_lock.base(), &gid)?;
-                let mut session = friend.to_session();
-                session.insert(&s_db)?;
-                results.rpcs.push(session_create(gid, &session));
+            // ADD NEW SESSION.
+            let s_db = session_db(group_lock.base(), &gid)?;
+            let mut session = friend.to_session();
+            session.insert(&s_db)?;
+            results.rpcs.push(session_create(gid, &session));
 
-                let proof = group_lock.prove_addr(&gid, &friend.addr)?;
-                let msg = super::layer::agree_message(proof, me, friend.addr)?;
-                results.layers.push((gid, friend.gid, msg));
-            }
+            let proof = group_lock.prove_addr(&gid, &friend.addr)?;
+            let msg = super::layer::agree_message(proof, me, friend.addr)?;
+            results.layers.push((gid, friend.gid, msg));
 
             Ok(results)
         },
@@ -355,7 +348,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
 
             let mut layer_lock = state.layer.write().await;
             let db = chat_db(layer_lock.base(), &gid)?;
-            let mut req = Request::get_id(&db, id)?.ok_or(RpcError::ParseError)?;
+            let mut req = Request::get(&db, &id)?;
             req.is_ok = false;
             req.is_over = true;
             req.update(&db)?;
@@ -384,11 +377,11 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             let db = chat_db(layer_lock.base(), &gid)?;
             let base = layer_lock.base().clone();
             drop(layer_lock);
-            let req = Request::get_id(&db, id)?.ok_or(RpcError::ParseError)?;
-            req.delete(&db)?;
+            let req = Request::get(&db, &id)?;
+            Request::delete(&db, &id)?;
 
             // delete avatar. check had friend.
-            if Friend::get(&db, &req.gid)?.is_none() {
+            if Friend::get_id(&db, &req.gid).is_err() {
                 delete_avatar(&base, &gid, &req.gid).await?;
             }
             drop(db);
@@ -411,8 +404,8 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             let id = params[0].as_i64().ok_or(RpcError::ParseError)?;
 
             let db = chat_db(state.layer.read().await.base(), &gid)?;
-            let friend = Friend::get_id(&db, id)?.ok_or(RpcError::ParseError)?;
-            let messages = Message::get(&db, &id)?;
+            let friend = Friend::get(&db, &id)?;
+            let messages = Message::get_by_fid(&db, &id)?;
             drop(db);
 
             Ok(HandleResult::rpc(detail_list(friend, messages)))
@@ -428,7 +421,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             let db = chat_db(layer_lock.base(), &gid)?;
             drop(layer_lock);
 
-            let messages = Message::get(&db, &fid)?;
+            let messages = Message::get_by_fid(&db, &fid)?;
             drop(db);
             Ok(HandleResult::rpc(message_list(messages)))
         },
@@ -498,8 +491,8 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             let db = chat_db(&layer_lock.base(), &gid)?;
             drop(layer_lock);
 
-            let msg = Message::get_id(&db, id)?.ok_or(RpcError::ParseError)?;
-            msg.delete(&db)?;
+            let msg = Message::get(&db, &id)?;
+            Message::delete(&db, &id)?;
             drop(db);
             let mut results = HandleResult::new();
             state.group.write().await.broadcast(

@@ -25,14 +25,6 @@ class ChatDetail extends StatefulWidget {
 }
 
 class _ChatDetailState extends State<ChatDetail> {
-  TextEditingController textController = TextEditingController();
-  FocusNode textFocus = FocusNode();
-  bool _emojiShow = false;
-  bool _sendShow = false;
-  bool _menuShow = false;
-  bool _recordShow = false;
-  String _recordName = '';
-
   bool _loading = false;
   Friend _friend = Friend('', '', '');
   Map<int, Message> _messages = {};
@@ -41,21 +33,24 @@ class _ChatDetailState extends State<ChatDetail> {
   initState() {
     super.initState();
 
-    rpc.addListener('chat-message-list', _messageList, false);
     rpc.addListener('chat-message-create', _messageCreate, true);
     rpc.addListener('chat-message-delivery', _messageDelivery, false);
-
-    textFocus.addListener(() {
-        if (textFocus.hasFocus) {
-          setState(() {
-              _emojiShow = false;
-              _menuShow = false;
-              _recordShow = false;
-          });
-        }
-    });
   }
 
+  // [friend, [message]]
+  _loadFriend() async {
+    this._messages.clear();
+    final res = await httpPost('chat-detail', [widget.id]);
+    if (res.isOk) {
+      this._loading = false;
+      this._friend = Friend.fromList(res.params[0]);
+      _messageList(res.params[1]);
+    } else {
+      print(res.error);
+    }
+  }
+
+  // [message]
   _messageCreate(List params) {
     final msg = Message.fromList(params);
     if (msg.fid == _friend.id) {
@@ -67,6 +62,7 @@ class _ChatDetailState extends State<ChatDetail> {
     }
   }
 
+  // [[message]]
   _messageList(List params) {
     // TOOD load more history.
     params.forEach((param) {
@@ -76,27 +72,13 @@ class _ChatDetailState extends State<ChatDetail> {
     setState(() {});
   }
 
+  // [message_id, is_delivery]
   _messageDelivery(List params) {
     final id = params[0];
     final isDelivery = params[1];
     if (this._messages.containsKey(id)) {
       this._messages[id]!.isDelivery = isDelivery;
       setState(() {});
-    }
-  }
-
-  _loadFriend() async {
-    this._messages.clear();
-    final res = await httpPost('chat-detail', [widget.id]);
-    if (res.isOk) {
-      this._friend = Friend.fromList(res.params[0]);
-      res.params[1].forEach((params) {
-          final msg = Message.fromList(params);
-          this._messages[msg.id] = msg;
-      });
-      setState(() { this._loading = false; });
-    } else {
-      print(res.error);
     }
   }
 
@@ -128,15 +110,25 @@ class _ChatDetailState extends State<ChatDetail> {
     final meName = accountProvider.activedAccount.name;
     final isOnline = session.isActive();
 
-    final recentMessageKeys = this._messages.keys.toList().toList();
+    final recentMessageKeys = this._messages.keys.toList().reversed.toList();
 
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
         leading: isDesktop ? null : IconButton(icon: Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context)),
-        title: Text(this._loading ? lang.waiting : _friend.name,
-          maxLines: 1, overflow: TextOverflow.ellipsis),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(this._loading ? lang.waiting : _friend.name,
+              maxLines: 1, overflow: TextOverflow.ellipsis),
+            const SizedBox(height: 2.0),
+            Text(this._friend.isClosed
+              ? lang.closed
+              : session.onlineLang(lang),
+              style: TextStyle(color: color.primary, fontSize: 11.0))
+          ]
+        ),
         bottom: isDesktop ? PreferredSize(
           child: Container(color: const Color(0x40ADB0BB), height: 1.0),
           preferredSize: Size.fromHeight(1.0)): null,
@@ -182,7 +174,8 @@ class _ChatDetailState extends State<ChatDetail> {
                     0.0,
                   );
                 } else if (value == 1) {
-                  showShadowDialog(context, Icons.group, lang.groupChatAdd, GroupAddScreen(), 0.0);
+                  showShadowDialog(
+                    context, Icons.group, lang.groupChatAdd, GroupAddScreen(fid: _friend.id), 0.0);
                 } else if (value == 2) {
                   print('TODO remark');
                 } else if (value == 3) {
@@ -278,7 +271,7 @@ class _ChatDetailState extends State<ChatDetail> {
             sid: session.id,
             online: isOnline,
             callback: _send,
-            transferTo: '',
+            transferTo: this._friend.wallet,
             waiting: session.online == OnlineType.Waiting
           ),
         ]

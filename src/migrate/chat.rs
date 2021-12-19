@@ -8,8 +8,7 @@ pub(super) const CHAT_VERSIONS: [&str; 3] = [
     wallet TEXT,
     remark TEXT,
     is_closed INTEGER NOT NULL,
-    datetime INTEGER NOT NULL,
-    is_deleted INTEGER NOT NULL);",
+    datetime INTEGER NOT NULL);",
   "CREATE TABLE IF NOT EXISTS requests(
     id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
     gid TEXT NOT NULL,
@@ -20,8 +19,7 @@ pub(super) const CHAT_VERSIONS: [&str; 3] = [
     is_ok INTEGER NOT NULL,
     is_over INTEGER NOT NULL,
     is_delivery INTEGER NOT NULL,
-    datetime INTEGER NOT NULL,
-    is_deleted INTEGER NOT NULL);",
+    datetime INTEGER NOT NULL);",
   "CREATE TABLE IF NOT EXISTS messages(
     id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
     hash TEXT NOT NULL,
@@ -30,6 +28,5 @@ pub(super) const CHAT_VERSIONS: [&str; 3] = [
     m_type INTEGER NOT NULL,
     content TEXT NOT NULL,
     is_delivery INTEGER NOT NULL,
-    datetime INTEGER NOT NULL,
-    is_deleted INTEGER NOT NULL);",
+    datetime INTEGER NOT NULL);",
 ];

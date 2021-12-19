@@ -167,15 +167,6 @@ class _HomeListState extends State<HomeList> {
                           MaterialPageRoute(builder: (_) => widget));
                       }
                     } else if (value == 2) {
-                      // final widget = GroupAddPage();
-                      // if (isDesktop) {
-                      //   provider.updateActivedWidget(widget);
-                      // } else {
-                      //   setState(() {});
-                      //   Navigator.push(context,
-                      //     MaterialPageRoute(builder: (_) => widget));
-                      // }
-                    } else if (value == 3) {
                       showShadowDialog(
                         context,
                         Icons.info,
@@ -192,9 +183,7 @@ class _HomeListState extends State<HomeList> {
                       _menuItem(0, Icons.qr_code_scanner_rounded, lang.scan),
                       _menuItem(1, Icons.person_add_rounded, lang.addFriend,
                         provider.systemAppFriendAddNew),
-                      _menuItem(
-                        2, Icons.group_add_rounded, lang.groupChatAdd),
-                      _menuItem(3, Icons.qr_code_rounded, lang.myQrcode),
+                      _menuItem(2, Icons.qr_code_rounded, lang.myQrcode),
                     ];
                   },
                 ),

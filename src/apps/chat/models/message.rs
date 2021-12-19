@@ -87,7 +87,6 @@ pub(crate) struct Message {
     pub content: String,
     pub is_delivery: bool,
     pub datetime: i64,
-    pub is_deleted: bool,
 }
 
 impl Message {
@@ -119,7 +118,6 @@ impl Message {
         Message {
             id: 0,
             hash: EventId(bytes),
-            is_deleted: false,
             fid,
             is_me,
             m_type,
@@ -145,7 +143,6 @@ impl Message {
 
         Message {
             id: 0,
-            is_deleted: false,
             hash,
             fid,
             is_me,
@@ -157,15 +154,8 @@ impl Message {
     }
 
     /// here is zero-copy and unwrap is safe. checked.
-    fn from_values(mut v: Vec<DsValue>, contains_deleted: bool) -> Message {
-        let is_deleted = if contains_deleted {
-            v.pop().unwrap().as_bool()
-        } else {
-            false
-        };
-
+    fn from_values(mut v: Vec<DsValue>) -> Message {
         Message {
-            is_deleted,
             datetime: v.pop().unwrap().as_i64(),
             is_delivery: v.pop().unwrap().as_bool(),
             content: v.pop().unwrap().as_string(),
@@ -190,39 +180,39 @@ impl Message {
         ])
     }
 
-    pub fn get(db: &DStorage, fid: &i64) -> Result<Vec<Message>> {
-        let sql = format!("SELECT id, hash, fid, is_me, m_type, content, is_delivery, datetime FROM messages WHERE fid = {} and is_deleted = false ORDER BY id DESC", fid);
+    pub fn get(db: &DStorage, id: &i64) -> Result<Message> {
+        let sql = format!("SELECT id, hash, fid, is_me, m_type, content, is_delivery, datetime FROM messages WHERE id = {}", id);
+        let mut matrix = db.query(&sql)?;
+        if matrix.len() > 0 {
+            Ok(Message::from_values(matrix.pop().unwrap())) // safe unwrap()
+        } else {
+            Err(anyhow!("message is missing."))
+        }
+    }
+
+    pub fn get_by_fid(db: &DStorage, fid: &i64) -> Result<Vec<Message>> {
+        let sql = format!("SELECT id, hash, fid, is_me, m_type, content, is_delivery, datetime FROM messages WHERE fid = {}", fid);
         let matrix = db.query(&sql)?;
         let mut messages = vec![];
         for values in matrix {
-            messages.push(Message::from_values(values, false));
+            messages.push(Message::from_values(values));
         }
         Ok(messages)
     }
 
-    pub fn get_id(db: &DStorage, id: i64) -> Result<Option<Message>> {
-        let sql = format!("SELECT id, hash, fid, is_me, m_type, content, is_delivery, datetime, is_deleted FROM messages WHERE id = {}", id);
+    pub fn get_by_hash(db: &DStorage, hash: &EventId) -> Result<Message> {
+        let sql = format!("SELECT id, hash, fid, is_me, m_type, content, is_delivery, datetime FROM messages WHERE hash = {}", hash.to_hex());
         let mut matrix = db.query(&sql)?;
         if matrix.len() > 0 {
-            let values = matrix.pop().unwrap(); // safe unwrap()
-            return Ok(Some(Message::from_values(values, true)));
+            Ok(Message::from_values(matrix.pop().unwrap()))
+        } else {
+            Err(anyhow!("message is missing."))
         }
-        Ok(None)
-    }
-
-    pub fn get_it(db: &DStorage, hash: &EventId) -> Result<Option<Message>> {
-        let sql = format!("SELECT id, hash, fid, is_me, m_type, content, is_delivery, datetime, is_deleted FROM messages WHERE hash = {}", hash.to_hex());
-        let mut matrix = db.query(&sql)?;
-        if matrix.len() > 0 {
-            let values = matrix.pop().unwrap(); // safe unwrap()
-            return Ok(Some(Message::from_values(values, true)));
-        }
-        Ok(None)
     }
 
     pub fn insert(&mut self, db: &DStorage) -> Result<()> {
         let sql = format!(
-            "INSERT INTO messages (hash, fid, is_me, m_type, content, is_delivery, datetime, is_deleted) VALUES ('{}',{},{},{},'{}',{},{},false)",
+            "INSERT INTO messages (hash, fid, is_me, m_type, content, is_delivery, datetime) VALUES ('{}',{},{},{},'{}',{},{})",
             self.hash.to_hex(),
             self.fid,
             self.is_me,
@@ -243,12 +233,17 @@ impl Message {
         db.update(&sql)
     }
 
-    pub fn delete(&self, db: &DStorage) -> Result<usize> {
-        let sql = format!(
-            "UPDATE messages SET is_deleted = true WHERE id = {}",
-            self.id
-        );
+    pub fn delete(db: &DStorage, id: &i64) -> Result<usize> {
+        let sql = format!("DELETE FROM messages WHERE id = {}", id);
+        // TODO delete content
         db.delete(&sql)
+    }
+
+    pub fn delete_by_fid(db: &DStorage, fid: &i64) -> Result<usize> {
+        let sql = format!("DELETE FROM messages WHERE fid = {}", fid);
+        let size = db.delete(&sql)?;
+        // TOOD delete content.
+        Ok(size)
     }
 
     pub fn exist(db: &DStorage, hash: &EventId) -> Result<bool> {

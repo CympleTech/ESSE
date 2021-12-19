@@ -86,7 +86,7 @@ pub(crate) async fn raw_to_network_message(
         MessageType::Contact => {
             let cid: i64 = content.parse()?;
             let db = chat_db(base, ogid)?;
-            let contact = Friend::get_id(&db, cid)?.ok_or(anyhow!("contact missind"))?;
+            let contact = Friend::get(&db, &cid)?;
             drop(db);
             let avatar_bytes = read_avatar(base, ogid, &contact.gid).await?;
             let tmp_name = contact.name.replace(";", "-;");
@@ -128,4 +128,13 @@ pub(crate) async fn raw_to_network_message(
             content.to_owned(),
         )),
     }
+}
+
+pub(crate) async fn clear_message(
+    base: &PathBuf,
+    ogid: &GroupId,
+    mtype: &MessageType,
+    content: &str,
+) -> Result<()> {
+    todo!()
 }

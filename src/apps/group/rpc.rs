@@ -15,6 +15,7 @@ use crate::rpc::{session_create, session_delete, session_last, RpcState};
 use crate::session::{Session, SessionType};
 use crate::storage::{chat_db, group_db, session_db, write_avatar};
 
+use super::layer::{broadcast, update_session};
 use super::models::{to_network_message, GroupChat, Member, Message};
 use super::{add_layer, add_server_layer};
 
@@ -29,34 +30,18 @@ pub(crate) fn member_leave(mgid: GroupId, id: i64, mid: i64) -> RpcParam {
 }
 
 #[inline]
-pub(crate) fn member_info(
-    mgid: GroupId,
-    id: i64,
-    mid: i64,
-    addr: PeerId,
-    name: String,
-) -> RpcParam {
-    rpc_response(
-        0,
-        "group-member-info",
-        json!([id, mid, addr.to_hex(), name]),
-        mgid,
-    )
-}
-
-#[inline]
-pub(crate) fn member_online(mgid: GroupId, gid: i64, mid: GroupId, maddr: PeerId) -> RpcParam {
+pub(crate) fn member_online(mgid: GroupId, id: i64, mid: i64, maddr: &PeerId) -> RpcParam {
     rpc_response(
         0,
         "group-member-online",
-        json!([gid, mid.to_hex(), maddr.to_hex()]),
+        json!([id, mid, maddr.to_hex()]),
         mgid,
     )
 }
 
 #[inline]
-pub(crate) fn member_offline(mgid: GroupId, gid: i64, mid: GroupId) -> RpcParam {
-    rpc_response(0, "group-member-offline", json!([gid, mid.to_hex()]), mgid)
+pub(crate) fn member_offline(mgid: GroupId, gid: i64, mid: i64) -> RpcParam {
+    rpc_response(0, "group-member-offline", json!([gid, mid]), mgid)
 }
 
 #[inline]
@@ -178,67 +163,50 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
     );
 
     handler.add_method(
-        "group-invite",
+        "group-member-join",
         |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
             let id = params[0].as_i64().ok_or(RpcError::ParseError)?;
-            let gcd = GroupId::from_hex(params[1].as_str().ok_or(RpcError::ParseError)?)?;
+            let fid = params[1].as_i64().ok_or(RpcError::ParseError)?;
 
-            let ids: Vec<i64> = params[2]
-                .as_array()
-                .ok_or(RpcError::ParseError)?
-                .iter()
-                .filter_map(|v| v.as_i64())
-                .collect();
-
-            let group_lock = state.group.read().await;
-            let base = group_lock.base().clone();
-
+            let base = state.layer.read().await.base().clone();
+            let chat_db = chat_db(&base, &gid)?;
+            let f = Friend::get(&chat_db, &fid)?;
             let group_db = group_db(&base, &gid)?;
-            let chat = chat_db(&base, &gid)?;
-            let gc = GroupChat::get(&group_db, &id)?;
+            let g = GroupChat::get(&group_db, &id)?;
+            let gcd = g.g_id;
+            let mut results = HandleResult::new();
 
-            let mut invites = vec![];
-            for fid in ids {
-                let friend = Friend::get_id(&chat, fid)?.ok_or(RpcError::ParseError)?;
-                if Member::get_id(&group_db, &id, &friend.gid).is_err() {
-                    // TODO add friend to group chat.
+            let tmp_name = g.g_name.replace(";", "-;");
+            let contact_values = format!(
+                "group;;{};;{};;{}",
+                gcd.to_hex(),
+                g.g_addr.to_hex(),
+                tmp_name
+            );
 
-                    invites.push((friend.id, friend.gid, friend.addr));
-                }
-            }
-            drop(chat);
+            let (msg, nw, sc) = crate::apps::chat::LayerEvent::from_message(
+                &base,
+                gid,
+                fid,
+                MessageType::Invite,
+                &contact_values,
+            )
+            .await?;
+            let event = crate::apps::chat::LayerEvent::Message(msg.hash, nw);
 
-            let tmp_name = gc.g_name.replace(";", "-;");
+            let mut layer_lock = state.layer.write().await;
+            let s = crate::apps::chat::event_message(&mut layer_lock, msg.id, gid, f.addr, &event);
+            drop(layer_lock);
+            results.layers.push((gid, f.gid, s));
 
             let s_db = session_db(&base, &gid)?;
-
-            let mut results = HandleResult::new();
-            let mut layer_lock = state.layer.write().await;
-            for (fid, fgid, faddr) in invites {
-                let contact_values =
-                    format!("{};;{};;{}", gcd.to_hex(), gc.g_addr.to_hex(), tmp_name);
-
-                let (msg, nw, sc) = crate::apps::chat::LayerEvent::from_message(
-                    &base,
-                    gid,
-                    fid,
-                    MessageType::Invite,
-                    &contact_values,
-                )
-                .await?;
-                let event = crate::apps::chat::LayerEvent::Message(msg.hash, nw);
-                let s =
-                    crate::apps::chat::event_message(&mut layer_lock, msg.id, gid, faddr, &event);
-                results.layers.push((gid, fgid, s));
-
-                if let Ok(id) =
-                    Session::last(&s_db, &fid, &SessionType::Chat, &msg.datetime, &sc, true)
-                {
-                    results
-                        .rpcs
-                        .push(session_last(gid, &id, &msg.datetime, &sc, false));
-                }
+            if let Ok(id) = Session::last(&s_db, &fid, &SessionType::Chat, &msg.datetime, &sc, true)
+            {
+                results
+                    .rpcs
+                    .push(session_last(gid, &id, &msg.datetime, &sc, false));
             }
+
             Ok(results)
         },
     );
@@ -246,19 +214,46 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
     handler.add_method(
         "group-message-create",
         |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
-            let gcd = GroupId::from_hex(params[0].as_str().ok_or(RpcError::ParseError)?)?;
+            let id = params[0].as_i64().ok_or(RpcError::ParseError)?;
             let m_type = MessageType::from_int(params[1].as_i64().ok_or(RpcError::ParseError)?);
             let m_content = params[2].as_str().ok_or(RpcError::ParseError)?;
 
-            let addr = state.layer.read().await.running(&gid)?.online(&gcd)?;
-            let mut results = HandleResult::new();
+            let base = state.layer.read().await.base().clone();
+            let db = group_db(&base, &gid)?;
+            let group = GroupChat::get(&db, &id)?;
+            let gcd = group.g_id;
+            let mid = Member::get_id(&db, &id, &gid)?;
 
-            let base = state.group.read().await.base().clone();
-            let (nmsg, datetime) = to_network_message(&base, &gid, m_type, m_content).await?;
+            let mut results = HandleResult::new();
+            let (nmsg, datetime, raw) = to_network_message(&base, &gid, m_type, m_content).await?;
             let event = Event::MessageCreate(gid, nmsg, datetime);
-            let data = bincode::serialize(&LayerEvent::Sync(gcd, 0, event))?;
-            let msg = SendType::Event(0, addr, data);
-            add_layer(&mut results, gid, msg);
+
+            if group.local {
+                // local save.
+                let new_h = state.layer.write().await.running_mut(&gcd)?.increased();
+
+                let mut msg = Message::new_with_time(new_h, id, mid, true, m_type, raw, datetime);
+                msg.insert(&db)?;
+                results.rpcs.push(msg.to_rpc());
+                GroupChat::add_height(&db, id, new_h)?;
+
+                // UPDATE SESSION.
+                update_session(&base, &gid, &id, &msg, &mut results);
+
+                // broadcast.
+                broadcast(
+                    &LayerEvent::Sync(gcd, new_h, event),
+                    &state.layer,
+                    &gcd,
+                    &mut results,
+                )
+                .await?;
+            } else {
+                // send to server.
+                let data = bincode::serialize(&LayerEvent::Sync(gcd, 0, event))?;
+                let msg = SendType::Event(0, group.g_addr, data);
+                add_layer(&mut results, gid, msg);
+            }
 
             Ok(results)
         },

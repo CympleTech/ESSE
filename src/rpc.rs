@@ -16,7 +16,7 @@ use tokio::sync::{
 use crate::account::lang_from_i64;
 use crate::apps::app_rpc_inject;
 use crate::apps::chat::chat_conn;
-use crate::apps::group::{add_layer, group_conn, GroupChat, Member};
+use crate::apps::group::{add_layer, group_conn, GroupChat};
 use crate::event::InnerEvent;
 use crate::group::Group;
 use crate::layer::{Layer, LayerEvent, Online};
@@ -405,38 +405,29 @@ fn new_rpc_handler(
 
             // load all services layer created by this account.
             // 1. group chat.
-            // let self_addr = layer_lock.addr.clone();
-            // let group_db = group_db(&layer_lock.base, &ogid)?;
-            // let group_chats = GroupChat::all_local(&group_db, &ogid)?;
-            // for (gid, gcd, gheight) in group_chats {
-            //     layer_lock.add_running(&gcd, ogid, gid, gheight)?;
-            //     results.networks.push(NetworkType::AddGroup(gcd));
+            let self_addr = layer_lock.addr.clone();
+            let group_db = group_db(&layer_lock.base, &ogid)?;
+            let group_chats = GroupChat::local(&group_db)?;
+            for g in group_chats {
+                layer_lock.add_running(&g.g_id, ogid, g.id, g.height)?;
+                results.networks.push(NetworkType::AddGroup(g.g_id));
 
-            //     // 2. online self-hold owner to group.
-            //     let (mid, _) = Member::get_id(&group_db, &gid, &ogid)?;
-            //     layer_lock.running_mut(&gcd)?.check_add_online(
-            //         ogid,
-            //         Online::Direct(self_addr),
-            //         gid, // group id.
-            //         mid, // member id.
-            //     )?;
-
-            //     // 3. online group to self group onlines.
-            //     if let Some(session) = connect_session(
-            //         &layer_lock.base,
-            //         &ogid,
-            //         &SessionType::Group,
-            //         &gid,
-            //         &self_addr,
-            //     )? {
-            //         layer_lock.running_mut(&ogid)?.check_add_online(
-            //             gcd,
-            //             Online::Direct(self_addr),
-            //             session.id,
-            //             gid,
-            //         )?;
-            //     }
-            // }
+                // 2. online group to self group onlines.
+                if let Some(session) = connect_session(
+                    &layer_lock.base,
+                    &ogid,
+                    &SessionType::Group,
+                    &g.id,
+                    &self_addr,
+                )? {
+                    layer_lock.running_mut(&ogid)?.check_add_online(
+                        g.g_id,
+                        Online::Direct(self_addr),
+                        session.id,
+                        g.id,
+                    )?;
+                }
+            }
             drop(layer_lock);
 
             debug!("Account Logined: {}.", ogid.to_hex());

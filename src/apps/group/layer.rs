@@ -1,3 +1,4 @@
+use std::path::PathBuf;
 use std::sync::Arc;
 use tdn::types::{
     group::GroupId,
@@ -6,6 +7,7 @@ use tdn::types::{
 };
 use tokio::sync::RwLock;
 
+use chat_types::MessageType;
 use group_types::{Event, LayerConnect, LayerEvent, LayerResult};
 use tdn_did::Proof;
 
@@ -15,7 +17,7 @@ use crate::rpc::{session_close, session_connect, session_last, session_lost, ses
 use crate::session::{connect_session, Session, SessionType};
 use crate::storage::{chat_db, delete_avatar, group_db, session_db, write_avatar_sync};
 
-use super::models::{handle_network_message, GroupChat, Member};
+use super::models::{handle_network_message, GroupChat, Member, Message};
 use super::{add_layer, add_server_layer, rpc};
 
 // variable statement:
@@ -93,7 +95,7 @@ async fn handle_server_connect(
     let _ = Member::addr_update(&db, &id, &fgid, &addr.id);
     results
         .rpcs
-        .push(rpc::member_online(ogid, id, fgid, addr.id));
+        .push(rpc::member_online(ogid, id, mdid, &addr.id));
 
     let new_data = bincode::serialize(&LayerEvent::MemberOnline(gcd, fgid, addr.id))?;
 
@@ -234,7 +236,9 @@ async fn handle_server_event(
             }
 
             // 2. UI: offline the member.
-            results.rpcs.push(rpc::member_offline(ogid, id, fgid));
+            if let Ok(mid) = Member::get_id(&db, &id, &fgid) {
+                results.rpcs.push(rpc::member_offline(ogid, id, mid));
+            }
 
             // 3. broadcast offline event.
             broadcast(&LayerEvent::MemberOffline(gcd, fgid), layer, &gcd, results).await?;
@@ -251,9 +255,8 @@ async fn handle_server_event(
                         if mavatar.len() > 0 {
                             write_avatar_sync(&base, &ogid, &mgid, mavatar)?;
                         }
-                        results
-                            .rpcs
-                            .push(rpc::member_info(ogid, id, mdid, maddr, mname));
+                        let mem = Member::info(mdid, id, mgid, maddr, mname);
+                        results.rpcs.push(rpc::member_join(ogid, &mem));
                     } else {
                         let mut member = Member::new(h, id, mgid, maddr, mname);
                         member.insert(&db)?;
@@ -274,7 +277,7 @@ async fn handle_server_event(
 
                     // check mid is my chat friend. if not, delete avatar.
                     let s_db = chat_db(&base, &mgid)?;
-                    if Friend::get(&s_db, &mgid)?.is_none() {
+                    if Friend::get_id(&s_db, &mgid).is_err() {
                         let _ = delete_avatar(&base, &ogid, &mgid).await;
                     }
                     results.rpcs.push(rpc::member_leave(ogid, id, mdid));
@@ -285,36 +288,19 @@ async fn handle_server_event(
                 }
                 Event::MessageCreate(mgid, nmsg, mtime) => {
                     println!("Sync: create message start");
-                    let mdid = Member::get_id(&db, &id, &mgid)?;
+                    let _mdid = Member::get_id(&db, &id, &mgid)?;
 
                     let new_e = Event::MessageCreate(mgid, nmsg.clone(), mtime);
                     let new_h = layer.write().await.running_mut(&gcd)?.increased();
                     broadcast(&LayerEvent::Sync(gcd, new_h, new_e), layer, &gcd, results).await?;
                     GroupChat::add_height(&db, id, new_h)?;
 
-                    let (msg, scontent) =
-                        handle_network_message(new_h, id, mgid, &ogid, nmsg, mtime, &base)?;
+                    let msg = handle_network_message(new_h, id, mgid, &ogid, nmsg, mtime, &base)?;
                     results.rpcs.push(rpc::message_create(ogid, &msg));
                     println!("Sync: create message ok");
 
                     // UPDATE SESSION.
-                    let s_db = session_db(&base, &ogid)?;
-                    if let Ok(sid) = Session::last(
-                        &s_db,
-                        &id,
-                        &SessionType::Group,
-                        &msg.datetime,
-                        &scontent,
-                        true,
-                    ) {
-                        results.rpcs.push(session_last(
-                            ogid,
-                            &sid,
-                            &msg.datetime,
-                            &scontent,
-                            false,
-                        ));
-                    }
+                    update_session(&base, &ogid, &id, &msg, results);
                 }
                 _ => error!("group server handle close nerver here"),
             }
@@ -412,22 +398,27 @@ async fn handle_peer_event(
             results.rpcs.push(session_connect(ogid, &sid, &addr));
         }
         LayerEvent::MemberOnline(_gcd, mgid, maddr) => {
-            let _ = Member::addr_update(&db, &id, &mgid, &maddr);
-            results.rpcs.push(rpc::member_online(ogid, id, mgid, maddr));
+            if let Ok(mid) = Member::addr_update(&db, &id, &mgid, &maddr) {
+                results.rpcs.push(rpc::member_online(ogid, id, mid, &maddr));
+            }
         }
         LayerEvent::MemberOffline(_gcd, mgid) => {
-            results.rpcs.push(rpc::member_offline(ogid, id, mgid));
+            if let Ok(mid) = Member::get_id(&db, &id, &mgid) {
+                results.rpcs.push(rpc::member_offline(ogid, id, mid));
+            }
         }
         LayerEvent::MemberOnlineSyncResult(_gcd, onlines) => {
             for (mgid, maddr) in onlines {
-                results.rpcs.push(rpc::member_online(ogid, id, mgid, maddr));
+                if let Ok(mid) = Member::addr_update(&db, &id, &mgid, &maddr) {
+                    results.rpcs.push(rpc::member_online(ogid, id, mid, &maddr));
+                }
             }
         }
         LayerEvent::Sync(gcd, height, event) => {
             println!("Sync: handle height: {}", height);
 
             match event {
-                Event::GroupTransfer(addr) => {
+                Event::GroupTransfer(_addr) => {
                     // TOOD transfer.
                 }
                 Event::GroupClose => {
@@ -443,9 +434,8 @@ async fn handle_peer_event(
                         if mavatar.len() > 0 {
                             write_avatar_sync(&base, &ogid, &mgid, mavatar)?;
                         }
-                        results
-                            .rpcs
-                            .push(rpc::member_info(ogid, id, mdid, maddr, mname));
+                        let mem = Member::info(mdid, id, mgid, maddr, mname);
+                        results.rpcs.push(rpc::member_join(ogid, &mem));
                     } else {
                         let mut member = Member::new(height, id, mgid, maddr, mname);
                         member.insert(&db)?;
@@ -464,7 +454,7 @@ async fn handle_peer_event(
 
                     // check mid is my chat friend. if not, delete avatar.
                     let s_db = chat_db(&base, &mgid)?;
-                    if Friend::get(&s_db, &mgid)?.is_none() {
+                    if Friend::get_id(&s_db, &mgid).is_err() {
                         let _ = delete_avatar(&base, &ogid, &mgid).await;
                     }
                     results.rpcs.push(rpc::member_leave(ogid, id, mdid));
@@ -474,33 +464,16 @@ async fn handle_peer_event(
                 }
                 Event::MessageCreate(mgid, nmsg, mtime) => {
                     println!("Sync: create message start");
-                    let mdid = Member::get_id(&db, &id, &mgid)?;
+                    let _mdid = Member::get_id(&db, &id, &mgid)?;
 
-                    let (msg, scontent) =
-                        handle_network_message(height, id, mgid, &ogid, nmsg, mtime, &base)?;
+                    let msg = handle_network_message(height, id, mgid, &ogid, nmsg, mtime, &base)?;
                     results.rpcs.push(rpc::message_create(ogid, &msg));
 
                     GroupChat::add_height(&db, id, height)?;
                     println!("Sync: create message ok");
 
                     // UPDATE SESSION.
-                    let s_db = session_db(&base, &ogid)?;
-                    if let Ok(sid) = Session::last(
-                        &s_db,
-                        &id,
-                        &SessionType::Group,
-                        &msg.datetime,
-                        &scontent,
-                        true,
-                    ) {
-                        results.rpcs.push(session_last(
-                            ogid,
-                            &sid,
-                            &msg.datetime,
-                            &scontent,
-                            false,
-                        ));
-                    }
+                    update_session(&base, &ogid, &id, &msg, results);
                 }
             }
         }
@@ -517,15 +490,12 @@ async fn handle_peer_event(
             }
 
             println!("Start handle sync packed... {}, {}, {}", height, from, to);
-            let mut last_scontent = String::new();
-            let mut last_time = 0;
+            let mut last_message = None;
 
             for (height, mgid, nm, time) in adds {
-                let (msg, scontent) =
-                    handle_network_message(height, id, mgid, &ogid, nm, time, &base)?;
+                let msg = handle_network_message(height, id, mgid, &ogid, nm, time, &base)?;
                 results.rpcs.push(rpc::message_create(ogid, &msg));
-                last_scontent = scontent;
-                last_time = time;
+                last_message = Some(msg);
                 from += 1;
             }
 
@@ -537,20 +507,8 @@ async fn handle_peer_event(
             GroupChat::add_height(&db, id, to)?;
 
             // UPDATE SESSION.
-            if last_time > 1 {
-                let s_db = session_db(&base, &ogid)?;
-                if let Ok(sid) = Session::last(
-                    &s_db,
-                    &id,
-                    &SessionType::Group,
-                    &last_time,
-                    &last_scontent,
-                    true,
-                ) {
-                    results
-                        .rpcs
-                        .push(session_last(ogid, &sid, &last_time, &last_scontent, false));
-                }
+            if let Some(msg) = last_message {
+                update_session(&base, &ogid, &id, &msg, results);
             }
         }
         _ => error!("group peer handle event nerver here"),
@@ -559,7 +517,7 @@ async fn handle_peer_event(
     Ok(())
 }
 
-async fn broadcast(
+pub(crate) async fn broadcast(
     event: &LayerEvent,
     layer: &Arc<RwLock<Layer>>,
     gcd: &GroupId,
@@ -574,6 +532,37 @@ async fn broadcast(
     }
 
     Ok(())
+}
+
+// UPDATE SESSION.
+pub(crate) fn update_session(
+    base: &PathBuf,
+    gid: &GroupId,
+    id: &i64,
+    msg: &Message,
+    results: &mut HandleResult,
+) {
+    let scontent = match msg.m_type {
+        MessageType::String => {
+            format!("{}:{}", msg.m_type.to_int(), msg.content)
+        }
+        _ => format!("{}:", msg.m_type.to_int()),
+    };
+
+    if let Ok(s_db) = session_db(base, gid) {
+        if let Ok(sid) = Session::last(
+            &s_db,
+            id,
+            &SessionType::Group,
+            &msg.datetime,
+            &scontent,
+            true,
+        ) {
+            results
+                .rpcs
+                .push(session_last(*gid, &sid, &msg.datetime, &scontent, false));
+        }
+    }
 }
 
 pub(crate) fn group_conn(proof: Proof, addr: Peer, gid: GroupId) -> SendType {

@@ -11,7 +11,8 @@ import 'package:esse/provider.dart';
 import 'package:esse/rpc.dart';
 
 class GroupAddScreen extends StatefulWidget {
-  const GroupAddScreen({Key? key}) : super(key: key);
+  final int fid;
+  const GroupAddScreen({Key? key, required this.fid}) : super(key: key);
 
   @override
   _GroupAddScreenState createState() => _GroupAddScreenState();
@@ -42,6 +43,7 @@ class _GroupAddScreenState extends State<GroupAddScreen> {
       if (widget != null) {
         if (isDesktop) {
           Provider.of<AccountProvider>(context, listen: false).updateActivedWidget(widget);
+          rpc.send('group-member-join', [id, widget.fid]);
         } else {
           Navigator.push(context, MaterialPageRoute(builder: (_) => widget));
         }

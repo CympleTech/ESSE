@@ -20,7 +20,6 @@ pub(crate) struct Request {
     pub is_over: bool,
     pub is_delivery: bool,
     pub datetime: i64,
-    pub is_deleted: bool,
 }
 
 impl Request {
@@ -49,7 +48,6 @@ impl Request {
             is_over: false,
             is_delivery,
             datetime: datetime,
-            is_deleted: false,
         }
     }
 
@@ -58,15 +56,8 @@ impl Request {
     }
 
     /// here is zero-copy and unwrap is safe. checked.
-    fn from_values(mut v: Vec<DsValue>, contains_deleted: bool) -> Request {
-        let is_deleted = if contains_deleted {
-            v.pop().unwrap().as_bool()
-        } else {
-            false
-        };
-
+    fn from_values(mut v: Vec<DsValue>) -> Request {
         Request {
-            is_deleted,
             datetime: v.pop().unwrap().as_i64(),
             is_delivery: v.pop().unwrap().as_bool(),
             is_over: v.pop().unwrap().as_bool(),
@@ -95,37 +86,37 @@ impl Request {
         ])
     }
 
-    pub fn get(db: &DStorage, gid: &GroupId) -> Result<Option<Request>> {
-        let sql = format!("SELECT id, gid, addr, name, remark, is_me, is_ok, is_over, is_delivery, datetime FROM requests WHERE gid = '{}' AND is_deleted = false", gid.to_hex());
+    pub fn get_id(db: &DStorage, gid: &GroupId) -> Result<Request> {
+        let sql = format!("SELECT id, gid, addr, name, remark, is_me, is_ok, is_over, is_delivery, datetime FROM requests WHERE gid = '{}'", gid.to_hex());
         let mut matrix = db.query(&sql)?;
         if matrix.len() > 0 {
-            let values = matrix.pop().unwrap(); // safe unwrap()
-            return Ok(Some(Request::from_values(values, false)));
+            Ok(Request::from_values(matrix.pop().unwrap())) // safe unwrap()
+        } else {
+            Err(anyhow!("request is missing"))
         }
-        Ok(None)
     }
 
-    pub fn get_id(db: &DStorage, id: i64) -> Result<Option<Request>> {
-        let sql = format!("SELECT id, gid, addr, name, remark, is_me, is_ok, is_over, is_delivery, datetime, is_deleted FROM requests WHERE id = {}", id);
+    pub fn get(db: &DStorage, id: &i64) -> Result<Request> {
+        let sql = format!("SELECT id, gid, addr, name, remark, is_me, is_ok, is_over, is_delivery, datetime FROM requests WHERE id = {}", id);
         let mut matrix = db.query(&sql)?;
         if matrix.len() > 0 {
-            let values = matrix.pop().unwrap(); // safe unwrap()
-            return Ok(Some(Request::from_values(values, true)));
+            Ok(Request::from_values(matrix.pop().unwrap())) // safe unwrap()
+        } else {
+            Err(anyhow!("request is missing"))
         }
-        Ok(None)
     }
 
-    pub fn all(db: &DStorage) -> Result<Vec<Request>> {
-        let matrix = db.query("SELECT id, gid, addr, name, remark, is_me, is_ok, is_over, is_delivery, datetime FROM requests WHERE is_deleted = false ORDER BY id DESC")?;
+    pub fn list(db: &DStorage) -> Result<Vec<Request>> {
+        let matrix = db.query("SELECT id, gid, addr, name, remark, is_me, is_ok, is_over, is_delivery, datetime FROM requests WHERE ORDER BY id DESC")?;
         let mut requests = vec![];
         for values in matrix {
-            requests.push(Request::from_values(values, false));
+            requests.push(Request::from_values(values));
         }
         Ok(requests)
     }
 
     pub fn insert(&mut self, db: &DStorage) -> Result<()> {
-        let sql = format!("INSERT INTO requests (gid, addr, name, remark, is_me, is_ok, is_over, is_delivery, datetime, is_deleted) VALUES ('{}', '{}', '{}', '{}', {}, {}, {}, {}, {}, false)",
+        let sql = format!("INSERT INTO requests (gid, addr, name, remark, is_me, is_ok, is_over, is_delivery, datetime) VALUES ('{}', '{}', '{}', '{}', {}, {}, {}, {}, {})",
             self.gid.to_hex(),
             self.addr.to_hex(),
             self.name,
@@ -142,7 +133,7 @@ impl Request {
     }
 
     pub fn update(&self, db: &DStorage) -> Result<usize> {
-        let sql = format!("UPDATE requests SET gid='{}', addr='{}', name='{}', remark='{}', is_me={}, is_ok={}, is_over={}, is_delivery={}, datetime={}, is_deleted = {} WHERE id = {}",
+        let sql = format!("UPDATE requests SET gid='{}', addr='{}', name='{}', remark='{}', is_me={}, is_ok={}, is_over={}, is_delivery={}, datetime={} WHERE id = {}",
             self.gid.to_hex(),
             self.addr.to_hex(),
             self.name,
@@ -152,7 +143,6 @@ impl Request {
             self.is_over,
             self.is_delivery,
             self.datetime,
-            self.is_deleted,
             self.id,
         );
         db.update(&sql)
@@ -167,11 +157,10 @@ impl Request {
         db.update(&sql)
     }
 
-    pub fn delete(&self, db: &DStorage) -> Result<usize> {
-        let sql = format!(
-            "UPDATE requests SET is_deleted = true WHERE id = {}",
-            self.id
-        );
-        db.delete(&sql)
+    pub fn delete(db: &DStorage, id: &i64) -> Result<usize> {
+        let sql = format!("DELETE FROM requests WHERE id = {}", id);
+        let size = db.delete(&sql)?;
+        // TODO delete avatar.
+        Ok(size)
     }
 }

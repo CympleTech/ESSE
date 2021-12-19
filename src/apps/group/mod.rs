@@ -19,5 +19,4 @@ pub fn add_server_layer(results: &mut HandleResult, gid: GroupId, msg: SendType)
 pub(crate) mod rpc;
 pub(crate) use layer::{group_conn, handle_peer, handle_server};
 pub(crate) use models::GroupChat;
-pub(crate) use models::Member;
 pub(crate) use rpc::new_rpc_handler;

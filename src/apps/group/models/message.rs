@@ -158,15 +158,15 @@ pub(crate) async fn to_network_message(
     gid: &GroupId,
     mtype: MessageType,
     content: &str,
-) -> Result<(NetworkMessage, i64)> {
+) -> Result<(NetworkMessage, i64, String)> {
     let start = SystemTime::now();
     let datetime = start
         .duration_since(UNIX_EPOCH)
         .map(|s| s.as_secs())
         .unwrap_or(0) as i64; // safe for all life.
 
-    let (nmsg, _raw) = raw_to_network_message(base, gid, &mtype, content).await?;
-    Ok((nmsg, datetime))
+    let (nmsg, raw) = raw_to_network_message(base, gid, &mtype, content).await?;
+    Ok((nmsg, datetime, raw))
 }
 
 pub(crate) fn handle_network_message(
@@ -177,22 +177,12 @@ pub(crate) fn handle_network_message(
     msg: NetworkMessage,
     datetime: i64,
     base: &PathBuf,
-) -> Result<(Message, String)> {
+) -> Result<Message> {
     let db = group_db(base, mgid)?;
     let mdid = Member::get_id(&db, &gdid, &mid)?;
     let is_me = &mid == mgid;
-
     let (m_type, raw) = from_network_message(msg, base, mgid)?;
-
-    let scontent = match m_type {
-        MessageType::String => {
-            format!("{}:{}", m_type.to_int(), raw)
-        }
-        _ => format!("{}:", m_type.to_int()),
-    };
-
     let mut msg = Message::new_with_time(height, gdid, mdid, is_me, m_type, raw, datetime);
     msg.insert(&db)?;
-
-    Ok((msg, scontent))
+    Ok(msg)
 }

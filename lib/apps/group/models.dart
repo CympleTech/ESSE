@@ -13,6 +13,7 @@ class GroupChat {
   String addr = '';
   String name = '';
   bool isClosed = false;
+  bool isLocal = true;
 
   GroupChat();
 
@@ -21,7 +22,8 @@ class GroupChat {
     this.gid = params[1],
     this.addr = params[2],
     this.name = params[3],
-    this.isClosed = params[4];
+    this.isClosed = params[4],
+    this.isLocal = params[4];
 
   Avatar showAvatar({double width = 45.0}) {
     final avatar = Global.avatarPath + this.gid + '.png';

@@ -5,7 +5,6 @@ use tdn::types::{
     group::{EventId, GroupId},
     message::{RecvType, SendType},
     primitive::{DeliveryType, HandleResult, Peer, PeerId, Result},
-    rpc::RpcError,
 };
 use tdn_did::Proof;
 use tokio::sync::RwLock;
@@ -18,10 +17,7 @@ use crate::layer::{Layer, Online};
 use crate::migrate::consensus::{FRIEND_TABLE_PATH, MESSAGE_TABLE_PATH, REQUEST_TABLE_PATH};
 use crate::rpc::{session_connect, session_create, session_last, session_lost, session_suspend};
 use crate::session::{connect_session, Session, SessionType};
-use crate::storage::{
-    chat_db, read_avatar, read_file, read_record, session_db, write_avatar_sync, write_file,
-    write_image,
-};
+use crate::storage::{chat_db, session_db, write_avatar_sync};
 
 use super::models::{handle_nmsg, raw_to_network_message, Friend, Message, Request};
 use super::rpc;
@@ -88,11 +84,10 @@ pub(crate) async fn handle(
                 }
             } else {
                 let db = chat_db(&layer.base, &mgid)?;
-                if let Some(friend) = Friend::get_it(&db, &fgid)? {
-                    if friend.contains_addr(&addr.id) {
-                        results.rpcs.push(rpc::friend_close(mgid, friend.id));
-                        friend.close(&db)?;
-                    }
+                let friend = Friend::get_id(&db, &fgid)?;
+                if friend.contains_addr(&addr.id) {
+                    results.rpcs.push(rpc::friend_close(mgid, friend.id));
+                    friend.close(&db)?;
                 }
             }
         }
@@ -149,8 +144,8 @@ fn handle_connect(
     proof.verify(fgid, &addr.id, &layer.addr)?;
 
     // 2. check friendship.
-    let friend = update_friend(&layer.base, mgid, fgid, &addr.id)?;
-    if friend.is_none() {
+    let friend = update_friend(&layer.base, mgid, fgid, &addr.id);
+    if friend.is_err() {
         return Ok(false);
     }
     let fid = friend.unwrap().id; // safe.
@@ -202,11 +197,11 @@ impl LayerEvent {
                 results.rpcs.push(session_connect(mgid, &sid, &addr));
             }
             LayerEvent::Request(remote, remark) => {
-                if load_friend(&layer.base, &mgid, &fgid)?.is_none() {
+                if load_friend(&layer.base, &mgid, &fgid).is_err() {
                     // check if exist request.
                     let db = chat_db(&layer.base, &mgid)?;
-                    if let Some(req) = Request::get(&db, &remote.id)? {
-                        req.delete(&db)?; // delete the old request.
+                    if let Ok(req) = Request::get_id(&db, &remote.id) {
+                        Request::delete(&db, &req.id)?; // delete the old request.
                         results.rpcs.push(rpc::request_delete(mgid, req.id));
                     }
                     let mut request = Request::new(
@@ -246,10 +241,10 @@ impl LayerEvent {
                 // 0. check verify.
                 proof.verify(&fgid, &addr, &layer.addr)?;
                 // 1. check friendship.
-                if load_friend(&layer.base, &mgid, &fgid)?.is_none() {
+                if load_friend(&layer.base, &mgid, &fgid).is_err() {
                     // agree request for friend.
                     let db = chat_db(&layer.base, &mgid)?;
-                    if let Some(mut request) = Request::get(&db, &remote.id)? {
+                    if let Ok(mut request) = Request::get_id(&db, &remote.id) {
                         layer.group.write().await.broadcast(
                             &mgid,
                             InnerEvent::SessionRequestHandle(
@@ -282,7 +277,7 @@ impl LayerEvent {
             }
             LayerEvent::Reject => {
                 let db = chat_db(&layer.base, &mgid)?;
-                if let Some(mut request) = Request::get(&db, &fgid)? {
+                if let Ok(mut request) = Request::get_id(&db, &fgid) {
                     layer.group.write().await.broadcast(
                         &mgid,
                         InnerEvent::SessionRequestHandle(request.gid, false, vec![]),
@@ -332,7 +327,7 @@ impl LayerEvent {
                 let (_sid, fid) = layer.get_running_remote_id(&mgid, &fgid)?;
                 let avatar = remote.avatar.clone();
                 let db = chat_db(&layer.base, &mgid)?;
-                let mut f = Friend::get_id(&db, fid)?.ok_or(anyhow!("friend not found"))?;
+                let mut f = Friend::get(&db, &fid)?;
                 f.name = remote.name;
                 f.addr = remote.addr;
                 f.wallet = remote.wallet;
@@ -401,27 +396,19 @@ impl LayerEvent {
 }
 
 #[inline]
-fn load_friend(base: &PathBuf, mgid: &GroupId, fgid: &GroupId) -> Result<Option<Friend>> {
+fn load_friend(base: &PathBuf, mgid: &GroupId, fgid: &GroupId) -> Result<Friend> {
     let db = chat_db(base, mgid)?;
-    Friend::get(&db, fgid)
+    Friend::get_id(&db, fgid)
 }
 
 #[inline]
-fn update_friend(
-    base: &PathBuf,
-    mgid: &GroupId,
-    fgid: &GroupId,
-    addr: &PeerId,
-) -> Result<Option<Friend>> {
+fn update_friend(base: &PathBuf, mgid: &GroupId, fgid: &GroupId, addr: &PeerId) -> Result<Friend> {
     let db = chat_db(base, mgid)?;
-    if let Some(friend) = Friend::get(&db, fgid)? {
-        if &friend.addr != addr {
-            let _ = Friend::addr_update(&db, friend.id, addr);
-        }
-        Ok(Some(friend))
-    } else {
-        Ok(None)
+    let friend = Friend::get_id(&db, fgid)?;
+    if &friend.addr != addr {
+        let _ = Friend::addr_update(&db, friend.id, addr);
     }
+    Ok(friend)
 }
 
 pub(super) fn req_message(layer: &mut Layer, me: User, request: Request) -> SendType {
