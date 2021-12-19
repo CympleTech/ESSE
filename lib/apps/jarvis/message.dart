@@ -14,14 +14,14 @@ import 'package:esse/widgets/shadow_dialog.dart';
 import 'package:esse/global.dart';
 
 import 'package:esse/apps/file/models.dart' show FileType, FileTypeExtension, parseFileType;
-import 'package:esse/apps/assistant/models.dart';
+import 'package:esse/apps/jarvis/models.dart';
 
-class AssistantMessage extends StatelessWidget {
+class JarvisMessage extends StatelessWidget {
   final String name;
   final Message message;
   final List<String> answers;
 
-  const AssistantMessage({Key? key, required this.name, required this.message, required this.answers}): super(key: key);
+  const JarvisMessage({Key? key, required this.name, required this.message, required this.answers}): super(key: key);
 
   Widget _showText(context, color, isDesktop, content, isMe) {
     final width = MediaQuery.of(context).size.width * 0.6;

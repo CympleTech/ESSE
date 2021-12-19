@@ -8,8 +8,8 @@ use tdn::types::{group::GroupId, primitive::Result};
 use tdn_storage::local::DStorage;
 
 use crate::migrate::{
-    account_init_migrate, ACCOUNT_DB, ASSISTANT_DB, CHAT_DB, CLOUD_DB, CONSENSUS_DB, DOMAIN_DB,
-    FILE_DB, GROUP_DB, ORGANIZATION_DB, SERVICE_DB, SESSION_DB, WALLET_DB,
+    account_init_migrate, ACCOUNT_DB, CHAT_DB, CLOUD_DB, CONSENSUS_DB, DOMAIN_DB, FILE_DB,
+    GROUP_DB, JARVIS_DB, ORGANIZATION_DB, SERVICE_DB, SESSION_DB, WALLET_DB,
 };
 
 const FILES_DIR: &'static str = "files";
@@ -376,10 +376,10 @@ pub(crate) fn _service_db(base: &PathBuf, gid: &GroupId) -> Result<DStorage> {
 }
 
 #[inline]
-pub(crate) fn assistant_db(base: &PathBuf, gid: &GroupId) -> Result<DStorage> {
+pub(crate) fn jarvis_db(base: &PathBuf, gid: &GroupId) -> Result<DStorage> {
     let mut db_path = base.clone();
     db_path.push(gid.to_hex());
-    db_path.push(ASSISTANT_DB);
+    db_path.push(JARVIS_DB);
     DStorage::open(db_path)
 }
 

@@ -12,5 +12,5 @@ pub(super) const SESSION_VERSIONS: [&str; 2] = [
     last_datetime INTEGER,
     last_content TEXT,
     last_readed INTEGER);",
-  "INSERT INTO sessions (fid, gid, addr, s_type, name, is_top, is_close, last_datetime, last_content, last_readed) VALUES (0, '', '', 3, '', 0, 0, 0, '', 1);", // Assistant.
+  "INSERT INTO sessions (fid, gid, addr, s_type, name, is_top, is_close, last_datetime, last_content, last_readed) VALUES (0, '', '', 3, '', 0, 0, 0, '', 1);", // Jarvis.
 ];

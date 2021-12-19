@@ -313,9 +313,9 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get filesBio => 'Sync & manager files between devices';
   @override
-  String get assistant => 'Jarvis';
+  String get jarvis => 'Jarvis';
   @override
-  String get assistantBio => 'Jarvis is a robot, only belongs to you';
+  String get jarvisBio => 'Jarvis is a robot, only belongs to you';
   @override
   String get groupChat => 'Group Chats';
   @override

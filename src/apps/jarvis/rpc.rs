@@ -6,39 +6,39 @@ use tdn::types::{
 };
 
 use crate::rpc::RpcState;
-use crate::storage::assistant_db;
+use crate::storage::jarvis_db;
 
 use super::{Message, MessageType};
 
 #[inline]
-pub(crate) fn _assistant_create(mgid: GroupId, device: &Message) -> RpcParam {
-    rpc_response(0, "assistant-create", json!(device.to_rpc()), mgid)
+pub(crate) fn _jarvis_create(mgid: GroupId, device: &Message) -> RpcParam {
+    rpc_response(0, "jarvis-create", json!(device.to_rpc()), mgid)
 }
 
 #[inline]
-pub(crate) fn _assistant_delete(mgid: GroupId, id: i64) -> RpcParam {
-    rpc_response(0, "assistant-delete", json!([id]), mgid)
+pub(crate) fn _jarvis_delete(mgid: GroupId, id: i64) -> RpcParam {
+    rpc_response(0, "jarvis-delete", json!([id]), mgid)
 }
 
 #[inline]
-pub(crate) fn _assistant_update(mgid: GroupId, id: i64, message: &Message) -> RpcParam {
+pub(crate) fn _jarvis_update(mgid: GroupId, id: i64, message: &Message) -> RpcParam {
     rpc_response(
         0,
-        "assistant-update",
+        "jarvis-update",
         json!([id, message.a_type.to_int(), message.a_content]),
         mgid,
     )
 }
 
 pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
-    handler.add_method("assistant-echo", |_, params, _| async move {
+    handler.add_method("jarvis-echo", |_, params, _| async move {
         Ok(HandleResult::rpc(json!(params)))
     });
 
     handler.add_method(
-        "assistant-list",
+        "jarvis-list",
         |gid: GroupId, _params: Vec<RpcParam>, state: Arc<RpcState>| async move {
-            let db = assistant_db(state.layer.read().await.base(), &gid)?;
+            let db = jarvis_db(state.layer.read().await.base(), &gid)?;
             let devices = Message::all(&db)?;
             db.close()?;
             let mut results = vec![];
@@ -50,14 +50,14 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
     );
 
     handler.add_method(
-        "assistant-create",
+        "jarvis-create",
         |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
             let q_type = MessageType::from_int(params[0].as_i64().ok_or(RpcError::ParseError)?);
             let q_content = params[1].as_str().ok_or(RpcError::ParseError)?.to_string();
 
             let base = state.layer.read().await.base().clone();
             let mut msg = q_type.handle(&base, &gid, q_content).await?;
-            let db = assistant_db(state.layer.read().await.base(), &gid)?;
+            let db = jarvis_db(state.layer.read().await.base(), &gid)?;
             msg.insert(&db)?;
             db.close()?;
 
@@ -67,10 +67,10 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
     );
 
     handler.add_method(
-        "assistant-delete",
+        "jarvis-delete",
         |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
             let id = params[0].as_i64().ok_or(RpcError::ParseError)?;
-            let db = assistant_db(state.layer.read().await.base(), &gid)?;
+            let db = jarvis_db(state.layer.read().await.base(), &gid)?;
             Message::delete(&db, id)?;
             db.close()?;
             Ok(HandleResult::new())

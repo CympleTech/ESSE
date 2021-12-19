@@ -1,7 +1,7 @@
 [package]
 name = "esse"
 version = "0.1.0"
-authors = ["CympleTech <contact@cympletech.com>"]
+authors = ["CympleTech <dev@cympletech.com>"]
 edition = "2021"
 license = "MIT/Apache-2.0"
 

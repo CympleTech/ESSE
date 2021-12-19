@@ -1,5 +1,5 @@
 #[rustfmt::skip]
-pub(crate) const ASSISTANT_VERSIONS: [&str; 1] = [
+pub(crate) const JARVIS_VERSIONS: [&str; 1] = [
   "CREATE TABLE IF NOT EXISTS messages(
     id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
     q_type INTEGER NOT NULL,

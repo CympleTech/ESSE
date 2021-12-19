@@ -10,20 +10,20 @@ use tokio::sync::RwLock;
 use crate::layer::Layer;
 use crate::rpc::RpcState;
 
-pub(crate) mod assistant;
 pub(crate) mod chat;
 pub(crate) mod cloud;
 pub(crate) mod device;
 pub(crate) mod domain;
 pub(crate) mod file;
 pub(crate) mod group;
+pub(crate) mod jarvis;
 //pub(crate) mod organization;
 pub(crate) mod wallet;
 
 pub(crate) fn app_rpc_inject(handler: &mut RpcHandler<RpcState>) {
     device::new_rpc_handler(handler);
     chat::new_rpc_handler(handler);
-    assistant::new_rpc_handler(handler);
+    jarvis::new_rpc_handler(handler);
     domain::new_rpc_handler(handler);
     file::new_rpc_handler(handler);
     group::new_rpc_handler(handler);

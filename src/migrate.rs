@@ -10,6 +10,7 @@ mod cloud;
 mod domain;
 mod file;
 mod group;
+mod jarvis;
 mod organization;
 mod service;
 mod session;
@@ -22,12 +23,11 @@ use consensus::CONSENSUS_VERSIONS;
 use domain::DOMAIN_VERSIONS;
 use file::FILE_VERSIONS;
 use group::GROUP_VERSIONS;
+use jarvis::JARVIS_VERSIONS;
 use organization::ORGANIZATION_VERSIONS;
 use service::SERVICE_VERSIONS;
 use session::SESSION_VERSIONS;
 use wallet::WALLET_VERSIONS;
-
-use crate::apps::assistant::ASSISTANT_VERSIONS;
 
 // Account's main database name.
 pub(crate) const ACCOUNT_DB: &'static str = "account.db";
@@ -47,8 +47,8 @@ pub(crate) const FILE_DB: &'static str = "file.db";
 /// Account's service database name
 pub(crate) const SERVICE_DB: &'static str = "service.db";
 
-/// Account's assistant database name
-pub(crate) const ASSISTANT_DB: &'static str = "assistant.db";
+/// Account's jarvis database name
+pub(crate) const JARVIS_DB: &'static str = "jarvis.db";
 
 /// Account's group chat database name
 pub(crate) const GROUP_DB: &'static str = "group.db";
@@ -129,7 +129,7 @@ pub(crate) fn main_migrate(path: &PathBuf) -> Result<()> {
                 SESSION_DB => SESSION_VERSIONS.as_ref(),
                 FILE_DB => FILE_VERSIONS.as_ref(),
                 SERVICE_DB => SERVICE_VERSIONS.as_ref(),
-                ASSISTANT_DB => ASSISTANT_VERSIONS.as_ref(),
+                JARVIS_DB => JARVIS_VERSIONS.as_ref(),
                 GROUP_DB => GROUP_VERSIONS.as_ref(),
                 ORGANIZATION_DB => ORGANIZATION_VERSIONS.as_ref(),
                 CHAT_DB => CHAT_VERSIONS.as_ref(),
@@ -203,8 +203,8 @@ pub(crate) fn main_migrate(path: &PathBuf) -> Result<()> {
 
         db.update(&format!(
             "UPDATE migrates SET version = {} where db_name = '{}'",
-            ASSISTANT_VERSIONS.len(),
-            ASSISTANT_DB,
+            JARVIS_VERSIONS.len(),
+            JARVIS_DB,
         ))?;
 
         db.update(&format!(
@@ -283,9 +283,9 @@ pub(crate) fn account_init_migrate(path: &PathBuf) -> Result<()> {
     db.close()?;
 
     let mut db_path = path.clone();
-    db_path.push(ASSISTANT_DB);
+    db_path.push(JARVIS_DB);
     let db = DStorage::open(db_path)?;
-    for i in &ASSISTANT_VERSIONS {
+    for i in &JARVIS_VERSIONS {
         db.execute(i)?;
     }
     db.close()?;

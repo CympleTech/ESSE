@@ -202,8 +202,8 @@ abstract class AppLocalizations {
   String get files;
   String get filesBio;
 
-  String get assistant;
-  String get assistantBio;
+  String get jarvis;
+  String get jarvisBio;
 
   String get groupChat;
   String get groupChatAdd;

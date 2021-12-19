@@ -313,9 +313,9 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String get filesBio => '同步和管理各设备上的文件';
   @override
-  String get assistant => 'Jarvis';
+  String get jarvis => 'Jarvis';
   @override
-  String get assistantBio => 'Jarvis 是个机器人，只属于你';
+  String get jarvisBio => 'Jarvis 是个机器人，只属于你';
   @override
   String get groupChat => '多人聊天';
   @override

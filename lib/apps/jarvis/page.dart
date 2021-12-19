@@ -13,19 +13,19 @@ import 'package:esse/widgets/transfer.dart';
 import 'package:esse/global.dart';
 import 'package:esse/options.dart';
 
-import 'package:esse/apps/assistant/models.dart';
-import 'package:esse/apps/assistant/provider.dart';
-import 'package:esse/apps/assistant/message.dart';
-import 'package:esse/apps/assistant/answer.dart';
+import 'package:esse/apps/jarvis/models.dart';
+import 'package:esse/apps/jarvis/provider.dart';
+import 'package:esse/apps/jarvis/message.dart';
+import 'package:esse/apps/jarvis/answer.dart';
 
-class AssistantDetail extends StatefulWidget {
-  const AssistantDetail({Key? key}) : super(key: key);
+class JarvisDetail extends StatefulWidget {
+  const JarvisDetail({Key? key}) : super(key: key);
 
   @override
-  _AssistantDetailState createState() => _AssistantDetailState();
+  _JarvisDetailState createState() => _JarvisDetailState();
 }
 
-class _AssistantDetailState extends State<AssistantDetail> {
+class _JarvisDetailState extends State<JarvisDetail> {
   TextEditingController textController = TextEditingController();
   FocusNode textFocus = FocusNode();
   bool emojiShow = false;
@@ -39,7 +39,7 @@ class _AssistantDetailState extends State<AssistantDetail> {
   initState() {
     super.initState();
     Future.delayed(Duration.zero, () async {
-        Provider.of<AssistantProvider>(context, listen: false).actived();
+        Provider.of<JarvisProvider>(context, listen: false).actived();
         final options = context.read<Options>();
         this.answers = await loadAnswers(options.locale);
         setState(() {});
@@ -57,12 +57,12 @@ class _AssistantDetailState extends State<AssistantDetail> {
 
   @override
   void deactivate() {
-    Provider.of<AssistantProvider>(context, listen: false).inactived();
+    Provider.of<JarvisProvider>(context, listen: false).inactived();
     super.deactivate();
   }
 
   _generateRecordPath() {
-    this._recordName = DateTime.now().millisecondsSinceEpoch.toString() + '_assistant.m4a';
+    this._recordName = DateTime.now().millisecondsSinceEpoch.toString() + '_jarvis.m4a';
   }
 
   void _sendMessage() async {
@@ -72,7 +72,7 @@ class _AssistantDetailState extends State<AssistantDetail> {
 
     final value = textController.text.trim();
     final aType = (value.endsWith('?') || value.endsWith('？')) ? MessageType.Answer : MessageType.String;
-    context.read<AssistantProvider>().create(aType, textController.text);
+    context.read<JarvisProvider>().create(aType, textController.text);
 
     setState(() {
         textController.text = '';
@@ -92,7 +92,7 @@ class _AssistantDetailState extends State<AssistantDetail> {
   void _sendImage() async {
     final image = await pickImage();
     if (image != null) {
-      context.read<AssistantProvider>().create(MessageType.Image, image);
+      context.read<JarvisProvider>().create(MessageType.Image, image);
     }
     setState(() {
         textFocus.requestFocus();
@@ -106,7 +106,7 @@ class _AssistantDetailState extends State<AssistantDetail> {
   void _sendFile() async {
     final file = await pickFile();
     if (file != null) {
-      context.read<AssistantProvider>().create(MessageType.File, file);
+      context.read<JarvisProvider>().create(MessageType.File, file);
     }
     setState(() {
         textFocus.requestFocus();
@@ -119,7 +119,7 @@ class _AssistantDetailState extends State<AssistantDetail> {
 
   void _sendRecord(int time) async {
     final raw = Message.rawRecordName(time, _recordName);
-    context.read<AssistantProvider>().create(MessageType.Record, raw);
+    context.read<JarvisProvider>().create(MessageType.Record, raw);
 
     setState(() {
         textFocus.requestFocus();
@@ -131,7 +131,7 @@ class _AssistantDetailState extends State<AssistantDetail> {
   }
 
   _callback(int id) {
-    context.read<AssistantProvider>().create(MessageType.Contact, id.toString());
+    context.read<JarvisProvider>().create(MessageType.Contact, id.toString());
     setState(() {
         textFocus.requestFocus();
         emojiShow = false;
@@ -151,7 +151,7 @@ class _AssistantDetailState extends State<AssistantDetail> {
   }
 
   _tokenCallback(String hash, String to, String amount, String name) {
-    //context.read<AssistantProvider>().create(MessageType.Transfer, "");
+    //context.read<JarvisProvider>().create(MessageType.Transfer, "");
     setState(() {
         textFocus.requestFocus();
         emojiShow = false;
@@ -178,7 +178,7 @@ class _AssistantDetailState extends State<AssistantDetail> {
     final color = Theme.of(context).colorScheme;
     final lang = AppLocalizations.of(context);
     final isDesktop = isDisplayDesktop(context);
-    final recentMessages = context.watch<AssistantProvider>().messages;
+    final recentMessages = context.watch<JarvisProvider>().messages;
     final recentMessageKeys = recentMessages.keys.toList().reversed.toList();
 
     return Scaffold(
@@ -212,7 +212,7 @@ class _AssistantDetailState extends State<AssistantDetail> {
                         SizedBox(height: 5.0),
                         Container(
                           height: 15.0,
-                          child: Text(lang.assistantBio,
+                          child: Text(lang.jarvisBio,
                             style: TextStyle(color: color.onPrimary.withOpacity(0.5), fontSize: 12.0))
                         )
                       ],
@@ -261,7 +261,7 @@ class _AssistantDetailState extends State<AssistantDetail> {
                 padding: EdgeInsets.symmetric(horizontal: 20.0),
                 itemCount: recentMessageKeys.length,
                 reverse: true,
-                itemBuilder: (BuildContext context, index) => AssistantMessage(
+                itemBuilder: (BuildContext context, index) => JarvisMessage(
                   name: 'Jarvis',
                   message: recentMessages[recentMessageKeys[index]]!,
                   answers: this.answers,

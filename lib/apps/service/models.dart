@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:esse/l10n/localizations.dart';
 
-import 'package:esse/apps/assistant/page.dart';
+import 'package:esse/apps/jarvis/page.dart';
 import 'package:esse/apps/file/list.dart';
 import 'package:esse/apps/group/list.dart';
 import 'package:esse/apps/domain/page.dart';
@@ -15,7 +15,7 @@ const List<InnerService> INNER_SERVICES = [
   InnerService.Chat,
   InnerService.GroupChat,
   InnerService.Organization,
-  InnerService.Assistant,
+  InnerService.Jarvis,
   InnerService.Domain,
   InnerService.Cloud,
 ];
@@ -23,7 +23,7 @@ const List<InnerService> INNER_SERVICES = [
 enum InnerService {
   Chat,
   GroupChat,
-  Assistant,
+  Jarvis,
   Domain,
   Wallet,
   Organization,
@@ -35,8 +35,8 @@ extension InnerServiceExtension on InnerService {
     switch (this) {
       case InnerService.Chat:
         return [lang.contact, lang.contactIntro, 'assets/logo/logo_chat.png'];
-      case InnerService.Assistant:
-        return [lang.assistant, lang.assistantBio, 'assets/logo/logo_assistant.png'];
+      case InnerService.Jarvis:
+        return [lang.jarvis, lang.jarvisBio, 'assets/logo/logo_jarvis.png'];
       case InnerService.GroupChat:
         return [lang.groupChat, lang.groupChatIntro, 'assets/logo/logo_group.png'];
       case InnerService.Domain:
@@ -54,8 +54,8 @@ extension InnerServiceExtension on InnerService {
     switch (this) {
       case InnerService.Chat:
         return ChatList();
-      case InnerService.Assistant:
-        return AssistantDetail();
+      case InnerService.Jarvis:
+        return JarvisDetail();
       case InnerService.GroupChat:
         return GroupChatList();
       case InnerService.Domain:

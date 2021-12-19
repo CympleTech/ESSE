@@ -12,7 +12,7 @@ pub(crate) enum SessionType {
     Chat,
     Group,
     Device,
-    Assistant,
+    Jarvis,
 }
 
 impl SessionType {
@@ -21,7 +21,7 @@ impl SessionType {
             SessionType::Chat => 0,
             SessionType::Group => 1,
             SessionType::Device => 2,
-            SessionType::Assistant => 3,
+            SessionType::Jarvis => 3,
         }
     }
 
@@ -30,7 +30,7 @@ impl SessionType {
             0 => SessionType::Chat,
             1 => SessionType::Group,
             2 => SessionType::Device,
-            3 => SessionType::Assistant,
+            3 => SessionType::Jarvis,
             _ => SessionType::Chat,
         }
     }

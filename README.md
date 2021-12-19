@@ -2,7 +2,7 @@
 
 **ESSE** (Encrypted Symmetrical Session Engine) An open source encrypted peer-to-peer system for data security, would allow data to be sent securely from one terminal to another without going through third-party services.
 
-**Protect your own data, protect your own privacy.**
+**My place, my rules.**
 
 ![image](https://cympletech.com/statics/esse-show.gif)
 

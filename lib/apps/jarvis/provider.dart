@@ -2,23 +2,23 @@ import "dart:collection";
 import 'package:flutter/material.dart';
 
 import 'package:esse/rpc.dart';
-import 'package:esse/apps/assistant/models.dart';
+import 'package:esse/apps/jarvis/models.dart';
 
-class AssistantProvider extends ChangeNotifier {
+class JarvisProvider extends ChangeNotifier {
   bool isActived = false;
   SplayTreeMap<int, Message> messages = SplayTreeMap();
 
-  AssistantProvider() {
+  JarvisProvider() {
     // rpc.
-    rpc.addListener('assistant-list', _list, false);
-    rpc.addListener('assistant-create', _create, false);
-    rpc.addListener('assistant-update', _update, false);
-    rpc.addListener('assistant-delete', _delete, false);
+    rpc.addListener('jarvis-list', _list, false);
+    rpc.addListener('jarvis-create', _create, false);
+    rpc.addListener('jarvis-update', _update, false);
+    rpc.addListener('jarvis-delete', _delete, false);
   }
 
   actived() {
     this.isActived = true;
-    rpc.send('assistant-list', []);
+    rpc.send('jarvis-list', []);
   }
 
   inactived() {
@@ -27,13 +27,13 @@ class AssistantProvider extends ChangeNotifier {
   }
 
   create(MessageType qType, String qContent) {
-    rpc.send('assistant-create', [qType.toInt(), qContent]);
+    rpc.send('jarvis-create', [qType.toInt(), qContent]);
   }
 
   /// delete a message.
   delete(int id) {
     this.messages.remove(id);
-    rpc.send('assistant-delete', [id]);
+    rpc.send('jarvis-delete', [id]);
     notifyListeners();
   }
 

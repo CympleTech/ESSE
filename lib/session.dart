@@ -11,7 +11,7 @@ enum SessionType {
   Chat,
   Group,
   Device,
-  Assistant,
+  Jarvis,
 }
 
 extension SessionTypeExtension on SessionType {
@@ -24,7 +24,7 @@ extension SessionTypeExtension on SessionType {
       case 2:
         return SessionType.Device;
       case 3:
-        return SessionType.Assistant;
+        return SessionType.Jarvis;
       default:
         return SessionType.Chat;
     }
@@ -136,8 +136,8 @@ class Session {
           this.lastTime.toString(),
           Icons.groups
         ];
-      case SessionType.Assistant:
-        final params = Session.innerService(InnerService.Assistant, lang);
+      case SessionType.Jarvis:
+        final params = Session.innerService(InnerService.Jarvis, lang);
         return [params[0], params[1], params[2], '', Icons.campaign];
       default:
         return [];

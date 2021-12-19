@@ -32,7 +32,7 @@ import 'package:esse/apps/chat/add.dart';
 import 'package:esse/apps/file/models.dart';
 import 'package:esse/apps/file/list.dart';
 import 'package:esse/apps/service/models.dart';
-import 'package:esse/apps/assistant/page.dart';
+import 'package:esse/apps/jarvis/page.dart';
 import 'package:esse/apps/group/detail.dart';
 
 class HomePage extends StatelessWidget {
@@ -541,8 +541,8 @@ class _SessionWidget extends StatelessWidget {
           case SessionType.Group:
             coreWidget = GroupChatDetail(id: session.fid);
             break;
-          case SessionType.Assistant:
-            coreWidget = AssistantDetail();
+          case SessionType.Jarvis:
+            coreWidget = JarvisDetail();
             break;
           default:
             break; // TODO
