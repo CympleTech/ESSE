@@ -13,6 +13,7 @@ use tokio::sync::{
     RwLock,
 };
 
+use crate::account::lang_from_i64;
 use crate::apps::app_rpc_inject;
 use crate::apps::chat::chat_conn;
 use crate::apps::group::{add_layer, group_conn, GroupChat, Member};
@@ -252,7 +253,7 @@ fn new_rpc_handler(
         "account-generate",
         |_gid, params: Vec<RpcParam>, _state: Arc<RpcState>| async move {
             let lang = params[0].as_i64().ok_or(RpcError::ParseError)?;
-            let language = crate::account::mnemonic_lang_from_i64(lang);
+            let language = lang_from_i64(lang);
             let words = generate_mnemonic(language, Count::Words12);
             Ok(HandleResult::rpc(json!([words])))
         },

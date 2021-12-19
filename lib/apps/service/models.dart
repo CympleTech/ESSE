@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:esse/l10n/localizations.dart';
 
-import 'package:esse/apps/jarvis/page.dart';
+import 'package:esse/apps/jarvis/detail.dart';
 import 'package:esse/apps/file/list.dart';
 import 'package:esse/apps/group/list.dart';
 import 'package:esse/apps/domain/page.dart';

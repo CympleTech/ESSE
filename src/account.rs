@@ -12,7 +12,7 @@ use crate::utils::crypto::{
     check_pin, decrypt, decrypt_key, encrypt_key, encrypt_multiple, hash_pin,
 };
 
-fn _mnemonic_lang_to_i64(lang: Language) -> i64 {
+fn _lang_to_i64(lang: Language) -> i64 {
     match lang {
         Language::English => 0,
         Language::SimplifiedChinese => 1,
@@ -27,7 +27,7 @@ fn _mnemonic_lang_to_i64(lang: Language) -> i64 {
     }
 }
 
-pub fn mnemonic_lang_from_i64(u: i64) -> Language {
+pub fn lang_from_i64(u: i64) -> Language {
     match u {
         0 => Language::English,
         1 => Language::SimplifiedChinese,
@@ -98,7 +98,7 @@ impl Account {
     }
 
     pub fn lang(&self) -> Language {
-        mnemonic_lang_from_i64(self.lang)
+        lang_from_i64(self.lang)
     }
 
     pub fn generate(
@@ -112,7 +112,7 @@ impl Account {
         avatar: Vec<u8>,
     ) -> Result<(Account, Keypair)> {
         let (gid, sk) = generate_id(
-            mnemonic_lang_from_i64(lang),
+            lang_from_i64(lang),
             mnemonic,
             index,
             0, // account default multiple address index is 0.

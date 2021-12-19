@@ -7,12 +7,12 @@ import 'package:esse/l10n/localizations.dart';
 import 'package:esse/widgets/shadow_dialog.dart';
 import 'package:esse/widgets/user_info.dart';
 import 'package:esse/widgets/chat_message.dart';
+import 'package:esse/widgets/chat_input.dart';
 import 'package:esse/provider.dart';
 import 'package:esse/session.dart' show SessionType, Session, OnlineType;
 import 'package:esse/rpc.dart';
 
 import 'package:esse/apps/primitives.dart';
-import 'package:esse/apps/chat_input.dart';
 import 'package:esse/apps/chat/models.dart';
 import 'package:esse/apps/group/add.dart';
 
@@ -107,7 +107,7 @@ class _ChatDetailState extends State<ChatDetail> {
   @override
   void deactivate() {
     if (!isDisplayDesktop(context)) {
-      context.read<AccountProvider>().clearActivedSession(SessionType.Group);
+      context.read<AccountProvider>().clearActivedSession(SessionType.Chat);
     }
     super.deactivate();
   }

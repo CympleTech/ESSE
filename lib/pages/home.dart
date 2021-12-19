@@ -32,7 +32,7 @@ import 'package:esse/apps/chat/add.dart';
 import 'package:esse/apps/file/models.dart';
 import 'package:esse/apps/file/list.dart';
 import 'package:esse/apps/service/models.dart';
-import 'package:esse/apps/jarvis/page.dart';
+import 'package:esse/apps/jarvis/detail.dart';
 import 'package:esse/apps/group/detail.dart';
 
 class HomePage extends StatelessWidget {

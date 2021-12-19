@@ -21,13 +21,15 @@ class ChatInput extends StatefulWidget {
   final Function callback;
   final bool hasTransfer;
   final String transferTo;
+  final bool emojiWidth;
   ChatInput({Key? key,
       required this.sid,
       required this.online,
       required this.callback,
       this.hasTransfer = true,
       this.waiting = false,
-      this.transferTo = ''
+      this.transferTo = '',
+      this.emojiWidth = false
   }) : super(key: key);
 
   @override
@@ -83,7 +85,8 @@ class ChatInputState extends State<ChatInput> {
       context,
       Icons.person_rounded,
       lang.contact,
-      ContactList(callback: _contactCallback, multiple: false)
+      ContactList(callback: _contactCallback, multiple: false),
+      0.0
     );
   }
 
@@ -261,7 +264,7 @@ class ChatInputState extends State<ChatInput> {
               ],
             ),
           ),
-          if (_emojiShow) Emoji(action: _emoji),
+          if (_emojiShow) Emoji(action: _emoji, emojiWidth: widget.emojiWidth),
           if (_recordShow)
           Container(height: 100.0,
             child: AudioRecorder(

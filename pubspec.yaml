@@ -101,16 +101,6 @@ flutter:
     - assets/images/file_video.png
     - assets/images/dir_folder.png
     - assets/images/dir_favorites.png
-    - assets/mnemonic/chinese_simplified.txt
-    - assets/mnemonic/chinese_traditional.txt
-    - assets/mnemonic/english.txt
-    - assets/mnemonic/french.txt
-    - assets/mnemonic/italian.txt
-    - assets/mnemonic/japanese.txt
-    - assets/mnemonic/korean.txt
-    - assets/mnemonic/spanish.txt
-    - assets/answers/chinese_simplified.txt
-    - assets/answers/english.txt
   # fonts:
   #   - family: 'Noto'
   #     fonts:

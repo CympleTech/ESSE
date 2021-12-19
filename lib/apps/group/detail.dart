@@ -12,6 +12,7 @@ import 'package:esse/widgets/shadow_dialog.dart';
 import 'package:esse/widgets/audio_recorder.dart';
 import 'package:esse/widgets/user_info.dart';
 import 'package:esse/widgets/chat_message.dart';
+import 'package:esse/widgets/chat_input.dart';
 import 'package:esse/widgets/show_contact.dart';
 import 'package:esse/rpc.dart';
 import 'package:esse/global.dart';
@@ -19,7 +20,6 @@ import 'package:esse/provider.dart';
 import 'package:esse/session.dart' show SessionType, Session;
 
 import 'package:esse/apps/primitives.dart';
-import 'package:esse/apps/chat_input.dart';
 import 'package:esse/apps/group/models.dart';
 
 class GroupChatDetail extends StatefulWidget {
@@ -152,21 +152,22 @@ class _GroupChatDetailState extends State<GroupChatDetail> {
         child: isDesktop
         ? Row(children: [
             Expanded(child: _MainScreen(
-                group: this._group, members: this._members, messages: this._messages)),
+                isDesktop: isDesktop, group: this._group, members: this._members, messages: this._messages)),
             _MemberScreen(members: this._members),
         ])
-        : _MainScreen(group: this._group, members: this._members, messages: this._messages)
+        : _MainScreen(isDesktop: isDesktop, group: this._group, members: this._members, messages: this._messages)
       )
     );
   }
 }
 
 class _MainScreen extends StatefulWidget {
+  final bool isDesktop;
   final GroupChat group;
   final List<Member> members;
   final List<Message> messages;
 
-  _MainScreen({Key? key, required this.group, required this.members, required this.messages}) : super(key: key);
+  _MainScreen({Key? key, required this.isDesktop, required this.group, required this.members, required this.messages}) : super(key: key);
 
   @override
   _MainScreenState createState() => _MainScreenState();
@@ -198,7 +199,13 @@ class _MainScreenState extends State<_MainScreen> {
               return Container();
             }
         )),
-        ChatInput(sid: 0, online: true, callback: _send, hasTransfer: false),
+        ChatInput(
+          sid: 0,
+          online: true,
+          callback: _send,
+          hasTransfer: false,
+          emojiWidth: widget.isDesktop,
+        ),
       ]
     );
   }

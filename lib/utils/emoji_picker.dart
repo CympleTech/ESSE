@@ -629,7 +629,7 @@ class _EmojiPickerState extends State<EmojiPicker> {
       return Column(
         children: <Widget>[
           SizedBox(
-            height: 110.0,
+            height: (widget.maxWidth / widget.columns) * widget.rows,
             width: widget.maxWidth,
             child: PageView(
               children: pages,
