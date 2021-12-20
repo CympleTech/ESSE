@@ -142,7 +142,8 @@ impl Message {
         gid: &GroupId,
         db: &DStorage,
         fid: &i64,
-        height: &i64,
+        from: &i64,
+        to: &i64,
     ) -> Result<Vec<(i64, GroupId, NetworkMessage, i64)>> {
         let sql = format!("SELECT id, mid FROM members WHERE fid = {}", fid);
         let m = db.query(&sql)?;
@@ -154,7 +155,7 @@ impl Message {
             members.insert(id, mid);
         }
 
-        let sql = format!("SELECT id, height, fid, mid, is_me, m_type, content, is_delivery, datetime FROM messages WHERE fid = {} AND height >= {}", fid, height);
+        let sql = format!("SELECT id, height, fid, mid, is_me, m_type, content, is_delivery, datetime FROM messages WHERE fid = {} AND height BETWEEN {} AND {}", fid, from, to);
         let matrix = db.query(&sql)?;
         let mut messages = vec![];
         for values in matrix {

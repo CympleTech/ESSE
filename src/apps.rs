@@ -38,7 +38,6 @@ pub(crate) async fn app_layer_handle(
     mgid: GroupId,
     msg: RecvType,
 ) -> Result<HandleResult> {
-    println!("Handle Sync: fgid: {:?}, mgid: {:?}", fgid, mgid);
     match (fgid, mgid) {
         (group::GROUP_ID, _) => group::handle_peer(layer, mgid, msg).await,
         (_, group::GROUP_ID) => group::handle_server(layer, fgid, msg).await,

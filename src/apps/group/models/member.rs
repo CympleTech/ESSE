@@ -189,12 +189,13 @@ impl Member {
         gid: &GroupId,
         db: &DStorage,
         fid: &i64,
-        height: &i64,
+        from: &i64,
+        to: &i64,
     ) -> Result<(
         Vec<(i64, GroupId, PeerId, String, Vec<u8>)>,
         Vec<(i64, GroupId)>,
     )> {
-        let sql = format!("SELECT id, height, fid, mid, addr, name, leave FROM members WHERE fid = {} AND height >= {}", fid, height);
+        let sql = format!("SELECT id, height, fid, mid, addr, name, leave FROM members WHERE fid = {} AND height BETWEEN {} AND {}", fid, from, to);
         let matrix = db.query(&sql)?;
         let mut adds = vec![];
         let mut leaves = vec![];

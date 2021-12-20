@@ -115,7 +115,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
 
             let mut gc = GroupChat::new(addr, name);
             let gcd = gc.g_id;
-            let gheight = gc.height;
+            let gheight = gc.height + 1; // add first member.
 
             // save db
             gc.insert(&db)?;
@@ -145,7 +145,6 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             // Add frist member join.
             let mut layer_lock = state.layer.write().await;
             layer_lock.add_running(&gcd, gid, gdid, gheight)?;
-            let height = layer_lock.running_mut(&gcd)?.increased();
 
             // Add online to layers.
             layer_lock
@@ -158,7 +157,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             drop(layer_lock);
 
             // Update consensus.
-            GroupChat::add_height(&db, gdid, height)?;
+            GroupChat::add_height(&db, gdid, gheight)?;
 
             // Online local group.
             results.networks.push(NetworkType::AddGroup(gcd));
@@ -305,7 +304,6 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
                 for (mgid, maddr) in state.layer.read().await.running(&gcd)?.onlines() {
                     let s = SendType::Event(0, *maddr, data.clone());
                     add_server_layer(&mut results, *mgid, s);
-                    println!("--- DEBUG broadcast to: {:?}", mgid);
                 }
             } else {
                 // leave group.

@@ -32,21 +32,25 @@ class GroupChat {
 }
 
 class Member {
-  int id;
-  int fid;
-  String mid;
-  String addr;
-  String name;
-  bool leave;
+  int id = 0;
+  int fid = 0;
+  String mid = '';
+  String addr = '';
+  String name = '';
+  bool leave = false;
   bool online = false;
 
-  Member.fromList(List params):
-    this.id = params[0],
-    this.fid = params[1],
-    this.mid = params[2],
-    this.addr = params[3],
-    this.name = params[4],
+  Member.fromList(List params) {
+    this.id = params[0];
+    this.fid = params[1];
+    this.mid = params[2];
+    this.addr = params[3];
+    this.name = params[4];
     this.leave = params[5];
+    if (this.addr == Global.addr) {
+      this.online = true;
+    }
+  }
 
   Avatar showAvatar({double width = 45.0, bool isOnline = true}) {
     final avatar = Global.avatarPath + this.mid + '.png';

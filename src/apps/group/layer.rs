@@ -52,10 +52,10 @@ pub(crate) async fn handle_server(
             // TODO
         }
         RecvType::Event(addr, bytes) => {
-            println!("----------- DEBUG GROUP CHAT: SERVER GOT LAYER EVENT");
+            debug!("----------- DEBUG GROUP CHAT: SERVER GOT LAYER EVENT");
             let event: LayerEvent = bincode::deserialize(&bytes)?;
             handle_server_event(fgid, addr, event, layer, &mut results).await?;
-            println!("----------- DEBUG GROUP CHAT: SERVER OVER LAYER EVENT");
+            debug!("----------- DEBUG GROUP CHAT: SERVER OVER LAYER EVENT");
         }
         RecvType::Stream(_uid, _stream, _bytes) => {
             // TODO stream
@@ -137,10 +137,10 @@ pub(crate) async fn handle_peer(
             }
         }
         RecvType::Event(addr, bytes) => {
-            println!("----------- DEBUG GROUP CHAT: PEER GOT LAYER EVENT");
+            debug!("----------- DEBUG GROUP CHAT: PEER GOT LAYER EVENT");
             let event: LayerEvent = bincode::deserialize(&bytes)?;
             handle_peer_event(ogid, addr, event, layer, &mut results).await?;
-            println!("----------- DEBUG GROUP CHAT: PEER OVER LAYER EVENT");
+            debug!("----------- DEBUG GROUP CHAT: PEER OVER LAYER EVENT");
         }
         RecvType::Stream(_uid, _stream, _bytes) => {
             // TODO stream
@@ -287,7 +287,7 @@ async fn handle_server_event(
                     broadcast(&LayerEvent::Sync(gcd, h, event), layer, &gcd, results).await?;
                 }
                 Event::MessageCreate(mgid, nmsg, mtime) => {
-                    println!("Sync: create message start");
+                    debug!("Sync: create message start");
                     let _mdid = Member::get_id(&db, &id, &mgid)?;
 
                     let new_e = Event::MessageCreate(mgid, nmsg.clone(), mtime);
@@ -299,7 +299,7 @@ async fn handle_server_event(
                         new_h, id, mgid, &ogid, nmsg, mtime, &base, results,
                     )?;
                     results.rpcs.push(rpc::message_create(ogid, &msg));
-                    println!("Sync: create message ok");
+                    debug!("Sync: create message ok");
 
                     // UPDATE SESSION.
                     update_session(&base, &ogid, &id, &msg, results);
@@ -322,7 +322,7 @@ async fn handle_server_event(
             add_server_layer(results, fgid, s);
         }
         LayerEvent::SyncReq(gcd, from) => {
-            println!("Got sync request. height: {} from: {}", height, from);
+            debug!("Got sync request. height: {} from: {}", height, from);
 
             if height >= from {
                 let to = if height - from > 20 {
@@ -331,13 +331,13 @@ async fn handle_server_event(
                     height
                 };
 
-                let (members, leaves) = Member::sync(&base, &ogid, &db, &id, &to).await?;
-                let messages = Message::sync(&base, &ogid, &db, &id, &to).await?;
+                let (members, leaves) = Member::sync(&base, &ogid, &db, &id, &from, &to).await?;
+                let messages = Message::sync(&base, &ogid, &db, &id, &from, &to).await?;
                 let event = LayerEvent::SyncRes(gcd, height, from, to, members, leaves, messages);
                 let data = bincode::serialize(&event).unwrap_or(vec![]);
                 let s = SendType::Event(0, addr, data);
                 add_server_layer(results, fgid, s);
-                println!("Sended sync request results. from: {}, to: {}", from, to);
+                debug!("Sended sync request results. from: {}, to: {}", from, to);
             }
         }
         LayerEvent::Suspend(..) => {}
@@ -412,7 +412,7 @@ async fn handle_peer_event(
             }
         }
         LayerEvent::Sync(gcd, height, event) => {
-            println!("Sync: handle height: {}", height);
+            debug!("Sync: handle height: {}", height);
 
             match event {
                 Event::GroupTransfer(_addr) => {
@@ -460,7 +460,7 @@ async fn handle_peer_event(
                     GroupChat::add_height(&db, id, height)?;
                 }
                 Event::MessageCreate(mgid, nmsg, mtime) => {
-                    println!("Sync: create message start");
+                    debug!("Sync: create message start");
                     let _mdid = Member::get_id(&db, &id, &mgid)?;
 
                     let msg = handle_network_message(
@@ -469,14 +469,14 @@ async fn handle_peer_event(
                     results.rpcs.push(rpc::message_create(ogid, &msg));
 
                     GroupChat::add_height(&db, id, height)?;
-                    println!("Sync: create message ok");
+                    debug!("Sync: create message ok");
 
                     // UPDATE SESSION.
                     update_session(&base, &ogid, &id, &msg, results);
                 }
             }
         }
-        LayerEvent::SyncRes(gcd, height, mut from, to, adds, leaves, messages) => {
+        LayerEvent::SyncRes(gcd, height, from, to, adds, leaves, messages) => {
             if to >= height {
                 // when last packed sync, start sync online members.
                 add_layer(results, ogid, sync_online(gcd, addr));
@@ -517,11 +517,12 @@ async fn handle_peer_event(
             }
 
             for (height, mgid, nm, time) in messages {
-                let msg =
-                    handle_network_message(height, id, mgid, &ogid, nm, time, &base, results)?;
-                results.rpcs.push(rpc::message_create(ogid, &msg));
-                last_message = Some(msg);
-                from += 1;
+                if let Ok(msg) =
+                    handle_network_message(height, id, mgid, &ogid, nm, time, &base, results)
+                {
+                    results.rpcs.push(rpc::message_create(ogid, &msg));
+                    last_message = Some(msg);
+                }
             }
 
             if to < height {
@@ -535,6 +536,7 @@ async fn handle_peer_event(
             if let Some(msg) = last_message {
                 update_session(&base, &ogid, &id, &msg, results);
             }
+            debug!("Over handle sync packed... {}, {}, {}", height, from, to);
         }
         _ => error!("group peer handle event nerver here"),
     }
@@ -553,7 +555,7 @@ pub(crate) async fn broadcast(
     for (mgid, maddr) in layer.read().await.running(&gcd)?.onlines() {
         let s = SendType::Event(0, *maddr, new_data.clone());
         add_server_layer(results, *mgid, s);
-        println!("--- DEBUG broadcast to: {:?}", mgid);
+        debug!("--- DEBUG broadcast to: {:?}", mgid);
     }
 
     Ok(())
@@ -596,7 +598,6 @@ pub(crate) fn group_conn(proof: Proof, addr: Peer, gid: GroupId) -> SendType {
 }
 
 fn sync(gcd: GroupId, addr: PeerId, height: i64) -> SendType {
-    println!("Send sync request...");
     let data = bincode::serialize(&LayerEvent::SyncReq(gcd, height + 1)).unwrap_or(vec![]);
     SendType::Event(0, addr, data)
 }

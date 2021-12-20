@@ -229,11 +229,15 @@ class _GroupChatDetailState extends State<GroupChatDetail> {
             padding: EdgeInsets.symmetric(horizontal: 20.0),
             itemCount: recentMessageKeys.length,
             reverse: true,
-            itemBuilder: (BuildContext context, index) => ChatMessage(
-              fgid: this._group.gid,
-              name: this._group.name,
-              message: this._messages[recentMessageKeys[index]]!,
-            )
+            itemBuilder: (BuildContext context, index) {
+              final msg = this._messages[recentMessageKeys[index]]!;
+              return ChatMessage(
+                avatar: this._members[msg.mid]!.showAvatar(isOnline: false),
+                fgid: this._group.gid,
+                name: this._group.name,
+                message: msg,
+              );
+            }
         )),
         ChatInput(
           sid: sid,
