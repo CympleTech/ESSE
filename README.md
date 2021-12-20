@@ -1,10 +1,10 @@
-<h1 align="center"><img src="https://cympletech.com/screenshots/esse_words_logo.png" alt="ESSE"></h1>
+<h1 align="center"><img src="https://cympletech.com/logo/esse_words.png" alt="ESSE"></h1>
 
 **ESSE** (Encrypted Symmetrical Session Engine) An open source encrypted peer-to-peer system for data security, would allow data to be sent securely from one terminal to another without going through third-party services.
 
-**My place, my rules.**
+**Your place, your rules.**
 
-![image](https://cympletech.com/statics/esse-show.gif)
+![image](https://cympletech.com/images/esse-show.gif)
 
 ESSE, stands for Encrypted Symmetrical Session Engine, positioned as an engine. The engine is coded in [**Rust**](https://github.com/rust-lang/rust) language based on [**TDN**](https://github.com/cypherlink/TDN) framework, and the cross-platform user interface is built using [**Flutter**](https://github.com/flutter/flutter).
 
