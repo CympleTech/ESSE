@@ -1,9 +1,12 @@
+use std::path::PathBuf;
 use tdn::types::{
     group::GroupId,
     primitive::{PeerId, Result},
     rpc::{json, RpcParam},
 };
 use tdn_storage::local::{DStorage, DsValue};
+
+use crate::storage::read_avatar;
 
 /// Group Member Model.
 pub(crate) struct Member {
@@ -71,7 +74,7 @@ impl Member {
         }
     }
 
-    pub fn all(db: &DStorage, fid: &i64) -> Result<Vec<Member>> {
+    pub fn list(db: &DStorage, fid: &i64) -> Result<Vec<Member>> {
         let matrix = db.query(&format!(
             "SELECT id, height, fid, mid, addr, name, leave FROM members WHERE fid = {}",
             fid
@@ -114,7 +117,7 @@ impl Member {
         Ok(())
     }
 
-    pub fn get(db: &DStorage, id: &i64) -> Result<Member> {
+    pub fn _get(db: &DStorage, id: &i64) -> Result<Member> {
         let mut matrix = db.query(&format!(
             "SELECT id, height, fid, mid, addr, name, leave FROM members WHERE id = {}",
             id,
@@ -179,5 +182,31 @@ impl Member {
     pub fn delete(db: &DStorage, fid: &i64) -> Result<usize> {
         let sql = format!("DELETE FROM members WHERE fid = {}", fid);
         db.delete(&sql)
+    }
+
+    pub async fn sync(
+        base: &PathBuf,
+        gid: &GroupId,
+        db: &DStorage,
+        fid: &i64,
+        height: &i64,
+    ) -> Result<(
+        Vec<(i64, GroupId, PeerId, String, Vec<u8>)>,
+        Vec<(i64, GroupId)>,
+    )> {
+        let sql = format!("SELECT id, height, fid, mid, addr, name, leave FROM members WHERE fid = {} AND height >= {}", fid, height);
+        let matrix = db.query(&sql)?;
+        let mut adds = vec![];
+        let mut leaves = vec![];
+        for values in matrix {
+            let m = Self::from_values(values);
+            if m.leave {
+                leaves.push((m.height, m.m_id));
+            } else {
+                let mavatar = read_avatar(base, gid, &m.m_id).await.unwrap_or(vec![]);
+                adds.push((m.height, m.m_id, m.m_addr, m.m_name, mavatar))
+            }
+        }
+        Ok((adds, leaves))
     }
 }

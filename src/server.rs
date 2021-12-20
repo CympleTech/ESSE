@@ -84,8 +84,11 @@ pub async fn start(db_path: String) -> Result<()> {
     while let Some(message) = recver.recv().await {
         match message {
             ReceiveMessage::Group(fgid, g_msg) => {
-                if let Ok(handle_result) =
-                    group.write().await.handle(fgid, g_msg, &layer, now_rpc_uid)
+                if let Ok(handle_result) = group
+                    .write()
+                    .await
+                    .handle(fgid, g_msg, &layer, now_rpc_uid)
+                    .await
                 {
                     handle(handle_result, now_rpc_uid, true, &sender).await;
                 }

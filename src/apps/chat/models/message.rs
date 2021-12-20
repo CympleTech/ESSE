@@ -2,16 +2,14 @@ use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
 use tdn::types::{
     group::{EventId, GroupId},
-    primitive::{HandleResult, PeerId, Result},
+    primitive::{HandleResult, Result},
     rpc::{json, RpcParam},
 };
 use tdn_storage::local::{DStorage, DsValue};
 
 use chat_types::{MessageType, NetworkMessage};
 
-use crate::storage::{read_avatar_sync, read_file_sync, read_image_sync, read_record_sync};
-
-use super::from_network_message;
+use super::{from_network_message, to_network_message};
 
 pub(crate) fn handle_nmsg(
     nmsg: NetworkMessage,
@@ -30,44 +28,12 @@ pub(crate) fn handle_nmsg(
     Ok(msg)
 }
 
-pub(crate) fn from_model(base: &PathBuf, gid: &GroupId, model: Message) -> Result<NetworkMessage> {
-    // handle message's type.
-    match model.m_type {
-        MessageType::String => Ok(NetworkMessage::String(model.content)),
-        MessageType::Image => {
-            let bytes = read_image_sync(base, gid, &model.content)?;
-            Ok(NetworkMessage::Image(bytes))
-        }
-        MessageType::File => {
-            let bytes = read_file_sync(base, gid, &model.content)?;
-            Ok(NetworkMessage::File(model.content, bytes))
-        }
-        MessageType::Contact => {
-            let v: Vec<&str> = model.content.split(";;").collect();
-            if v.len() != 3 {
-                return Err(anyhow!("message is invalid"));
-            }
-            let cname = v[0].to_owned();
-            let cgid = GroupId::from_hex(v[1])?;
-            let caddr = PeerId::from_hex(v[2])?;
-            let avatar_bytes = read_avatar_sync(base, gid, &cgid)?;
-            Ok(NetworkMessage::Contact(cname, cgid, caddr, avatar_bytes))
-        }
-        MessageType::Record => {
-            let (bytes, time) = if let Some(i) = model.content.find('-') {
-                let time = model.content[0..i].parse().unwrap_or(0);
-                let bytes = read_record_sync(base, gid, &model.content[i + 1..])?;
-                (bytes, time)
-            } else {
-                (vec![], 0)
-            };
-            Ok(NetworkMessage::Record(bytes, time))
-        }
-        MessageType::Invite => Ok(NetworkMessage::Invite(model.content)),
-        MessageType::Emoji => Ok(NetworkMessage::Emoji),
-        MessageType::Phone => Ok(NetworkMessage::Phone),
-        MessageType::Video => Ok(NetworkMessage::Video),
-    }
+pub(crate) async fn from_model(
+    base: &PathBuf,
+    gid: &GroupId,
+    model: Message,
+) -> Result<NetworkMessage> {
+    to_network_message(base, gid, model.m_type, model.content).await
 }
 
 pub(crate) struct Message {

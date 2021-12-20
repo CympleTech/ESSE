@@ -11,7 +11,7 @@ use group_types::{Event, LayerEvent};
 
 use crate::apps::chat::{Friend, InviteType};
 use crate::layer::Online;
-use crate::rpc::{session_create, session_delete, session_last, RpcState};
+use crate::rpc::{session_create, session_delete, RpcState};
 use crate::session::{Session, SessionType};
 use crate::storage::{chat_db, group_db, read_avatar, session_db, write_avatar};
 
@@ -94,8 +94,8 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             let id = params[0].as_i64().ok_or(RpcError::ParseError)?;
             let db = group_db(state.layer.read().await.base(), &gid)?;
             let group = GroupChat::get(&db, &id)?;
-            let members = Member::all(&db, &id)?;
-            let messages = Message::all(&db, &id)?;
+            let members = Member::list(&db, &id)?;
+            let messages = Message::list(&db, &id)?;
             Ok(HandleResult::rpc(detail_list(group, members, messages)))
         },
     );

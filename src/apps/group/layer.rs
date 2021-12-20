@@ -196,7 +196,7 @@ fn handle_connect(
     // 1.3 online to UI.
     results.rpcs.push(session_connect(ogid, &sid, &addr.id));
 
-    println!("will sync remote: {}, my: {}", height, group.height);
+    debug!("will sync remote: {}, my: {}", height, group.height);
     // 1.4 sync group height.
     if group.height < height {
         add_layer(results, ogid, sync(gcd, addr.id, group.height));
@@ -325,24 +325,19 @@ async fn handle_server_event(
             println!("Got sync request. height: {} from: {}", height, from);
 
             if height >= from {
-                let to = if height - from > 100 {
-                    from + 100
+                let to = if height - from > 20 {
+                    from + 20
                 } else {
                     height
                 };
 
-                // TODO
-
-                // let packed = Consensus::pack(&db, &base, &gcd, &id, &from, &to).await?;
-                // let event = LayerEvent::Packed(gcd, height, from, to, packed);
-
-                //let packed_members = vec![];
-                //let packed_messages = vec![];
-
-                //let data = bincode::serialize(&event).unwrap_or(vec![]);
-                //let s = SendType::Event(0, addr, data);
-                //add_server_layer(results, fgid, s);
-                //println!("Sended sync request results. from: {}, to: {}", from, to);
+                let (members, leaves) = Member::sync(&base, &ogid, &db, &id, &to).await?;
+                let messages = Message::sync(&base, &ogid, &db, &id, &to).await?;
+                let event = LayerEvent::SyncRes(gcd, height, from, to, members, leaves, messages);
+                let data = bincode::serialize(&event).unwrap_or(vec![]);
+                let s = SendType::Event(0, addr, data);
+                add_server_layer(results, fgid, s);
+                println!("Sended sync request results. from: {}, to: {}", from, to);
             }
         }
         LayerEvent::Suspend(..) => {}
@@ -481,22 +476,47 @@ async fn handle_peer_event(
                 }
             }
         }
-        LayerEvent::SyncMember(gcd, height, from, to, adds, leaves) => {
-            println!("Start handle sync packed... {}, {}, {}", height, from, to);
-            // TODO
-            // handle_sync(&db, ogid, id, gcd, addr, height, from, to, events, base, results)?;
-            // update or leave.
-        }
-        LayerEvent::SyncMessage(gcd, height, mut from, to, adds) => {
+        LayerEvent::SyncRes(gcd, height, mut from, to, adds, leaves, messages) => {
             if to >= height {
                 // when last packed sync, start sync online members.
                 add_layer(results, ogid, sync_online(gcd, addr));
             }
 
-            println!("Start handle sync packed... {}, {}, {}", height, from, to);
+            debug!("Start handle sync packed... {}, {}, {}", height, from, to);
             let mut last_message = None;
 
-            for (height, mgid, nm, time) in adds {
+            for (height, mgid, maddr, mname, mavatar) in adds {
+                let mdid_res = Member::get_id(&db, &id, &mgid);
+                if let Ok(mdid) = mdid_res {
+                    Member::update(&db, &height, &mdid, &maddr, &mname)?;
+                    if mavatar.len() > 0 {
+                        write_avatar_sync(&base, &ogid, &mgid, mavatar)?;
+                    }
+                    let mem = Member::info(mdid, id, mgid, maddr, mname);
+                    results.rpcs.push(rpc::member_join(ogid, &mem));
+                } else {
+                    let mut member = Member::new(height, id, mgid, maddr, mname);
+                    member.insert(&db)?;
+                    if mavatar.len() > 0 {
+                        write_avatar_sync(&base, &ogid, &mgid, mavatar)?;
+                    }
+                    results.rpcs.push(rpc::member_join(ogid, &member));
+                }
+            }
+
+            for (height, mgid) in leaves {
+                if let Ok(mdid) = Member::get_id(&db, &id, &mgid) {
+                    Member::leave(&db, &height, &mdid)?;
+                    // check mid is my chat friend. if not, delete avatar.
+                    let s_db = chat_db(&base, &mgid)?;
+                    if Friend::get_id(&s_db, &mgid).is_err() {
+                        let _ = delete_avatar(&base, &ogid, &mgid).await;
+                    }
+                    results.rpcs.push(rpc::member_leave(ogid, id, mdid));
+                }
+            }
+
+            for (height, mgid, nm, time) in messages {
                 let msg =
                     handle_network_message(height, id, mgid, &ogid, nm, time, &base, results)?;
                 results.rpcs.push(rpc::message_create(ogid, &msg));

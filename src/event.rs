@@ -499,7 +499,7 @@ impl StatusEvent {
 }
 
 impl SyncEvent {
-    pub fn sync(
+    pub async fn sync(
         base: &PathBuf,
         gid: &GroupId,
         account: &Account,
@@ -616,7 +616,7 @@ impl SyncEvent {
                         // create
                         let mid = msg.hash;
                         let is_me = msg.is_me;
-                        let nm = from_model(base, gid, msg)?;
+                        let nm = from_model(base, gid, msg).await?;
                         SyncEvent::Message(hash, fgid, mid, is_me, nm)
                     } else {
                         SyncEvent::None

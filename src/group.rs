@@ -77,7 +77,7 @@ pub(crate) enum GroupEvent {
 }
 
 impl Group {
-    pub fn handle(
+    pub async fn handle(
         &mut self,
         gid: GroupId,
         msg: RecvType,
@@ -113,7 +113,7 @@ impl Group {
             }
             RecvType::Event(addr, bytes) => {
                 let event: GroupEvent = bincode::deserialize(&bytes)?;
-                return GroupEvent::handle(self, event, gid, addr, layer, uid);
+                return GroupEvent::handle(self, event, gid, addr, layer, uid).await;
             }
             RecvType::Stream(_uid, _stream, _bytes) => {
                 todo!();
@@ -691,7 +691,7 @@ impl Group {
 }
 
 impl GroupEvent {
-    pub fn handle(
+    pub async fn handle(
         group: &mut Group,
         event: GroupEvent,
         gid: GroupId,
@@ -829,7 +829,7 @@ impl GroupEvent {
                 // every time sync MAX is 100.
                 let last_to = if to - from > 100 { to - 100 } else { to };
                 let sync_events =
-                    SyncEvent::sync(&group.base, &gid, group.account(&gid)?, from, last_to)?;
+                    SyncEvent::sync(&group.base, &gid, group.account(&gid)?, from, last_to).await?;
                 let event = GroupEvent::SyncResponse(from, last_to, to, sync_events);
                 let data = bincode::serialize(&event).unwrap_or(vec![]);
                 results.groups.push((gid, SendType::Event(0, addr, data)));

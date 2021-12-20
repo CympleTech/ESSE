@@ -16,8 +16,9 @@ use tdn::types::{
 use crate::apps::group::GroupChat;
 use crate::rpc::session_create;
 use crate::storage::{
-    chat_db, group_db, read_avatar, read_file, read_record, session_db, write_avatar_sync,
-    write_file, write_file_sync, write_image, write_image_sync, write_record_sync,
+    chat_db, group_db, read_avatar, read_db_file, read_file, read_image, read_record, session_db,
+    write_avatar_sync, write_file, write_file_sync, write_image, write_image_sync,
+    write_record_sync,
 };
 
 pub(crate) fn from_network_message(
@@ -152,6 +153,51 @@ pub(crate) async fn raw_to_network_message(
             NetworkMessage::Invite(content.to_owned()),
             content.to_owned(),
         )),
+    }
+}
+
+pub(crate) async fn to_network_message(
+    base: &PathBuf,
+    gid: &GroupId,
+    mtype: MessageType,
+    content: String,
+) -> Result<NetworkMessage> {
+    // handle message's type.
+    match mtype {
+        MessageType::String => Ok(NetworkMessage::String(content)),
+        MessageType::Image => {
+            let bytes = read_image(base, gid, &content).await?;
+            Ok(NetworkMessage::Image(bytes))
+        }
+        MessageType::File => {
+            let bytes = read_db_file(base, gid, &content).await?;
+            Ok(NetworkMessage::File(content, bytes))
+        }
+        MessageType::Contact => {
+            let v: Vec<&str> = content.split(";;").collect();
+            if v.len() != 3 {
+                return Err(anyhow!("message is invalid"));
+            }
+            let cname = v[0].to_owned();
+            let cgid = GroupId::from_hex(v[1])?;
+            let caddr = PeerId::from_hex(v[2])?;
+            let avatar_bytes = read_avatar(base, gid, &cgid).await?;
+            Ok(NetworkMessage::Contact(cname, cgid, caddr, avatar_bytes))
+        }
+        MessageType::Record => {
+            let (bytes, time) = if let Some(i) = content.find('-') {
+                let time = content[0..i].parse().unwrap_or(0);
+                let bytes = read_record(base, gid, &content[i + 1..]).await?;
+                (bytes, time)
+            } else {
+                (vec![], 0)
+            };
+            Ok(NetworkMessage::Record(bytes, time))
+        }
+        MessageType::Invite => Ok(NetworkMessage::Invite(content)),
+        MessageType::Emoji => Ok(NetworkMessage::Emoji),
+        MessageType::Phone => Ok(NetworkMessage::Phone),
+        MessageType::Video => Ok(NetworkMessage::Video),
     }
 }
 

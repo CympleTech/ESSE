@@ -12,8 +12,7 @@ use chat_types::MessageType;
 use crate::account::User;
 use crate::event::InnerEvent;
 use crate::migrate::consensus::{FRIEND_TABLE_PATH, MESSAGE_TABLE_PATH, REQUEST_TABLE_PATH};
-use crate::rpc::{session_create, session_last, sleep_waiting_close_stable, RpcState};
-use crate::session::{Session, SessionType};
+use crate::rpc::{session_create, sleep_waiting_close_stable, RpcState};
 use crate::storage::{chat_db, delete_avatar, session_db};
 
 use super::layer::{update_session, LayerEvent};
@@ -139,6 +138,8 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             let mut results = HandleResult::new();
             let db = chat_db(state.layer.read().await.base(), &gid)?;
             let mut f = Friend::get(&db, &id)?;
+            f.remark = remark.to_owned();
+            f.me_update(&db)?;
             drop(db);
             state.group.write().await.broadcast(
                 &gid,

@@ -100,12 +100,28 @@ pub(crate) fn write_file_sync(
     Ok(name.to_owned())
 }
 
-pub(crate) fn read_file_sync(base: &PathBuf, gid: &GroupId, name: &str) -> Result<Vec<u8>> {
+pub(crate) async fn read_db_file(base: &PathBuf, gid: &GroupId, name: &str) -> Result<Vec<u8>> {
     let mut path = base.clone();
     path.push(gid.to_hex());
     path.push(FILES_DIR);
     path.push(name);
-    Ok(std::fs::read(base)?)
+    if path.exists() {
+        Ok(fs::read(path).await?)
+    } else {
+        Ok(vec![])
+    }
+}
+
+pub(crate) async fn read_image(base: &PathBuf, gid: &GroupId, name: &str) -> Result<Vec<u8>> {
+    let mut path = base.clone();
+    path.push(gid.to_hex());
+    path.push(IMAGE_DIR);
+    path.push(name);
+    if path.exists() {
+        Ok(fs::read(path).await?)
+    } else {
+        Ok(vec![])
+    }
 }
 
 #[inline]
@@ -171,14 +187,6 @@ pub(crate) async fn write_image(base: &PathBuf, gid: &GroupId, bytes: &[u8]) -> 
     fs::write(path, bytes).await?;
 
     Ok(name)
-}
-
-pub(crate) fn read_image_sync(base: &PathBuf, gid: &GroupId, name: &str) -> Result<Vec<u8>> {
-    let mut path = base.clone();
-    path.push(gid.to_hex());
-    path.push(IMAGE_DIR);
-    path.push(name);
-    Ok(std::fs::read(base)?)
 }
 
 #[inline]
@@ -282,14 +290,6 @@ pub(crate) async fn read_record(base: &PathBuf, gid: &GroupId, name: &str) -> Re
     } else {
         Ok(vec![])
     }
-}
-
-pub(crate) fn read_record_sync(base: &PathBuf, gid: &GroupId, name: &str) -> Result<Vec<u8>> {
-    let mut path = base.clone();
-    path.push(gid.to_hex());
-    path.push(RECORD_DIR);
-    path.push(name);
-    Ok(std::fs::read(path)?)
 }
 
 pub(crate) fn write_record_sync(
