@@ -4,7 +4,7 @@
 
 **Your place, your rules.**
 
-![image](https://cympletech.com/images/esse-show.gif)
+![image](https://cympletech.com/images/esse_show.gif)
 
 ESSE, stands for Encrypted Symmetrical Session Engine, positioned as an engine. The engine is coded in [**Rust**](https://github.com/rust-lang/rust) language based on [**TDN**](https://github.com/cypherlink/TDN) framework, and the cross-platform user interface is built using [**Flutter**](https://github.com/flutter/flutter).
 
@@ -22,8 +22,6 @@ ESSE, stands for Encrypted Symmetrical Session Engine, positioned as an engine. 
 - Built-in Robot assistant Application
 - Multi-identity System
 - Multi-platform Support: Android, iOS, iPadOS, MacOS, Windows, Linux, etc.
-
-[About ESSE(English)](https://github.com/CympleTech/esse/wiki/About-ESSE) / [关于ESSE(简体中文)](https://github.com/CympleTech/esse/wiki/%E5%85%B3%E4%BA%8E-ESSE)
 
 [Screenshots](https://github.com/CympleTech/esse/wiki/Screenshots)
 
