@@ -11,7 +11,7 @@ use tokio::sync::RwLock;
 
 use chat_types::{MessageType, NetworkMessage};
 
-use crate::account::User;
+use crate::account::{Account, User};
 use crate::event::InnerEvent;
 use crate::layer::{Layer, Online};
 use crate::migrate::consensus::{FRIEND_TABLE_PATH, MESSAGE_TABLE_PATH, REQUEST_TABLE_PATH};
@@ -19,10 +19,15 @@ use crate::rpc::{
     notice_menu, session_connect, session_create, session_last, session_lost, session_suspend,
 };
 use crate::session::{connect_session, Session, SessionType};
-use crate::storage::{chat_db, session_db, write_avatar_sync};
+use crate::storage::{account_db, chat_db, session_db, write_avatar_sync};
 
 use super::models::{handle_nmsg, raw_to_network_message, Friend, Message, Request};
 use super::rpc;
+
+/// Chat connect data structure.
+/// params: Friend about me height, connect_proof.
+#[derive(Serialize, Deserialize)]
+pub struct LayerConnect(pub i64, pub Proof);
 
 /// ESSE chat layer Event.
 #[derive(Serialize, Deserialize)]
@@ -41,8 +46,10 @@ pub(crate) enum LayerEvent {
     Reject,
     /// receiver gid, sender gid, message.
     Message(EventId, NetworkMessage),
+    /// request user info.
+    InfoReq(i64),
     /// user full info.
-    Info(User),
+    InfoRes(User),
     /// close friendship.
     Close,
 }
@@ -67,10 +74,17 @@ pub(crate) async fn handle(
         }
         RecvType::Connect(addr, data) | RecvType::ResultConnect(addr, data) => {
             // ESSE chat layer connect date structure.
-            if handle_connect(&mgid, &fgid, &addr, data, &mut layer, &mut results)? {
+            if let Ok(height) = handle_connect(&mgid, &fgid, &addr, data, &mut layer, &mut results)
+            {
+                let peer_id = addr.id;
                 let proof = layer.group.read().await.prove_addr(&mgid, &addr.id)?;
                 let data = bincode::serialize(&proof).unwrap_or(vec![]);
                 let msg = SendType::Result(0, addr, true, false, data);
+                results.layers.push((mgid, fgid, msg));
+
+                let info = LayerEvent::InfoReq(height);
+                let data = bincode::serialize(&info).unwrap_or(vec![]);
+                let msg = SendType::Event(0, peer_id, data);
                 results.layers.push((mgid, fgid, msg));
             } else {
                 let msg = SendType::Result(0, addr, false, false, vec![]);
@@ -80,7 +94,14 @@ pub(crate) async fn handle(
         RecvType::Result(addr, is_ok, data) => {
             // ESSE chat layer result date structure.
             if is_ok {
-                if !handle_connect(&mgid, &fgid, &addr, data, &mut layer, &mut results)? {
+                if let Ok(height) =
+                    handle_connect(&mgid, &fgid, &addr, data, &mut layer, &mut results)
+                {
+                    let info = LayerEvent::InfoReq(height);
+                    let data = bincode::serialize(&info).unwrap_or(vec![]);
+                    let msg = SendType::Event(0, addr.id, data);
+                    results.layers.push((mgid, fgid, msg));
+                } else {
                     let msg = SendType::Result(0, addr, false, false, vec![]);
                     results.layers.push((mgid, fgid, msg));
                 }
@@ -138,7 +159,7 @@ fn handle_connect(
     data: Vec<u8>,
     layer: &mut Layer,
     results: &mut HandleResult,
-) -> Result<bool> {
+) -> Result<i64> {
     // 0. deserialize connect data.
     let proof: Proof = bincode::deserialize(&data)?;
 
@@ -148,25 +169,25 @@ fn handle_connect(
     // 2. check friendship.
     let friend = update_friend(&layer.base, mgid, fgid, &addr.id);
     if friend.is_err() {
-        return Ok(false);
+        return Err(anyhow!("not friend"));
     }
-    let fid = friend.unwrap().id; // safe.
+    let f = friend.unwrap(); // safe.
 
     // 3. get session.
-    let session_some = connect_session(&layer.base, mgid, &SessionType::Chat, &fid, &addr.id)?;
+    let session_some = connect_session(&layer.base, mgid, &SessionType::Chat, &f.id, &addr.id)?;
     if session_some.is_none() {
-        return Ok(false);
+        return Err(anyhow!("not friend"));
     }
     let sid = session_some.unwrap().id;
 
     // 4. active this session.
     layer
         .running_mut(mgid)?
-        .check_add_online(*fgid, Online::Direct(addr.id), sid, fid)?;
+        .check_add_online(*fgid, Online::Direct(addr.id), sid, f.id)?;
 
     // 5. session online to UI.
     results.rpcs.push(session_connect(*mgid, &sid, &addr.id));
-    Ok(true)
+    Ok(f.height)
 }
 
 impl LayerEvent {
@@ -208,7 +229,7 @@ impl LayerEvent {
                     }
                     let mut request = Request::new(
                         remote.id,
-                        remote.addr,
+                        addr,
                         remote.name.clone(),
                         remark.clone(),
                         false,
@@ -263,7 +284,8 @@ impl LayerEvent {
                         request.is_ok = true;
                         request.update(&db)?;
                         let request_id = request.id;
-                        let friend = Friend::from_request(&db, request)?;
+                        let friend =
+                            Friend::from_remote(&db, remote.id, remote.name, addr, remote.wallet)?;
                         write_avatar_sync(&layer.base, &mgid, &remote.id, remote.avatar)?;
                         results
                             .rpcs
@@ -322,7 +344,23 @@ impl LayerEvent {
                     update_session(&layer.base, &mgid, &fid, &msg, &mut results);
                 }
             }
-            LayerEvent::Info(remote) => {
+            LayerEvent::InfoReq(height) => {
+                // check sync remote height.
+                if let Ok(account) = Account::get(&account_db(layer.base())?, &mgid) {
+                    if account.pub_height > height {
+                        let info = LayerEvent::InfoRes(User::info(
+                            account.name,
+                            account.wallet,
+                            account.pub_height,
+                            account.avatar,
+                        ));
+                        let data = bincode::serialize(&info).unwrap_or(vec![]);
+                        let msg = SendType::Event(0, addr, data);
+                        results.layers.push((mgid, fgid, msg));
+                    }
+                }
+            }
+            LayerEvent::InfoRes(remote) => {
                 let (_sid, fid) = layer.get_running_remote_id(&mgid, &fgid)?;
                 let avatar = remote.avatar.clone();
                 let db = chat_db(&layer.base, &mgid)?;
@@ -330,6 +368,7 @@ impl LayerEvent {
                 f.name = remote.name;
                 f.addr = remote.addr;
                 f.wallet = remote.wallet;
+                f.height = remote.height;
                 f.remote_update(&db)?;
                 drop(db);
                 write_avatar_sync(&layer.base, &mgid, &remote.id, remote.avatar)?;

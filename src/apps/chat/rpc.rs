@@ -79,16 +79,6 @@ pub(crate) fn message_delete(mgid: GroupId, id: i64) -> RpcParam {
 }
 
 #[inline]
-fn friend_list(friends: Vec<Friend>) -> RpcParam {
-    let mut results = vec![];
-    for friend in friends {
-        results.push(friend.to_rpc());
-    }
-
-    json!(results)
-}
-
-#[inline]
 fn request_list(requests: Vec<Request>) -> RpcParam {
     let mut results = vec![];
     for request in requests {
@@ -300,7 +290,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
                 &gid,
                 InnerEvent::SessionRequestCreate(
                     true,
-                    User::simple(remote_gid, remote_addr, remote_name, vec![]),
+                    User::simple(remote_gid, remote_addr, remote_name, vec![], "".to_owned()),
                     remark,
                 ),
                 REQUEST_TABLE_PATH,
@@ -342,7 +332,8 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             request.is_over = true;
             request.update(&db)?;
 
-            let friend = Friend::from_request(&db, request)?;
+            let friend =
+                Friend::from_remote(&db, request.gid, request.name, request.addr, "".to_owned())?;
             results.rpcs.push(json!([id, friend.to_rpc()]));
 
             // ADD NEW SESSION.

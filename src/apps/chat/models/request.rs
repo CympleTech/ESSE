@@ -6,8 +6,6 @@ use tdn::types::{
 };
 use tdn_storage::local::{DStorage, DsValue};
 
-use super::Friend;
-
 #[derive(Clone)]
 pub(crate) struct Request {
     pub id: i64,
@@ -49,10 +47,6 @@ impl Request {
             is_delivery,
             datetime: datetime,
         }
-    }
-
-    pub fn to_friend(self) -> Friend {
-        Friend::new(self.gid, self.addr, self.name, self.remark, "".to_owned())
     }
 
     /// here is zero-copy and unwrap is safe. checked.

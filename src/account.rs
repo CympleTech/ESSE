@@ -55,7 +55,9 @@ pub(crate) struct Account {
     pub lock: Vec<u8>,    // hashed-lock.
     pub secret: Vec<u8>,  // encrypted value.
     pub encrypt: Vec<u8>, // encrypted encrypt key.
-    pub height: u64,
+    pub wallet: String,   // main wallet info.
+    pub pub_height: i64,  // public information height.
+    pub own_height: u64,  // own data consensus height.
     pub event: EventId,
     pub datetime: i64,
 }
@@ -81,7 +83,9 @@ impl Account {
 
         Account {
             id: 0,
-            height: 0,
+            pub_height: 0,
+            own_height: 0,
+            wallet: String::new(),
             event: EventId::default(),
             gid,
             index,
@@ -178,7 +182,9 @@ impl Account {
         Account {
             datetime: v.pop().unwrap().as_i64(),
             event: EventId::from_hex(v.pop().unwrap().as_str()).unwrap_or(EventId::default()),
-            height: v.pop().unwrap().as_i64() as u64,
+            own_height: v.pop().unwrap().as_i64() as u64,
+            pub_height: v.pop().unwrap().as_i64(),
+            wallet: v.pop().unwrap().as_string(),
             avatar: base64::decode(v.pop().unwrap().as_str()).unwrap_or(vec![]),
             encrypt: base64::decode(v.pop().unwrap().as_str()).unwrap_or(vec![]),
             secret: base64::decode(v.pop().unwrap().as_str()).unwrap_or(vec![]),
@@ -193,22 +199,23 @@ impl Account {
         }
     }
 
-    pub fn _get(db: &DStorage, gid: &GroupId) -> Result<Option<Account>> {
+    pub fn get(db: &DStorage, gid: &GroupId) -> Result<Account> {
         let sql = format!(
-            "SELECT id, gid, indx, lang, pass, name, lock, mnemonic, secret, encrypt, avatar, height, event, datetime FROM accounts WHERE gid = '{}'",
+            "SELECT id, gid, indx, lang, pass, name, lock, mnemonic, secret, encrypt, avatar, wallet, pub_height, own_height, event, datetime FROM accounts WHERE gid = '{}'",
             gid.to_hex()
         );
         let mut matrix = db.query(&sql)?;
         if matrix.len() > 0 {
             let values = matrix.pop().unwrap(); // safe unwrap()
-            return Ok(Some(Account::from_values(values)));
+            Ok(Account::from_values(values))
+        } else {
+            Err(anyhow!("account is missing."))
         }
-        Ok(None)
     }
 
     pub fn all(db: &DStorage) -> Result<Vec<Account>> {
         let matrix = db.query(
-            "SELECT id, gid, indx, lang, pass, name, lock, mnemonic, secret, encrypt, avatar, height, event, datetime FROM accounts ORDER BY datetime DESC",
+            "SELECT id, gid, indx, lang, pass, name, lock, mnemonic, secret, encrypt, avatar, wallet, pub_height, own_height, event, datetime FROM accounts ORDER BY datetime DESC",
         )?;
         let mut accounts = vec![];
         for values in matrix {
@@ -227,7 +234,7 @@ impl Account {
             self.id = id;
             self.update(db)?;
         } else {
-            let sql = format!("INSERT INTO accounts (gid, indx, lang, pass, name, lock, mnemonic, secret, encrypt, avatar, height, event, datetime) VALUES ('{}', {}, {}, '{}', '{}', '{}', '{}', '{}', '{}', '{}', {}, '{}', {})",
+            let sql = format!("INSERT INTO accounts (gid, indx, lang, pass, name, lock, mnemonic, secret, encrypt, avatar, wallet, pub_height, own_height, event, datetime) VALUES ('{}', {}, {}, '{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}', {}, {}, '{}', {})",
             self.gid.to_hex(),
             self.index,
             self.lang,
@@ -238,7 +245,9 @@ impl Account {
             base64::encode(&self.secret),
             base64::encode(&self.encrypt),
             base64::encode(&self.avatar),
-            self.height,
+            self.wallet,
+            self.pub_height,
+            self.own_height,
             self.event.to_hex(),
             self.datetime,
         );
@@ -249,12 +258,14 @@ impl Account {
     }
 
     pub fn update(&self, db: &DStorage) -> Result<usize> {
-        let sql = format!("UPDATE accounts SET name='{}', lock='{}', encrypt='{}', avatar='{}', height={}, event='{}', datetime={} WHERE id = {}",
+        let sql = format!("UPDATE accounts SET name='{}', lock='{}', encrypt='{}', avatar='{}', wallet='{}', pub_height={}, own_height={}, event='{}', datetime={} WHERE id = {}",
             self.name,
             base64::encode(&self.lock),
             base64::encode(&self.encrypt),
             base64::encode(&self.avatar),
-            self.height,
+            self.wallet,
+            self.pub_height,
+            self.own_height,
             self.datetime,
             self.event.to_hex(),
             self.id,
@@ -264,9 +275,11 @@ impl Account {
 
     pub fn update_info(&self, db: &DStorage) -> Result<usize> {
         let sql = format!(
-            "UPDATE accounts SET name='{}', avatar='{}' WHERE id = {}",
+            "UPDATE accounts SET name='{}', avatar='{}', wallet='{}', height={} WHERE id = {}",
             self.name,
             base64::encode(&self.avatar),
+            self.wallet,
+            self.pub_height + 1,
             self.id,
         );
         db.update(&sql)
@@ -278,11 +291,11 @@ impl Account {
     }
 
     pub fn update_consensus(&mut self, db: &DStorage, height: u64, eid: EventId) -> Result<usize> {
-        self.height = height;
+        self.own_height = height;
         self.event = eid;
         let sql = format!(
-            "UPDATE accounts SET height={}, event='{}' WHERE id = {}",
-            self.height,
+            "UPDATE accounts SET own_height={}, event='{}' WHERE id = {}",
+            self.own_height,
             self.event.to_hex(),
             self.id,
         );
@@ -296,33 +309,36 @@ pub(crate) struct User {
     pub addr: PeerId,
     pub name: String,
     pub wallet: String,
+    pub height: i64,
     pub avatar: Vec<u8>,
 }
 
 impl User {
-    pub fn simple(id: GroupId, addr: PeerId, name: String, avatar: Vec<u8>) -> Self {
+    pub fn simple(
+        id: GroupId,
+        addr: PeerId,
+        name: String,
+        avatar: Vec<u8>,
+        wallet: String,
+    ) -> Self {
         Self {
             id,
             addr,
             name,
             avatar,
-            wallet: String::new(),
+            wallet,
+            height: 0,
         }
     }
 
-    pub fn full(
-        id: GroupId,
-        addr: PeerId,
-        name: String,
-        wallet: String,
-        avatar: Vec<u8>,
-    ) -> Result<Self> {
-        Ok(Self {
-            id,
-            addr,
+    pub fn info(name: String, wallet: String, height: i64, avatar: Vec<u8>) -> Self {
+        Self {
+            id: GroupId::default(),
+            addr: PeerId::default(),
             name,
             wallet,
+            height,
             avatar,
-        })
+        }
     }
 }

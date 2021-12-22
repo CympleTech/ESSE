@@ -228,10 +228,11 @@ impl Group {
         };
 
         let account = self.account(gid)?;
-        if account.height != remote_height || account.event != remote_event {
-            results
-                .groups
-                .push((*gid, self.sync_message(gid, peer_id, 1, account.height)?));
+        if account.own_height != remote_height || account.event != remote_event {
+            results.groups.push((
+                *gid,
+                self.sync_message(gid, peer_id, 1, account.own_height)?,
+            ));
         }
 
         // connect to others.
@@ -432,6 +433,7 @@ impl Group {
                 self.addr,
                 u.name.clone(),
                 u.avatar.clone(),
+                u.wallet.clone(),
             ))
         } else {
             Err(anyhow!("user missing."))
@@ -535,7 +537,7 @@ impl Group {
     pub fn create_message(&self, gid: &GroupId, addr: Peer) -> Result<SendType> {
         let user = self.clone_user(gid)?;
         let account = self.account(gid)?;
-        let height = account.height;
+        let height = account.own_height;
         let event = account.event;
         let proof = self.prove_addr(gid, &addr.id)?;
         let running = self.running(gid)?;
@@ -558,7 +560,7 @@ impl Group {
 
     pub fn connect_message(&self, gid: &GroupId, addr: Peer) -> Result<SendType> {
         let account = self.account(gid)?;
-        let height = account.height;
+        let height = account.own_height;
         let event = account.event;
         let data = bincode::serialize(&GroupConnect::Connect(height, event)).unwrap_or(vec![]);
         Ok(SendType::Connect(0, addr, data))
@@ -566,7 +568,7 @@ impl Group {
 
     pub fn connect_result(&self, gid: &GroupId, addr: Peer) -> Result<SendType> {
         let account = self.account(gid)?;
-        let height = account.height;
+        let height = account.own_height;
         let event = account.event;
         let data = bincode::serialize(&GroupConnect::Connect(height, event)).unwrap_or(vec![]);
         Ok(SendType::Result(0, addr, true, false, data))
@@ -574,7 +576,7 @@ impl Group {
 
     pub fn agree_message(&self, gid: &GroupId, addr: Peer) -> Result<SendType> {
         let account = self.account(gid)?;
-        let height = account.height;
+        let height = account.own_height;
         let event = account.event;
         let me = self.clone_user(gid)?;
         let proof = self.prove_addr(gid, &addr.id)?;
@@ -649,7 +651,7 @@ impl Group {
 
         let account = self.account_mut(gid)?;
         let pre_event = account.event;
-        let eheight = account.height + 1;
+        let eheight = account.own_height + 1;
         let eid = event.generate_event_id();
 
         let db = consensus_db(&base, gid)?;
@@ -768,7 +770,7 @@ impl GroupEvent {
 
                 let remote_height = ancestors.last().map(|v| *v).unwrap_or(0);
                 let remote_event = hashes.last().map(|v| *v).unwrap_or(EventId::default());
-                if account.height != remote_height || account.event != remote_event {
+                if account.own_height != remote_height || account.event != remote_event {
                     // check ancestor and merge.
                     let db = consensus_db(&group.base, &gid)?;
                     let ours = crate::consensus::Event::get_assign_hash(&db, &ancestors)?;
@@ -819,7 +821,7 @@ impl GroupEvent {
                     } else {
                         results.groups.push((
                             gid,
-                            group.sync_message(&gid, addr, remote_height, account.height)?,
+                            group.sync_message(&gid, addr, remote_height, account.own_height)?,
                         ));
                     }
                 }

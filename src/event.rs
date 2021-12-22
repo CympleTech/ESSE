@@ -216,14 +216,14 @@ impl InnerEvent {
         }
 
         let (merge_height, next_height, next_eid) =
-            if account.height + 1 == eheight && account.event == pre_event {
+            if account.own_height + 1 == eheight && account.event == pre_event {
                 (eheight, eheight, eid)
             } else {
                 Self::merge_event(
                     &db,
                     &addr,
                     results,
-                    account.height,
+                    account.own_height,
                     account.event,
                     eheight,
                     eid,
@@ -274,7 +274,13 @@ impl InnerEvent {
                         if avatar.len() > 0 {
                             write_avatar_sync(group.base(), &gid, &request.gid, avatar)?;
                         }
-                        let friend = Friend::from_request(&db, request)?;
+                        let friend = Friend::from_remote(
+                            &db,
+                            request.gid,
+                            request.name,
+                            request.addr,
+                            "".to_owned(),
+                        )?;
                         results
                             .rpcs
                             .push(chat_rpc::request_agree(gid, rid, &friend));
@@ -718,7 +724,13 @@ impl SyncEvent {
                         if avatar.len() > 0 {
                             write_avatar_sync(&base, &gid, &request.gid, avatar)?;
                         }
-                        let friend = Friend::from_request(&chat_db, request)?;
+                        let friend = Friend::from_remote(
+                            &chat_db,
+                            request.gid,
+                            request.name,
+                            request.addr,
+                            "".to_owned(),
+                        )?;
                         results
                             .rpcs
                             .push(chat_rpc::request_agree(gid, rid, &friend));
@@ -813,7 +825,7 @@ impl SyncEvent {
                 &consensus_db,
                 &addr,
                 results,
-                account.height,
+                account.own_height,
                 account.event,
                 height,
                 eid,

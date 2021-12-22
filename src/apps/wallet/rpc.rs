@@ -16,7 +16,10 @@ use web3::{
     Web3,
 };
 
-use crate::{rpc::RpcState, storage::wallet_db};
+use crate::{
+    rpc::RpcState,
+    storage::{account_db, wallet_db},
+};
 
 use super::{
     models::{Address, Balance, ChainToken, Network, Token},
@@ -584,8 +587,17 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
         "wallet-main",
         |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
             let id = params[0].as_i64().ok_or(RpcError::ParseError)?;
-            let db = wallet_db(state.layer.read().await.base(), &gid)?;
+            let base = state.layer.read().await.base().clone();
+            let db = wallet_db(&base, &gid)?;
+            let a_db = account_db(&base)?;
+            let address = Address::get(&db, &id)?;
             Address::main(&db, &id)?;
+
+            let mut group_lock = state.group.write().await;
+            let account = group_lock.account_mut(&gid)?;
+            account.wallet = address.address;
+            account.update_info(&a_db)?;
+            drop(group_lock);
             Ok(HandleResult::new())
         },
     );
