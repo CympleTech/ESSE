@@ -178,7 +178,12 @@ impl GroupChat {
     }
 
     pub fn add_height(db: &DStorage, id: i64, height: i64) -> Result<usize> {
-        let sql = format!("UPDATE groups SET height={} WHERE id = {}", height, id,);
+        let sql = format!("UPDATE groups SET height={} WHERE id = {}", height, id);
+        db.update(&sql)
+    }
+
+    pub fn update_name(db: &DStorage, id: &i64, name: &str) -> Result<usize> {
+        let sql = format!("UPDATE groups SET name='{}' WHERE id = {}", name, id);
         db.update(&sql)
     }
 

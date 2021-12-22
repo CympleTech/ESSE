@@ -300,7 +300,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
 
             if group.g_addr == addr {
                 // dissolve group.
-                let data = bincode::serialize(&LayerEvent::Sync(gcd, 0, Event::GroupClose))?;
+                let data = bincode::serialize(&LayerEvent::GroupClose(gcd))?;
                 for (mgid, maddr) in state.layer.read().await.running(&gcd)?.onlines() {
                     let s = SendType::Event(0, *maddr, data.clone());
                     add_server_layer(&mut results, *mgid, s);

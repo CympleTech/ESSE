@@ -13,7 +13,10 @@ use tdn_did::Proof;
 
 use crate::apps::chat::Friend;
 use crate::layer::{Layer, Online};
-use crate::rpc::{session_close, session_connect, session_last, session_lost, session_suspend};
+use crate::rpc::{
+    session_close, session_connect, session_last, session_lost, session_suspend,
+    session_update_name,
+};
 use crate::session::{connect_session, Session, SessionType};
 use crate::storage::{chat_db, delete_avatar, group_db, session_db, write_avatar_sync};
 
@@ -78,9 +81,10 @@ async fn handle_server_connect(
     let (ogid, height, id) = layer.read().await.running(&gcd)?.owner_height_id();
     // check is member.
     let db = group_db(&layer.read().await.base, &ogid)?;
+    let g = GroupChat::get(&db, &id)?;
     let mdid = Member::get_id(&db, &id, &fgid)?;
 
-    let res = LayerResult(gcd, height);
+    let res = LayerResult(gcd, g.g_name, height);
     let data = bincode::serialize(&res).unwrap_or(vec![]);
     let s = SendType::Result(0, addr.clone(), true, false, data);
     add_server_layer(results, fgid, s);
@@ -164,7 +168,7 @@ fn handle_connect(
     results: &mut HandleResult,
 ) -> Result<()> {
     // 0. deserialize result.
-    let LayerResult(gcd, height) = bincode::deserialize(&data)?;
+    let LayerResult(gcd, gname, height) = bincode::deserialize(&data)?;
 
     // 1. check group.
     let db = group_db(layer.base(), &ogid)?;
@@ -174,6 +178,8 @@ fn handle_connect(
     if group.g_addr != addr.id {
         return Err(anyhow!("invalid group chat address."));
     }
+
+    let _ = GroupChat::update_name(&db, &group.id, &gname);
 
     // 1.1 get session.
     let session_some = connect_session(
@@ -187,6 +193,9 @@ fn handle_connect(
         return Err(anyhow!("invalid group chat address."));
     }
     let sid = session_some.unwrap().id;
+
+    let _ = Session::update_name(&session_db(layer.base(), &ogid)?, &sid, &gname);
+    results.rpcs.push(session_update_name(ogid, &sid, &gname));
 
     // 1.2 online this group.
     layer
@@ -242,6 +251,17 @@ async fn handle_server_event(
 
             // 3. broadcast offline event.
             broadcast(&LayerEvent::MemberOffline(gcd, fgid), layer, &gcd, results).await?;
+        }
+        LayerEvent::GroupName(_gcd, name) => {
+            let _ = GroupChat::update_name(&db, &id, &name)?;
+            if let Ok(sid) = Session::update_name_by_id(
+                &session_db(&base, &ogid)?,
+                &id,
+                &SessionType::Group,
+                &name,
+            ) {
+                results.rpcs.push(session_update_name(ogid, &sid, &name));
+            }
         }
         LayerEvent::Sync(gcd, _, event) => {
             match event {
@@ -304,7 +324,6 @@ async fn handle_server_event(
                     // UPDATE SESSION.
                     update_session(&base, &ogid, &id, &msg, results);
                 }
-                _ => error!("group server handle close nerver here"),
             }
         }
         LayerEvent::MemberOnlineSync(gcd) => {
@@ -411,19 +430,20 @@ async fn handle_peer_event(
                 }
             }
         }
-        LayerEvent::Sync(gcd, height, event) => {
+        LayerEvent::GroupName(_gcd, name) => {
+            let _ = GroupChat::update_name(&db, &id, &name)?;
+            let _ = Session::update_name(&session_db(&base, &ogid)?, &sid, &name);
+            results.rpcs.push(session_update_name(ogid, &sid, &name));
+        }
+        LayerEvent::GroupClose(_gcd) => {
+            let group = GroupChat::close(&db, &gcd)?;
+            let sid = Session::close(&session_db(&base, &ogid)?, &group.id, &SessionType::Group)?;
+            results.rpcs.push(session_close(ogid, &sid));
+        }
+        LayerEvent::Sync(_gcd, height, event) => {
             debug!("Sync: handle height: {}", height);
 
             match event {
-                Event::GroupTransfer(_addr) => {
-                    // TOOD transfer.
-                }
-                Event::GroupClose => {
-                    let group = GroupChat::close(&db, &gcd)?;
-                    let sid =
-                        Session::close(&session_db(&base, &ogid)?, &group.id, &SessionType::Group)?;
-                    results.rpcs.push(session_close(ogid, &sid));
-                }
                 Event::MemberJoin(mgid, maddr, mname, mavatar) => {
                     let mdid_res = Member::get_id(&db, &id, &mgid);
                     if let Ok(mdid) = mdid_res {

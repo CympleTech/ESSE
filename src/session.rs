@@ -170,6 +170,35 @@ impl Session {
         ))
     }
 
+    pub fn update_name(db: &DStorage, id: &i64, name: &str) -> Result<usize> {
+        db.update(&format!(
+            "UPDATE sessions SET name='{}' WHERE id = {}",
+            name, id
+        ))
+    }
+
+    pub fn update_name_by_id(
+        db: &DStorage,
+        fid: &i64,
+        s_type: &SessionType,
+        name: &str,
+    ) -> Result<i64> {
+        let sql = format!(
+            "SELECT id from sessions WHERE fid = {} AND s_type = {}",
+            fid,
+            s_type.to_int()
+        );
+        let mut matrix = db.query(&sql)?;
+        if let Some(mut values) = matrix.pop() {
+            let id = values.pop().unwrap().as_i64(); // safe unwrap.
+            let s = format!("UPDATE sessions SET name = '{}' WHERE id = {}", name, id);
+            db.update(&s)?;
+            Ok(id)
+        } else {
+            Err(anyhow!("session missing"))
+        }
+    }
+
     pub fn delete(db: &DStorage, fid: &i64, s_type: &SessionType) -> Result<i64> {
         let sql = format!(
             "SELECT id from sessions WHERE fid = {} AND s_type = {}",

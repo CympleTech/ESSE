@@ -182,7 +182,9 @@ class Session {
   }
 
   update(List params) {
-    this.addr = params[1];
+    if (params[1].length > 2) {
+      this.addr = params[1];
+    }
     this.name = params[2];
     this.isTop = params[3];
   }

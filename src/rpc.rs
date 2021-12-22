@@ -92,7 +92,12 @@ pub(crate) fn notice_menu(mgid: GroupId, t: &SessionType) -> RpcParam {
 }
 
 #[inline]
-pub(crate) fn _session_update(
+pub(crate) fn session_update_name(mgid: GroupId, id: &i64, name: &str) -> RpcParam {
+    rpc_response(0, "session-update", json!([id, "", name, false]), mgid)
+}
+
+#[inline]
+pub(crate) fn session_update(
     mgid: GroupId,
     id: &i64,
     addr: &PeerId,
