@@ -80,6 +80,7 @@ abstract class AppLocalizations {
   String get file;
   String get delete;
   String get deleteImmediate;
+  String get leave;
   String get open;
   String get unknown;
   String get create;

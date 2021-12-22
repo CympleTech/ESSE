@@ -85,6 +85,8 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String get deleteImmediate => '立即删除';
   @override
+  String get leave => '退出';
+  @override
   String get open => '打开';
   @override
   String get unknown => '未知';

@@ -85,6 +85,8 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get deleteImmediate => 'Delete Immediately';
   @override
+  String get leave => 'Leave';
+  @override
   String get open => 'Open';
   @override
   String get unknown => 'Unknown';

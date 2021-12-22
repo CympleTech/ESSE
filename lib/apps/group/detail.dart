@@ -215,7 +215,7 @@ class _GroupChatDetailState extends State<GroupChatDetail> {
                     context: context,
                     builder: (BuildContext context) {
                       return AlertDialog(
-                        title: Text(lang.delete),
+                        title: Text(lang.leave),
                         content: Text(_group.name,
                           style: TextStyle(color: color.primary)),
                         actions: [
@@ -245,7 +245,7 @@ class _GroupChatDetailState extends State<GroupChatDetail> {
                 return <PopupMenuEntry<int>>[
                   menuItem(Color(0xFF6174FF), 0, Icons.add_rounded, lang.addFriend),
                   menuItem(Color(0xFF6174FF), 1, Icons.create_rounded, lang.rename),
-                  menuItem(Colors.red, 2, Icons.delete_rounded, lang.delete),
+                  menuItem(Colors.red, 2, Icons.delete_rounded, lang.leave),
                 ];
               },
             )
