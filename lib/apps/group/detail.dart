@@ -7,6 +7,7 @@ import 'package:esse/widgets/avatar.dart';
 import 'package:esse/widgets/button_text.dart';
 import 'package:esse/widgets/input_text.dart';
 import 'package:esse/widgets/shadow_dialog.dart';
+import 'package:esse/widgets/show_contact.dart';
 import 'package:esse/widgets/user_info.dart';
 import 'package:esse/widgets/chat_message.dart';
 import 'package:esse/widgets/chat_input.dart';
@@ -136,6 +137,12 @@ class _GroupChatDetailState extends State<GroupChatDetail> {
     rpc.send('group-message-create', [_group.id, mtype.toInt(), raw]);
   }
 
+  _invite(List<int> ids) {
+    ids.forEach((id) {
+        rpc.send('group-member-join', [_group.id, id]);
+    });
+  }
+
   @override
   void deactivate() {
     if (!isDisplayDesktop(context)) {
@@ -206,6 +213,12 @@ class _GroupChatDetailState extends State<GroupChatDetail> {
               child: Icon(Icons.more_vert_rounded, color: color.primary),
               onSelected: (int value) {
                 if (value == 0) {
+                  showShadowDialog(context, Icons.add, lang.addFriend,
+                    ContactList(callback: _invite, multiple: true,
+                      filters: this._members.values.map((v) => v.mid).toList(),
+                      online: true,
+                    ), 0.0
+                  );
                 } else if (value == 1) {
                   showShadowDialog(context, Icons.create, lang.rename,
                     _ChangeNameScreen(_group.id, _group.name), 0.0

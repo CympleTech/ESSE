@@ -97,6 +97,20 @@ impl Friend {
         ])
     }
 
+    pub fn to_rpc_online(&self, online: bool) -> RpcParam {
+        json!([
+            self.id,
+            self.gid.to_hex(),
+            self.addr.to_hex(),
+            self.name,
+            self.wallet,
+            self.remark,
+            self.is_closed,
+            self.datetime,
+            online
+        ])
+    }
+
     pub fn get_id(db: &DStorage, gid: &GroupId) -> Result<Friend> {
         let sql = format!("SELECT id, gid, addr, name, wallet, remark, is_closed, datetime FROM friends WHERE gid = '{}'", gid.to_hex());
         let mut matrix = db.query(&sql)?;

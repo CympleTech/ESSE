@@ -122,10 +122,27 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
 
     handler.add_method(
         "chat-friend-list",
-        |gid: GroupId, _params: Vec<RpcParam>, state: Arc<RpcState>| async move {
+        |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
+            let need_online = params[0].as_bool().ok_or(RpcError::ParseError)?;
+
             let layer_lock = state.layer.read().await;
             let db = chat_db(&layer_lock.base, &gid)?;
-            Ok(HandleResult::rpc(friend_list(Friend::list(&db)?)))
+            let friends = Friend::list(&db)?;
+
+            let mut results = vec![];
+            if need_online {
+                for friend in friends {
+                    let online = layer_lock.is_online(&gid, &friend.gid);
+                    results.push(friend.to_rpc_online(online));
+                }
+            } else {
+                for friend in friends {
+                    results.push(friend.to_rpc());
+                }
+            }
+            drop(layer_lock);
+
+            Ok(HandleResult::rpc(json!(results)))
         },
     );
 

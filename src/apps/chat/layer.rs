@@ -357,7 +357,7 @@ impl LayerEvent {
                 Friend::id_close(&db, fid)?;
                 drop(db);
                 results.rpcs.push(rpc::friend_close(mgid, fid));
-                if !layer.is_online(&addr) {
+                if !layer.is_addr_online(&addr) {
                     results
                         .layers
                         .push((mgid, fgid, SendType::Disconnect(addr)))

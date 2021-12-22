@@ -29,7 +29,7 @@ class _ChatListState extends State<ChatList> {
 
   _loadFriends() async {
     this._friends.clear();
-    final res = await httpPost('chat-friend-list', []);
+    final res = await httpPost('chat-friend-list', [false]);
     if (res.isOk) {
       print(res.params);
       res.params.forEach((params) {

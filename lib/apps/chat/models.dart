@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 import 'package:esse/utils/relative_time.dart';
 import 'package:esse/widgets/avatar.dart';
 import 'package:esse/global.dart';
@@ -13,13 +15,21 @@ class Friend {
   String remark = '';
   bool isClosed = false;
   RelativeTime time = RelativeTime();
+  bool online = false;
 
   // new friend from network
   Friend(this.gid, this.name, this.addr);
 
-  Avatar showAvatar({double width = 45.0}) {
+  Avatar showAvatar({bool needOnline = false, double width = 45.0}) {
     final avatar = Global.avatarPath + this.gid + '.png';
-    return Avatar(width: width, name: this.name, avatarPath: avatar);
+    if (needOnline) {
+      return Avatar(width: width, name: this.name, avatarPath: avatar,
+        online: this.online,
+        onlineColor: Color(0xFF0EE50A),
+      );
+    } else {
+      return Avatar(width: width, name: this.name, avatarPath: avatar);
+    }
   }
 
   Friend.fromList(List params) {
@@ -31,6 +41,9 @@ class Friend {
     this.remark = params[5];
     this.isClosed = params[6];
     this.time = RelativeTime.fromInt(params[7]);
+    if (params.length == 9) {
+      this.online = params[8];
+    }
   }
 }
 

@@ -85,7 +85,7 @@ class ChatInputState extends State<ChatInput> {
       context,
       Icons.person_rounded,
       lang.contact,
-      ContactList(callback: _contactCallback, multiple: false),
+      ContactList(callback: _contactCallback, multiple: false, filters: [], online: false),
       0.0
     );
   }

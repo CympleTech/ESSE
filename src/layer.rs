@@ -152,11 +152,21 @@ impl Layer {
         Ok(conns)
     }
 
-    pub fn is_online(&self, faddr: &PeerId) -> bool {
+    pub fn is_addr_online(&self, faddr: &PeerId) -> bool {
         for (_, running) in &self.runnings {
-            running.check_addr_online(faddr);
+            if running.check_addr_online(faddr) {
+                return true;
+            }
         }
         return false;
+    }
+
+    pub fn is_online(&self, gid: &GroupId, fgid: &GroupId) -> bool {
+        if let Some(running) = self.runnings.get(gid) {
+            running.is_online(fgid)
+        } else {
+            false
+        }
     }
 }
 
@@ -314,6 +324,10 @@ impl RunningLayer {
             .iter()
             .map(|(fgid, online)| (fgid, online.online.addr()))
             .collect()
+    }
+
+    pub fn is_online(&self, gid: &GroupId) -> bool {
+        self.sessions.contains_key(gid)
     }
 
     /// check add online.

@@ -155,6 +155,8 @@ class BaseMessage {
     var proof = '';
     var key = '';
 
+    print(this.content);
+
     final iType = this.content.indexOf(';;');
     if (iType > 0) {
       type = GroupTypeExtension.fromInt(int.parse(this.content.substring(0, iType)));
@@ -176,6 +178,9 @@ class BaseMessage {
     final iName = raw_2.indexOf(';;');
     if (iName > 0) {
       name = raw_2.substring(0, iName).replaceAll('-;', ';');
+    } else {
+      name = raw_2.replaceAll('-;', ';');
+      return [type, gid, addr, name, proof, key];
     }
 
     final raw_3 = raw_2.substring(iName + 2);

@@ -8,8 +8,14 @@ import 'package:esse/rpc.dart';
 class ContactList extends StatefulWidget {
   final Function callback;
   final bool multiple;
-  const ContactList({Key? key, required this.callback, this.multiple = true})
-      : super(key: key);
+  final List<String> filters;
+  final bool online;
+  const ContactList({Key? key,
+      required this.callback,
+      required this.multiple,
+      required this.filters,
+      required this.online
+  }) : super(key: key);
 
   @override
   _ContactListState createState() => _ContactListState();
@@ -27,12 +33,30 @@ class _ContactListState extends State<ContactList> {
 
   _loadFriends() async {
     this._friends.clear();
-    final res = await httpPost('chat-friend-list', []);
+    final res = await httpPost('chat-friend-list', [widget.online]);
     if (res.isOk) {
-      print(res.params);
-      res.params.forEach((params) {
-          this._friends.add(Friend.fromList(params));
-      });
+      if (widget.online) {
+        List<Friend> onlines = [];
+        List<Friend> offlines = [];
+        res.params.forEach((params) {
+            final friend = Friend.fromList(params);
+            if (!widget.filters.contains(friend.gid)) {
+              if (friend.online) {
+                onlines.add(friend);
+              } else {
+                offlines.add(friend);
+              }
+            }
+        });
+        this._friends = onlines + offlines;
+      } else {
+        res.params.forEach((params) {
+            final friend = Friend.fromList(params);
+            if (!widget.filters.contains(friend.gid)) {
+              this._friends.add(friend);
+            }
+        });
+      }
       _checks = List<bool>.generate(_friends.length, (_) => false);
       setState(() {});
     } else {
@@ -41,23 +65,26 @@ class _ContactListState extends State<ContactList> {
   }
 
   Widget _friend(int i, Friend friend) {
+    final text = widget.online && !friend.online
+    ? Text(friend.name, style: TextStyle(color: Colors.grey))
+    : Text(friend.name);
     return Container(
-        height: 55.0,
-        child: widget.multiple
-            ? ListTile(
-                leading: friend.showAvatar(),
-                title: Text(friend.name),
-                trailing: Checkbox(
-                    value: _checks[i],
-                    onChanged: (value) => setState(() => _checks[i] = value!)))
-            : ListTile(
-                onTap: () {
-                  Navigator.pop(context);
-                  widget.callback(friend.id);
-                },
-                leading: friend.showAvatar(),
-                title: Text(friend.name),
-              ));
+      height: 55.0,
+      child: widget.multiple
+      ? ListTile(
+        leading: friend.showAvatar(needOnline: widget.online),
+        title: text,
+        trailing: widget.online && !friend.online ? null : Checkbox(
+          value: _checks[i],
+          onChanged: (value) => setState(() => _checks[i] = value!)))
+      : ListTile(
+        onTap: widget.online && !friend.online ? null : () {
+          Navigator.pop(context);
+          widget.callback(friend.id);
+        },
+        leading: friend.showAvatar(),
+        title: text,
+    ));
   }
 
   @override
