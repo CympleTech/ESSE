@@ -155,8 +155,6 @@ class BaseMessage {
     var proof = '';
     var key = '';
 
-    print(this.content);
-
     final iType = this.content.indexOf(';;');
     if (iType > 0) {
       type = GroupTypeExtension.fromInt(int.parse(this.content.substring(0, iType)));

@@ -108,7 +108,7 @@ class _ChatDetailState extends State<ChatDetail> {
     final accountProvider = context.watch<AccountProvider>();
     final session = accountProvider.activedSession;
     final meName = accountProvider.activedAccount.name;
-    final isOnline = session.isActive();
+    this._friend.online = session.isActive();
 
     final recentMessageKeys = this._messages.keys.toList().reversed.toList();
 
@@ -243,6 +243,7 @@ class _ChatDetailState extends State<ChatDetail> {
               itemBuilder: (context) {
                 return <PopupMenuEntry<int>>[
                   menuItem(Color(0xFF6174FF), 0, Icons.qr_code_rounded, lang.friendInfo),
+                  if (this._friend.online)
                   menuItem(Color(0xFF6174FF), 1, Icons.group_rounded, lang.groupChatAdd),
                   //_menuItem(color.primary, 2, Icons.turned_in_rounded, lang.remark),
                   _friend.isClosed
@@ -271,7 +272,7 @@ class _ChatDetailState extends State<ChatDetail> {
           if (!this._friend.isClosed)
           ChatInput(
             sid: session.id,
-            online: isOnline,
+            online: this._friend.online,
             callback: _send,
             transferTo: this._friend.wallet,
             waiting: session.online == OnlineType.Waiting
