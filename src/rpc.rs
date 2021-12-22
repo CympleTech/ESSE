@@ -88,7 +88,7 @@ pub(crate) fn session_last(
 
 #[inline]
 pub(crate) fn notice_menu(mgid: GroupId, t: &SessionType) -> RpcParam {
-    rpc_response(0, "notice_menu", json!([t.to_int()]), mgid)
+    rpc_response(0, "notice-menu", json!([t.to_int()]), mgid)
 }
 
 #[inline]

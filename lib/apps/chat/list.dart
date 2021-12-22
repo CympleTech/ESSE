@@ -31,7 +31,6 @@ class _ChatListState extends State<ChatList> {
     this._friends.clear();
     final res = await httpPost('chat-friend-list', [false]);
     if (res.isOk) {
-      print(res.params);
       res.params.forEach((params) {
           this._friends.add(Friend.fromList(params));
       });

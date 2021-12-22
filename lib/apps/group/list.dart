@@ -5,6 +5,7 @@ import 'package:esse/utils/adaptive.dart';
 import 'package:esse/l10n/localizations.dart';
 import 'package:esse/provider.dart';
 import 'package:esse/session.dart';
+import 'package:esse/rpc.dart';
 
 import 'package:esse/apps/group/detail.dart';
 import 'package:esse/apps/group/models.dart';
@@ -17,22 +18,39 @@ class GroupChatList extends StatefulWidget {
 }
 
 class _GroupChatListState extends State<GroupChatList> {
+  List<GroupChat> _groups = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadGroups();
+  }
+
+  _loadGroups() async {
+    this._groups.clear();
+    final res = await httpPost('group-list', []);
+    if (res.isOk) {
+      res.params.forEach((params) {
+          this._groups.add(GroupChat.fromList(params));
+      });
+      setState(() {});
+    } else {
+      print(res.error);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    //final color = Theme.of(context).colorScheme;
     final lang = AppLocalizations.of(context);
     final isDesktop = isDisplayDesktop(context);
-    //final provider = context.watch<GroupChatProvider>();
-    final orderKeys = []; //provider.orderKeys;
-    final groups = []; //provider.groups;
 
     return Scaffold(
       appBar: AppBar(title: Text(lang.groupChat)),
       body: Padding(
         padding: const EdgeInsets.symmetric(vertical: 10.0),
         child: ListView.builder(
-          itemCount: orderKeys.length,
-          itemBuilder: (BuildContext ctx, int index) => ListChat(group: groups[orderKeys[index]]!),
+          itemCount: _groups.length,
+          itemBuilder: (BuildContext ctx, int index) => ListChat(group: _groups[index]),
         )
       ),
     );
@@ -53,7 +71,6 @@ class ListChat extends StatelessWidget {
       behavior: HitTestBehavior.opaque,
       onTap: () {
         context.read<AccountProvider>().updateActivedSession(0, SessionType.Group, group.id);
-        //context.read<GroupChatProvider>().updateActivedGroup(group.id);
         final widget = GroupChatDetail(id: group.id);
         if (!isDesktop) {
           Navigator.push(context, MaterialPageRoute(builder: (_) => widget));
