@@ -69,7 +69,7 @@ class WebSocketsNotifications {
   Future<bool> init(String addr) async {
     reset();
 
-    var i = 0;
+    var i = 2;
 
     while (true) {
       try {
@@ -88,14 +88,14 @@ class WebSocketsNotifications {
         });
         return true;
       } catch (e) {
-        print("DEBUG Flutter: got websockt error.........retry");
+        print("DEBUG Flutter: got websockt error.........retry ${i}s");
         //print(e);
-        if (i > 3) {
+        if (i > 100) {
+          print("DEBUG Flutter: got websockt error.");
           return false;
         }
-
-        i += 1;
-        await Future.delayed(Duration(seconds: 1), () => true);
+        await Future.delayed(Duration(seconds: i), () => true);
+        i = i * 2; // 2, 4, 8, 16, 32, 64
         continue;
       }
     }
