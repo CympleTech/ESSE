@@ -47,7 +47,7 @@ class _JarvisDetailState extends State<JarvisDetail> {
   initState() {
     super.initState();
 
-    rpc.addListener('jarvis-create', _create, false);
+    rpc.addListener('jarvis-create', _create);
 
     textFocus.addListener(() {
         if (textFocus.hasFocus) {

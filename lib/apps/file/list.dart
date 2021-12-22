@@ -31,10 +31,10 @@ class _FilesListState extends State<FilesList> {
   @override
   void initState() {
     super.initState();
-    rpc.addListener('dc-list', _dcList, false);
-    rpc.addListener('dc-file-create', _dcFileCreate, false);
-    rpc.addListener('dc-folder-create', _dcFolderCreate, false);
-    rpc.addListener('dc-file-upload', _dcFolderCreate, false);
+    rpc.addListener('dc-list', _dcList);
+    rpc.addListener('dc-file-create', _dcFileCreate);
+    rpc.addListener('dc-folder-create', _dcFolderCreate);
+    rpc.addListener('dc-file-upload', _dcFolderCreate);
 
     _loadDirectory(widget.path.last);
   }

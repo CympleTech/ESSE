@@ -9,12 +9,12 @@ class DeviceProvider extends ChangeNotifier {
 
   DeviceProvider() {
     // rpc.
-    rpc.addListener('device-list', _list, false);
-    rpc.addListener('device-create', _create, true);
-    rpc.addListener('device-delete', _delete, false);
-    rpc.addListener('device-online', _online, false);
-    rpc.addListener('device-offline', _offline, false);
-    rpc.addListener('device-status', _status, false);
+    rpc.addListener('device-list', _list);
+    rpc.addListener('device-create', _create);
+    rpc.addListener('device-delete', _delete);
+    rpc.addListener('device-online', _online);
+    rpc.addListener('device-offline', _offline);
+    rpc.addListener('device-status', _status);
   }
 
   clear() {

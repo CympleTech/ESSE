@@ -44,8 +44,8 @@ class _TransferState extends State<Transfer> {
 
   @override
   initState() {
-    rpc.addListener('wallet-token', _walletToken, false);
-    rpc.addListener('wallet-balance', _walletBalance, false);
+    rpc.addListener('wallet-token', _walletToken);
+    rpc.addListener('wallet-balance', _walletBalance);
     _amountController.addListener(() {
         setState(() {
             this._checked = false;

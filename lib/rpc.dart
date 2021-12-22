@@ -61,7 +61,6 @@ class WebSocketsNotifications {
 
   Map<String, List> _listeners = new Map<String, List>();
   Function? _notice;
-  Function? _requestNotice;
 
   bool isLinked() {
     return !_closed;
@@ -119,13 +118,12 @@ class WebSocketsNotifications {
     }
   }
 
-  addNotice(Function noticeCallback, Function requestCallback) {
+  addNotice(Function noticeCallback) {
     _notice = noticeCallback;
-    _requestNotice = requestCallback;
   }
 
-  addListener(String method, Function callback, bool notice, [bool request = false]) {
-    _listeners[method] = [callback, notice, request];
+  addListener(String method, Function callback, [bool notice = false]) {
+    _listeners[method] = [callback, notice];
   }
 
   removeListener(String method) {
@@ -145,10 +143,6 @@ class WebSocketsNotifications {
         String gid = response["gid"];
       if (_listeners[method] != null) {
         final callbacks = _listeners[method]!;
-        if (callbacks[2] != null && callbacks[2]) {
-          _requestNotice!(gid);
-        }
-
         if (gid == Global.gid || method.startsWith('account')) {
           try {
             callbacks[0](params);

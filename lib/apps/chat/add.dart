@@ -137,10 +137,10 @@ class _ChatAddState extends State<ChatAdd> {
   void initState() {
     super.initState();
 
-    rpc.addListener('chat-request-create', _requestCreate, true, true);
-    rpc.addListener('chat-request-delivery', _requestDelivery, false);
-    rpc.addListener('chat-request-agree', _requestAgree, false);
-    rpc.addListener('chat-request-reject', _requestReject, false);
+    rpc.addListener('chat-request-create', _requestCreate);
+    rpc.addListener('chat-request-delivery', _requestDelivery);
+    rpc.addListener('chat-request-agree', _requestAgree);
+    rpc.addListener('chat-request-reject', _requestReject);
 
     new Future.delayed(Duration.zero, () {
         if (widget.id != '') {

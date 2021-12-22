@@ -43,11 +43,11 @@ class _WalletDetailState extends State<WalletDetail> with SingleTickerProviderSt
   void initState() {
     _tabController = new TabController(length: 2, vsync: this);
 
-    rpc.addListener('wallet-generate', _walletGenerate, false);
-    rpc.addListener('wallet-import', _walletGenerate, false);
-    rpc.addListener('wallet-token', _walletToken, false);
-    rpc.addListener('wallet-balance', _walletBalance, false);
-    rpc.addListener('wallet-transfer', _walletTransfer, false);
+    rpc.addListener('wallet-generate', _walletGenerate);
+    rpc.addListener('wallet-import', _walletGenerate);
+    rpc.addListener('wallet-token', _walletToken);
+    rpc.addListener('wallet-balance', _walletBalance);
+    rpc.addListener('wallet-transfer', _walletTransfer);
 
     super.initState();
     Future.delayed(Duration.zero, _load);

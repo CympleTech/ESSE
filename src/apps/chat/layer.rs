@@ -15,7 +15,9 @@ use crate::account::User;
 use crate::event::InnerEvent;
 use crate::layer::{Layer, Online};
 use crate::migrate::consensus::{FRIEND_TABLE_PATH, MESSAGE_TABLE_PATH, REQUEST_TABLE_PATH};
-use crate::rpc::{session_connect, session_create, session_last, session_lost, session_suspend};
+use crate::rpc::{
+    notice_menu, session_connect, session_create, session_last, session_lost, session_suspend,
+};
 use crate::session::{connect_session, Session, SessionType};
 use crate::storage::{chat_db, session_db, write_avatar_sync};
 
@@ -227,6 +229,7 @@ impl LayerEvent {
                     )?;
 
                     results.rpcs.push(rpc::request_create(mgid, &request));
+                    results.rpcs.push(notice_menu(mgid, &SessionType::Chat));
                     return Ok(results);
                 } else {
                     let group_lock = layer.group.read().await;

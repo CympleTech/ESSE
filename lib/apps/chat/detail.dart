@@ -33,8 +33,8 @@ class _ChatDetailState extends State<ChatDetail> {
   initState() {
     super.initState();
 
-    rpc.addListener('chat-message-create', _messageCreate, true);
-    rpc.addListener('chat-message-delivery', _messageDelivery, false);
+    rpc.addListener('chat-message-create', _messageCreate);
+    rpc.addListener('chat-message-delivery', _messageDelivery);
   }
 
   // [friend, [message]]

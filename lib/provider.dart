@@ -45,22 +45,23 @@ class AccountProvider extends ChangeNotifier {
 
   AccountProvider() {
     // rpc notice when account not actived.
-    rpc.addNotice(_accountNotice, _newRequestNotice);
+    rpc.addNotice(_accountNotice);
 
     // rpc
-    rpc.addListener('account-system-info', _systemInfo, false);
-    rpc.addListener('account-update', _accountUpdate, false);
-    rpc.addListener('account-login', _accountLogin, false);
+    rpc.addListener('account-system-info', _systemInfo);
+    rpc.addListener('account-update', _accountUpdate);
+    rpc.addListener('account-login', _accountLogin);
 
-    rpc.addListener('session-list', _sessionList, false);
+    rpc.addListener('session-list', _sessionList);
     rpc.addListener('session-last', _sessionLast, true);
     rpc.addListener('session-create', _sessionCreate, true);
-    rpc.addListener('session-update', _sessionUpdate, false);
-    rpc.addListener('session-close', _sessionClose, false);
-    rpc.addListener('session-delete', _sessionDelete, false);
-    rpc.addListener('session-connect', _sessionConnect, false);
-    rpc.addListener('session-suspend', _sessionSuspend, false);
-    rpc.addListener('session-lost', _sessionLost, false);
+    rpc.addListener('session-update', _sessionUpdate);
+    rpc.addListener('session-close', _sessionClose);
+    rpc.addListener('session-delete', _sessionDelete);
+    rpc.addListener('session-connect', _sessionConnect);
+    rpc.addListener('session-suspend', _sessionSuspend);
+    rpc.addListener('session-lost', _sessionLost);
+    rpc.addListener('notice-menu', _noticeMenu, true);
   }
 
   /// when security load accounts from cache.
@@ -248,8 +249,9 @@ class AccountProvider extends ChangeNotifier {
     }
   }
 
-  _newRequestNotice(String gid) {
-    if (this.activedAccountId == gid) {
+  _noticeMenu(List params) {
+    final st = SessionTypeExtension.fromInt(params[0]);
+    if (st == SessionType.Chat) {
       this.systemAppFriendAddNew = true;
       notifyListeners();
     }

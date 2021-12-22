@@ -50,9 +50,9 @@ class AccountDomainScreenState extends State<AccountDomainScreen> {
   initState() {
     super.initState();
 
-    rpc.addListener('domain-list', _domainList, false);
-    rpc.addListener('domain-register-success', _domainRegisterSuccess, false);
-    rpc.addListener('domain-register-failure', _domainRegisterFailure, false);
+    rpc.addListener('domain-list', _domainList);
+    rpc.addListener('domain-register-success', _domainRegisterSuccess);
+    rpc.addListener('domain-register-failure', _domainRegisterFailure);
     rpc.send('domain-list', []);
 
     _nameController.text = widget.name;

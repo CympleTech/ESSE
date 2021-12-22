@@ -67,9 +67,9 @@ class _DomainDetailState extends State<DomainDetail> {
     super.initState();
 
     // resigter rpc for current page.
-    rpc.addListener('domain-list', _domainList, false);
-    rpc.addListener('domain-provider-add', _domainProviderAdd, false);
-    rpc.addListener('domain-register-success', _domainRegisterSuccess, false);
+    rpc.addListener('domain-list', _domainList);
+    rpc.addListener('domain-provider-add', _domainProviderAdd);
+    rpc.addListener('domain-register-success', _domainRegisterSuccess);
 
     rpc.send('domain-list', []);
   }
@@ -382,7 +382,7 @@ class _RegisterScreenState extends State<_RegisterScreen> {
   @override
   void initState() {
     super.initState();
-    rpc.addListener('domain-register-failure', _domainRegisterFailure, false);
+    rpc.addListener('domain-register-failure', _domainRegisterFailure);
   }
 
 

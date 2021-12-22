@@ -36,12 +36,12 @@ class _GroupChatDetailState extends State<GroupChatDetail> {
   initState() {
     super.initState();
 
-    rpc.addListener('group-member-join', _memberJoin, false);
-    rpc.addListener('group-member-leave', _memberLeave, false);
-    rpc.addListener('group-member-online', _memberOnline, false);
-    rpc.addListener('group-member-offline', _memberOffline, false);
-    rpc.addListener('group-message-create', _messageCreate, false);
-    rpc.addListener('group-message-delivery', _messageDelivery, false);
+    rpc.addListener('group-member-join', _memberJoin);
+    rpc.addListener('group-member-leave', _memberLeave);
+    rpc.addListener('group-member-online', _memberOnline);
+    rpc.addListener('group-member-offline', _memberOffline);
+    rpc.addListener('group-message-create', _messageCreate);
+    rpc.addListener('group-message-delivery', _messageDelivery);
   }
 
   // [group, [member], [message]]
