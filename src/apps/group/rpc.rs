@@ -11,7 +11,7 @@ use group_types::{Event, LayerEvent};
 
 use crate::apps::chat::{Friend, InviteType};
 use crate::layer::Online;
-use crate::rpc::{session_create, session_delete, RpcState};
+use crate::rpc::{session_create, session_delete, session_update_name, RpcState};
 use crate::session::{Session, SessionType};
 use crate::storage::{chat_db, group_db, read_avatar, session_db, write_avatar};
 
@@ -45,6 +45,11 @@ pub(crate) fn member_offline(mgid: GroupId, gid: i64, mid: i64) -> RpcParam {
 }
 
 #[inline]
+pub(crate) fn group_name(mgid: GroupId, gid: &i64, name: &str) -> RpcParam {
+    rpc_response(0, "group-name", json!([gid, name]), mgid)
+}
+
+#[inline]
 pub(crate) fn message_create(mgid: GroupId, msg: &Message) -> RpcParam {
     rpc_response(0, "group-message-create", json!(msg.to_rpc()), mgid)
 }
@@ -75,10 +80,6 @@ fn detail_list(group: GroupChat, members: Vec<Member>, messages: Vec<Message>) -
 }
 
 pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
-    handler.add_method("group-echo", |_, params, _| async move {
-        Ok(HandleResult::rpc(json!(params)))
-    });
-
     handler.add_method(
         "group-list",
         |gid: GroupId, _params: Vec<RpcParam>, state: Arc<RpcState>| async move {
@@ -278,37 +279,67 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
     );
 
     handler.add_method(
-        "group-delete",
+        "group-name",
         |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
-            let gcd = GroupId::from_hex(params[0].as_str().ok_or(RpcError::ParseError)?)?;
-            let id = params[1].as_i64().ok_or(RpcError::ParseError)?;
-
-            let addr = state
-                .layer
-                .write()
-                .await
-                .remove_online(&gid, &gcd)
-                .ok_or(RpcError::ParseError)?;
+            let id = params[0].as_i64().ok_or(RpcError::ParseError)?;
+            let name = params[1].as_str().ok_or(RpcError::ParseError)?;
 
             let mut results = HandleResult::new();
             let base = state.layer.read().await.base().clone();
             let db = group_db(&base, &gid)?;
-            let group = GroupChat::delete(&db, &id)?;
+            let g = GroupChat::get(&db, &id)?;
+            let d = bincode::serialize(&LayerEvent::GroupName(g.g_id, name.to_owned()))?;
 
-            let sid = Session::delete(&session_db(&base, &gid)?, &id, &SessionType::Group)?;
-            results.rpcs.push(session_delete(gid, &sid));
+            if let Ok(sid) = Session::update_name_by_id(
+                &session_db(&base, &gid)?,
+                &id,
+                &SessionType::Group,
+                &name,
+            ) {
+                results.rpcs.push(session_update_name(gid, &sid, &name));
+            }
 
-            if group.g_addr == addr {
+            if g.local {
+                results.rpcs.push(json!([id, name]));
                 // dissolve group.
-                let data = bincode::serialize(&LayerEvent::GroupClose(gcd))?;
-                for (mgid, maddr) in state.layer.read().await.running(&gcd)?.onlines() {
-                    let s = SendType::Event(0, *maddr, data.clone());
+                for (mgid, maddr) in state.layer.read().await.running(&g.g_id)?.onlines() {
+                    let s = SendType::Event(0, *maddr, d.clone());
                     add_server_layer(&mut results, *mgid, s);
                 }
             } else {
                 // leave group.
-                let data = bincode::serialize(&LayerEvent::Sync(gcd, 0, Event::MemberLeave(gid)))?;
-                let msg = SendType::Event(0, addr, data);
+                let msg = SendType::Event(0, g.g_addr, d);
+                add_layer(&mut results, gid, msg);
+            }
+
+            Ok(results)
+        },
+    );
+
+    handler.add_method(
+        "group-delete",
+        |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
+            let id = params[0].as_i64().ok_or(RpcError::ParseError)?;
+
+            let mut results = HandleResult::new();
+            let base = state.layer.read().await.base().clone();
+            let db = group_db(&base, &gid)?;
+            let g = GroupChat::delete(&db, &id)?;
+
+            let sid = Session::delete(&session_db(&base, &gid)?, &id, &SessionType::Group)?;
+            results.rpcs.push(session_delete(gid, &sid));
+
+            if g.local {
+                // dissolve group.
+                let d = bincode::serialize(&LayerEvent::GroupClose(g.g_id))?;
+                for (mgid, maddr) in state.layer.read().await.running(&g.g_id)?.onlines() {
+                    let s = SendType::Event(0, *maddr, d.clone());
+                    add_server_layer(&mut results, *mgid, s);
+                }
+            } else {
+                // leave group.
+                let d = bincode::serialize(&LayerEvent::Sync(g.g_id, 0, Event::MemberLeave(gid)))?;
+                let msg = SendType::Event(0, g.g_addr, d);
                 add_layer(&mut results, gid, msg);
             }
 

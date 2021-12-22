@@ -229,8 +229,11 @@ class AccountProvider extends ChangeNotifier {
     if (coreWidget != null) {
       print("update actived widget");
       this.coreShowWidget = coreWidget;
-      notifyListeners();
+    } else {
+      this.actived = 0;
+      this.coreShowWidget = DefaultCoreShow();
     }
+    notifyListeners();
   }
 
   // -- callback when receive rpc info. -- //

@@ -180,6 +180,7 @@ fn handle_connect(
     }
 
     let _ = GroupChat::update_name(&db, &group.id, &gname);
+    results.rpcs.push(rpc::group_name(ogid, &group.id, &gname));
 
     // 1.1 get session.
     let session_some = connect_session(
@@ -254,6 +255,7 @@ async fn handle_server_event(
         }
         LayerEvent::GroupName(_gcd, name) => {
             let _ = GroupChat::update_name(&db, &id, &name)?;
+            results.rpcs.push(rpc::group_name(ogid, &id, &name));
             if let Ok(sid) = Session::update_name_by_id(
                 &session_db(&base, &ogid)?,
                 &id,
@@ -432,6 +434,7 @@ async fn handle_peer_event(
         }
         LayerEvent::GroupName(_gcd, name) => {
             let _ = GroupChat::update_name(&db, &id, &name)?;
+            results.rpcs.push(rpc::group_name(ogid, &id, &name));
             let _ = Session::update_name(&session_db(&base, &ogid)?, &sid, &name);
             results.rpcs.push(session_update_name(ogid, &sid, &name));
         }

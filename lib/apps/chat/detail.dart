@@ -227,7 +227,9 @@ class _ChatDetailState extends State<ChatDetail> {
                             onPressed:  () {
                               Navigator.pop(context);
                               rpc.send('chat-friend-delete', [_friend.id]);
-                              if (!isDesktop) {
+                              if (isDesktop) {
+                                context.read<AccountProvider>().updateActivedWidget(null);
+                              } else {
                                 Navigator.pop(context);
                               }
                             },

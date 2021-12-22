@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 import 'package:esse/utils/adaptive.dart';
 import 'package:esse/l10n/localizations.dart';
 import 'package:esse/widgets/avatar.dart';
+import 'package:esse/widgets/button_text.dart';
+import 'package:esse/widgets/input_text.dart';
 import 'package:esse/widgets/shadow_dialog.dart';
 import 'package:esse/widgets/user_info.dart';
 import 'package:esse/widgets/chat_message.dart';
@@ -42,6 +44,7 @@ class _GroupChatDetailState extends State<GroupChatDetail> {
     rpc.addListener('group-member-offline', _memberOffline);
     rpc.addListener('group-message-create', _messageCreate);
     rpc.addListener('group-message-delivery', _messageDelivery);
+    rpc.addListener('group-name', _groupName);
   }
 
   // [group, [member], [message]]
@@ -116,6 +119,15 @@ class _GroupChatDetailState extends State<GroupChatDetail> {
     final isDelivery = params[1];
     if (this._messages.containsKey(id)) {
       this._messages[id]!.isDelivery = isDelivery;
+      setState(() {});
+    }
+  }
+
+  // [group_id, name]
+  _groupName(List params) {
+    final id = params[0];
+    if (this._group.id == id) {
+      this._group.name = params[1];
       setState(() {});
     }
   }
@@ -195,14 +207,45 @@ class _GroupChatDetailState extends State<GroupChatDetail> {
               onSelected: (int value) {
                 if (value == 0) {
                 } else if (value == 1) {
+                  showShadowDialog(context, Icons.create, lang.rename,
+                    _ChangeNameScreen(_group.id, _group.name), 0.0
+                  );
                 } else if (value == 2) {
+                  showDialog(
+                    context: context,
+                    builder: (BuildContext context) {
+                      return AlertDialog(
+                        title: Text(lang.delete),
+                        content: Text(_group.name,
+                          style: TextStyle(color: color.primary)),
+                        actions: [
+                          TextButton(
+                            child: Text(lang.cancel),
+                            onPressed: () => Navigator.pop(context),
+                          ),
+                          TextButton(
+                            child: Text(lang.ok),
+                            onPressed:  () {
+                              Navigator.pop(context);
+                              rpc.send('group-delete', [this._group.id]);
+                              if (reallyDesktop) {
+                                context.read<AccountProvider>().updateActivedWidget(null);
+                              } else {
+                                Navigator.pop(context);
+                              }
+                            },
+                          ),
+                        ]
+                      );
+                    },
+                  );
                 }
               },
               itemBuilder: (context) {
                 return <PopupMenuEntry<int>>[
                   menuItem(Color(0xFF6174FF), 0, Icons.add_rounded, lang.addFriend),
-                  menuItem(Color(0xFF6174FF), 0, Icons.create_rounded, lang.rename),
-                  menuItem(Colors.red, 6, Icons.delete_rounded, lang.delete),
+                  menuItem(Color(0xFF6174FF), 1, Icons.create_rounded, lang.rename),
+                  menuItem(Colors.red, 2, Icons.delete_rounded, lang.delete),
                 ];
               },
             )
@@ -301,5 +344,46 @@ class _MemberScreenState extends State<_MemberScreen> {
         decoration: BoxDecoration(color: color.secondary),
         child: ListView(children: widget.members.values.map((member) => _item(member, lang)).toList())
     ));
+  }
+}
+
+class _ChangeNameScreen extends StatelessWidget {
+  final TextEditingController _nameController = TextEditingController();
+  final FocusNode _nameFocus = FocusNode();
+  int id = 0;
+
+  _ChangeNameScreen(id, name) {
+    this.id = id;
+    this._nameController.text = name;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final color = Theme.of(context).colorScheme;
+    final lang = AppLocalizations.of(context);
+    _nameFocus.requestFocus();
+
+    return Column(
+      children: [
+        Container(
+          padding: const EdgeInsets.only(bottom: 20.0, top: 10.0),
+          child: InputText(
+            icon: Icons.account_circle,
+            text: lang.groupChatName,
+            controller: _nameController,
+            focus: _nameFocus),
+        ),
+        ButtonText(
+          text: lang.send,
+          action: () {
+            final name = _nameController.text.trim();
+            if (name.length < 1) {
+              return;
+            }
+            rpc.send('group-name', [this.id, name]);
+            Navigator.pop(context);
+        }),
+      ]
+    );
   }
 }
