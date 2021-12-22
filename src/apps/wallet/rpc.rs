@@ -595,7 +595,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
 
             let mut group_lock = state.group.write().await;
             let account = group_lock.account_mut(&gid)?;
-            account.wallet = address.address;
+            account.wallet = address.chain.update_main(&address.address, &account.wallet);
             account.update_info(&a_db)?;
             drop(group_lock);
             Ok(HandleResult::new())

@@ -49,6 +49,33 @@ impl ChainToken {
             _ => ChainToken::ETH,
         }
     }
+
+    pub fn update_main(&self, address: &str, old: &str) -> String {
+        let mut mains: HashMap<i64, &str> = old
+            .split(",")
+            .flat_map(|s| {
+                if s.len() > 2 {
+                    let mut ss = s.split(":");
+                    Some((
+                        ss.next().and_then(|s| s.parse().ok()).unwrap_or(0),
+                        ss.next().unwrap_or(""),
+                    ))
+                } else {
+                    None
+                }
+            })
+            .collect();
+        mains
+            .entry(self.to_i64())
+            .and_modify(|old| *old = address)
+            .or_insert(address);
+
+        let mut last: Vec<String> = vec![];
+        for (key, s) in mains {
+            last.push(format!("{}:{}", key, s));
+        }
+        last.join(",")
+    }
 }
 
 #[derive(Clone, Copy)]
