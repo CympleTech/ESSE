@@ -301,7 +301,7 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String get deviceQrcodeIntro => '扫码登陆与同步账户，小心使用，请勿告知他人';
   @override
-  String get about2 => '一款开源的加密对等通信系统，允许信息安全地从发送端经由网络直接到达接收端而不用经过第三方服务。';
+  String get about2 => '属于自己的安全数据环境，你的地盘，你做主。';
   @override
   String get donate => '捐助';
   @override

@@ -9,13 +9,12 @@ use tdn::types::{
 
 use chat_types::MessageType;
 
-use crate::account::User;
 use crate::event::InnerEvent;
 use crate::migrate::consensus::{FRIEND_TABLE_PATH, MESSAGE_TABLE_PATH, REQUEST_TABLE_PATH};
 use crate::rpc::{session_create, sleep_waiting_close_stable, RpcState};
 use crate::storage::{chat_db, delete_avatar, session_db};
 
-use super::layer::{update_session, LayerEvent};
+use super::layer::{agree_message, reject_message, req_message, update_session, LayerEvent};
 use super::{Friend, Message, Request};
 
 #[inline]
@@ -267,7 +266,10 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
                 false,
             );
 
-            let me = state.group.read().await.clone_user(&gid)?;
+            let group_lock = state.group.read().await;
+            let name = group_lock.username(&gid)?;
+            let proof = group_lock.prove_addr(&gid, &remote_addr)?;
+            drop(group_lock);
 
             let mut layer_lock = state.layer.write().await;
             let db = chat_db(layer_lock.base(), &gid)?;
@@ -286,22 +288,10 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
 
             let mut results = HandleResult::rpc(json!(request.to_rpc()));
 
-            state.group.write().await.broadcast(
-                &gid,
-                InnerEvent::SessionRequestCreate(
-                    true,
-                    User::simple(remote_gid, remote_addr, remote_name, vec![], "".to_owned()),
-                    remark,
-                ),
-                REQUEST_TABLE_PATH,
-                request.id,
-                &mut results,
-            )?;
-
             results.layers.push((
                 gid,
                 remote_gid,
-                super::layer::req_message(&mut layer_lock, me, request),
+                req_message(&mut layer_lock, gid, name, proof, request),
             ));
 
             drop(layer_lock);
@@ -316,7 +306,6 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             let id = params[0].as_i64().ok_or(RpcError::ParseError)?;
 
             let mut group_lock = state.group.write().await;
-            let me = group_lock.clone_user(&gid)?;
             let db = chat_db(group_lock.base(), &gid)?;
             let mut request = Request::get(&db, &id)?;
             let mut results = HandleResult::new();
@@ -343,7 +332,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             results.rpcs.push(session_create(gid, &session));
 
             let proof = group_lock.prove_addr(&gid, &friend.addr)?;
-            let msg = super::layer::agree_message(proof, me, friend.addr)?;
+            let msg = agree_message(proof, friend.addr)?;
             results.layers.push((gid, friend.gid, msg));
 
             Ok(results)
@@ -362,7 +351,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             req.is_over = true;
             req.update(&db)?;
             drop(db);
-            let msg = super::layer::reject_message(&mut layer_lock, id, req.addr, gid);
+            let msg = reject_message(&mut layer_lock, id, req.addr, gid);
             drop(layer_lock);
 
             let mut results = HandleResult::layer(gid, req.gid, msg);

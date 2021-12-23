@@ -301,7 +301,7 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get deviceQrcodeIntro => 'Tips: Scan to Login and sync, use it with care, and do not tell others';
   @override
-  String get about2 => 'An open source encrypted peer-to-peer session system would allow data to be sent securely from one terminal to another without going through third-party services.';
+  String get about2 => 'An open source encrypted peer-to-peer system for data security. Your place, your rules.';
   @override
   String get donate => 'Donate';
   @override

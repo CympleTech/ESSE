@@ -275,11 +275,11 @@ impl Account {
 
     pub fn update_info(&self, db: &DStorage) -> Result<usize> {
         let sql = format!(
-            "UPDATE accounts SET name='{}', avatar='{}', wallet='{}', height={} WHERE id = {}",
+            "UPDATE accounts SET name='{}', avatar='{}', wallet='{}', pub_height={} WHERE id = {}",
             self.name,
             base64::encode(&self.avatar),
             self.wallet,
-            self.pub_height + 1,
+            self.pub_height,
             self.id,
         );
         db.update(&sql)
@@ -314,12 +314,13 @@ pub(crate) struct User {
 }
 
 impl User {
-    pub fn simple(
+    pub fn new(
         id: GroupId,
         addr: PeerId,
         name: String,
         avatar: Vec<u8>,
         wallet: String,
+        height: i64,
     ) -> Self {
         Self {
             id,
@@ -327,7 +328,7 @@ impl User {
             name,
             avatar,
             wallet,
-            height: 0,
+            height,
         }
     }
 

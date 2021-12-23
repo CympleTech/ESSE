@@ -208,7 +208,7 @@ impl Friend {
 
     pub fn remote_update(&self, db: &DStorage) -> Result<usize> {
         let sql = format!(
-            "UPDATE friends SET addr='{}', name='{}', wallet='{}', height={}, is_closed = false, is_deleted = false WHERE id = {}",
+            "UPDATE friends SET addr='{}', name='{}', wallet='{}', height={}, is_closed = false WHERE id = {}",
             self.addr.to_hex(),
             self.name,
             self.wallet,

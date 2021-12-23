@@ -428,13 +428,22 @@ impl Group {
 
     pub fn clone_user(&self, gid: &GroupId) -> Result<User> {
         if let Some(u) = self.accounts.get(gid) {
-            Ok(User::simple(
+            Ok(User::new(
                 u.gid,
                 self.addr,
                 u.name.clone(),
                 u.avatar.clone(),
                 u.wallet.clone(),
+                u.pub_height,
             ))
+        } else {
+            Err(anyhow!("user missing."))
+        }
+    }
+
+    pub fn username(&self, gid: &GroupId) -> Result<String> {
+        if let Some(u) = self.accounts.get(gid) {
+            Ok(u.name.clone())
         } else {
             Err(anyhow!("user missing."))
         }
@@ -502,6 +511,7 @@ impl Group {
         if avatar.len() > 0 {
             account.avatar = avatar;
         }
+        account.pub_height = account.pub_height + 1;
         account.update_info(&account_db)?;
         account_db.close()
     }
