@@ -42,6 +42,10 @@ class _TransferState extends State<Transfer> {
   String _gas = '0';
   String _networkError = '';
 
+  Map<ChainToken, String> _mains = {};
+  String _main = '';
+  ChainToken _mainChain = ChainToken.ETH;
+
   @override
   initState() {
     rpc.addListener('wallet-token', _walletToken);
@@ -54,6 +58,23 @@ class _TransferState extends State<Transfer> {
     });
     super.initState();
     _loadWallet();
+    _split_address(widget.to);
+  }
+
+  _split_address(String s) {
+    print(s);
+    if (s.length > 0) {
+      s.split(",").forEach((ss) {
+          final sss = ss.split(":");
+          this._mains[ChainTokenExtension.fromInt(int.parse(sss[0]))] = sss[1];
+      });
+      if (this._mains.length == 0) {
+        Navigator.of(context).pop();
+      }
+      this._mainChain = ChainToken.ETH;
+      this._main = this._mains[ChainToken.ETH]!;
+      setState(() {});
+    }
   }
 
   _walletToken(List params) {
@@ -93,7 +114,7 @@ class _TransferState extends State<Transfer> {
       res.params.forEach((param) {
           final address = Address.fromList(param);
           this._addresses.add(address);
-          if (address.isMain) {
+          if (address.isMain && this._mainChain == address.chain) {
             _changeAddress(address);
           }
       });
@@ -104,6 +125,11 @@ class _TransferState extends State<Transfer> {
   }
 
   _changeAddress(Address address) {
+    if (!this._mains.containsKey(address.chain)) {
+      return;
+    }
+    this._main = this._mains[address.chain]!;
+    this._mainChain = address.chain;
     this._selectedAddress = address;
     this._networks = address.networks();
     if (!this._networks.contains(this._selectedNetwork)) {
@@ -126,9 +152,12 @@ class _TransferState extends State<Transfer> {
   }
 
   _gasPrice(String amount) async {
+    if (this._main.length < 2) {
+      return;
+    }
     final res = await httpPost('wallet-gas-price', [
         this._selectedToken.chain.toInt(), this._selectedNetwork.toInt(),
-        this._selectedAddress!.address, widget.to, amount,
+        this._selectedAddress!.address, this._main, amount,
         this._selectedToken.contract
     ]);
     if (res.isOk) {
@@ -166,7 +195,7 @@ class _TransferState extends State<Transfer> {
 
     return Column(
       children: [
-        Text('-> ' + widget.to, style: TextStyle(color: color.primary)),
+        Text(this._main, style: TextStyle(color: color.primary)),
         const SizedBox(height: 10.0),
         Row(
           children: [
@@ -303,10 +332,13 @@ class _TransferState extends State<Transfer> {
               PinWords(
                 gid: gid,
                 callback: (key) async {
+                  if (this._main.length < 2) {
+                    return;
+                  }
                   Navigator.of(context).pop();
                   final res = await httpPost('wallet-transfer', [
                       this._selectedToken.chain.toInt(), this._selectedNetwork.toInt(),
-                      this._selectedAddress!.id, widget.to, amount,
+                      this._selectedAddress!.id, this._main, amount,
                       this._selectedToken.contract, key,
                   ]);
                   if (res.isOk) {

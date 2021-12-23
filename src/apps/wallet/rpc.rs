@@ -372,6 +372,15 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             };
 
             address.insert(&db)?;
+            if address.main {
+                let mut group_lock = state.group.write().await;
+                let a_db = account_db(group_lock.base())?;
+                let account = group_lock.account_mut(&gid)?;
+                account.wallet = address.chain.update_main(&address.address, &account.wallet);
+                account.pub_height = account.pub_height + 1;
+                account.update_info(&a_db)?;
+                drop(group_lock);
+            }
             Ok(HandleResult::rpc(address.to_rpc()))
         },
     );

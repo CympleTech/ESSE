@@ -29,6 +29,7 @@ pub(crate) fn from_network_message(
 ) -> Result<(MessageType, String)> {
     match nmsg {
         NetworkMessage::String(content) => Ok((MessageType::String, content)),
+        NetworkMessage::Transfer(content) => Ok((MessageType::Transfer, content)),
         NetworkMessage::Image(bytes) => {
             let image_name = write_image_sync(base, ogid, bytes)?;
             Ok((MessageType::Image, image_name))
@@ -153,6 +154,10 @@ pub(crate) async fn raw_to_network_message(
             NetworkMessage::Invite(content.to_owned()),
             content.to_owned(),
         )),
+        MessageType::Transfer => Ok((
+            NetworkMessage::Transfer(content.to_owned()),
+            content.to_owned(),
+        )),
     }
 }
 
@@ -195,6 +200,7 @@ pub(crate) async fn to_network_message(
             Ok(NetworkMessage::Record(bytes, time))
         }
         MessageType::Invite => Ok(NetworkMessage::Invite(content)),
+        MessageType::Transfer => Ok(NetworkMessage::Transfer(content)),
         MessageType::Emoji => Ok(NetworkMessage::Emoji),
         MessageType::Phone => Ok(NetworkMessage::Phone),
         MessageType::Video => Ok(NetworkMessage::Video),

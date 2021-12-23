@@ -115,6 +115,8 @@ class Session {
         return "[${lang.others}]";
       case MessageType.Invite:
         return "[${lang.invite}]";
+      case MessageType.Transfer:
+        return "[${lang.transfer}]";
     }
   }
 

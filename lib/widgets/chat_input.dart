@@ -130,11 +130,13 @@ class ChatInputState extends State<ChatInput> {
 
   _tokenCallback(String hash, String to, String amount, String name) {
     _restore();
-    //widget.callback(MessageType.Transfer, "");
+    widget.callback(
+      MessageType.Transfer,
+      BaseMessage.mergeTransfer(hash, to, amount, name)
+    );
   }
 
   void _transfer(ColorScheme color, AppLocalizations lang) {
-    return;
     showShadowDialog(
       context,
       Icons.paid,
@@ -279,18 +281,21 @@ class ChatInputState extends State<ChatInput> {
               alignment: WrapAlignment.center,
               children: <Widget>[
                 _ExtensionButton(
+                  enable: true,
                   icon: Icons.image_rounded,
                   text: lang.album,
                   action: _image,
                   bgColor: color.surface,
                   iconColor: color.primary),
                 _ExtensionButton(
+                  enable: true,
                   icon: Icons.folder_rounded,
                   text: lang.file,
                   action: _file,
                   bgColor: color.surface,
                   iconColor: color.primary),
                 _ExtensionButton(
+                  enable: true,
                   icon: Icons.person_rounded,
                   text: lang.contact,
                   action: () => _contact(color, lang),
@@ -298,11 +303,12 @@ class ChatInputState extends State<ChatInput> {
                   iconColor: color.primary),
                 if (widget.hasTransfer)
                 _ExtensionButton(
-                    icon: Icons.paid_rounded,
-                    text: lang.transfer,
-                    action: () => _transfer(color, lang),
-                    bgColor: color.surface,
-                    iconColor: color.primary),
+                  enable: widget.transferTo.length > 2,
+                  icon: Icons.paid_rounded,
+                  text: lang.transfer,
+                  action: () => _transfer(color, lang),
+                  bgColor: color.surface,
+                  iconColor: color.primary),
               ],
             ),
           )
@@ -341,6 +347,7 @@ class ChatInputState extends State<ChatInput> {
 }
 
 class _ExtensionButton extends StatelessWidget {
+  final bool enable;
   final String text;
   final IconData icon;
   final VoidCallback action;
@@ -354,12 +361,13 @@ class _ExtensionButton extends StatelessWidget {
       required this.action,
       required this.bgColor,
       required this.iconColor,
+      required this.enable,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: action,
+      onTap: enable ? action : null,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         mainAxisAlignment: MainAxisAlignment.center,
@@ -370,7 +378,7 @@ class _ExtensionButton extends StatelessWidget {
               color: bgColor,
               borderRadius: BorderRadius.circular(15.0),
             ),
-            child: Icon(icon, color: iconColor, size: 36.0)),
+            child: Icon(icon, color: enable ? iconColor : Colors.grey, size: 36.0)),
           SizedBox(height: 5.0),
           Text(text, style: TextStyle(fontSize: 14.0)),
         ],

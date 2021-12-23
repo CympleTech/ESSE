@@ -65,6 +65,7 @@ enum MessageType {
   Phone,
   Video,
   Invite,
+  Transfer,
 }
 
 // use 00-99
@@ -89,6 +90,8 @@ extension MessageTypeExtension on MessageType {
         return 7;
       case MessageType.Invite:
         return 8;
+      case MessageType.Transfer:
+        return 9;
       default:
         return 0;
     }
@@ -114,6 +117,8 @@ extension MessageTypeExtension on MessageType {
         return MessageType.Video;
       case 8:
         return MessageType.Invite;
+      case 8:
+        return MessageType.Transfer;
       default:
         return MessageType.String;
     }
@@ -191,6 +196,15 @@ class BaseMessage {
     }
 
     return [type, gid, addr, name, proof, key];
+  }
+
+  // [hash, to, amount, name]
+  List<String> showTransfer() {
+    return this.content.split(";");
+  }
+
+  static String mergeTransfer(String hash, String to, String amount, String name) {
+    return "${hash};${to};${amount};${name}";
   }
 
   static String rawRecordName(int time, String name) {
