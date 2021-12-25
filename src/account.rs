@@ -83,7 +83,7 @@ impl Account {
 
         Account {
             id: 0,
-            pub_height: 0,
+            pub_height: 1,
             own_height: 0,
             wallet: String::new(),
             event: EventId::default(),

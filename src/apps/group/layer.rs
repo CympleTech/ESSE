@@ -253,8 +253,10 @@ async fn handle_server_event(
             // 3. broadcast offline event.
             broadcast(&LayerEvent::MemberOffline(gcd, fgid), layer, &gcd, results).await?;
         }
-        LayerEvent::GroupName(_gcd, name) => {
+        LayerEvent::GroupName(gcd, name) => {
+            // 1. update group name
             let _ = GroupChat::update_name(&db, &id, &name)?;
+            // 2. UI: update
             results.rpcs.push(rpc::group_name(ogid, &id, &name));
             if let Ok(sid) = Session::update_name_by_id(
                 &session_db(&base, &ogid)?,
@@ -264,6 +266,8 @@ async fn handle_server_event(
             ) {
                 results.rpcs.push(session_update_name(ogid, &sid, &name));
             }
+            // 3. broadcast
+            broadcast(&LayerEvent::GroupName(gcd, name), layer, &gcd, results).await?;
         }
         LayerEvent::Sync(gcd, _, event) => {
             match event {

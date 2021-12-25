@@ -290,16 +290,16 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             let g = GroupChat::get(&db, &id)?;
             let d = bincode::serialize(&LayerEvent::GroupName(g.g_id, name.to_owned()))?;
 
-            if let Ok(sid) = Session::update_name_by_id(
-                &session_db(&base, &gid)?,
-                &id,
-                &SessionType::Group,
-                &name,
-            ) {
-                results.rpcs.push(session_update_name(gid, &sid, &name));
-            }
-
             if g.local {
+                if let Ok(sid) = Session::update_name_by_id(
+                    &session_db(&base, &gid)?,
+                    &id,
+                    &SessionType::Group,
+                    &name,
+                ) {
+                    results.rpcs.push(session_update_name(gid, &sid, &name));
+                }
+
                 results.rpcs.push(json!([id, name]));
                 // dissolve group.
                 for (mgid, maddr) in state.layer.read().await.running(&g.g_id)?.onlines() {
