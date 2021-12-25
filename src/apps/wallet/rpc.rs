@@ -352,6 +352,8 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             let db = wallet_db(group_lock.base(), &gid)?;
             drop(group_lock);
 
+            let mut results = HandleResult::new();
+
             let pass = if pass.len() > 0 {
                 Some(pass.as_ref())
             } else {
@@ -372,6 +374,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             };
 
             address.insert(&db)?;
+            results.rpcs.push(address.to_rpc());
             if address.main {
                 let mut group_lock = state.group.write().await;
                 let a_db = account_db(group_lock.base())?;
@@ -379,9 +382,13 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
                 account.wallet = address.chain.update_main(&address.address, &account.wallet);
                 account.pub_height = account.pub_height + 1;
                 account.update_info(&a_db)?;
+                let user = group_lock.clone_user(&gid)?;
                 drop(group_lock);
+
+                // broadcast all friends.
+                state.layer.read().await.broadcast(user, &mut results);
             }
-            Ok(HandleResult::rpc(address.to_rpc()))
+            Ok(results)
         },
     );
 
@@ -602,12 +609,19 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             let address = Address::get(&db, &id)?;
             Address::main(&db, &id)?;
 
+            let mut results = HandleResult::new();
+
             let mut group_lock = state.group.write().await;
             let account = group_lock.account_mut(&gid)?;
             account.wallet = address.chain.update_main(&address.address, &account.wallet);
             account.pub_height = account.pub_height + 1;
             account.update_info(&a_db)?;
+            let user = group_lock.clone_user(&gid)?;
             drop(group_lock);
+
+            // broadcast all friends.
+            state.layer.read().await.broadcast(user, &mut results);
+
             Ok(HandleResult::new())
         },
     );

@@ -5,11 +5,12 @@ use std::sync::Arc;
 use tdn::types::{
     group::GroupId,
     message::SendType,
-    primitive::{Peer, PeerId, Result},
+    primitive::{HandleResult, Peer, PeerId, Result},
 };
 use tokio::sync::RwLock;
 
-use crate::apps::chat::chat_conn;
+use crate::account::User;
+use crate::apps::chat::{chat_conn, LayerEvent as ChatLayerEvent};
 use crate::apps::group::{group_conn, GROUP_ID};
 use crate::group::Group;
 use crate::session::{Session, SessionType};
@@ -166,6 +167,18 @@ impl Layer {
             running.is_online(fgid)
         } else {
             false
+        }
+    }
+
+    pub fn broadcast(&self, user: User, results: &mut HandleResult) {
+        let gid = user.id;
+        let info = ChatLayerEvent::InfoRes(user);
+        let data = bincode::serialize(&info).unwrap_or(vec![]);
+        if let Some(running) = self.runnings.get(&gid) {
+            for (fgid, online) in &running.sessions {
+                let msg = SendType::Event(0, *online.online.addr(), data.clone());
+                results.layers.push((gid, *fgid, msg));
+            }
         }
     }
 }

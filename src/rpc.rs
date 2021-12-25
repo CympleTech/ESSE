@@ -348,16 +348,20 @@ fn new_rpc_handler(
 
             let mut group_lock = state.group.write().await;
             group_lock.update_account(gid, name, avatar_bytes.clone())?;
+            let user = group_lock.clone_user(&gid)?;
 
             let mut results = HandleResult::new();
             group_lock.broadcast(
                 &gid,
-                InnerEvent::UserInfo(name.to_owned(), avatar_bytes),
+                InnerEvent::UserInfo(name.to_owned(), avatar_bytes.clone()),
                 0,
                 0,
                 &mut results,
             )?;
             drop(group_lock);
+
+            // broadcast all friends.
+            state.layer.read().await.broadcast(user, &mut results);
 
             Ok(results)
         },

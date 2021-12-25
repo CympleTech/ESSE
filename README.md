@@ -27,10 +27,10 @@ ESSE, positioned as an engine. The engine is coded in [**Rust**](https://github.
 [Document](https://docs.cympletech.com/docs/introduction)
 
 ## Install
-### Use pre-compiled executable
+### 🚀 Use pre-compiled executable
 [Download](https://github.com/cympletech/esse/releases)
 
-### Compile from souce
+### 🚲 Compile from souce
 #### 1. Pre-installed
 - Rustup [install](https://rustup.rs/)
 - Rust (Lastest Stable version)
