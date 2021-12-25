@@ -1,6 +1,11 @@
 #[rustfmt::skip]
-pub(super) const ORGANIZATION_VERSIONS: [&str; 8] = [
-  "CREATE TABLE IF NOT EXISTS organizations(
+pub(super) const DAO_VERSIONS: [&str; 0] = [
+
+];
+
+#[rustfmt::skip]
+pub(super) const _DAO_VERSIONS: [&str; 8] = [
+  "CREATE TABLE IF NOT EXISTS daos(
     id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
     height INTEGER NOT NULL,
     owner TEXT NOT NULL,

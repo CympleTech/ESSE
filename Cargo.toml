@@ -44,10 +44,10 @@ chat_types = { git = "https://github.com/cympletech/esse_types", branch="main" }
 group_types = { git = "https://github.com/cympletech/esse_types", branch="main" }
 cloud_types = { git = "https://github.com/cympletech/esse_types", branch="main" }
 domain_types = { git = "https://github.com/cympletech/esse_types", branch="main" }
-organization_types = { git = "https://github.com/cympletech/esse_types", branch="main" }
+dao_types = { git = "https://github.com/cympletech/esse_types", branch="main" }
 #chat_types = { path = "../esse_types/chat" }
 #group_types = { path = "../esse_types/group" }
-#organization_types = { path = "../esse_types/organization" }
+#dao_types = { path = "../esse_types/dao" }
 #domain_types = { path = "../esse_types/domain" }
 #cloud_types = { path = "../esse_types/cloud" }
 

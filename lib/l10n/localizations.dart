@@ -273,8 +273,8 @@ abstract class AppLocalizations {
   String get setMain;
   String get transfer;
 
-  String get organization;
-  String get organizationIntro;
+  String get dao;
+  String get daoIntro;
 }
 
 class _AppLocalizationsDelegate

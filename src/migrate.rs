@@ -7,11 +7,11 @@ pub mod consensus;
 mod account;
 mod chat;
 mod cloud;
+mod dao;
 mod domain;
 mod file;
 mod group;
 mod jarvis;
-mod organization;
 mod service;
 mod session;
 mod wallet;
@@ -20,11 +20,11 @@ use account::ACCOUNT_VERSIONS;
 use chat::CHAT_VERSIONS;
 use cloud::CLOUD_VERSIONS;
 use consensus::CONSENSUS_VERSIONS;
+use dao::DAO_VERSIONS;
 use domain::DOMAIN_VERSIONS;
 use file::FILE_VERSIONS;
 use group::GROUP_VERSIONS;
 use jarvis::JARVIS_VERSIONS;
-use organization::ORGANIZATION_VERSIONS;
 use service::SERVICE_VERSIONS;
 use session::SESSION_VERSIONS;
 use wallet::WALLET_VERSIONS;
@@ -53,8 +53,8 @@ pub(crate) const JARVIS_DB: &'static str = "jarvis.db";
 /// Account's group chat database name
 pub(crate) const GROUP_DB: &'static str = "group.db";
 
-/// Account's organization database name
-pub(crate) const ORGANIZATION_DB: &'static str = "organization.db";
+/// Account's dao database name
+pub(crate) const DAO_DB: &'static str = "dao.db";
 
 /// Account's domain database name
 pub(crate) const DOMAIN_DB: &'static str = "domain.db";
@@ -131,7 +131,7 @@ pub(crate) fn main_migrate(path: &PathBuf) -> Result<()> {
                 SERVICE_DB => SERVICE_VERSIONS.as_ref(),
                 JARVIS_DB => JARVIS_VERSIONS.as_ref(),
                 GROUP_DB => GROUP_VERSIONS.as_ref(),
-                ORGANIZATION_DB => ORGANIZATION_VERSIONS.as_ref(),
+                DAO_DB => DAO_VERSIONS.as_ref(),
                 CHAT_DB => CHAT_VERSIONS.as_ref(),
                 DOMAIN_DB => DOMAIN_VERSIONS.as_ref(),
                 WALLET_DB => WALLET_VERSIONS.as_ref(),
@@ -215,8 +215,8 @@ pub(crate) fn main_migrate(path: &PathBuf) -> Result<()> {
 
         db.update(&format!(
             "UPDATE migrates SET version = {} where db_name = '{}'",
-            ORGANIZATION_VERSIONS.len(),
-            ORGANIZATION_DB,
+            DAO_VERSIONS.len(),
+            DAO_DB,
         ))?;
 
         db.update(&format!(
@@ -299,9 +299,9 @@ pub(crate) fn account_init_migrate(path: &PathBuf) -> Result<()> {
     db.close()?;
 
     let mut db_path = path.clone();
-    db_path.push(ORGANIZATION_DB);
+    db_path.push(DAO_DB);
     let db = DStorage::open(db_path)?;
-    for i in &ORGANIZATION_VERSIONS {
+    for i in &DAO_VERSIONS {
         db.execute(i)?;
     }
     db.close()?;

@@ -7,14 +7,14 @@ import 'package:esse/apps/group/list.dart';
 import 'package:esse/apps/domain/page.dart';
 import 'package:esse/apps/chat/list.dart';
 import 'package:esse/apps/wallet/page.dart';
-import 'package:esse/apps/organization/detail.dart';
+import 'package:esse/apps/dao/detail.dart';
 import 'package:esse/apps/cloud/page.dart';
 
 const List<InnerService> INNER_SERVICES = [
   InnerService.Wallet,
   InnerService.Chat,
   InnerService.GroupChat,
-  InnerService.Organization,
+  InnerService.Dao,
   InnerService.Jarvis,
   InnerService.Domain,
   InnerService.Cloud,
@@ -26,7 +26,7 @@ enum InnerService {
   Jarvis,
   Domain,
   Wallet,
-  Organization,
+  Dao,
   Cloud,
 }
 
@@ -43,8 +43,8 @@ extension InnerServiceExtension on InnerService {
         return [lang.domain, lang.domainIntro, 'assets/logo/logo_domain.png'];
       case InnerService.Wallet:
         return [lang.wallet, lang.walletIntro, 'assets/logo/logo_wallet.png'];
-      case InnerService.Organization:
-        return [lang.organization, lang.organizationIntro, 'assets/logo/logo_organization.png'];
+      case InnerService.Dao:
+        return [lang.dao, lang.daoIntro, 'assets/logo/logo_dao.png'];
       case InnerService.Cloud:
         return [lang.cloud, lang.cloudIntro, 'assets/logo/logo_cloud.png'];
     }
@@ -62,8 +62,8 @@ extension InnerServiceExtension on InnerService {
         return DomainDetail();
       case InnerService.Wallet:
         return WalletDetail();
-      case InnerService.Organization:
-        return OrganizationDetail();
+      case InnerService.Dao:
+        return DaoDetail();
       case InnerService.Cloud:
         return CloudPage();
     }

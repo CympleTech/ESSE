@@ -26,9 +26,9 @@ pub(super) const ACCOUNT_VERSIONS: [&str; 13] = [
   "INSERT INTO migrates (db_name, version) values ('file.db', 0)",
   "INSERT INTO migrates (db_name, version) values ('jarvis.db', 0)",
   "INSERT INTO migrates (db_name, version) values ('group.db', 0)",
-  "INSERT INTO migrates (db_name, version) values ('organization.db', 0)",
   "INSERT INTO migrates (db_name, version) values ('chat.db', 0)",
   "INSERT INTO migrates (db_name, version) values ('domain.db', 0)",
   "INSERT INTO migrates (db_name, version) values ('wallet.db', 0)",
   "INSERT INTO migrates (db_name, version) values ('cloud.db', 0)",
+  "INSERT INTO migrates (db_name, version) values ('dao.db', 0)",
 ];

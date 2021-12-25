@@ -449,7 +449,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get transfer => '转账';
 
   @override
-  String get organization => '群组';
+  String get dao => '群组';
   @override
-  String get organizationIntro => '去中心化群聊与组织';
+  String get daoIntro => '去中心化群聊与组织';
 }

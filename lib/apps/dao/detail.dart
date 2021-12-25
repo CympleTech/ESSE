@@ -16,14 +16,14 @@ import 'package:esse/global.dart';
 import 'package:esse/options.dart';
 import 'package:esse/rpc.dart';
 
-class OrganizationDetail extends StatefulWidget {
-  const OrganizationDetail({Key? key}) : super(key: key);
+class DaoDetail extends StatefulWidget {
+  const DaoDetail({Key? key}) : super(key: key);
 
   @override
-  _OrganizationDetailState createState() => _OrganizationDetailState();
+  _DaoDetailState createState() => _DaoDetailState();
 }
 
-class _OrganizationDetailState extends State<OrganizationDetail> {
+class _DaoDetailState extends State<DaoDetail> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override

@@ -17,7 +17,7 @@ pub(crate) mod domain;
 pub(crate) mod file;
 pub(crate) mod group;
 pub(crate) mod jarvis;
-//pub(crate) mod organization;
+//pub(crate) mod dao;
 pub(crate) mod wallet;
 
 pub(crate) fn app_rpc_inject(handler: &mut RpcHandler<RpcState>) {
@@ -28,7 +28,7 @@ pub(crate) fn app_rpc_inject(handler: &mut RpcHandler<RpcState>) {
     file::new_rpc_handler(handler);
     group::new_rpc_handler(handler);
     wallet::new_rpc_handler(handler);
-    //organization::new_rpc_handler(handler);
+    //dao::new_rpc_handler(handler);
     cloud::new_rpc_handler(handler);
 }
 
@@ -41,7 +41,7 @@ pub(crate) async fn app_layer_handle(
     match (fgid, mgid) {
         (group::GROUP_ID, _) => group::handle_peer(layer, mgid, msg).await,
         (_, group::GROUP_ID) => group::handle_server(layer, fgid, msg).await,
-        //(organization::GROUP_ID, _) => organization::handle(layer, fgid, mgid, false, msg).await,
+        //(dao::GROUP_ID, _) => dao::handle(layer, fgid, mgid, false, msg).await,
         (domain::GROUP_ID, _) => domain::handle(layer, mgid, msg).await,
         (cloud::GROUP_ID, _) => cloud::handle(layer, mgid, msg).await,
         _ => chat::handle(layer, fgid, mgid, msg).await,

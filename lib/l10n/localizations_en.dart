@@ -449,7 +449,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get transfer => 'Transfer';
 
   @override
-  String get organization => 'Organization';
+  String get dao => 'DAO';
   @override
-  String get organizationIntro => 'DAO groups and channels';
+  String get daoIntro => 'DAO groups and channels';
 }
