@@ -45,15 +45,14 @@ class _DaoDetailState extends State<DaoDetail> {
 
     return Scaffold(
       key: _scaffoldKey,
-      drawer: _ChannelScreen(),
+      drawer: _ChannelScreen(padding: 20.0),
       endDrawer: _MemberScreen(),
       drawerScrimColor: const Color(0x26ADB0BB),
-      drawerEnableOpenDragGesture: false,
       appBar: AppBar(
         automaticallyImplyLeading: false,
         leading: reallyDesktop ? null : IconButton(icon: Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context)),
-        title: Text('ESSE', maxLines: 1, overflow: TextOverflow.ellipsis),
+        title: Text('ESSE ' + lang.wip, maxLines: 1, overflow: TextOverflow.ellipsis),
         bottom: isDesktop ? PreferredSize(
           child: Container(color: const Color(0x40ADB0BB), height: 1.0),
           preferredSize: Size.fromHeight(1.0)): null,
@@ -77,7 +76,7 @@ class _DaoDetailState extends State<DaoDetail> {
         child: isDesktop
         ? Row(children: [
             Expanded(child: _MainScreen()),
-            _ChannelScreen(),
+            _ChannelScreen(padding: 5.0),
         ])
         : _MainScreen()
       )
@@ -170,13 +169,6 @@ class _MainScreenState extends State<_MainScreen> {
   }
 }
 
-class _ChannelScreen extends StatefulWidget {
-  _ChannelScreen({Key? key}) : super(key: key);
-
-  @override
-  _ChannelScreenState createState() => _ChannelScreenState();
-}
-
 class Channel {
   String name = '';
   bool public = true;
@@ -191,6 +183,14 @@ class Category {
   bool open = true;
 
   Category(this.channels, this.name);
+}
+
+class _ChannelScreen extends StatefulWidget {
+  final double padding;
+  _ChannelScreen({Key? key, required this.padding}) : super(key: key);
+
+  @override
+  _ChannelScreenState createState() => _ChannelScreenState();
 }
 
 class _ChannelScreenState extends State<_ChannelScreen> {
@@ -285,6 +285,7 @@ class _ChannelScreenState extends State<_ChannelScreen> {
     return SafeArea(
       child: Container(
         width: 200.0,
+        padding: EdgeInsets.symmetric(vertical: widget.padding),
         decoration: BoxDecoration(color: color.secondary),
         child: ListView(
           children: _categories.map((category) =>
@@ -324,6 +325,7 @@ class _MemberScreenState extends State<_MemberScreen> {
     return SafeArea(
       child: Container(
         width: 200.0,
+        padding: const EdgeInsets.symmetric(vertical: 20.0),
         decoration: BoxDecoration(color: color.secondary),
         child: ListView(
           children: [

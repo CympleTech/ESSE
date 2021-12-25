@@ -15,9 +15,9 @@ const List<InnerService> INNER_SERVICES = [
   InnerService.Chat,
   InnerService.GroupChat,
   InnerService.Dao,
-  InnerService.Jarvis,
   InnerService.Domain,
   InnerService.Cloud,
+  InnerService.Jarvis,
 ];
 
 enum InnerService {

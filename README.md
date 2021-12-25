@@ -1,45 +1,46 @@
 <h1 align="center"><img src="https://cympletech.com/logo/esse_words.png" alt="ESSE"></h1>
 
-**ESSE** (Encrypted Symmetrical Session Engine) An open source encrypted peer-to-peer system for data security, would allow data to be sent securely from one terminal to another without going through third-party services.
+**ESSE** (Encrypted Symmetrical Session Engine) An open source encrypted peer-to-peer system for data security, and allow data to be sent securely from one terminal to another without going through third-party services. Also provides data visualization and interactive entry. With a friendly interface for users, it transforms abstract data concepts into software that everyone can actually experience.
 
-**Your place, your rules.**
+Slogan: **My place, my rules.**
 
 ![image](https://cympletech.com/images/esse_show.gif)
 
-ESSE, stands for Encrypted Symmetrical Session Engine, positioned as an engine. The engine is coded in [**Rust**](https://github.com/rust-lang/rust) language based on [**TDN**](https://github.com/cypherlink/TDN) framework, and the cross-platform user interface is built using [**Flutter**](https://github.com/flutter/flutter).
+ESSE, positioned as an engine. The engine is coded in [**Rust**](https://github.com/rust-lang/rust) language based on [**TDN**](https://github.com/cympletech/TDN) framework, and the cross-platform user interface is built using [**Flutter**](https://github.com/flutter/flutter).
 
 ## Features
-- Data Security Fortress
 - Encryption Everywhere
 - Distributed Identity
 - Distributed Devices
 - Distributed Notes & Files
 - Distributed Storage & Synchronization
-- Built-in IM Application
-- Built-in Group Chat Application
-- Built-in Domain Application
-- Built-in Wallet Application (Support ETH/ERC20/ERC721)
-- Built-in Robot assistant Application
+- Built-in Chat with friend application
+- Built-in Group Chat application
+- Built-in Personal Domain application
+- Built-in Wallet application (Support ETH/ERC20/ERC721)
+- Built-in Robot assistant application
 - Multi-identity System
 - Multi-platform Support: Android, iOS, iPadOS, MacOS, Windows, Linux, etc.
 
 [Screenshots](https://github.com/CympleTech/esse/wiki/Screenshots)
 
-## Usage
-### 1. Use Binary executable
+[Document](https://docs.cympletech.com/docs/introduction)
+
+## Install
+### Use pre-compiled executable
 [Download](https://github.com/cympletech/esse/releases)
 
-### 2. Compile
-#### 2.1. Pre-installed
+### Compile from souce
+#### 1. Pre-installed
 - Rustup [install](https://rustup.rs/)
 - Rust (Lastest Stable version)
 - Flutter (Lastest Stable channel)
 
-#### 2.2. Compile Rust code to dynamic link library (FFI)
-##### 2.2.1. Auto-compile script
+#### 2. Compile Rust code to dynamic link library (FFI)
+##### 2.1. Auto-compile script
 It is recommended to use [rust.sh](./rust.sh) to auto-compile the Rust code
 
-##### 2.2.2. Manually compile
+##### 2.2. Manually compile
 ##### Linux / MacOS / Windows
 - `cargo build --release`
 
@@ -71,7 +72,7 @@ It is recommended to use [rust.sh](./rust.sh) to auto-compile the Rust code
 2. `cargo lipo --release`
 3. `cp target/universal/release/libesse.a core/ios/share/libesse.a`
 
-#### 2.3. Run flutter to build binary
+#### 3. Run flutter to build binary
 - Run `flutter run` or `flutter run --release` in terminal, or
 - for Android, run `flutter build apk`, or
 - for Linux, run `flutter build linux`, or
