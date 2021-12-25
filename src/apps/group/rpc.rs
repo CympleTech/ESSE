@@ -124,9 +124,6 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
 
             let mut results = HandleResult::new();
 
-            // add to rpcs.
-            results.rpcs.push(json!(gc.to_rpc()));
-
             let mut m = Member::new(gheight, gc.id, gid, me.addr, me.name);
             m.insert(&db)?;
             let mid = m.id;
@@ -142,6 +139,9 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
                     .send(SendMessage::Rpc(0, session_create(gid, &session), true))
                     .await;
             });
+
+            // add to rpcs.
+            results.rpcs.push(json!([sid, gdid]));
 
             // Add frist member join.
             let mut layer_lock = state.layer.write().await;

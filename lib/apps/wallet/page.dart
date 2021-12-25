@@ -211,7 +211,7 @@ class _WalletDetailState extends State<WalletDetail> with SingleTickerProviderSt
                 children: [
                   const Icon(Icons.lock),
                   const SizedBox(width: 8.0),
-                  const Text('生成以太坊地址'),
+                  Text(lang.walletGenerate),
                 ]
               )
             )
@@ -478,7 +478,7 @@ class _WalletDetailState extends State<WalletDetail> with SingleTickerProviderSt
                 unselectedLabelColor: color.onSurface,
                 labelColor: Color(0xFF6174FF),
                 tabs: [
-                  Tab(text: 'Assets'),
+                  Tab(text: 'Tokens'),
                   Tab(text: 'Activity'),
                 ],
                 controller: _tabController!,
@@ -496,7 +496,7 @@ class _WalletDetailState extends State<WalletDetail> with SingleTickerProviderSt
                           return TextButton(
                             child: Padding(
                               padding: const EdgeInsets.symmetric(vertical: 10.0),
-                              child: Text('Add new Token' + ' ( ERC20 / ERC721 )')
+                              child: Text('Add Token' + ' ( ERC20 / ERC721 )')
                             ),
                             onPressed: () => showShadowDialog(
                               context, Icons.paid, 'Token', _ImportToken(
@@ -982,7 +982,7 @@ class _TransferTokenState extends State<_TransferToken> {
           children: [
             const SizedBox(width: 10.0),
             TextButton(child: Text(
-                this._myAccount ? 'Input Account' : 'Between Accounts'
+                this._myAccount ? lang.walletInputAccount: lang.walletBetweenAccount,
               ), onPressed: () => setState(() {
                   this._myAccount = !this._myAccount;
                   if (this._selectAddress.length == 0) {

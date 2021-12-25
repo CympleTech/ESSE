@@ -438,6 +438,12 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get walletIntro => 'Manage your own cryptocurrency.';
   @override
+  String get walletGenerate => 'Generate ETH account';
+  @override
+  String get walletInputAccount => 'Input Account';
+  @override
+  String get walletBetweenAccount => 'Between Accounts';
+  @override
   String get secretKey => 'Secret Key';
   @override
   String get contract => 'Contract Address';

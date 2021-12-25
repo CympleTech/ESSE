@@ -38,18 +38,24 @@ class _GroupAddScreenState extends State<GroupAddScreen> {
   _send(String name, bool isDesktop) async {
     final res = await httpPost('group-create', [name]);
     if (res.isOk) {
-      print(res.params);
-      final id = res.params[0];
-      final w = GroupChatDetail(id: id);
-      if (w != null) {
-        if (isDesktop) {
-          Provider.of<AccountProvider>(context, listen: false).updateActivedWidget(w);
-          rpc.send('group-member-join', [id, widget.fid]);
-        } else {
-          Navigator.push(context, MaterialPageRoute(builder: (_) => w));
-        }
-      }
-      Navigator.pop(context);
+      // use delayed because waiting this session added.
+      Future.delayed(Duration(seconds: 1), () async {
+          final fid = widget.fid;
+          Navigator.pop(context);
+          final sid = res.params[0];
+          final id = res.params[1];
+          final w = GroupChatDetail(id: id);
+          rpc.send('group-member-join', [id, fid]);
+          Provider.of<AccountProvider>(context, listen: false).updateActivedSession(sid);
+          if (w != null) {
+            if (isDesktop) {
+              Provider.of<AccountProvider>(context, listen: false).updateActivedWidget(w);
+            } else {
+              Navigator.pop(context);
+              Navigator.push(context, MaterialPageRoute(builder: (_) => w));
+            }
+          }
+      });
     } else {
       setState(() {
           this._error = res.error;

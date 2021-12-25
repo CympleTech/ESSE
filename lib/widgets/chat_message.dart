@@ -323,7 +323,7 @@ class ChatMessage extends StatelessWidget {
           if (message.isMe) Spacer(),
           if (isAvatar)
           Container(
-            width: 50.0,
+            width: 60.0,
             child: Text(name, maxLines: 1, overflow: TextOverflow.ellipsis,
               style: TextStyle(color: color.onPrimary.withOpacity(0.5), fontSize: 10.0)
           )),

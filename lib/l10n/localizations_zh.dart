@@ -438,6 +438,12 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String get walletIntro => '管理自己的加密货币。';
   @override
+  String get walletGenerate => '生成以太坊地址';
+  @override
+  String get walletInputAccount => '输入对方账号';
+  @override
+  String get walletBetweenAccount => '自己账户之间';
+  @override
   String get secretKey => '私钥';
   @override
   String get contract => '合约地址';

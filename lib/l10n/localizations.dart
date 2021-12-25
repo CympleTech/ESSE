@@ -267,6 +267,9 @@ abstract class AppLocalizations {
 
   String get wallet;
   String get walletIntro;
+  String get walletGenerate;
+  String get walletInputAccount;
+  String get walletBetweenAccount;
   String get secretKey;
   String get contract;
   String get main;
