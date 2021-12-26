@@ -117,7 +117,7 @@ extension MessageTypeExtension on MessageType {
         return MessageType.Video;
       case 8:
         return MessageType.Invite;
-      case 8:
+      case 9:
         return MessageType.Transfer;
       default:
         return MessageType.String;
@@ -198,13 +198,13 @@ class BaseMessage {
     return [type, gid, addr, name, proof, key];
   }
 
-  // [hash, to, amount, name]
+  // [hash, to, amount, name, network]
   List<String> showTransfer() {
     return this.content.split(";");
   }
 
-  static String mergeTransfer(String hash, String to, String amount, String name) {
-    return "${hash};${to};${amount};${name}";
+  static String mergeTransfer(String hash, String to, String amount, String name, int network, int decimal) {
+    return "${hash};${to};${amount};${name};${network};${decimal}";
   }
 
   static String rawRecordName(int time, String name) {

@@ -287,8 +287,10 @@ class Token {
 
   double get amount => double.parse(this.balance);
 
-  String get logo {
-    switch (name.toUpperCase()) {
+  String get logo => getLogo(name, chain);
+
+  static String getLogo(String n, [ChainToken c = ChainToken.ERC20]) {
+    switch (n.toUpperCase()) {
       case 'ETH':
         return 'assets/logo/logo_eth.png';
       case 'USDT':
@@ -296,9 +298,9 @@ class Token {
       case 'ESNFT':
         return 'assets/logo/logo_esse_nft.png';
       default:
-        if (chain == ChainToken.ERC20) {
+        if (c == ChainToken.ERC20) {
           return 'assets/logo/logo_erc20.png';
-        } else if (chain == ChainToken.ERC721) {
+        } else if (c == ChainToken.ERC721) {
           return 'assets/logo/logo_nft.png';
         } else {
           return 'assets/logo/logo_btc.png';

@@ -128,11 +128,11 @@ class ChatInputState extends State<ChatInput> {
     });
   }
 
-  _tokenCallback(String hash, String to, String amount, String name) {
+  _tokenCallback(String hash, String to, String amount, String name, int network, int decimal) {
     _restore();
     widget.callback(
       MessageType.Transfer,
-      BaseMessage.mergeTransfer(hash, to, amount, name)
+      BaseMessage.mergeTransfer(hash, to, amount, name, network, decimal)
     );
   }
 

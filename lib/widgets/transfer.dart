@@ -310,7 +310,36 @@ class _TransferState extends State<Transfer> {
           controller: _amountController,
           focus: _amountFocus
         ),
-        const SizedBox(height: 20.0),
+        const SizedBox(height: 10.0),
+        if (this._checked)
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.arrow_forward, color: Colors.green),
+            const SizedBox(width: 10.0),
+            Expanded(
+              child: this._networkError.length > 1
+              ? Text(this._networkError,
+                textAlign: TextAlign.center, style: TextStyle(color: Colors.red))
+              : RichText(
+                textAlign: TextAlign.center,
+                text: TextSpan(
+                  text: 'Estimated Price = ',
+                  style: TextStyle(
+                    fontSize: 14.0, fontStyle: FontStyle.italic, color: Colors.green),
+                  children: <TextSpan>[
+                    TextSpan(text: this._price + ' Gwei',
+                      style: TextStyle(fontWeight: FontWeight.bold)),
+                    TextSpan(text: ', Gas ≈ '),
+                    TextSpan(text: this._gas + ' ETH',
+                      style: TextStyle(fontWeight: FontWeight.bold)),
+                  ],
+                ),
+              )
+            ),
+          ]
+        ),
+        const SizedBox(height: 10.0),
         this._checked
         ? ButtonText(
           text: lang.send,
@@ -345,7 +374,10 @@ class _TransferState extends State<Transfer> {
                     final addressId = res.params[0];
                     final network = NetworkExtension.fromInt(res.params[1]);
                     final tx = Transaction.fromList(res.params[2]);
-                    widget.callback(tx.hash, tx.to, amount, this._selectedToken.name);
+                    widget.callback(tx.hash, tx.to, amount,
+                      this._selectedToken.name, this._selectedNetwork.toInt(),
+                      this._selectedToken.decimal,
+                    );
                     Navigator.of(context).pop();
                   } else {
                     this._networkError = res.error;

@@ -18,6 +18,7 @@ import 'package:esse/rpc.dart';
 import 'package:esse/apps/primitives.dart';
 import 'package:esse/apps/chat/models.dart' show Request;
 import 'package:esse/apps/file/models.dart' show FileType, FileTypeExtension, parseFileType;
+import 'package:esse/apps/wallet/models.dart' show NetworkExtension, Network, Token, unitBalance;
 
 class ChatMessage extends StatelessWidget {
   final Widget? avatar;
@@ -287,6 +288,51 @@ class ChatMessage extends StatelessWidget {
     }
   }
 
+  Widget _showTransfer(context, lang, color, maxWidth) {
+    // transfer [hash, to, amount, name, network, decimal]
+    final infos = message.showTransfer();
+    if (infos.length > 3) {
+      final logo = Token.getLogo(infos[3]);
+      final network = infos.length > 4 ? NetworkExtension.fromInt(int.parse(infos[4])) : Network.EthMain;
+      final decimal = infos.length > 5 ? int.parse(infos[5]) : 18;
+      final amount = unitBalance(infos[2], decimal, 4);
+      return Container(
+        padding: const EdgeInsets.only(top: 10, bottom: 6.0, left: 10.0, right: 10.0),
+        width: 200.0,
+        decoration: BoxDecoration(
+          color: network.params()[1].withOpacity(0.3),
+          borderRadius: BorderRadius.circular(10.0)
+        ),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(children: [
+                Container(
+                  width: 36.0,
+                  height: 36.0,
+                  decoration: BoxDecoration(
+                    image: DecorationImage(
+                      image: AssetImage(logo),
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                ),
+                Container(width: 135.0, padding: const EdgeInsets.only(left: 10.0),
+                  child: Column(children: [
+                      Text("${amount} ${infos[3]}", maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: color.onPrimary, fontSize: 16.0)),
+                      const SizedBox(height: 4.0),
+                      Text(infos[1], maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: Colors.grey, fontSize: 12.0)),
+            ]))]),
+            const SizedBox(height: 5.0),
+            const Divider(height: 1.0, color: Color(0x40ADB0BB)),
+            const SizedBox(height: 3.0),
+            Text(infos[0], maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: Colors.grey, fontSize: 10.0)),
+        ])
+      );
+    } else {
+      return _showText(context, color, maxWidth);
+    }
+  }
+
 
   Widget _show(context, color, lang, isDesktop, maxWidth) {
     //final width = MediaQuery.of(context).size.width * 0.6;
@@ -303,6 +349,8 @@ class ChatMessage extends StatelessWidget {
       return  _showRecord();
     } else if (message.type == MessageType.Invite) {
       return  _showInvite(context, lang, color, maxWidth);
+    } else if (message.type == MessageType.Transfer) {
+      return  _showTransfer(context, lang, color, maxWidth);
     }
     return _showText(context, color, maxWidth);
   }
