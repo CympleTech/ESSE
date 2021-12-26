@@ -1,5 +1,11 @@
 <h1 align="center"><img src="https://cympletech.com/logo/esse_words.png" alt="ESSE"></h1>
 
+Do you have watched "Black Mirror" The first episode of the second season?  The story of the “rebirth” to accompany the lover based on the text, photos, videos and other information posted on the Internet.
+
+So is this "data" accessible to everyone or some companies ?
+
+What we want to do is protect this data and privacy. you can see details [what we are doing](https://docs.cympletech.com/blog/what-we-are-doing/).
+
 **ESSE** (Encrypted Symmetrical Session Engine) An open source encrypted peer-to-peer system for data security, and allow data to be sent securely from one terminal to another without going through third-party services. Also provides data visualization and interactive entry. With a friendly interface for users, it transforms abstract data concepts into software that everyone can actually experience.
 
 Slogan: **My place, my rules.**
