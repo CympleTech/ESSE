@@ -68,7 +68,7 @@ msix_config:
   publisher_display_name: ESSE
   identity_name: CympleTech.com.ESSE
   msix_version: 0.5.0.0
-  logo_path: .\assets\logo\desktop_icon.png
+  logo_path: .\assets\logo\esse_desktop.png
   capabilities: "internetClient,microphone,webcam"
 
 flutter_icons:
