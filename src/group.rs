@@ -278,7 +278,7 @@ impl Group {
 
     pub fn check_lock(&self, gid: &GroupId, lock: &str) -> bool {
         if let Some(account) = self.accounts.get(gid) {
-            account.check_lock(&self.secret, lock).is_ok()
+            account.check_lock(lock).is_ok()
         } else {
             false
         }

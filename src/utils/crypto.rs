@@ -2,6 +2,10 @@ use aes_gcm::{
     aead::{generic_array::GenericArray, Aead, NewAead},
     Aes256Gcm,
 };
+use argon2::{
+    password_hash::{rand_core::OsRng, PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
+    Argon2,
+};
 use sha2::{Digest, Sha256};
 
 const FIX_PADDING: [u8; 19] = [
@@ -9,22 +13,21 @@ const FIX_PADDING: [u8; 19] = [
 ];
 
 /// Hash the given pin.
-pub fn hash_pin(salt: &[u8], pin: &str, index: i64) -> Vec<u8> {
-    let mut hasher = Sha256::new();
-    hasher.update(salt); // for avoid same hash when no-pin in other derives.
-    hasher.update(pin.as_bytes());
-    hasher.update(index.to_le_bytes()); // for avoid same hash when no-pin in one device.
-    hasher.finalize().to_vec()
+pub fn hash_pin(pin: &str) -> anyhow::Result<String> {
+    let salt = SaltString::generate(&mut OsRng);
+    let argon2 = Argon2::default();
+    Ok(argon2
+        .hash_password(pin.as_bytes(), &salt)
+        .map_err(|_| anyhow!("hash pin failure!"))?
+        .to_string())
 }
 
 /// check the pin is the given hash pre-image.
-pub fn check_pin(salt: &[u8], pin: &str, index: i64, hash: &[u8]) -> bool {
-    let mut hasher = Sha256::new();
-    hasher.update(salt);
-    hasher.update(pin.as_bytes());
-    hasher.update(index.to_le_bytes());
-    let hash_key = hasher.finalize();
-    &hash_key[..] == hash
+pub fn check_pin(pin: &str, hash: &str) -> anyhow::Result<bool> {
+    let parsed_hash = PasswordHash::new(hash).map_err(|_| anyhow!("hash pin failure!"))?;
+    Ok(Argon2::default()
+        .verify_password(pin.as_bytes(), &parsed_hash)
+        .is_ok())
 }
 
 fn build_cipher(salt: &[u8], pin: &str) -> Aes256Gcm {

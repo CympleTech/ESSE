@@ -29,6 +29,7 @@ image = "0.23"
 base64 = "0.13"
 hex = "0.4"
 sha2 = "0.10"
+argon2 = "0.3"
 blake3 = "1.2"
 bincode = "1.3"
 aes-gcm = "0.9"
@@ -45,6 +46,7 @@ group_types = { git = "https://github.com/cympletech/esse_types", branch="main" 
 cloud_types = { git = "https://github.com/cympletech/esse_types", branch="main" }
 domain_types = { git = "https://github.com/cympletech/esse_types", branch="main" }
 dao_types = { git = "https://github.com/cympletech/esse_types", branch="main" }
+data = { git = "https://github.com/cympletech/esse_types", branch="main" }
 #chat_types = { path = "../esse_types/chat" }
 #group_types = { path = "../esse_types/group" }
 #dao_types = { path = "../esse_types/dao" }

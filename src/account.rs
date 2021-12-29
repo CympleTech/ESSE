@@ -52,7 +52,7 @@ pub(crate) struct Account {
     pub pass: String,
     pub name: String,
     pub avatar: Vec<u8>,
-    pub lock: Vec<u8>,    // hashed-lock.
+    pub lock: String,     // hashed-lock.
     pub secret: Vec<u8>,  // encrypted value.
     pub encrypt: Vec<u8>, // encrypted encrypt key.
     pub wallet: String,   // main wallet info.
@@ -69,7 +69,7 @@ impl Account {
         lang: i64,
         pass: String,
         name: String,
-        lock: Vec<u8>,
+        lock: String,
         avatar: Vec<u8>,
         mnemonic: Vec<u8>,
         secret: Vec<u8>,
@@ -138,7 +138,7 @@ impl Account {
                 lang,
                 pass.to_string(),
                 name.to_string(),
-                hash_pin(salt, lock, index),
+                hash_pin(lock)?,
                 avatar,
                 mnemonic,
                 secret,
@@ -148,8 +148,8 @@ impl Account {
         ))
     }
 
-    pub fn check_lock(&self, salt: &[u8], lock: &str) -> Result<()> {
-        if check_pin(salt, lock, self.index, &self.lock) {
+    pub fn check_lock(&self, lock: &str) -> Result<()> {
+        if check_pin(lock, &self.lock)? {
             Ok(())
         } else {
             Err(anyhow!("lock is invalid!"))
@@ -157,8 +157,8 @@ impl Account {
     }
 
     pub fn pin(&mut self, salt: &[u8], old: &str, new: &str) -> Result<()> {
-        self.check_lock(salt, old)?;
-        self.lock = hash_pin(salt, new, self.index);
+        self.check_lock(old)?;
+        self.lock = hash_pin(new)?;
         let key = decrypt_key(salt, old, &self.encrypt)?;
         self.encrypt = encrypt_key(salt, new, &key)?;
 
@@ -166,13 +166,13 @@ impl Account {
     }
 
     pub fn mnemonic(&self, salt: &[u8], lock: &str) -> Result<String> {
-        self.check_lock(salt, lock)?;
+        self.check_lock(lock)?;
         let pbytes = decrypt(salt, lock, &self.encrypt, &self.mnemonic)?;
         String::from_utf8(pbytes).or(Err(anyhow!("mnemonic unlock invalid.")))
     }
 
     pub fn secret(&self, salt: &[u8], lock: &str) -> Result<Keypair> {
-        self.check_lock(salt, lock)?;
+        self.check_lock(lock)?;
         let pbytes = decrypt(salt, lock, &self.encrypt, &self.secret)?;
         Keypair::from_bytes(&pbytes).or(Err(anyhow!("secret unlock invalid.")))
     }
@@ -189,7 +189,7 @@ impl Account {
             encrypt: base64::decode(v.pop().unwrap().as_str()).unwrap_or(vec![]),
             secret: base64::decode(v.pop().unwrap().as_str()).unwrap_or(vec![]),
             mnemonic: base64::decode(v.pop().unwrap().as_str()).unwrap_or(vec![]),
-            lock: base64::decode(v.pop().unwrap().as_string()).unwrap_or(vec![]),
+            lock: v.pop().unwrap().as_string(),
             name: v.pop().unwrap().as_string(),
             pass: v.pop().unwrap().as_string(),
             lang: v.pop().unwrap().as_i64(),
@@ -240,7 +240,7 @@ impl Account {
             self.lang,
             self.pass,
             self.name,
-            base64::encode(&self.lock),
+            self.lock,
             base64::encode(&self.mnemonic),
             base64::encode(&self.secret),
             base64::encode(&self.encrypt),
@@ -260,7 +260,7 @@ impl Account {
     pub fn update(&self, db: &DStorage) -> Result<usize> {
         let sql = format!("UPDATE accounts SET name='{}', lock='{}', encrypt='{}', avatar='{}', wallet='{}', pub_height={}, own_height={}, event='{}', datetime={} WHERE id = {}",
             self.name,
-            base64::encode(&self.lock),
+            self.lock,
             base64::encode(&self.encrypt),
             base64::encode(&self.avatar),
             self.wallet,
