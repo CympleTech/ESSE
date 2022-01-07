@@ -5,11 +5,11 @@ use tdn::types::{
     group::GroupId,
     primitive::{Peer, PeerId, Result},
 };
-
 use tdn_did::Keypair;
+use tdn_storage::local::DStorage;
 
 use crate::apps::device::Device;
-use crate::storage::consensus_db;
+use crate::migrate::CONSENSUS_DB;
 
 pub(crate) struct RunningAccount {
     /// secret keypair.
@@ -25,9 +25,11 @@ pub(crate) struct RunningAccount {
 }
 
 impl RunningAccount {
-    pub fn init(keypair: Keypair, base: &PathBuf, gid: &GroupId) -> Result<Self> {
-        // load devices to runnings.
-        let db = consensus_db(base, gid)?;
+    pub fn init(keypair: Keypair, base: &PathBuf, key: &str, gid: &GroupId) -> Result<Self> {
+        let mut db_path = base.clone();
+        db_path.push(gid.to_hex());
+        db_path.push(CONSENSUS_DB);
+        let db = DStorage::open(db_path, key)?;
         let distributes = Device::distributes(&db)?;
         let (device_name, device_info) = Device::device_info(&db)?;
         db.close()?;

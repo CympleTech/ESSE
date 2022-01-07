@@ -11,7 +11,7 @@ use super::{
     add_layer,
     models::{Name, Provider},
 };
-use crate::{rpc::RpcState, storage::domain_db};
+use crate::rpc::RpcState;
 
 #[inline]
 pub(crate) fn add_provider(mgid: GroupId, provider: &Provider) -> RpcParam {
@@ -71,7 +71,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
     handler.add_method(
         "domain-list",
         |gid: GroupId, _params: Vec<RpcParam>, state: Arc<RpcState>| async move {
-            let db = domain_db(state.layer.read().await.base(), &gid)?;
+            let db = state.group.read().await.domain_db(&gid)?;
 
             // list providers.
             let providers: Vec<RpcParam> =
@@ -90,7 +90,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             let provider = PeerId::from_hex(params[0].as_str().ok_or(RpcError::ParseError)?)?;
 
             let mut results = HandleResult::new();
-            let db = domain_db(state.layer.read().await.base(), &gid)?;
+            let db = state.group.read().await.domain_db(&gid)?;
             let mut p = Provider::prepare(provider);
             p.insert(&db)?;
 
@@ -104,7 +104,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
         |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
             let id = params[0].as_i64().ok_or(RpcError::ParseError)?;
 
-            let db = domain_db(state.layer.read().await.base(), &gid)?;
+            let db = state.group.read().await.domain_db(&gid)?;
             let provider = Provider::get(&db, &id)?;
             if let Ok(default) = Provider::get_default(&db) {
                 if default.id == provider.id {
@@ -123,7 +123,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
         |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
             let id = params[0].as_i64().ok_or(RpcError::ParseError)?;
 
-            let db = domain_db(state.layer.read().await.base(), &gid)?;
+            let db = state.group.read().await.domain_db(&gid)?;
             let names = Name::get_by_provider(&db, &id)?;
             if names.len() == 0 {
                 Provider::delete(&db, &id)?;
@@ -145,7 +145,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
 
             // save to db.
             let mut results = HandleResult::new();
-            let db = domain_db(state.layer.read().await.base(), &gid)?;
+            let db = state.group.read().await.domain_db(&gid)?;
             let mut u = Name::prepare(name, bio, provider);
             u.insert(&db)?;
 

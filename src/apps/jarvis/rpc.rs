@@ -15,7 +15,6 @@ use chat_types::MessageType;
 use crate::account::lang_from_i64;
 use crate::apps::chat::raw_to_network_message;
 use crate::rpc::RpcState;
-use crate::storage::jarvis_db;
 use crate::utils::answer::load_answer;
 
 use super::models::Message;
@@ -53,7 +52,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
     handler.add_method(
         "jarvis-list",
         |gid: GroupId, _params: Vec<RpcParam>, state: Arc<RpcState>| async move {
-            let db = jarvis_db(state.layer.read().await.base(), &gid)?;
+            let db = state.group.read().await.jarvis_db(&gid)?;
             let devices = Message::list(&db)?;
             db.close()?;
             let mut results = vec![];
@@ -74,11 +73,12 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             let group_lock = state.group.read().await;
             let base = group_lock.base().clone();
             let sender = group_lock.sender();
+            let db = group_lock.jarvis_db(&gid)?;
             drop(group_lock);
 
-            let (_, raw) = raw_to_network_message(&base, &gid, &m_type, content).await?;
+            let (_, raw) =
+                raw_to_network_message(&state.group, &base, &gid, &m_type, content).await?;
             let mut msg = Message::new(m_type, raw, true);
-            let db = jarvis_db(&base, &gid)?;
             msg.insert(&db)?;
 
             let results = HandleResult::rpc(msg.to_rpc());
@@ -92,7 +92,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
         "jarvis-delete",
         |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
             let id = params[0].as_i64().ok_or(RpcError::ParseError)?;
-            let db = jarvis_db(state.layer.read().await.base(), &gid)?;
+            let db = state.group.read().await.jarvis_db(&gid)?;
             Message::delete(&db, id)?;
             db.close()?;
             Ok(HandleResult::new())

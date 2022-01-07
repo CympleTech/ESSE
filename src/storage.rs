@@ -5,12 +5,8 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use tokio::fs;
 
 use tdn::types::{group::GroupId, primitive::Result};
-use tdn_storage::local::DStorage;
 
-use crate::migrate::{
-    account_init_migrate, ACCOUNT_DB, CHAT_DB, CLOUD_DB, CONSENSUS_DB, DAO_DB, DOMAIN_DB, FILE_DB,
-    GROUP_DB, JARVIS_DB, SERVICE_DB, SESSION_DB, WALLET_DB,
-};
+use crate::migrate::account_init_migrate;
 
 const FILES_DIR: &'static str = "files";
 const IMAGE_DIR: &'static str = "images";
@@ -328,107 +324,12 @@ pub(crate) fn _write_emoji(base: &PathBuf, gid: &GroupId) -> Result<()> {
     Ok(())
 }
 
-#[inline]
-pub(crate) fn account_db(base: &PathBuf) -> Result<DStorage> {
-    let mut db_path = base.clone();
-    db_path.push(ACCOUNT_DB);
-    DStorage::open(db_path)
-}
-
-#[inline]
-pub(crate) fn consensus_db(base: &PathBuf, gid: &GroupId) -> Result<DStorage> {
-    let mut db_path = base.clone();
-    db_path.push(gid.to_hex());
-    db_path.push(CONSENSUS_DB);
-    DStorage::open(db_path)
-}
-
-#[inline]
-pub(crate) fn session_db(base: &PathBuf, gid: &GroupId) -> Result<DStorage> {
-    let mut db_path = base.clone();
-    db_path.push(gid.to_hex());
-    db_path.push(SESSION_DB);
-    DStorage::open(db_path)
-}
-
-#[inline]
-pub(crate) fn chat_db(base: &PathBuf, gid: &GroupId) -> Result<DStorage> {
-    let mut db_path = base.clone();
-    db_path.push(gid.to_hex());
-    db_path.push(CHAT_DB);
-    DStorage::open(db_path)
-}
-
-#[inline]
-pub(crate) fn file_db(base: &PathBuf, gid: &GroupId) -> Result<DStorage> {
-    let mut db_path = base.clone();
-    db_path.push(gid.to_hex());
-    db_path.push(FILE_DB);
-    DStorage::open(db_path)
-}
-
-#[inline]
-pub(crate) fn _service_db(base: &PathBuf, gid: &GroupId) -> Result<DStorage> {
-    let mut db_path = base.clone();
-    db_path.push(gid.to_hex());
-    db_path.push(SERVICE_DB);
-    DStorage::open(db_path)
-}
-
-#[inline]
-pub(crate) fn jarvis_db(base: &PathBuf, gid: &GroupId) -> Result<DStorage> {
-    let mut db_path = base.clone();
-    db_path.push(gid.to_hex());
-    db_path.push(JARVIS_DB);
-    DStorage::open(db_path)
-}
-
-#[inline]
-pub(crate) fn group_db(base: &PathBuf, gid: &GroupId) -> Result<DStorage> {
-    let mut db_path = base.clone();
-    db_path.push(gid.to_hex());
-    db_path.push(GROUP_DB);
-    DStorage::open(db_path)
-}
-
-#[inline]
-pub(crate) fn dao_db(base: &PathBuf, gid: &GroupId) -> Result<DStorage> {
-    let mut db_path = base.clone();
-    db_path.push(gid.to_hex());
-    db_path.push(DAO_DB);
-    DStorage::open(db_path)
-}
-
-#[inline]
-pub(crate) fn domain_db(base: &PathBuf, gid: &GroupId) -> Result<DStorage> {
-    let mut db_path = base.clone();
-    db_path.push(gid.to_hex());
-    db_path.push(DOMAIN_DB);
-    DStorage::open(db_path)
-}
-
-#[inline]
-pub(crate) fn wallet_db(base: &PathBuf, gid: &GroupId) -> Result<DStorage> {
-    let mut db_path = base.clone();
-    db_path.push(gid.to_hex());
-    db_path.push(WALLET_DB);
-    DStorage::open(db_path)
-}
-
-#[inline]
-pub(crate) fn cloud_db(base: &PathBuf, gid: &GroupId) -> Result<DStorage> {
-    let mut db_path = base.clone();
-    db_path.push(gid.to_hex());
-    db_path.push(CLOUD_DB);
-    DStorage::open(db_path)
-}
-
 /// account independent db and storage directory.
-pub(crate) async fn account_init(base: &PathBuf, gid: &GroupId) -> Result<()> {
+pub(crate) async fn account_init(base: &PathBuf, key: &str, gid: &GroupId) -> Result<()> {
     let mut db_path = base.clone();
     db_path.push(gid.to_hex());
     init_local_files(&db_path).await?;
 
     // Inner Database.
-    account_init_migrate(&db_path)
+    account_init_migrate(&db_path, key)
 }

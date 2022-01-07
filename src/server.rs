@@ -12,14 +12,15 @@ use tokio::{
     sync::RwLock,
 };
 
+use tdn_storage::local::DStorage;
+
 use crate::account::Account;
 use crate::apps::app_layer_handle;
 use crate::group::Group;
 use crate::layer::Layer;
-use crate::migrate::main_migrate;
+use crate::migrate::{main_migrate, ACCOUNT_DB};
 use crate::primitives::network_seeds;
 use crate::rpc::{init_rpc, inner_rpc};
-use crate::storage::account_db;
 
 pub const DEFAULT_WS_ADDR: &'static str = "127.0.0.1:8080";
 pub const DEFAULT_LOG_FILE: &'static str = "esse.log.txt";
@@ -33,8 +34,6 @@ pub async fn start(db_path: String) -> Result<()> {
     }
 
     init_log(db_path.clone());
-    main_migrate(&db_path)?;
-    info!("Core storage path {:?}", db_path);
 
     let mut config = Config::load_save(db_path.clone()).await;
     config.db_path = Some(db_path.clone());
@@ -54,8 +53,12 @@ pub async fn start(db_path: String) -> Result<()> {
     );
 
     let rand_secret = config.secret.clone();
+    main_migrate(&db_path, &hex::encode(&rand_secret))?;
+    info!("Core storage path {:?}", db_path);
 
-    let account_db = account_db(&db_path)?;
+    let mut account_db_path = db_path.clone();
+    account_db_path.push(ACCOUNT_DB);
+    let account_db = DStorage::open(account_db_path, &hex::encode(&rand_secret))?;
     let accounts = Account::all(&account_db)?;
     account_db.close()?;
     let mut me: HashMap<GroupId, Account> = HashMap::new();

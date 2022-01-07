@@ -14,7 +14,6 @@ use crate::apps::chat::{chat_conn, LayerEvent as ChatLayerEvent};
 use crate::apps::group::{group_conn, GROUP_ID};
 use crate::group::Group;
 use crate::session::{Session, SessionType};
-use crate::storage::session_db;
 
 /// ESSE app's `BaseLayerEvent`.
 /// EVERY LAYER APP MUST EQUAL THE FIRST THREE FIELDS.
@@ -129,7 +128,7 @@ impl Layer {
         for mgid in self.runnings.keys() {
             let mut vecs = vec![];
 
-            let db = session_db(&self.base, &mgid)?;
+            let db = group_lock.session_db(&mgid)?;
             let sessions = Session::list(&db)?;
             drop(db);
 

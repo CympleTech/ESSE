@@ -13,7 +13,7 @@ use crate::apps::chat::{Friend, InviteType};
 use crate::layer::Online;
 use crate::rpc::{session_create, session_delete, session_update_name, RpcState};
 use crate::session::{Session, SessionType};
-use crate::storage::{chat_db, group_db, read_avatar, session_db, write_avatar};
+use crate::storage::{read_avatar, write_avatar};
 
 use super::layer::{broadcast, update_session};
 use super::models::{to_network_message, GroupChat, Member, Message};
@@ -83,8 +83,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
     handler.add_method(
         "group-list",
         |gid: GroupId, _params: Vec<RpcParam>, state: Arc<RpcState>| async move {
-            let layer_lock = state.layer.read().await;
-            let db = group_db(&layer_lock.base, &gid)?;
+            let db = state.group.read().await.group_db(&gid)?;
             Ok(HandleResult::rpc(group_list(GroupChat::all(&db)?)))
         },
     );
@@ -93,7 +92,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
         "group-detail",
         |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
             let id = params[0].as_i64().ok_or(RpcError::ParseError)?;
-            let db = group_db(state.layer.read().await.base(), &gid)?;
+            let db = state.group.read().await.group_db(&gid)?;
             let group = GroupChat::get(&db, &id)?;
             let members = Member::list(&db, &id)?;
             let messages = Message::list(&db, &id)?;
@@ -111,8 +110,9 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             let addr = group_lock.addr().clone();
             let sender = group_lock.sender();
             let me = group_lock.clone_user(&gid)?;
+            let db = group_lock.group_db(&gid)?;
+            let s_db = group_lock.session_db(&gid)?;
             drop(group_lock);
-            let db = group_db(&base, &gid)?;
 
             let mut gc = GroupChat::new(addr, name);
             let gcd = gc.g_id;
@@ -130,7 +130,6 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             let _ = write_avatar(&base, &gid, &gid, &me.avatar).await;
 
             // Add new session.
-            let s_db = session_db(&base, &gid)?;
             let mut session = gc.to_session();
             session.insert(&s_db)?;
             let sid = session.id;
@@ -173,10 +172,13 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             let id = params[0].as_i64().ok_or(RpcError::ParseError)?;
             let fid = params[1].as_i64().ok_or(RpcError::ParseError)?;
 
-            let base = state.layer.read().await.base().clone();
-            let chat_db = chat_db(&base, &gid)?;
+            let group_lock = state.group.read().await;
+            let base = group_lock.base().clone();
+            let chat_db = group_lock.chat_db(&gid)?;
+            let group_db = group_lock.group_db(&gid)?;
+            let s_db = group_lock.session_db(&gid)?;
+            drop(group_lock);
             let f = Friend::get(&chat_db, &fid)?;
-            let group_db = group_db(&base, &gid)?;
             let g = GroupChat::get(&group_db, &id)?;
             let gcd = g.g_id;
             let mut results = HandleResult::new();
@@ -184,6 +186,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             // handle invite message
             let contact_values = InviteType::Group(gcd, g.g_addr, g.g_name).serialize();
             let (msg, nw) = crate::apps::chat::LayerEvent::from_message(
+                &state.group,
                 &base,
                 gid,
                 fid,
@@ -196,7 +199,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             let s = crate::apps::chat::event_message(&mut layer_lock, msg.id, gid, f.addr, &event);
             drop(layer_lock);
             results.layers.push((gid, f.gid, s));
-            crate::apps::chat::update_session(&base, &gid, &id, &msg, &mut results);
+            crate::apps::chat::update_session(&s_db, &gid, &id, &msg, &mut results);
 
             // handle group member
             let avatar = read_avatar(&base, &gid, &f.gid).await.unwrap_or(vec![]);
@@ -237,14 +240,19 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             let m_type = MessageType::from_int(params[1].as_i64().ok_or(RpcError::ParseError)?);
             let m_content = params[2].as_str().ok_or(RpcError::ParseError)?;
 
-            let base = state.layer.read().await.base().clone();
-            let db = group_db(&base, &gid)?;
+            let group_lock = state.group.read().await;
+            let base = group_lock.base().clone();
+            let db = group_lock.group_db(&gid)?;
+            let s_db = group_lock.session_db(&gid)?;
+            drop(group_lock);
+
             let group = GroupChat::get(&db, &id)?;
             let gcd = group.g_id;
             let mid = Member::get_id(&db, &id, &gid)?;
 
             let mut results = HandleResult::new();
-            let (nmsg, datetime, raw) = to_network_message(&base, &gid, m_type, m_content).await?;
+            let (nmsg, datetime, raw) =
+                to_network_message(&state.group, &base, &gid, m_type, m_content).await?;
             let event = Event::MessageCreate(gid, nmsg, datetime);
 
             if group.local {
@@ -257,7 +265,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
                 GroupChat::add_height(&db, id, new_h)?;
 
                 // UPDATE SESSION.
-                update_session(&base, &gid, &id, &msg, &mut results);
+                update_session(&s_db, &gid, &id, &msg, &mut results);
 
                 // broadcast.
                 broadcast(
@@ -285,18 +293,17 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             let name = params[1].as_str().ok_or(RpcError::ParseError)?;
 
             let mut results = HandleResult::new();
-            let base = state.layer.read().await.base().clone();
-            let db = group_db(&base, &gid)?;
+            let group_lock = state.group.read().await;
+            let db = group_lock.group_db(&gid)?;
+            let s_db = group_lock.session_db(&gid)?;
+            drop(group_lock);
+
             let g = GroupChat::get(&db, &id)?;
             let d = bincode::serialize(&LayerEvent::GroupName(g.g_id, name.to_owned()))?;
 
             if g.local {
-                if let Ok(sid) = Session::update_name_by_id(
-                    &session_db(&base, &gid)?,
-                    &id,
-                    &SessionType::Group,
-                    &name,
-                ) {
+                if let Ok(sid) = Session::update_name_by_id(&s_db, &id, &SessionType::Group, &name)
+                {
                     results.rpcs.push(session_update_name(gid, &sid, &name));
                 }
 
@@ -322,11 +329,15 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             let id = params[0].as_i64().ok_or(RpcError::ParseError)?;
 
             let mut results = HandleResult::new();
-            let base = state.layer.read().await.base().clone();
-            let db = group_db(&base, &gid)?;
+
+            let group_lock = state.group.read().await;
+            let db = group_lock.group_db(&gid)?;
+            let s_db = group_lock.session_db(&gid)?;
+            drop(group_lock);
+
             let g = GroupChat::delete(&db, &id)?;
 
-            let sid = Session::delete(&session_db(&base, &gid)?, &id, &SessionType::Group)?;
+            let sid = Session::delete(&s_db, &id, &SessionType::Group)?;
             results.rpcs.push(session_delete(gid, &sid));
 
             if g.local {

@@ -10,14 +10,20 @@ use tdn::types::{
 use tdn_did::Proof;
 use tokio::sync::{mpsc::Sender, RwLock};
 
+use tdn_storage::local::DStorage;
+
 use crate::account::{Account, User};
 use crate::apps::device::rpc as device_rpc;
 use crate::apps::device::Device;
 use crate::consensus::Event;
 use crate::event::{InnerEvent, StatusEvent, SyncEvent};
 use crate::layer::Layer;
+use crate::migrate::{
+    ACCOUNT_DB, CHAT_DB, CLOUD_DB, CONSENSUS_DB, DAO_DB, DOMAIN_DB, FILE_DB, GROUP_DB, JARVIS_DB,
+    SERVICE_DB, SESSION_DB, WALLET_DB,
+};
 use crate::rpc;
-use crate::storage::{account_db, account_init, consensus_db, write_avatar};
+use crate::storage::{account_init, write_avatar};
 use crate::utils::crypto::{decrypt, encrypt};
 use crate::utils::device_status::{device_info, device_status as local_device_status};
 
@@ -159,11 +165,11 @@ impl Group {
 
                 // first init sync.
                 if remote.avatar.len() > 0 {
+                    let account_db = self.account_db()?;
                     if let Some(u) = self.accounts.get_mut(gid) {
                         if u.avatar.len() == 0 {
                             u.name = remote.name;
                             u.avatar = remote.avatar;
-                            let account_db = account_db(&self.base)?;
                             u.update(&account_db)?;
                             account_db.close()?;
                             results.rpcs.push(rpc::account_update(
@@ -175,6 +181,7 @@ impl Group {
                     }
                 }
 
+                let db = self.consensus_db(gid)?;
                 let running = self.runnings.get_mut(gid).unwrap(); // safe unwrap. checked.
                 let mut new_addrs = vec![];
                 for a in others {
@@ -189,7 +196,6 @@ impl Group {
                     (remote_height, remote_event, new_addrs)
                 } else {
                     let mut device = Device::new(device_name, device_info, peer_id);
-                    let db = consensus_db(&self.base, gid)?;
                     device.insert(&db)?;
                     db.close()?;
                     running
@@ -411,18 +417,21 @@ impl Group {
     }
 
     pub fn add_running(&mut self, gid: &GroupId, lock: &str) -> Result<(i64, bool)> {
-        if let Some(u) = self.accounts.get(gid) {
+        let (keypair, id, key) = if let Some(u) = self.accounts.get_mut(gid) {
             let keypair = u.secret(&self.secret, lock)?;
-            if !self.runnings.contains_key(gid) {
-                // load devices to runnings.
-                let running = RunningAccount::init(keypair, &self.base, gid)?;
-                self.runnings.insert(gid.clone(), running);
-                Ok((u.id, false))
-            } else {
-                Ok((u.id, true))
-            }
+            u.cache_plainkey(&self.secret, lock)?;
+            (keypair, u.id, u.plainkey())
         } else {
-            Err(anyhow!("user missing."))
+            return Err(anyhow!("user missing."));
+        };
+
+        if !self.runnings.contains_key(gid) {
+            // load devices to runnings.
+            let running = RunningAccount::init(keypair, &self.base, &key, gid)?;
+            self.runnings.insert(gid.clone(), running);
+            Ok((id, false))
+        } else {
+            Ok((id, true))
         }
     }
 
@@ -476,36 +485,37 @@ impl Group {
         let account_id = account.gid;
 
         if let Some(u) = self.accounts.get(&account_id) {
-            let running = RunningAccount::init(sk, &self.base, &account_id)?;
+            let running = RunningAccount::init(sk, &self.base, &account.plainkey(), &account_id)?;
             self.runnings.insert(account_id, running);
             return Ok((u.id, account_id));
         }
 
-        account_init(&self.base, &account.gid).await?;
+        account_init(&self.base, &account.plainkey(), &account.gid).await?;
 
-        let account_db = account_db(&self.base)?;
+        let account_db = self.account_db()?;
         account.insert(&account_db)?;
         account_db.close()?;
         let account_did = account.id;
+        let key = account.plainkey();
         let _ = write_avatar(&self.base, &account_id, &account_id, &account.avatar).await;
         self.accounts.insert(account.gid, account);
 
         let (device_name, device_info) = device_info();
         let mut device = Device::new(device_name, device_info, self.addr);
-        let db = consensus_db(&self.base, &account_id)?;
+        let db = self.consensus_db(&account_id)?;
         device.insert(&db)?;
         db.close()?;
 
         self.runnings.insert(
             account_id,
-            RunningAccount::init(sk, &self.base, &account_id)?,
+            RunningAccount::init(sk, &self.base, &key, &account_id)?,
         );
 
         Ok((account_did, account_id))
     }
 
     pub fn update_account(&mut self, gid: GroupId, name: &str, avatar: Vec<u8>) -> Result<()> {
-        let account_db = account_db(&self.base)?;
+        let account_db = self.account_db()?;
         let account = self.account_mut(&gid)?;
         account.name = name.to_owned();
         if avatar.len() > 0 {
@@ -525,9 +535,9 @@ impl Group {
     }
 
     pub fn pin(&mut self, gid: &GroupId, lock: &str, new: &str) -> Result<()> {
+        let account_db = self.account_db()?;
         if let Some(u) = self.accounts.get_mut(gid) {
             u.pin(&self.secret, lock, new)?;
-            let account_db = account_db(&self.base)?;
             u.update(&account_db)?;
             account_db.close()
         } else {
@@ -631,7 +641,7 @@ impl Group {
     ) -> Result<SendType> {
         let (ancestors, hashes, is_min) = if to >= from {
             let (ancestors, is_min) = Self::ancestor(from, to);
-            let db = consensus_db(&self.base, gid)?;
+            let db = self.consensus_db(gid)?;
             let hashes = crate::consensus::Event::get_assign_hash(&db, &ancestors)?;
             db.close()?;
             (ancestors, hashes, is_min)
@@ -657,17 +667,17 @@ impl Group {
         row: i64,
         results: &mut HandleResult,
     ) -> Result<()> {
-        let base = self.base.clone();
+        let db = self.consensus_db(gid)?;
+        let account_db = self.account_db()?;
 
         let account = self.account_mut(gid)?;
         let pre_event = account.event;
         let eheight = account.own_height + 1;
         let eid = event.generate_event_id();
 
-        let db = consensus_db(&base, gid)?;
         Event::merge(&db, eid, path, row, eheight)?;
         drop(db);
-        let account_db = account_db(&base)?;
+
         account.update_consensus(&account_db, eheight, eid)?;
         account_db.close()?;
         drop(account);
@@ -699,6 +709,95 @@ impl Group {
             }
         }
         Ok(())
+    }
+}
+
+impl Group {
+    fn db_key(&self, gid: &GroupId) -> Result<String> {
+        Ok(self.account(gid)?.plainkey())
+    }
+
+    pub(crate) fn account_db(&self) -> Result<DStorage> {
+        let mut db_path = self.base.clone();
+        db_path.push(ACCOUNT_DB);
+        DStorage::open(db_path, &hex::encode(&self.secret))
+    }
+
+    pub(crate) fn consensus_db(&self, gid: &GroupId) -> Result<DStorage> {
+        let mut db_path = self.base.clone();
+        db_path.push(gid.to_hex());
+        db_path.push(CONSENSUS_DB);
+        DStorage::open(db_path, &self.db_key(gid)?)
+    }
+
+    pub(crate) fn session_db(&self, gid: &GroupId) -> Result<DStorage> {
+        let mut db_path = self.base.clone();
+        db_path.push(gid.to_hex());
+        db_path.push(SESSION_DB);
+        DStorage::open(db_path, &self.db_key(gid)?)
+    }
+
+    pub(crate) fn chat_db(&self, gid: &GroupId) -> Result<DStorage> {
+        let mut db_path = self.base.clone();
+        db_path.push(gid.to_hex());
+        db_path.push(CHAT_DB);
+        DStorage::open(db_path, &self.db_key(gid)?)
+    }
+
+    pub(crate) fn file_db(&self, gid: &GroupId) -> Result<DStorage> {
+        let mut db_path = self.base.clone();
+        db_path.push(gid.to_hex());
+        db_path.push(FILE_DB);
+        DStorage::open(db_path, &self.db_key(gid)?)
+    }
+
+    pub(crate) fn _service_db(&self, gid: &GroupId) -> Result<DStorage> {
+        let mut db_path = self.base.clone();
+        db_path.push(gid.to_hex());
+        db_path.push(SERVICE_DB);
+        DStorage::open(db_path, &self.db_key(gid)?)
+    }
+
+    pub(crate) fn jarvis_db(&self, gid: &GroupId) -> Result<DStorage> {
+        let mut db_path = self.base.clone();
+        db_path.push(gid.to_hex());
+        db_path.push(JARVIS_DB);
+        DStorage::open(db_path, &self.db_key(gid)?)
+    }
+
+    pub(crate) fn group_db(&self, gid: &GroupId) -> Result<DStorage> {
+        let mut db_path = self.base.clone();
+        db_path.push(gid.to_hex());
+        db_path.push(GROUP_DB);
+        DStorage::open(db_path, &self.db_key(gid)?)
+    }
+
+    pub(crate) fn _dao_db(&self, gid: &GroupId) -> Result<DStorage> {
+        let mut db_path = self.base.clone();
+        db_path.push(gid.to_hex());
+        db_path.push(DAO_DB);
+        DStorage::open(db_path, &self.db_key(gid)?)
+    }
+
+    pub(crate) fn domain_db(&self, gid: &GroupId) -> Result<DStorage> {
+        let mut db_path = self.base.clone();
+        db_path.push(gid.to_hex());
+        db_path.push(DOMAIN_DB);
+        DStorage::open(db_path, &self.db_key(gid)?)
+    }
+
+    pub(crate) fn wallet_db(&self, gid: &GroupId) -> Result<DStorage> {
+        let mut db_path = self.base.clone();
+        db_path.push(gid.to_hex());
+        db_path.push(WALLET_DB);
+        DStorage::open(db_path, &self.db_key(gid)?)
+    }
+
+    pub(crate) fn _cloud_db(&self, gid: &GroupId) -> Result<DStorage> {
+        let mut db_path = self.base.clone();
+        db_path.push(gid.to_hex());
+        db_path.push(CLOUD_DB);
+        DStorage::open(db_path, &self.db_key(gid)?)
     }
 }
 
@@ -782,7 +881,7 @@ impl GroupEvent {
                 let remote_event = hashes.last().map(|v| *v).unwrap_or(EventId::default());
                 if account.own_height != remote_height || account.event != remote_event {
                     // check ancestor and merge.
-                    let db = consensus_db(&group.base, &gid)?;
+                    let db = group.consensus_db(&gid)?;
                     let ours = crate::consensus::Event::get_assign_hash(&db, &ancestors)?;
                     drop(db);
 
@@ -840,8 +939,15 @@ impl GroupEvent {
                 println!("====== DEBUG Sync Request: from: {} to {}", from, to);
                 // every time sync MAX is 100.
                 let last_to = if to - from > 100 { to - 100 } else { to };
-                let sync_events =
-                    SyncEvent::sync(&group.base, &gid, group.account(&gid)?, from, last_to).await?;
+                let sync_events = SyncEvent::sync(
+                    &group,
+                    &group.base,
+                    &gid,
+                    group.account(&gid)?,
+                    from,
+                    last_to,
+                )
+                .await?;
                 let event = GroupEvent::SyncResponse(from, last_to, to, sync_events);
                 let data = bincode::serialize(&event).unwrap_or(vec![]);
                 results.groups.push((gid, SendType::Event(0, addr, data)));

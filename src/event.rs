@@ -15,7 +15,7 @@ use chat_types::NetworkMessage;
 
 use crate::account::{Account, User};
 use crate::apps::chat::LayerEvent;
-use crate::consensus::Event;
+use crate::consensus::Event as OldEvent;
 use crate::group::{Group, GroupEvent};
 use crate::layer::Layer;
 use crate::migrate::consensus::{
@@ -23,12 +23,36 @@ use crate::migrate::consensus::{
 };
 
 use crate::apps::chat::rpc as chat_rpc;
-use crate::apps::chat::{from_model, handle_nmsg, Friend, Message, Request};
+use crate::apps::chat::{from_model, Friend, Message, Request};
 use crate::apps::file::{FileDid, RootDirectory};
 use crate::rpc;
-use crate::storage::{
-    account_db, chat_db, consensus_db, delete_avatar_sync, read_avatar_sync, write_avatar_sync,
-};
+use crate::storage::{delete_avatar_sync, read_avatar_sync, write_avatar_sync};
+
+/// Online state synchronization.
+#[derive(Serialize, Deserialize)]
+pub(crate) enum State {
+    Account,
+    Session,
+    ChatMessage,
+    GroupMessage,
+}
+
+pub(crate) async fn _handle_state(
+    _gid: GroupId,
+    _addr: PeerId,
+    state: State,
+    _group: &Arc<RwLock<Group>>,
+    _layer: &Arc<RwLock<Layer>>,
+    _results: &mut HandleResult,
+) -> Result<()> {
+    match state {
+        State::Account => {}
+        State::Session => {}
+        State::ChatMessage => {}
+        State::GroupMessage => {}
+    }
+    Ok(())
+}
 
 /// Event that will update data.
 #[derive(Serialize, Deserialize)]
@@ -168,7 +192,7 @@ impl InnerEvent {
 
         if our_height >= event_height {
             // load current event_hegiht.
-            let events = Event::get_nexts(db, event_height)?;
+            let events = OldEvent::get_nexts(db, event_height)?;
             for event in events {
                 let our_event_time = Self::event_time(&event.hash);
                 let remote_event_time = Self::event_time(&event_id);
@@ -210,8 +234,8 @@ impl InnerEvent {
         layer: &Arc<RwLock<Layer>>,
     ) -> Result<()> {
         let account = group.account(&gid)?;
-        let db = consensus_db(group.base(), &gid)?;
-        if Event::contains_hash(&db, &eid)? {
+        let db = group.consensus_db(&gid)?;
+        if OldEvent::contains_hash(&db, &eid)? {
             return Ok(());
         }
 
@@ -240,7 +264,7 @@ impl InnerEvent {
                 (ACCOUNT_TABLE_PATH, 0)
             }
             InnerEvent::SessionRequestCreate(is_me, remote, remark) => {
-                let db = chat_db(group.base(), &gid)?;
+                let db = group.chat_db(&gid)?;
                 // check if exist request.
                 if Friend::get_id(&db, &remote.id).is_ok() {
                     return Ok(());
@@ -260,7 +284,7 @@ impl InnerEvent {
                 (REQUEST_TABLE_PATH, request.id)
             }
             InnerEvent::SessionRequestHandle(rgid, is_ok, avatar) => {
-                let db = chat_db(group.base(), &gid)?;
+                let db = group.chat_db(&gid)?;
                 if Friend::get_id(&db, &rgid).is_ok() {
                     return Ok(());
                 }
@@ -293,7 +317,7 @@ impl InnerEvent {
                 }
             }
             InnerEvent::SessionRequestDelete(rgid) => {
-                let db = chat_db(group.base(), &gid)?;
+                let db = group.chat_db(&gid)?;
                 if let Ok(request) = Request::get_id(&db, &rgid) {
                     let rid = request.id;
                     Request::delete(&db, &request.id)?;
@@ -308,7 +332,7 @@ impl InnerEvent {
                 }
             }
             InnerEvent::SessionMessageCreate(rgid, is_me, hash, m) => {
-                let db = chat_db(group.base(), &gid)?;
+                let db = group.chat_db(&gid)?;
                 if Message::exist(&db, &hash)? {
                     return Ok(());
                 }
@@ -329,15 +353,18 @@ impl InnerEvent {
                         ));
                     }
 
-                    let msg = handle_nmsg(m, is_me, gid, group.base(), &db, f.id, hash, results)?;
-                    results.rpcs.push(chat_rpc::message_create(gid, &msg));
-                    (MESSAGE_TABLE_PATH, msg.id)
+                    // Need Refactor
+                    // let msg =
+                    //     handle_nmsg(group, m, is_me, gid, group.base(), &db, f.id, hash, results)
+                    //         .await?;
+                    // results.rpcs.push(chat_rpc::message_create(gid, &msg));
+                    (MESSAGE_TABLE_PATH, 0)
                 } else {
                     return Ok(());
                 }
             }
             InnerEvent::SessionMessageDelete(hash) => {
-                let db = chat_db(group.base(), &gid)?;
+                let db = group.chat_db(&gid)?;
                 if let Ok(m) = Message::get_by_hash(&db, &hash) {
                     Message::delete(&db, &m.id)?;
                     results.rpcs.push(chat_rpc::message_delete(gid, m.id));
@@ -347,7 +374,7 @@ impl InnerEvent {
                 }
             }
             InnerEvent::SessionFriendInfo(rgid, raddr, rname, ravatar) => {
-                let db = chat_db(group.base(), &gid)?;
+                let db = group.chat_db(&gid)?;
                 if let Ok(mut f) = Friend::get_id(&db, &rgid) {
                     f.addr = raddr;
                     f.name = rname;
@@ -362,7 +389,7 @@ impl InnerEvent {
                 }
             }
             InnerEvent::SessionFriendUpdate(rgid, remark) => {
-                let db = chat_db(group.base(), &gid)?;
+                let db = group.chat_db(&gid)?;
                 if let Ok(mut f) = Friend::get_id(&db, &rgid) {
                     f.remark = remark;
                     f.me_update(&db)?;
@@ -375,7 +402,7 @@ impl InnerEvent {
                 }
             }
             InnerEvent::SessionFriendClose(rgid) => {
-                let db = chat_db(group.base(), &gid)?;
+                let db = group.chat_db(&gid)?;
                 if let Ok(f) = Friend::get_id(&db, &rgid) {
                     f.close(&db)?;
                     results.rpcs.push(chat_rpc::friend_close(gid, f.id));
@@ -402,7 +429,7 @@ impl InnerEvent {
                 }
             }
             InnerEvent::SessionFriendDelete(rgid) => {
-                let db = chat_db(group.base(), &gid)?;
+                let db = group.chat_db(&gid)?;
                 if let Ok(f) = Friend::get_id(&db, &rgid) {
                     Friend::delete(&db, &f.id)?;
                     results.rpcs.push(chat_rpc::friend_delete(gid, f.id));
@@ -452,11 +479,11 @@ impl InnerEvent {
             }
         };
 
-        Event::merge(&db, eid, path, id, merge_height)?;
+        OldEvent::merge(&db, eid, path, id, merge_height)?;
         drop(db);
         drop(layer);
 
-        let account_db = account_db(group.base())?;
+        let account_db = group.account_db()?;
         let account = group.account_mut(&gid)?;
         account.update_consensus(&account_db, next_height, next_eid)?;
         account_db.close()?;
@@ -477,13 +504,13 @@ impl StatusEvent {
     ) -> Result<()> {
         match self {
             StatusEvent::SessionFriendOnline(rgid) => {
-                let db = chat_db(group.base(), &gid)?;
+                let db = group.chat_db(&gid)?;
                 if let Ok(_f) = Friend::get_id(&db, &rgid) {
                     // TODO
                 }
             }
             StatusEvent::SessionFriendOffline(rgid) => {
-                let db = chat_db(group.base(), &gid)?;
+                let db = group.chat_db(&gid)?;
                 if let Ok(f) = Friend::get_id(&db, &rgid) {
                     let layer_lock = layer.clone();
                     let rgid = f.gid;
@@ -506,13 +533,14 @@ impl StatusEvent {
 
 impl SyncEvent {
     pub async fn sync(
+        group: &Group,
         base: &PathBuf,
         gid: &GroupId,
         account: &Account,
         from: u64,
         to: u64,
     ) -> Result<Vec<Self>> {
-        let db = consensus_db(base, gid)?;
+        let db = group.consensus_db(gid)?;
         let sql = format!(
             "SELECT id, hash, db_table, row from events WHERE id BETWEEN {} AND {}",
             from, to
@@ -546,7 +574,7 @@ impl SyncEvent {
                     events.push(SyncEvent::Account(hash, name, avatar));
                 }
                 REQUEST_TABLE_PATH => {
-                    let db = chat_db(base, gid)?;
+                    let db = group.chat_db(gid)?;
                     let event = if let Ok(request) = Request::get(&db, &row) {
                         if pre_keys.contains(&(path, row)) {
                             events.push(SyncEvent::RequestHad(hash, request.gid));
@@ -580,7 +608,7 @@ impl SyncEvent {
                     events.push(event);
                 }
                 FRIEND_TABLE_PATH => {
-                    let db = chat_db(base, gid)?;
+                    let db = group.chat_db(gid)?;
                     let event = if let Ok(friend) = Friend::get(&db, &row) {
                         if pre_keys.contains(&(path, row)) {
                             events.push(SyncEvent::FriendHad(hash, friend.gid));
@@ -611,7 +639,7 @@ impl SyncEvent {
                     events.push(event);
                 }
                 MESSAGE_TABLE_PATH => {
-                    let db = chat_db(base, gid)?;
+                    let db = group.chat_db(gid)?;
                     let event = if let Ok(msg) = Message::get(&db, &row) {
                         let fgid = if let Ok(f) = Friend::get(&db, &msg.fid) {
                             f.gid
@@ -658,7 +686,7 @@ impl SyncEvent {
             return Ok(());
         }
         let base = group.base().clone();
-        let consensus_db = consensus_db(&base, &gid)?;
+        let consensus_db = group.consensus_db(&gid)?;
 
         let mut next = from;
         for event in events {
@@ -673,7 +701,7 @@ impl SyncEvent {
                 | SyncEvent::Friend(eid, ..)
                 | SyncEvent::FriendHad(eid, ..)
                 | SyncEvent::Message(eid, ..) => {
-                    if Event::contains_hash(&consensus_db, eid)? {
+                    if OldEvent::contains_hash(&consensus_db, eid)? {
                         continue;
                     }
                 }
@@ -702,7 +730,7 @@ impl SyncEvent {
                     is_ok,
                     is_over,
                 ) => {
-                    let chat_db = chat_db(&base, &gid)?;
+                    let chat_db = group.chat_db(&gid)?;
                     let request = if let Ok(mut req) = Request::get_id(&chat_db, &rgid) {
                         req.is_ok = is_ok;
                         req.is_over = is_over;
@@ -742,7 +770,7 @@ impl SyncEvent {
                     (eid, REQUEST_TABLE_PATH, rid)
                 }
                 SyncEvent::RequestHad(eid, rgid) => {
-                    let chat_db = chat_db(&base, &gid)?;
+                    let chat_db = group.chat_db(&gid)?;
                     let id = if let Ok(req) = Request::get_id(&chat_db, &rgid) {
                         req.id
                     } else {
@@ -751,7 +779,7 @@ impl SyncEvent {
                     (eid, REQUEST_TABLE_PATH, id)
                 }
                 SyncEvent::Friend(eid, fgid, faddr, fname, avatar, remark, is_closed) => {
-                    let chat_db = chat_db(&base, &gid)?;
+                    let chat_db = group.chat_db(&gid)?;
                     let id = if let Ok(mut friend) = Friend::get_id(&chat_db, &fgid) {
                         friend.addr = faddr;
                         friend.name = fname;
@@ -791,7 +819,7 @@ impl SyncEvent {
                     (eid, FRIEND_TABLE_PATH, id)
                 }
                 SyncEvent::FriendHad(eid, fgid) => {
-                    let chat_db = chat_db(&base, &gid)?;
+                    let chat_db = group.chat_db(&gid)?;
                     let id = if let Ok(friend) = Friend::get_id(&chat_db, &fgid) {
                         friend.id
                     } else {
@@ -799,16 +827,16 @@ impl SyncEvent {
                     };
                     (eid, FRIEND_TABLE_PATH, id)
                 }
-                SyncEvent::Message(eid, fgid, meid, is_me, m) => {
-                    let chat_db = chat_db(&base, &gid)?;
+                SyncEvent::Message(eid, fgid, meid, _is_me, _m) => {
+                    let chat_db = group.chat_db(&gid)?;
                     if Message::exist(&chat_db, &meid)? {
                         continue;
                     }
 
-                    let id = if let Ok(f) = Friend::get_id(&chat_db, &fgid) {
-                        let msg = handle_nmsg(m, is_me, gid, &base, &chat_db, f.id, eid, results)?;
-                        results.rpcs.push(chat_rpc::message_create(gid, &msg));
-                        msg.id
+                    let id = if let Ok(_f) = Friend::get_id(&chat_db, &fgid) {
+                        //let msg = handle_nmsg(m, is_me, gid, &base, &chat_db, f.id, eid, results)?;
+                        //results.rpcs.push(chat_rpc::message_create(gid, &msg));
+                        -1
                     } else {
                         -1
                     };
@@ -820,6 +848,7 @@ impl SyncEvent {
                 }
             };
 
+            let account_db = group.account_db()?;
             let account = group.account_mut(&gid)?;
             let (merge_height, next_height, next_eid) = InnerEvent::merge_event(
                 &consensus_db,
@@ -832,11 +861,10 @@ impl SyncEvent {
                 None,
             )?;
 
-            let account_db = account_db(&base)?;
             account.update_consensus(&account_db, next_height, next_eid)?;
             account_db.close()?;
 
-            Event::merge(&consensus_db, eid, path, id, merge_height)?;
+            OldEvent::merge(&consensus_db, eid, path, id, merge_height)?;
         }
 
         consensus_db.close()?;

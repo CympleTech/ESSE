@@ -16,10 +16,7 @@ use web3::{
     Web3,
 };
 
-use crate::{
-    rpc::RpcState,
-    storage::{account_db, wallet_db},
-};
+use crate::rpc::RpcState;
 
 use super::{
     models::{Address, Balance, ChainToken, Network, Token},
@@ -331,7 +328,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
     handler.add_method(
         "wallet-list",
         |gid: GroupId, _params: Vec<RpcParam>, state: Arc<RpcState>| async move {
-            let db = wallet_db(state.layer.read().await.base(), &gid)?;
+            let db = state.group.read().await.wallet_db(&gid)?;
             let addresses = Address::list(&db)?;
             Ok(HandleResult::rpc(wallet_list(addresses)))
         },
@@ -349,7 +346,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             let lang = account.lang();
             let pass = account.pass.to_string();
             let account_index = account.index as u32;
-            let db = wallet_db(group_lock.base(), &gid)?;
+            let db = group_lock.wallet_db(&gid)?;
             drop(group_lock);
 
             let mut results = HandleResult::new();
@@ -377,7 +374,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             results.rpcs.push(address.to_rpc());
             if address.main {
                 let mut group_lock = state.group.write().await;
-                let a_db = account_db(group_lock.base())?;
+                let a_db = group_lock.account_db()?;
                 let account = group_lock.account_mut(&gid)?;
                 account.wallet = address.chain.update_main(&address.address, &account.wallet);
                 account.pub_height = account.pub_height + 1;
@@ -404,7 +401,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
 
             let group_lock = state.group.read().await;
             let cbytes = group_lock.encrypt(&gid, lock, sk.as_ref())?;
-            let db = wallet_db(group_lock.base(), &gid)?;
+            let db = group_lock.wallet_db(&gid)?;
             drop(group_lock);
 
             let mut address = Address::import(chain, addr, cbytes);
@@ -420,7 +417,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             let address = params[1].as_str().ok_or(RpcError::ParseError)?.to_owned();
 
             let group_lock = state.group.read().await;
-            let db = wallet_db(group_lock.base(), &gid)?;
+            let db = group_lock.wallet_db(&gid)?;
             let sender = group_lock.sender();
             drop(group_lock);
 
@@ -447,7 +444,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             let c_str = params[3].as_str().ok_or(RpcError::ParseError)?.to_owned();
 
             let group_lock = state.group.read().await;
-            let db = wallet_db(group_lock.base(), &gid)?;
+            let db = group_lock.wallet_db(&gid)?;
             let sender = group_lock.sender();
             drop(group_lock);
 
@@ -487,7 +484,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             if !group_lock.check_lock(&gid, &lock) {
                 return Err(RpcError::Custom("Lock is invalid!".to_owned()));
             }
-            let db = wallet_db(group_lock.base(), &gid)?;
+            let db = group_lock.wallet_db(&gid)?;
             let address = Address::get(&db, &from)?;
 
             let (mnemonic, pbytes) = if address.is_gen() {
@@ -560,7 +557,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             let address = params[0].as_i64().ok_or(RpcError::ParseError)?;
             let token = params[1].as_i64().ok_or(RpcError::ParseError)?;
 
-            let db = wallet_db(state.layer.read().await.base(), &gid)?;
+            let db = state.group.read().await.wallet_db(&gid)?;
             let nfts = Balance::list(&db, &address, &token)?;
 
             let mut results = vec![];
@@ -578,7 +575,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             let token = params[1].as_i64().ok_or(RpcError::ParseError)?;
             let hash = params[2].as_str().ok_or(RpcError::ParseError)?.to_owned();
 
-            let db = wallet_db(state.layer.read().await.base(), &gid)?;
+            let db = state.group.read().await.wallet_db(&gid)?;
             let t = Token::get(&db, &token)?;
             let a = Address::get(&db, &address)?;
 
@@ -603,9 +600,12 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
         "wallet-main",
         |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
             let id = params[0].as_i64().ok_or(RpcError::ParseError)?;
-            let base = state.layer.read().await.base().clone();
-            let db = wallet_db(&base, &gid)?;
-            let a_db = account_db(&base)?;
+
+            let group_lock = state.group.read().await;
+            let db = group_lock.wallet_db(&gid)?;
+            let a_db = group_lock.account_db()?;
+            drop(group_lock);
+
             let address = Address::get(&db, &id)?;
             Address::main(&db, &id)?;
 

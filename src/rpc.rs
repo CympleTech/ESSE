@@ -21,7 +21,6 @@ use crate::event::InnerEvent;
 use crate::group::Group;
 use crate::layer::{Layer, LayerEvent, Online};
 use crate::session::{connect_session, Session, SessionType};
-use crate::storage::{group_db, session_db};
 
 pub(crate) fn init_rpc(
     addr: PeerId,
@@ -420,20 +419,19 @@ fn new_rpc_handler(
             // load all services layer created by this account.
             // 1. group chat.
             let self_addr = layer_lock.addr.clone();
-            let group_db = group_db(&layer_lock.base, &ogid)?;
+            let group_lock = state.group.read().await;
+            let group_db = group_lock.group_db(&ogid)?;
+            let s_db = group_lock.session_db(&ogid)?;
+            drop(group_lock);
             let group_chats = GroupChat::local(&group_db)?;
             for g in group_chats {
                 layer_lock.add_running(&g.g_id, ogid, g.id, g.height)?;
                 results.networks.push(NetworkType::AddGroup(g.g_id));
 
                 // 2. online group to self group onlines.
-                if let Some(session) = connect_session(
-                    &layer_lock.base,
-                    &ogid,
-                    &SessionType::Group,
-                    &g.id,
-                    &self_addr,
-                )? {
+                if let Some(session) =
+                    connect_session(&s_db, &SessionType::Group, &g.id, &self_addr)?
+                {
                     layer_lock.running_mut(&ogid)?.check_add_online(
                         g.g_id,
                         Online::Direct(self_addr),
@@ -541,7 +539,7 @@ fn new_rpc_handler(
     handler.add_method(
         "session-list",
         |gid: GroupId, _params: Vec<RpcParam>, state: Arc<RpcState>| async move {
-            let db = session_db(state.layer.read().await.base(), &gid)?;
+            let db = state.group.read().await.session_db(&gid)?;
             Ok(HandleResult::rpc(session_list(Session::list(&db)?)))
         },
     );
@@ -553,7 +551,7 @@ fn new_rpc_handler(
             let remote = GroupId::from_hex(params[1].as_str().ok_or(RpcError::ParseError)?)?;
 
             let group_lock = state.group.read().await;
-            let db = session_db(group_lock.base(), &gid)?;
+            let db = group_lock.session_db(&gid)?;
             Session::readed(&db, &id)?;
 
             let mut layer_lock = state.layer.write().await;
@@ -595,7 +593,7 @@ fn new_rpc_handler(
             let remote = GroupId::from_hex(params[1].as_str().ok_or(RpcError::ParseError)?)?;
             let must = params[2].as_bool().ok_or(RpcError::ParseError)?; // if need must suspend.
 
-            let db = session_db(state.group.read().await.base(), &gid)?;
+            let db = state.group.read().await.session_db(&gid)?;
             let s = Session::get(&db, &id)?;
             drop(db);
 
@@ -637,7 +635,7 @@ fn new_rpc_handler(
         "session-readed",
         |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
             let id = params[0].as_i64().ok_or(RpcError::ParseError)?;
-            let db = session_db(state.group.read().await.base(), &gid)?;
+            let db = state.group.read().await.session_db(&gid)?;
             Session::readed(&db, &id)?;
             Ok(HandleResult::new())
         },
@@ -650,7 +648,7 @@ fn new_rpc_handler(
             let is_top = params[1].as_bool().ok_or(RpcError::ParseError)?;
             let is_close = params[2].as_bool().ok_or(RpcError::ParseError)?;
 
-            let db = session_db(state.group.read().await.base(), &gid)?;
+            let db = state.group.read().await.session_db(&gid)?;
             Session::update(&db, &id, is_top, is_close)?;
             Ok(HandleResult::new())
         },

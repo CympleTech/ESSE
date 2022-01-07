@@ -60,6 +60,7 @@ pub(crate) struct Account {
     pub own_height: u64,  // own data consensus height.
     pub event: EventId,
     pub datetime: i64,
+    plainkey: Vec<u8>,
 }
 
 impl Account {
@@ -74,6 +75,7 @@ impl Account {
         mnemonic: Vec<u8>,
         secret: Vec<u8>,
         encrypt: Vec<u8>,
+        plainkey: Vec<u8>,
     ) -> Self {
         let start = SystemTime::now();
         let datetime = start
@@ -96,6 +98,7 @@ impl Account {
             mnemonic,
             secret,
             encrypt,
+            plainkey,
             avatar,
             datetime,
         }
@@ -143,6 +146,7 @@ impl Account {
                 mnemonic,
                 secret,
                 ckey,
+                key.to_vec(),
             ),
             sk,
         ))
@@ -156,11 +160,22 @@ impl Account {
         }
     }
 
+    // when success login, cache plain encrypt key for database use.
+    pub fn cache_plainkey(&mut self, salt: &[u8], lock: &str) -> Result<()> {
+        self.plainkey = decrypt_key(salt, lock, &self.encrypt)?;
+        Ok(())
+    }
+
+    pub fn plainkey(&self) -> String {
+        hex::encode(&self.plainkey)
+    }
+
     pub fn pin(&mut self, salt: &[u8], old: &str, new: &str) -> Result<()> {
         self.check_lock(old)?;
         self.lock = hash_pin(new)?;
         let key = decrypt_key(salt, old, &self.encrypt)?;
-        self.encrypt = encrypt_key(salt, new, &key)?;
+        self.plainkey = key;
+        self.encrypt = encrypt_key(salt, new, &self.plainkey)?;
 
         Ok(())
     }
@@ -196,6 +211,7 @@ impl Account {
             index: v.pop().unwrap().as_i64(),
             gid: GroupId::from_hex(v.pop().unwrap().as_str()).unwrap_or(GroupId::default()),
             id: v.pop().unwrap().as_i64(),
+            plainkey: vec![],
         }
     }
 

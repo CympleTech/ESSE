@@ -9,7 +9,6 @@ use tokio::sync::RwLock;
 use domain_types::{LayerServerEvent, ServerEvent};
 
 use crate::layer::Layer;
-use crate::storage::domain_db;
 
 use super::models::{Name, Provider};
 use super::rpc;
@@ -33,7 +32,7 @@ pub(crate) async fn handle(
             // server & client handle it.
             let LayerServerEvent(event, _proof) = bincode::deserialize(&bytes)?;
 
-            let db = domain_db(layer.read().await.base(), &ogid)?;
+            let db = layer.read().await.group.read().await.domain_db(&ogid)?;
 
             match event {
                 ServerEvent::Status(name, support_request) => {

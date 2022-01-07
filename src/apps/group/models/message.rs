@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
+use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 use tdn::types::{
     group::GroupId,
@@ -7,11 +8,12 @@ use tdn::types::{
     rpc::{json, RpcParam},
 };
 use tdn_storage::local::{DStorage, DsValue};
+use tokio::sync::RwLock;
 
 use chat_types::{MessageType, NetworkMessage};
 
 use crate::apps::chat::{from_network_message, raw_to_network_message, to_network_message as tnm};
-use crate::storage::group_db;
+use crate::group::Group;
 
 use super::Member;
 
@@ -171,6 +173,7 @@ impl Message {
 }
 
 pub(crate) async fn to_network_message(
+    group: &Arc<RwLock<Group>>,
     base: &PathBuf,
     gid: &GroupId,
     mtype: MessageType,
@@ -182,11 +185,12 @@ pub(crate) async fn to_network_message(
         .map(|s| s.as_secs())
         .unwrap_or(0) as i64; // safe for all life.
 
-    let (nmsg, raw) = raw_to_network_message(base, gid, &mtype, content).await?;
+    let (nmsg, raw) = raw_to_network_message(group, base, gid, &mtype, content).await?;
     Ok((nmsg, datetime, raw))
 }
 
-pub(crate) fn handle_network_message(
+pub(crate) async fn handle_network_message(
+    group: &Arc<RwLock<Group>>,
     height: i64,
     gdid: i64,
     mid: GroupId,
@@ -196,10 +200,10 @@ pub(crate) fn handle_network_message(
     base: &PathBuf,
     results: &mut HandleResult,
 ) -> Result<Message> {
-    let db = group_db(base, mgid)?;
+    let db = group.read().await.group_db(mgid)?;
     let mdid = Member::get_id(&db, &gdid, &mid)?;
     let is_me = &mid == mgid;
-    let (m_type, raw) = from_network_message(msg, base, mgid, results)?;
+    let (m_type, raw) = from_network_message(group, msg, base, mgid, results).await?;
     let mut msg = Message::new_with_time(height, gdid, mdid, is_me, m_type, raw, datetime);
     msg.insert(&db)?;
     Ok(msg)

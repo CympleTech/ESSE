@@ -7,12 +7,14 @@ use tdn::types::{
     primitive::{DeliveryType, HandleResult, Peer, PeerId, Result},
 };
 use tdn_did::Proof;
+use tdn_storage::local::DStorage;
 use tokio::sync::RwLock;
 
 use chat_types::{MessageType, NetworkMessage};
 
 use crate::account::{Account, User};
 use crate::event::InnerEvent;
+use crate::group::Group;
 use crate::layer::{Layer, Online};
 use crate::migrate::consensus::{FRIEND_TABLE_PATH, MESSAGE_TABLE_PATH, REQUEST_TABLE_PATH};
 use crate::rpc::{
@@ -20,7 +22,7 @@ use crate::rpc::{
     session_update_name,
 };
 use crate::session::{connect_session, Session, SessionType};
-use crate::storage::{account_db, chat_db, session_db, write_avatar_sync};
+use crate::storage::write_avatar_sync;
 
 use super::models::{handle_nmsg, raw_to_network_message, Friend, Message, Request};
 use super::rpc;
@@ -77,7 +79,8 @@ pub(crate) async fn handle(
         }
         RecvType::Connect(addr, data) | RecvType::ResultConnect(addr, data) => {
             // ESSE chat layer connect date structure.
-            if let Ok(height) = handle_connect(&mgid, &fgid, &addr, data, &mut layer, &mut results)
+            if let Ok(height) =
+                handle_connect(&mgid, &fgid, &addr, data, &mut layer, &mut results).await
             {
                 let peer_id = addr.id;
                 let proof = layer.group.read().await.prove_addr(&mgid, &addr.id)?;
@@ -98,7 +101,7 @@ pub(crate) async fn handle(
             // ESSE chat layer result date structure.
             if is_ok {
                 if let Ok(height) =
-                    handle_connect(&mgid, &fgid, &addr, data, &mut layer, &mut results)
+                    handle_connect(&mgid, &fgid, &addr, data, &mut layer, &mut results).await
                 {
                     let info = LayerEvent::InfoReq(height);
                     let data = bincode::serialize(&info).unwrap_or(vec![]);
@@ -109,7 +112,7 @@ pub(crate) async fn handle(
                     results.layers.push((mgid, fgid, msg));
                 }
             } else {
-                let db = chat_db(&layer.base, &mgid)?;
+                let db = layer.group.read().await.chat_db(&mgid)?;
                 let friend = Friend::get_id(&db, &fgid)?;
                 if friend.contains_addr(&addr.id) {
                     results.rpcs.push(rpc::friend_close(mgid, friend.id));
@@ -128,7 +131,7 @@ pub(crate) async fn handle(
             // TODO maybe send failure need handle.
             if is_ok {
                 if let Some((gid, db_id)) = layer.delivery.remove(&tid) {
-                    let db = chat_db(&layer.base, &mgid)?;
+                    let db = layer.group.read().await.chat_db(&mgid)?;
                     let resp = match t {
                         DeliveryType::Event => {
                             Message::delivery(&db, db_id, true)?;
@@ -155,7 +158,7 @@ pub(crate) async fn handle(
     Ok(results)
 }
 
-fn handle_connect(
+async fn handle_connect(
     mgid: &GroupId,
     fgid: &GroupId,
     addr: &Peer,
@@ -170,14 +173,19 @@ fn handle_connect(
     proof.verify(fgid, &addr.id, &layer.addr)?;
 
     // 2. check friendship.
-    let friend = update_friend(&layer.base, mgid, fgid, &addr.id);
+    let friend = update_friend(&layer.group.read().await.chat_db(mgid)?, fgid, &addr.id);
     if friend.is_err() {
         return Err(anyhow!("not friend"));
     }
     let f = friend.unwrap(); // safe.
 
     // 3. get session.
-    let session_some = connect_session(&layer.base, mgid, &SessionType::Chat, &f.id, &addr.id)?;
+    let session_some = connect_session(
+        &layer.group.read().await.session_db(mgid)?,
+        &SessionType::Chat,
+        &f.id,
+        &addr.id,
+    )?;
     if session_some.is_none() {
         return Err(anyhow!("not friend"));
     }
@@ -225,9 +233,9 @@ impl LayerEvent {
                 // 1. check verify.
                 proof.verify(&fgid, &addr, &layer.addr)?;
 
-                if load_friend(&layer.base, &mgid, &fgid).is_err() {
+                if load_friend(&layer.group.read().await.chat_db(&mgid)?, &fgid).is_err() {
                     // check if exist request.
-                    let db = chat_db(&layer.base, &mgid)?;
+                    let db = layer.group.read().await.chat_db(&mgid)?;
                     if let Ok(req) = Request::get_id(&db, &fgid) {
                         Request::delete(&db, &req.id)?; // delete the old request.
                         results.rpcs.push(rpc::request_delete(mgid, req.id));
@@ -250,9 +258,9 @@ impl LayerEvent {
                 // 0. check verify.
                 proof.verify(&fgid, &addr, &layer.addr)?;
                 // 1. check friendship.
-                if load_friend(&layer.base, &mgid, &fgid).is_err() {
+                if load_friend(&layer.group.read().await.chat_db(&mgid)?, &fgid).is_err() {
                     // 2. agree request for friend.
-                    let db = chat_db(&layer.base, &mgid)?;
+                    let db = layer.group.read().await.chat_db(&mgid)?;
                     if let Ok(mut r) = Request::get_id(&db, &fgid) {
                         r.is_over = true;
                         r.is_ok = true;
@@ -261,7 +269,7 @@ impl LayerEvent {
                         results.rpcs.push(rpc::request_agree(mgid, r.id, &friend));
 
                         // ADD NEW SESSION.
-                        let s_db = session_db(&layer.base, &mgid)?;
+                        let s_db = layer.group.read().await.session_db(&mgid)?;
                         let mut session = friend.to_session();
                         session.insert(&s_db)?;
                         results.rpcs.push(session_create(mgid, &session));
@@ -270,7 +278,7 @@ impl LayerEvent {
                 }
             }
             LayerEvent::Reject => {
-                let db = chat_db(&layer.base, &mgid)?;
+                let db = layer.group.read().await.chat_db(&mgid)?;
                 if let Ok(mut request) = Request::get_id(&db, &fgid) {
                     layer.group.write().await.broadcast(
                         &mgid,
@@ -288,9 +296,10 @@ impl LayerEvent {
             }
             LayerEvent::Message(hash, m) => {
                 let (_sid, fid) = layer.get_running_remote_id(&mgid, &fgid)?;
-                let db = chat_db(&layer.base, &mgid)?;
+                let db = layer.group.read().await.chat_db(&mgid)?;
                 if !Message::exist(&db, &hash)? {
                     let msg = handle_nmsg(
+                        &layer.group,
                         m.clone(),
                         false,
                         mgid,
@@ -299,7 +308,8 @@ impl LayerEvent {
                         fid,
                         hash,
                         &mut results,
-                    )?;
+                    )
+                    .await?;
                     layer.group.write().await.broadcast(
                         &mgid,
                         InnerEvent::SessionMessageCreate(fgid, false, hash, m),
@@ -310,12 +320,14 @@ impl LayerEvent {
                     results.rpcs.push(rpc::message_create(mgid, &msg));
 
                     // UPDATE SESSION.
-                    update_session(&layer.base, &mgid, &fid, &msg, &mut results);
+                    if let Ok(s_db) = layer.group.read().await.session_db(&mgid) {
+                        update_session(&s_db, &mgid, &fid, &msg, &mut results);
+                    }
                 }
             }
             LayerEvent::InfoReq(height) => {
                 // check sync remote height.
-                if let Ok(account) = Account::get(&account_db(layer.base())?, &mgid) {
+                if let Ok(account) = Account::get(&layer.group.read().await.account_db()?, &mgid) {
                     if account.pub_height > height {
                         let info = LayerEvent::InfoRes(User::info(
                             account.name,
@@ -332,7 +344,7 @@ impl LayerEvent {
             LayerEvent::InfoRes(remote) => {
                 let (sid, fid) = layer.get_running_remote_id(&mgid, &fgid)?;
                 let avatar = remote.avatar.clone();
-                let db = chat_db(&layer.base, &mgid)?;
+                let db = layer.group.read().await.chat_db(&mgid)?;
                 let mut f = Friend::get(&db, &fid)?;
                 let name = remote.name.clone();
                 f.name = remote.name;
@@ -342,7 +354,8 @@ impl LayerEvent {
                 drop(db);
                 write_avatar_sync(&layer.base, &mgid, &remote.id, remote.avatar)?;
                 results.rpcs.push(rpc::friend_info(mgid, &f));
-                let _ = Session::update_name(&session_db(&layer.base, &mgid)?, &sid, &name);
+                let _ =
+                    Session::update_name(&layer.group.read().await.session_db(&mgid)?, &sid, &name);
                 results.rpcs.push(session_update_name(mgid, &sid, &name));
 
                 layer.group.write().await.broadcast(
@@ -363,7 +376,7 @@ impl LayerEvent {
                     &mut results,
                 )?;
                 layer.remove_online(&mgid, &fgid);
-                let db = chat_db(&layer.base, &mgid)?;
+                let db = layer.group.read().await.chat_db(&mgid)?;
                 Friend::id_close(&db, fid)?;
                 drop(db);
                 results.rpcs.push(rpc::friend_close(mgid, fid));
@@ -379,31 +392,29 @@ impl LayerEvent {
     }
 
     pub async fn from_message(
+        group: &Arc<RwLock<Group>>,
         base: &PathBuf,
         mgid: GroupId,
         fid: i64,
         m_type: MessageType,
         content: &str,
     ) -> std::result::Result<(Message, NetworkMessage), tdn::types::rpc::RpcError> {
-        let db = chat_db(&base, &mgid)?;
         // handle message's type.
-        let (nm_type, raw) = raw_to_network_message(base, &mgid, &m_type, content).await?;
+        let db = group.read().await.chat_db(&mgid)?;
+        let (nm_type, raw) = raw_to_network_message(group, base, &mgid, &m_type, content).await?;
         let mut msg = Message::new(&mgid, fid, true, m_type, raw, false);
         msg.insert(&db)?;
-        drop(db);
         Ok((msg, nm_type))
     }
 }
 
 #[inline]
-fn load_friend(base: &PathBuf, mgid: &GroupId, fgid: &GroupId) -> Result<Friend> {
-    let db = chat_db(base, mgid)?;
+fn load_friend(db: &DStorage, fgid: &GroupId) -> Result<Friend> {
     Friend::get_id(&db, fgid)
 }
 
 #[inline]
-fn update_friend(base: &PathBuf, mgid: &GroupId, fgid: &GroupId, addr: &PeerId) -> Result<Friend> {
-    let db = chat_db(base, mgid)?;
+fn update_friend(db: &DStorage, fgid: &GroupId, addr: &PeerId) -> Result<Friend> {
     let friend = Friend::get_id(&db, fgid)?;
     if &friend.addr != addr {
         let _ = Friend::addr_update(&db, friend.id, addr);
@@ -463,7 +474,7 @@ fn _res_reject() -> Vec<u8> {
 
 // UPDATE SESSION.
 pub(crate) fn update_session(
-    base: &PathBuf,
+    s_db: &DStorage,
     gid: &GroupId,
     id: &i64,
     msg: &Message,
@@ -476,18 +487,16 @@ pub(crate) fn update_session(
         _ => format!("{}:", msg.m_type.to_int()),
     };
 
-    if let Ok(s_db) = session_db(base, gid) {
-        if let Ok(sid) = Session::last(
-            &s_db,
-            id,
-            &SessionType::Chat,
-            &msg.datetime,
-            &scontent,
-            true,
-        ) {
-            results
-                .rpcs
-                .push(session_last(*gid, &sid, &msg.datetime, &scontent, false));
-        }
+    if let Ok(sid) = Session::last(
+        &s_db,
+        id,
+        &SessionType::Chat,
+        &msg.datetime,
+        &scontent,
+        true,
+    ) {
+        results
+            .rpcs
+            .push(session_last(*gid, &sid, &msg.datetime, &scontent, false));
     }
 }

@@ -7,7 +7,6 @@ use tdn::types::{
 
 use crate::group::GroupEvent;
 use crate::rpc::RpcState;
-use crate::storage::consensus_db;
 use crate::utils::device_status::device_status as local_device_status;
 
 use super::Device;
@@ -70,7 +69,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
     handler.add_method(
         "device-list",
         |gid: GroupId, _params: Vec<RpcParam>, state: Arc<RpcState>| async move {
-            let db = consensus_db(state.layer.read().await.base(), &gid)?;
+            let db = state.group.read().await.consensus_db(&gid)?;
             let devices = Device::list(&db)?;
             drop(db);
             let online_devices = state.group.read().await.online_devices(&gid, devices);

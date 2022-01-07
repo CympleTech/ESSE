@@ -65,12 +65,12 @@ pub(crate) const WALLET_DB: &'static str = "wallet.db";
 /// Account's cloud database name
 pub(crate) const CLOUD_DB: &'static str = "cloud.db";
 
-pub(crate) fn main_migrate(path: &PathBuf) -> Result<()> {
+pub(crate) fn main_migrate(path: &PathBuf, key: &str) -> Result<()> {
     let mut db_path = path.clone();
     db_path.push(ACCOUNT_DB);
 
     if db_path.exists() {
-        let db = DStorage::open(db_path)?;
+        let db = DStorage::open(db_path, key)?;
 
         // 1. get current version.
         let first_matrix =
@@ -147,7 +147,7 @@ pub(crate) fn main_migrate(path: &PathBuf) -> Result<()> {
                     let mut account_path = path.clone();
                     account_path.push(matrix.pop().unwrap().pop().unwrap().as_str());
                     account_path.push(&db_name);
-                    let account_db = DStorage::open(account_path)?;
+                    let account_db = DStorage::open(account_path, key)?;
                     // migrate
                     for i in &current_versions[db_version..] {
                         account_db.execute(i)?;
@@ -165,7 +165,7 @@ pub(crate) fn main_migrate(path: &PathBuf) -> Result<()> {
 
         db.close()?;
     } else {
-        let db = DStorage::open(db_path)?;
+        let db = DStorage::open(db_path, key)?;
         // migrate all.
         for i in ACCOUNT_VERSIONS.iter() {
             db.execute(i)?;
@@ -249,10 +249,10 @@ pub(crate) fn main_migrate(path: &PathBuf) -> Result<()> {
     Ok(())
 }
 
-pub(crate) fn account_init_migrate(path: &PathBuf) -> Result<()> {
+pub(crate) fn account_init_migrate(path: &PathBuf, key: &str) -> Result<()> {
     let mut db_path = path.clone();
     db_path.push(CONSENSUS_DB);
-    let db = DStorage::open(db_path)?;
+    let db = DStorage::open(db_path, key)?;
     for i in &CONSENSUS_VERSIONS {
         db.execute(i)?;
     }
@@ -260,7 +260,7 @@ pub(crate) fn account_init_migrate(path: &PathBuf) -> Result<()> {
 
     let mut db_path = path.clone();
     db_path.push(SESSION_DB);
-    let db = DStorage::open(db_path)?;
+    let db = DStorage::open(db_path, key)?;
     for i in &SESSION_VERSIONS {
         db.execute(i)?;
     }
@@ -268,7 +268,7 @@ pub(crate) fn account_init_migrate(path: &PathBuf) -> Result<()> {
 
     let mut db_path = path.clone();
     db_path.push(FILE_DB);
-    let db = DStorage::open(db_path)?;
+    let db = DStorage::open(db_path, key)?;
     for i in &FILE_VERSIONS {
         db.execute(i)?;
     }
@@ -276,7 +276,7 @@ pub(crate) fn account_init_migrate(path: &PathBuf) -> Result<()> {
 
     let mut db_path = path.clone();
     db_path.push(SERVICE_DB);
-    let db = DStorage::open(db_path)?;
+    let db = DStorage::open(db_path, key)?;
     for i in &SERVICE_VERSIONS {
         db.execute(i)?;
     }
@@ -284,7 +284,7 @@ pub(crate) fn account_init_migrate(path: &PathBuf) -> Result<()> {
 
     let mut db_path = path.clone();
     db_path.push(JARVIS_DB);
-    let db = DStorage::open(db_path)?;
+    let db = DStorage::open(db_path, key)?;
     for i in &JARVIS_VERSIONS {
         db.execute(i)?;
     }
@@ -292,7 +292,7 @@ pub(crate) fn account_init_migrate(path: &PathBuf) -> Result<()> {
 
     let mut db_path = path.clone();
     db_path.push(GROUP_DB);
-    let db = DStorage::open(db_path)?;
+    let db = DStorage::open(db_path, key)?;
     for i in &GROUP_VERSIONS {
         db.execute(i)?;
     }
@@ -300,7 +300,7 @@ pub(crate) fn account_init_migrate(path: &PathBuf) -> Result<()> {
 
     let mut db_path = path.clone();
     db_path.push(DAO_DB);
-    let db = DStorage::open(db_path)?;
+    let db = DStorage::open(db_path, key)?;
     for i in &DAO_VERSIONS {
         db.execute(i)?;
     }
@@ -308,7 +308,7 @@ pub(crate) fn account_init_migrate(path: &PathBuf) -> Result<()> {
 
     let mut db_path = path.clone();
     db_path.push(CHAT_DB);
-    let db = DStorage::open(db_path)?;
+    let db = DStorage::open(db_path, key)?;
     for i in &CHAT_VERSIONS {
         db.execute(i)?;
     }
@@ -316,7 +316,7 @@ pub(crate) fn account_init_migrate(path: &PathBuf) -> Result<()> {
 
     let mut db_path = path.clone();
     db_path.push(DOMAIN_DB);
-    let db = DStorage::open(db_path)?;
+    let db = DStorage::open(db_path, key)?;
     for i in &DOMAIN_VERSIONS {
         db.execute(i)?;
     }
@@ -324,7 +324,7 @@ pub(crate) fn account_init_migrate(path: &PathBuf) -> Result<()> {
 
     let mut db_path = path.clone();
     db_path.push(WALLET_DB);
-    let db = DStorage::open(db_path)?;
+    let db = DStorage::open(db_path, key)?;
     for i in &WALLET_VERSIONS {
         db.execute(i)?;
     }
@@ -332,7 +332,7 @@ pub(crate) fn account_init_migrate(path: &PathBuf) -> Result<()> {
 
     let mut db_path = path.clone();
     db_path.push(CLOUD_DB);
-    let db = DStorage::open(db_path)?;
+    let db = DStorage::open(db_path, key)?;
     for i in &CLOUD_VERSIONS {
         db.execute(i)?;
     }

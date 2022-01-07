@@ -8,20 +8,23 @@ pub(crate) use self::request::Request;
 
 use chat_types::{MessageType, NetworkMessage};
 use std::path::PathBuf;
+use std::sync::Arc;
 use tdn::types::{
     group::GroupId,
     primitive::{HandleResult, PeerId, Result},
 };
+use tokio::sync::RwLock;
 
 use crate::apps::group::GroupChat;
+use crate::group::Group;
 use crate::rpc::session_create;
 use crate::storage::{
-    chat_db, group_db, read_avatar, read_db_file, read_file, read_image, read_record, session_db,
-    write_avatar_sync, write_file, write_file_sync, write_image, write_image_sync,
-    write_record_sync,
+    read_avatar, read_db_file, read_file, read_image, read_record, write_avatar_sync, write_file,
+    write_file_sync, write_image, write_image_sync, write_record_sync,
 };
 
-pub(crate) fn from_network_message(
+pub(crate) async fn from_network_message(
+    group: &Arc<RwLock<Group>>,
     nmsg: NetworkMessage,
     base: &PathBuf,
     ogid: &GroupId,
@@ -58,13 +61,13 @@ pub(crate) fn from_network_message(
             match itype {
                 InviteType::Group(gcd, addr, name) => {
                     // 1 add group chat.
-                    let db = group_db(&base, &ogid)?;
+                    let db = group.read().await.group_db(&ogid)?;
                     let mut g = GroupChat::from(gcd, 0, addr, name);
                     g.insert(&db)?;
 
                     // 2 add new session.
                     let mut session = g.to_session();
-                    let s_db = session_db(&base, &ogid)?;
+                    let s_db = group.read().await.session_db(&ogid)?;
                     session.insert(&s_db)?;
                     results.rpcs.push(session_create(*ogid, &session));
                 }
@@ -84,6 +87,7 @@ pub(crate) fn from_network_message(
 }
 
 pub(crate) async fn raw_to_network_message(
+    group: &Arc<RwLock<Group>>,
     base: &PathBuf,
     ogid: &GroupId,
     mtype: &MessageType,
@@ -112,7 +116,7 @@ pub(crate) async fn raw_to_network_message(
         }
         MessageType::Contact => {
             let cid: i64 = content.parse()?;
-            let db = chat_db(base, ogid)?;
+            let db = group.read().await.chat_db(ogid)?;
             let contact = Friend::get(&db, &cid)?;
             drop(db);
             let avatar_bytes = read_avatar(base, ogid, &contact.gid).await?;

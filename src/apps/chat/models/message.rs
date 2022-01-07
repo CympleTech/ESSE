@@ -1,4 +1,5 @@
 use std::path::PathBuf;
+use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 use tdn::types::{
     group::{EventId, GroupId},
@@ -6,12 +7,16 @@ use tdn::types::{
     rpc::{json, RpcParam},
 };
 use tdn_storage::local::{DStorage, DsValue};
+use tokio::sync::RwLock;
 
 use chat_types::{MessageType, NetworkMessage};
 
+use crate::group::Group;
+
 use super::{from_network_message, to_network_message};
 
-pub(crate) fn handle_nmsg(
+pub(crate) async fn handle_nmsg(
+    group: &Arc<RwLock<Group>>,
     nmsg: NetworkMessage,
     is_me: bool,
     gid: GroupId,
@@ -22,7 +27,7 @@ pub(crate) fn handle_nmsg(
     results: &mut HandleResult,
 ) -> Result<Message> {
     // handle event.
-    let (m_type, raw) = from_network_message(nmsg, base, &gid, results)?;
+    let (m_type, raw) = from_network_message(group, nmsg, base, &gid, results).await?;
     let mut msg = Message::new_with_id(hash, fid, is_me, m_type, raw, true);
     msg.insert(db)?;
     Ok(msg)

@@ -1,12 +1,9 @@
-use std::path::PathBuf;
 use tdn::types::{
     group::GroupId,
     primitive::{PeerId, Result},
     rpc::{json, RpcParam},
 };
 use tdn_storage::local::{DStorage, DsValue};
-
-use crate::storage::session_db;
 
 pub(crate) enum SessionType {
     Chat,
@@ -266,14 +263,11 @@ impl Session {
 
 #[inline]
 pub(crate) fn connect_session(
-    base: &PathBuf,
-    mgid: &GroupId,
+    db: &DStorage,
     s_type: &SessionType,
     fid: &i64,
     addr: &PeerId,
 ) -> Result<Option<Session>> {
-    let db = session_db(base, mgid)?;
-
     let sql = format!("SELECT id, fid, gid, addr, s_type, name, is_top, is_close, last_datetime, last_content, last_readed FROM sessions WHERE s_type = {} AND fid = {}", s_type.to_int(), fid);
 
     let mut matrix = db.query(&sql)?;

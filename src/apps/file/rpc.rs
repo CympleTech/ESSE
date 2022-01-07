@@ -7,7 +7,7 @@ use tdn::types::{
 };
 
 use crate::rpc::RpcState;
-use crate::storage::{copy_file, file_db, write_file};
+use crate::storage::{copy_file, write_file};
 
 use super::models::{File, RootDirectory};
 
@@ -22,7 +22,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             let root = RootDirectory::from_i64(params[0].as_i64().ok_or(RpcError::ParseError)?);
             let parent = params[1].as_i64().ok_or(RpcError::ParseError)?;
 
-            let db = file_db(state.layer.read().await.base(), &gid)?;
+            let db = state.group.read().await.file_db(&gid)?;
             let files: Vec<RpcParam> = File::list(&db, &root, &parent)?
                 .iter()
                 .map(|p| p.to_rpc())
@@ -39,8 +39,10 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             let parent = params[1].as_i64().ok_or(RpcError::ParseError)?;
             let name = params[2].as_str().ok_or(RpcError::ParseError)?.to_owned();
 
-            let base = state.group.read().await.base().clone();
-            let db = file_db(&base, &gid)?;
+            let group_lock = state.group.read().await;
+            let base = group_lock.base().clone();
+            let db = group_lock.file_db(&gid)?;
+            drop(group_lock);
             // genereate new file.
             let mut file = File::generate(root, parent, name);
             file.insert(&db)?;
@@ -66,8 +68,10 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
                 .ok_or(RpcError::ParseError)?
                 .to_owned();
 
-            let base = state.group.read().await.base().clone();
-            let db = file_db(&base, &gid)?;
+            let group_lock = state.group.read().await;
+            let base = group_lock.base().clone();
+            let db = group_lock.file_db(&gid)?;
+            drop(group_lock);
             let mut file = File::generate(root, parent, name);
             file.insert(&db)?;
             copy_file(&file_path, &base, &gid, &file.storage_name()).await?;
@@ -84,7 +88,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             let name = params[2].as_str().ok_or(RpcError::ParseError)?.to_owned();
 
             // create new folder.
-            let db = file_db(state.layer.read().await.base(), &gid)?;
+            let db = state.group.read().await.file_db(&gid)?;
             let mut file = File::generate(root, parent, name);
             file.insert(&db)?;
 
@@ -100,7 +104,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             let parent = params[2].as_i64().ok_or(RpcError::ParseError)?;
             let name = params[3].as_str().ok_or(RpcError::ParseError)?.to_owned();
 
-            let db = file_db(state.layer.read().await.base(), &gid)?;
+            let db = state.group.read().await.file_db(&gid)?;
             let mut file = File::get(&db, &id)?;
             file.root = root;
             file.parent = parent;
@@ -117,7 +121,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             let id = params[0].as_i64().ok_or(RpcError::ParseError)?;
             let starred = params[1].as_bool().ok_or(RpcError::ParseError)?;
 
-            let db = file_db(state.layer.read().await.base(), &gid)?;
+            let db = state.group.read().await.file_db(&gid)?;
             File::star(&db, &id, starred)?;
             Ok(HandleResult::new())
         },
@@ -130,7 +134,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
 
             // TODO trash a directory.
 
-            let db = file_db(state.layer.read().await.base(), &gid)?;
+            let db = state.group.read().await.file_db(&gid)?;
             File::trash(&db, &id)?;
             Ok(HandleResult::new())
         },
@@ -143,7 +147,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
 
             // TODO deleted file & directory.
 
-            let db = file_db(state.layer.read().await.base(), &gid)?;
+            let db = state.group.read().await.file_db(&gid)?;
             File::delete(&db, &id)?;
             Ok(HandleResult::new())
         },
