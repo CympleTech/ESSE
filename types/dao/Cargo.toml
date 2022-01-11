@@ -1,0 +1,16 @@
+[package]
+name = "dao_types"
+version = "0.1.0"
+authors = ["CympleTech <dev@cympletech.com>"]
+edition = "2021"
+readme = "README.md"
+description = "ESSE dao service types."
+repository = "https://github.com/cympletech/esse_types/dao"
+keywords = ["distributed", "p2p", "DAO", "ESSE"]
+license = "MIT/Apache-2.0"
+
+[dependencies]
+chat_types = { path = "../chat", version = "0.1" }
+serde = { version = "1", features = ["derive"] }
+tdn_types = { version = "0.6", default-features = false }
+tdn_did = { version = "0.6", default-features = false }

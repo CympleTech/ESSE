@@ -5,6 +5,16 @@ authors = ["CympleTech <dev@cympletech.com>"]
 edition = "2021"
 license = "MIT/Apache-2.0"
 
+[workspace]
+members = [
+    "types/chat",
+    "types/group",
+    "types/dao",
+    "types/domain",
+    "types/cloud",
+    "types/data"
+]
+
 [lib]
 name = "esse"
 crate-type = ["cdylib", "staticlib"]
@@ -39,19 +49,13 @@ tokio = { version = "1", features = ["full"] }
 web3 = { version = "0.17", default-features = false, features = ["http-tls", "signing"] }
 tdn = { version = "0.6", default-features = false, features = ["full"] }
 tdn_did = { version = "0.6" }
-tdn_storage = { git = "https://github.com/cypherlink/tdn_storage", branch="main" }
-
-chat_types = { git = "https://github.com/cympletech/esse_types", branch="main" }
-group_types = { git = "https://github.com/cympletech/esse_types", branch="main" }
-cloud_types = { git = "https://github.com/cympletech/esse_types", branch="main" }
-domain_types = { git = "https://github.com/cympletech/esse_types", branch="main" }
-dao_types = { git = "https://github.com/cympletech/esse_types", branch="main" }
-data = { git = "https://github.com/cympletech/esse_types", branch="main" }
-#chat_types = { path = "../esse_types/chat" }
-#group_types = { path = "../esse_types/group" }
-#dao_types = { path = "../esse_types/dao" }
-#domain_types = { path = "../esse_types/domain" }
-#cloud_types = { path = "../esse_types/cloud" }
+tdn_storage = { git = "https://github.com/cympletech/tdn", branch="main" }
+chat_types = { version = "0.1", path = "./types/chat" }
+group_types = { version = "0.1", path = "./types/group" }
+cloud_types = { version = "0.1", path = "./types/cloud" }
+domain_types = { version = "0.1", path = "./types/domain" }
+dao_types = { version = "0.1", path = "./types/dao" }
+data = { version = "0.1", path = "./types/data" }
 
 openssl = { version = "0.10", features = ["vendored"] } # Add for cross-compile.
 

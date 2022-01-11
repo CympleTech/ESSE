@@ -1,0 +1,15 @@
+[package]
+name = "cloud_types"
+version = "0.1.0"
+authors = ["CympleTech <dev@cympletech.com>"]
+edition = "2021"
+readme = "README.md"
+description = "ESSE personal data cloud service types."
+repository = "https://github.com/cympletech/esse_types/group"
+keywords = ["distributed", "p2p", "cloud", "data", "storage", "ESSE"]
+license = "MIT/Apache-2.0"
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+tdn_types = { version = "0.6", default-features = false }
+tdn_did = { version = "0.6", default-features = false }

@@ -1,0 +1,18 @@
+[package]
+name = "data"
+version = "0.1.0"
+authors = ["CympleTech <dev@cympletech.com>"]
+edition = "2021"
+readme = "README.md"
+description = "ESSE common data structure."
+repository = "https://github.com/cympletech/esse_types/data"
+keywords = ["distributed", "data", "ESSE"]
+license = "MIT/Apache-2.0"
+
+[features]
+default = ["tdn"]
+tdn = ["tdn_did", "tdn_types"]
+
+[dependencies]
+tdn_did = { version = "0.6", default-features = false, optional = true }
+tdn_types = { version = "0.6", default-features = false, optional = true }

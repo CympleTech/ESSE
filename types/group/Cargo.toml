@@ -1,0 +1,16 @@
+[package]
+name = "group_types"
+version = "0.1.0"
+authors = ["Contact <contact@cypherlink.io>"]
+edition = "2021"
+readme = "README.md"
+description = "ESSE group chat service types."
+repository = "https://github.com/cympletech/esse_types/group"
+keywords = ["distributed", "p2p", "group chat", "ESSE"]
+license = "MIT/Apache-2.0"
+
+[dependencies]
+chat_types = { path = "../chat", version = "0.1" }
+serde = { version = "1", features = ["derive"] }
+tdn_types = { version = "0.6", default-features = false }
+tdn_did = { version = "0.6", default-features = false }
