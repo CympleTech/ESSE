@@ -67,7 +67,7 @@ pub async fn start(db_path: String) -> Result<()> {
     }
     config.group_ids = me.keys().cloned().collect();
 
-    let (peer_id, sender, mut recver) = start_with_config(config).await.unwrap();
+    let (peer_id, sender, mut recver) = start_with_config(config).await?;
     info!("Network Peer id : {}", peer_id.to_hex());
 
     let group = Arc::new(RwLock::new(
