@@ -1,0 +1,14 @@
+[package]
+name = "esse_primitives"
+version = "0.1.0"
+authors = ["CympleTech <dev@cympletech.com>"]
+edition = "2021"
+readme = "README.md"
+description = "ESSE common primitives."
+repository = "https://github.com/cympletech/esse_types/primitives"
+keywords = ["distributed", "p2p", "did", "ESSE"]
+license = "MIT/Apache-2.0"
+
+[dependencies]
+blake3 = "1.3"
+tdn_types = { version = "0.6", default-features = false }
