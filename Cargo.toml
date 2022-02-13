@@ -41,15 +41,15 @@ base64 = "0.13"
 hex = "0.4"
 sha2 = "0.10"
 argon2 = "0.3"
-blake3 = "1.2"
+blake3 = "1.3"
 bincode = "1.3"
 aes-gcm = "0.9"
 sysinfo = "0.21"
 serde = { version = "1", features = ["derive"] }
 tokio = { version = "1", features = ["full"] }
 web3 = { version = "0.17", default-features = false, features = ["http-tls", "signing"] }
-tdn = { version = "0.6", default-features = false, features = ["full"] }
-tdn_did = { version = "0.6" }
+tdn = { version = "0.7", default-features = false, features = ["full"] }
+tdn_did = { version = "0.7" }
 tdn_storage = { git = "https://github.com/cympletech/tdn", branch="main" }
 chat_types = { version = "0.1", path = "./types/chat" }
 group_types = { version = "0.1", path = "./types/group" }
@@ -62,3 +62,10 @@ openssl = { version = "0.10", features = ["vendored"] } # Add for cross-compile.
 
 [target.'cfg(target_os="android")'.dependencies]
 jni = { version = "0.19", default-features = false }
+
+
+# DEBUG patch.
+[patch.crates-io]
+tdn = { git = "https://github.com/cympletech/tdn" }
+tdn_types = { git = "https://github.com/cympletech/tdn" }
+tdn_did = { git = "https://github.com/cympletech/tdn" }

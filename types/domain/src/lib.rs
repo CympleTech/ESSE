@@ -1,17 +1,11 @@
 use serde::{Deserialize, Serialize};
 use tdn_did::Proof;
-use tdn_types::{group::GroupId, primitive::PeerId};
+use tdn_types::{group::GroupId, primitives::PeerId};
 
 // Same ID can has many name !.
 
 /// Group chat app(service) default TDN GROUP ID.
-#[rustfmt::skip]
-pub const DOMAIN_ID: GroupId = GroupId([
-    0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 4,
-]);
+pub const DOMAIN_ID: GroupId = 4;
 
 /// ESSE domain service layer Event.
 #[derive(Serialize, Deserialize)]
@@ -31,8 +25,8 @@ pub enum ServerEvent {
     /// params: name, is_ok.
     Result(String, bool),
     /// a identity info.
-    /// params: user_name, user_ID, user_address, user_bio, user_avatar.
-    Info(String, GroupId, PeerId, String, Vec<u8>),
+    /// params: user_id, user_name, user_bio, user_avatar.
+    Info(PeerId, String, String, Vec<u8>),
     /// not found a user by name.
     None(String),
     /// current name is active.
@@ -42,8 +36,8 @@ pub enum ServerEvent {
     /// params: name.
     Deleted(String),
     /// response the make friend.
-    /// params: remote_ID, name, is_ok.
-    Response(GroupId, String, bool),
+    /// params: remote_id, name, is_ok.
+    Response(PeerId, String, bool),
 }
 
 /// ESSE domain peer to service layer Event.

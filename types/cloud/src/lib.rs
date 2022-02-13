@@ -3,13 +3,7 @@ use tdn_did::Proof;
 use tdn_types::group::GroupId;
 
 /// Personal data cloud service default TDN GROUP ID.
-#[rustfmt::skip]
-pub const CLOUD_ID: GroupId = GroupId([
-    0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 5,
-]);
+pub const CLOUD_ID: GroupId = 5;
 
 /// ESSE service to peer layer Event.
 #[derive(Serialize, Deserialize)]

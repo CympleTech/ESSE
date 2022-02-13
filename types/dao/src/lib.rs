@@ -1,17 +1,14 @@
 use serde::{Deserialize, Serialize};
 use tdn_did::Proof;
-use tdn_types::{group::GroupId, primitive::PeerId};
+use tdn_types::{group::GroupId, primitives::PeerId};
 
 use chat_types::NetworkMessage;
 
 /// Dao app(service) default TDN GROUP ID.
-#[rustfmt::skip]
-pub const DAO_ID: GroupId = GroupId([
-    0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 3,
-]);
+pub const DAO_ID: GroupId = 3;
+
+/// Dao ID type.
+pub type DaoId = u64;
 
 /// Group chat types. include: Encrypted, Private, Open.
 #[derive(Serialize, Deserialize, Clone, Copy, Debug, Eq, PartialEq)]
@@ -54,10 +51,10 @@ pub enum DaoInfo {
     /// params: owner, owner_name, owner_avatar, Group ID, group_type, is_must_agree_by_manager,
     /// group_name, group_bio, group_avatar.
     Common(
-        GroupId,
+        PeerId,
         String,
         Vec<u8>,
-        GroupId,
+        DaoId,
         GroupType,
         bool,
         String,
@@ -67,10 +64,10 @@ pub enum DaoInfo {
     /// params: owner, owner_name, owner_avatar, Group ID, is_must_agree_by_manager, key_hash,
     /// group_name(bytes), group_bio(bytes), group_avatar(bytes).
     Encrypted(
-        GroupId,
+        PeerId,
         String,
         Vec<u8>,
-        GroupId,
+        DaoId,
         bool,
         Vec<u8>,
         Vec<u8>,
@@ -82,12 +79,12 @@ pub enum DaoInfo {
 /// Dao chat connect data structure.
 /// params: Group ID, join_proof.
 #[derive(Serialize, Deserialize)]
-pub struct LayerConnect(pub GroupId, pub ConnectProof);
+pub struct LayerConnect(pub DaoId, pub ConnectProof);
 
 /// Dao chat connect success result data structure.
 /// params: Group ID, group current height.
 #[derive(Serialize, Deserialize)]
-pub struct LayerResult(pub GroupId, pub i64);
+pub struct LayerResult(pub DaoId, pub i64);
 
 /// Dao chat connect proof.
 #[derive(Serialize, Deserialize)]
@@ -108,7 +105,7 @@ pub enum JoinProof {
     Open(String, Vec<u8>),
     /// when is invate, it will take group_manager's proof for invate.
     /// params: invite_by_account, invite_proof, member name, member avatar.
-    Invite(GroupId, Proof, String, Vec<u8>),
+    Invite(PeerId, Proof, String, Vec<u8>),
     /// zero-knowledge-proof. not has account id.
     /// verify(proof, key_hash, current_peer_addr).
     Zkp(Proof), // TODO MOCK-PROOF
@@ -142,11 +139,11 @@ impl CheckType {
 #[derive(Serialize, Deserialize)]
 pub enum LayerEvent {
     /// offline. as BaseLayerEvent.
-    Offline(GroupId),
+    Offline(DaoId),
     /// suspend. as BaseLayerEvent.
-    Suspend(GroupId),
+    Suspend(DaoId),
     /// actived. as BaseLayerEvent.
-    Actived(GroupId),
+    Actived(DaoId),
     /// check if account has permission to create group, and supported group types.
     Check,
     /// result check.
@@ -157,36 +154,36 @@ pub enum LayerEvent {
     Create(DaoInfo, Proof),
     /// result create group success.
     /// params: Group ID, is_ok.
-    CreateResult(GroupId, bool),
+    CreateResult(DaoId, bool),
     /// join group request. Group ID, Join Proof and info, request db id.
-    Request(GroupId, JoinProof),
+    Request(DaoId, JoinProof),
     /// request need manager to handle.
-    RequestHandle(GroupId, GroupId, PeerId, JoinProof, i64, i64),
+    RequestHandle(DaoId, PeerId, JoinProof, i64, i64),
     /// manager handle request result. Group ID, request db id, is ok.
-    RequestResult(GroupId, i64, bool),
+    RequestResult(DaoId, i64, bool),
     /// agree join request.
-    Agree(GroupId, DaoInfo),
+    Agree(DaoId, DaoInfo),
     /// reject join request. Group ID, if lost efficacy.
-    Reject(GroupId, bool),
-    /// online group member. Group ID, member id, member address.
-    MemberOnline(GroupId, GroupId, PeerId),
+    Reject(DaoId, bool),
+    /// online group member. Group ID, member id.
+    MemberOnline(DaoId, PeerId),
     /// offline group member. Group ID, member id.
-    MemberOffline(GroupId, GroupId),
+    MemberOffline(DaoId, PeerId),
     /// sync online members.
-    MemberOnlineSync(GroupId),
+    MemberOnlineSync(DaoId),
     /// sync online members result.
-    MemberOnlineSyncResult(GroupId, Vec<(GroupId, PeerId)>),
+    MemberOnlineSyncResult(DaoId, Vec<PeerId>),
     /// sync group event. Group ID, height, event.
-    Sync(GroupId, i64, Event),
+    Sync(DaoId, i64, Event),
     /// packed sync event request. Group ID, from.
-    SyncReq(GroupId, i64),
+    SyncReq(DaoId, i64),
     /// packed sync event. Group ID, current height, from height, to height, packed events.
-    Packed(GroupId, i64, i64, i64, Vec<PackedEvent>),
+    Packed(DaoId, i64, i64, i64, Vec<PackedEvent>),
 }
 
 impl LayerEvent {
     /// get event's group id.
-    pub fn gcd(&self) -> Option<&GroupId> {
+    pub fn gcd(&self) -> Option<&DaoId> {
         match self {
             Self::Offline(gcd) => Some(gcd),
             Self::Suspend(gcd) => Some(gcd),
@@ -238,14 +235,14 @@ pub enum PackedEvent {
     GroupManagerAdd,
     GroupManagerDel,
     GroupClose,
-    /// params: member id, member address, member name, member avatar.
-    MemberInfo(GroupId, PeerId, String, Vec<u8>),
-    /// params: member id, member address, member name, member avatar, member join time.
-    MemberJoin(GroupId, PeerId, String, Vec<u8>, i64),
+    /// params: member id, member name, member avatar.
+    MemberInfo(PeerId, String, Vec<u8>),
+    /// params: member id, member name, member avatar, member join time.
+    MemberJoin(PeerId, String, Vec<u8>, i64),
     /// params: member id,
-    MemberLeave(GroupId),
+    MemberLeave(PeerId),
     /// params: member id, message, message time.
-    MessageCreate(GroupId, NetworkMessage, i64),
+    MessageCreate(PeerId, NetworkMessage, i64),
     /// had in before.
     None,
 }
@@ -258,12 +255,12 @@ pub enum Event {
     GroupManagerAdd,
     GroupManagerDel,
     GroupClose,
-    /// params: member id, member address, member name, member avatar.
-    MemberInfo(GroupId, PeerId, String, Vec<u8>),
-    /// params: member id, member address, member name, member avatar, member join time.
-    MemberJoin(GroupId, PeerId, String, Vec<u8>, i64),
+    /// params: member id, member name, member avatar.
+    MemberInfo(PeerId, String, Vec<u8>),
+    /// params: member id, member name, member avatar, member join time.
+    MemberJoin(PeerId, String, Vec<u8>, i64),
     /// params: member id,
-    MemberLeave(GroupId),
+    MemberLeave(PeerId),
     /// params: member id, message, height.
-    MessageCreate(GroupId, NetworkMessage, i64),
+    MessageCreate(PeerId, NetworkMessage, i64),
 }

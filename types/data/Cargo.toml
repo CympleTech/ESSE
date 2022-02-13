@@ -14,5 +14,5 @@ default = ["tdn"]
 tdn = ["tdn_did", "tdn_types"]
 
 [dependencies]
-tdn_did = { version = "0.6", default-features = false, optional = true }
-tdn_types = { version = "0.6", default-features = false, optional = true }
+tdn_did = { version = "0.7", default-features = false, optional = true }
+tdn_types = { version = "0.7", default-features = false, optional = true }

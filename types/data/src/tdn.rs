@@ -1,5 +1,5 @@
 use tdn_did::{Proof, PROOF_LENGTH};
-use tdn_types::group::{GroupId, GROUP_LENGTH};
+use tdn_types::group::{GroupId, GROUP_BYTES_LENGTH};
 
 use crate::{Data, OwnerId};
 

@@ -1,14 +1,18 @@
 use serde::{Deserialize, Serialize};
-use tdn_types::{group::GroupId, primitive::PeerId};
+use tdn_types::{group::GroupId, primitives::PeerId};
+
+/// Chat service default TDN GROUP ID.
+#[rustfmt::skip]
+pub const CHAT_ID: GroupId = 1;
 
 /// message type use in network.
 #[derive(Serialize, Deserialize, Clone)]
 pub enum NetworkMessage {
-    String(String),                            // content
-    Image(Vec<u8>),                            // image bytes.
-    File(String, Vec<u8>),                     // filename, file bytes.
-    Contact(String, GroupId, PeerId, Vec<u8>), // name, gid, addr, avatar bytes.
-    Record(Vec<u8>, u32),                      // record audio bytes.
+    String(String),                   // content
+    Image(Vec<u8>),                   // image bytes.
+    File(String, Vec<u8>),            // filename, file bytes.
+    Contact(PeerId, String, Vec<u8>), // PeerId, name, avatar bytes.
+    Record(Vec<u8>, u32),             // record audio bytes.
     Emoji,
     Phone,
     Video,

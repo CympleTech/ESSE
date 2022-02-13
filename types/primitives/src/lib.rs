@@ -75,7 +75,18 @@ pub mod bs32 {
     }
 }
 
-pub fn id(peer: &tdn_types::primitive::PeerId) -> String {
-    let hash = blake3::hash(&peer.0);
-    bs32::encode(&hash.as_bytes()[0..30])
+use tdn_types::primitives::{new_io_error, PeerId, PEER_ID_LENGTH};
+
+pub fn id_to_string(peer: &PeerId) -> String {
+    bs32::encode(&peer.0)
+}
+
+pub fn id_from_string(s: &str) -> std::io::Result<PeerId> {
+    let data = bs32::decode(s).ok_or(new_io_error("id from string is failure."))?;
+    if data.len() != PEER_ID_LENGTH {
+        return Err(new_io_error("id from string is failure."));
+    }
+    let mut bytes = [0u8; PEER_ID_LENGTH];
+    bytes.copy_from_slice(&data);
+    Ok(PeerId(bytes))
 }
