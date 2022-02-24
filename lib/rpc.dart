@@ -10,7 +10,6 @@ import 'package:esse/global.dart';
 Map jsonrpc = {
   "jsonrpc": "2.0",
   "id": 1,
-  "gid": Global.gid,
   "method": "",
   "params": [],
 };
@@ -111,7 +110,6 @@ class WebSocketsNotifications {
   send(String method, List params) {
     jsonrpc["method"] = method;
     jsonrpc["params"] = params;
-    jsonrpc["gid"] = Global.gid;
 
     if (_channel != null) {
       _channel!.sink.add(json.encode(jsonrpc));
@@ -134,23 +132,16 @@ class WebSocketsNotifications {
     Map response = json.decode(message);
     print(response);
 
-    if (response["result"] != null &&
-        response["method"] != null &&
-        response["gid"] != null
-      ) {
-        String method = response["method"];
-        List params = response["result"];
-        String gid = response["gid"];
+    if (response["result"] != null && response["method"] != null) {
+      String method = response["method"];
+      List params = response["result"];
+
       if (_listeners[method] != null) {
         final callbacks = _listeners[method]!;
-        if (gid == Global.gid || method.startsWith('account')) {
-          try {
-            callbacks[0](params);
-          } catch (e) {
-            print('function is unvalid');
-          }
-        } else if (callbacks[1] != null && callbacks[1]) {
-          _notice!(gid);
+        try {
+          callbacks[0](params);
+        } catch (e) {
+          print('function is unvalid');
         }
       } else {
         print("has no this " + method);

@@ -1,5 +1,4 @@
 use serde::{Deserialize, Serialize};
-use tdn_did::Proof;
 use tdn_types::{group::GroupId, primitives::PeerId};
 
 use chat_types::NetworkMessage;
@@ -11,9 +10,9 @@ pub const GROUP_CHAT_ID: GroupId = 2;
 pub type GroupChatId = u64;
 
 /// Group chat connect data structure.
-/// params: Group Chat ID, join_proof.
+/// params: Group Chat ID.
 #[derive(Serialize, Deserialize)]
-pub struct LayerConnect(pub GroupChatId, pub Proof);
+pub struct LayerConnect(pub GroupChatId);
 
 /// Group chat connect success result data structure.
 /// params: Group ID, group name, group current height.

@@ -35,10 +35,6 @@ dependencies:
     git:
       url: git://github.com/google/flutter-desktop-embedding.git
       path: plugins/file_selector/file_selector_macos
-  file_selector_windows:
-    git:
-      url: git://github.com/google/flutter-desktop-embedding.git
-      path: plugins/file_selector/file_selector_windows
   open_file: any # open file in mobile.
   crop: any
   unorm_dart: any

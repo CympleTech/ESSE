@@ -2,7 +2,7 @@
 pub(super) const ACCOUNT_VERSIONS: [&str; 13] = [
   "CREATE TABLE IF NOT EXISTS accounts(
     id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-    gid TEXT NOT NULL,
+    pid TEXT NOT NULL,
     indx INTEGER NOT NULL,
     lang INTEGER NOT NULL,
     pass TEXT NOT NULL,

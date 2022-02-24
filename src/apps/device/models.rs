@@ -1,6 +1,5 @@
-use std::collections::HashMap;
 use std::time::{SystemTime, UNIX_EPOCH};
-use tdn::types::primitive::{Peer, PeerId, Result};
+use tdn::types::primitives::{Peer, Result};
 use tdn::types::rpc::{json, RpcParam};
 use tdn_storage::local::{DStorage, DsValue};
 
@@ -8,13 +7,13 @@ pub(crate) struct Device {
     pub id: i64,
     pub name: String,
     pub info: String,
-    pub addr: PeerId,
+    pub peer: Peer,
     pub lasttime: i64,
     pub online: bool,
 }
 
 impl Device {
-    pub fn new(name: String, info: String, addr: PeerId) -> Self {
+    pub fn new(name: String, info: String, peer: Peer) -> Self {
         let start = SystemTime::now();
         let lasttime = start
             .duration_since(UNIX_EPOCH)
@@ -22,10 +21,10 @@ impl Device {
             .unwrap_or(0) as i64; // safe for all life.
 
         Self {
-            addr,
             lasttime,
             info,
             name,
+            peer,
             id: 0,
             online: true,
         }
@@ -35,7 +34,7 @@ impl Device {
     fn from_values(mut v: Vec<DsValue>) -> Device {
         Device {
             lasttime: v.pop().unwrap().as_i64(),
-            addr: PeerId::from_hex(v.pop().unwrap().as_str()).unwrap_or(PeerId::default()),
+            peer: Peer::from_string(v.pop().unwrap().as_str()).unwrap_or(Peer::default()),
             info: v.pop().unwrap().as_string(),
             name: v.pop().unwrap().as_string(),
             id: v.pop().unwrap().as_i64(),
@@ -48,7 +47,7 @@ impl Device {
             self.id,
             self.name,
             self.info,
-            self.addr.to_hex(),
+            self.peer.to_string(),
             self.lasttime,
             if self.online { "1" } else { "0" },
         ])
@@ -56,25 +55,22 @@ impl Device {
 
     /// load account devices.
     pub fn list(db: &DStorage) -> Result<Vec<Device>> {
-        let matrix = db.query("SELECT id, name, info, addr, lasttime FROM devices")?;
+        let matrix = db.query("SELECT id, name, info, peer, lasttime FROM devices")?;
         let mut devices = vec![];
         for values in matrix {
-            if values.len() == 5 {
-                devices.push(Device::from_values(values));
-            }
+            devices.push(Device::from_values(values));
         }
         Ok(devices)
     }
 
-    pub fn distributes(db: &DStorage) -> Result<HashMap<PeerId, (Peer, i64, bool)>> {
-        let matrix = db.query("SELECT id, addr FROM devices")?;
-        let mut devices = HashMap::new();
-        for mut values in matrix {
-            if values.len() == 2 {
-                let addr =
-                    PeerId::from_hex(values.pop().unwrap().as_str()).unwrap_or(PeerId::default());
-                let id = values.pop().unwrap().as_i64();
-                devices.insert(addr, (Peer::peer(addr), id, false));
+    pub fn distributes(db: &DStorage) -> Result<Vec<(Peer, i64, bool)>> {
+        let matrix = db.query("SELECT id, peer FROM devices")?;
+        let mut devices = vec![];
+        for mut v in matrix {
+            if v.len() == 3 {
+                let peer = Peer::from_string(v.pop().unwrap().as_str()).unwrap_or(Peer::default());
+                let id = v.pop().unwrap().as_i64();
+                devices.push((peer, id, false));
             }
         }
         Ok(devices)
@@ -95,10 +91,10 @@ impl Device {
 
     pub fn insert(&mut self, db: &DStorage) -> Result<()> {
         let sql = format!(
-            "INSERT INTO devices (name, info, addr, lasttime) VALUES ('{}', '{}', '{}', {})",
+            "INSERT INTO devices (name, info, peer, lasttime) VALUES ('{}', '{}', '{}', {})",
             self.name,
             self.info,
-            self.addr.to_hex(),
+            self.peer.to_string(),
             self.lasttime,
         );
         let id = db.insert(&sql)?;
