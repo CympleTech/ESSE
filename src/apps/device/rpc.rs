@@ -12,28 +12,28 @@ use crate::utils::device_status::device_status as local_device_status;
 use super::Device;
 
 #[inline]
-pub(crate) fn device_create(mgid: GroupId, device: &Device) -> RpcParam {
+pub(crate) fn device_create(mgid: PeerId, device: &Device) -> RpcParam {
     rpc_response(0, "device-create", json!(device.to_rpc()), mgid)
 }
 
 #[inline]
-pub(crate) fn _device_remove(mgid: GroupId, id: i64) -> RpcParam {
+pub(crate) fn _device_remove(mgid: PeerId, id: i64) -> RpcParam {
     rpc_response(0, "device-remove", json!([id]), mgid)
 }
 
 #[inline]
-pub(crate) fn device_online(mgid: GroupId, id: i64) -> RpcParam {
+pub(crate) fn device_online(mgid: PeerId, id: i64) -> RpcParam {
     rpc_response(0, "device-online", json!([id]), mgid)
 }
 
 #[inline]
-pub(crate) fn device_offline(mgid: GroupId, id: i64) -> RpcParam {
+pub(crate) fn device_offline(mgid: PeerId, id: i64) -> RpcParam {
     rpc_response(0, "device-offline", json!([id]), mgid)
 }
 
 #[inline]
 pub(crate) fn device_status(
-    mgid: GroupId,
+    mgid: PeerId,
     cpu: u32,
     memory: u32,
     swap: u32,

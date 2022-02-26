@@ -1,5 +1,4 @@
 use serde::{Deserialize, Serialize};
-use tdn_did::Proof;
 use tdn_types::{group::GroupId, primitives::PeerId};
 
 use chat_types::NetworkMessage;
@@ -91,10 +90,10 @@ pub struct LayerResult(pub DaoId, pub i64);
 pub enum ConnectProof {
     /// when is joined in group chat, can only use had to join (connect).
     /// params: proof.
-    Common(Proof),
+    Common,
     /// zero-knowledge-proof. not has account id.
     /// verify(proof, key_hash, current_peer_addr).
-    Zkp(Proof), // TODO MOCK-PROOF
+    Zkp, // TODO MOCK-PROOF
 }
 
 /// Dao chat join proof.
@@ -104,11 +103,11 @@ pub enum JoinProof {
     /// params: member name, member avatar.
     Open(String, Vec<u8>),
     /// when is invate, it will take group_manager's proof for invate.
-    /// params: invite_by_account, invite_proof, member name, member avatar.
-    Invite(PeerId, Proof, String, Vec<u8>),
+    /// params: invite_by_account, member name, member avatar.
+    Invite(PeerId, String, Vec<u8>),
     /// zero-knowledge-proof. not has account id.
     /// verify(proof, key_hash, current_peer_addr).
-    Zkp(Proof), // TODO MOCK-PROOF
+    Zkp, // TODO MOCK-PROOF
 }
 
 /// check result type.
@@ -150,8 +149,8 @@ pub enum LayerEvent {
     /// params: check type, provider name, remain, supported_group_types.
     CheckResult(CheckType, String, i64, Vec<GroupType>),
     /// create a Group Chat.
-    /// params: group_info, proof.
-    Create(DaoInfo, Proof),
+    /// params: group_info.
+    Create(DaoInfo),
     /// result create group success.
     /// params: Group ID, is_ok.
     CreateResult(DaoId, bool),

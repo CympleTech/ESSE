@@ -175,9 +175,6 @@ class _SecurityPageState extends State<SecurityPage> {
       await rpc.init(Global.wsRpc);
     }
 
-    // init system info.
-    rpc.send('account-system-info', []);
-
     // check if has logined.
     final loginedAccounts = await getLogined();
     if (loginedAccounts.length != 0) {

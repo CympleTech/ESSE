@@ -1,5 +1,4 @@
 use serde::{Deserialize, Serialize};
-use tdn_did::Proof;
 use tdn_types::{group::GroupId, primitives::PeerId};
 
 // Same ID can has many name !.
@@ -7,17 +6,9 @@ use tdn_types::{group::GroupId, primitives::PeerId};
 /// Group chat app(service) default TDN GROUP ID.
 pub const DOMAIN_ID: GroupId = 4;
 
-/// ESSE domain service layer Event.
-#[derive(Serialize, Deserialize)]
-pub struct LayerServerEvent(pub ServerEvent, pub Proof);
-
-/// ESSE domain service layer Event.
-#[derive(Serialize, Deserialize)]
-pub struct LayerPeerEvent(pub PeerEvent, pub Proof);
-
 /// ESSE domain service to peer layer Event.
 #[derive(Serialize, Deserialize)]
-pub enum ServerEvent {
+pub enum LayerServerEvent {
     /// check result status.
     /// params: provider name, is support request proxy.
     Status(String, bool),
@@ -42,7 +33,7 @@ pub enum ServerEvent {
 
 /// ESSE domain peer to service layer Event.
 #[derive(Serialize, Deserialize)]
-pub enum PeerEvent {
+pub enum LayerPeerEvent {
     /// check service status is ok.
     Check,
     /// register new unique identity to service.

@@ -1,5 +1,4 @@
 use serde::{Deserialize, Serialize};
-use tdn_did::Proof;
 use tdn_types::group::GroupId;
 
 /// Personal data cloud service default TDN GROUP ID.
@@ -7,11 +6,11 @@ pub const CLOUD_ID: GroupId = 5;
 
 /// ESSE service to peer layer Event.
 #[derive(Serialize, Deserialize)]
-pub struct LayerServerEvent(pub ServerEvent, pub Proof);
+pub struct LayerServerEvent(pub ServerEvent);
 
 /// ESSE peer to layer Event.
 #[derive(Serialize, Deserialize)]
-pub struct LayerPeerEvent(pub PeerEvent, pub Proof);
+pub struct LayerPeerEvent(pub PeerEvent);
 
 /// ESSE service to peer Event.
 #[derive(Serialize, Deserialize)]

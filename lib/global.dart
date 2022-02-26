@@ -1,8 +1,8 @@
 class Global {
   static String version = 'v0.5.0';
   static String gid = '0000000000000000000000000000000000000000000000000000000000000000';
-  static String httpRpc = '127.0.0.1:8000';
-  static String wsRpc = '127.0.0.1:8080';
+  static String httpRpc = '127.0.0.1:7365';
+  static String wsRpc = '127.0.0.1:7366';
   //static String httpRpc = '192.168.2.148:8001';  // test code
   //static String wsRpc = '192.168.2.148:8081';    // test code
   //static String httpRpc = '192.168.50.250:8001'; // test code

@@ -1,6 +1,6 @@
+use esse_primitives::{id_from_str, id_to_string};
 use tdn::types::{
-    group::GroupId,
-    primitive::{PeerId, Result},
+    primitives::{PeerId, Result},
     rpc::{json, RpcParam},
 };
 use tdn_storage::local::{DStorage, DsValue};
@@ -36,7 +36,6 @@ impl SessionType {
 pub(crate) struct Session {
     pub id: i64,
     fid: i64,
-    pub gid: GroupId,
     pub addr: PeerId,
     pub s_type: SessionType,
     name: String,
@@ -48,17 +47,9 @@ pub(crate) struct Session {
 }
 
 impl Session {
-    pub fn new(
-        fid: i64,
-        gid: GroupId,
-        addr: PeerId,
-        s_type: SessionType,
-        name: String,
-        datetime: i64,
-    ) -> Self {
+    pub fn new(fid: i64, addr: PeerId, s_type: SessionType, name: String, datetime: i64) -> Self {
         Self {
             fid,
-            gid,
             addr,
             s_type,
             name,
@@ -75,8 +66,7 @@ impl Session {
         json!([
             self.id,
             self.fid,
-            self.gid.to_hex(),
-            self.addr.to_hex(),
+            id_to_string(&self.addr),
             self.s_type.to_int(),
             self.name,
             self.is_top,
@@ -96,8 +86,7 @@ impl Session {
             is_top: v.pop().unwrap().as_bool(),
             name: v.pop().unwrap().as_string(),
             s_type: SessionType::from_int(v.pop().unwrap().as_i64()),
-            addr: PeerId::from_hex(v.pop().unwrap().as_str()).unwrap_or(PeerId::default()),
-            gid: GroupId::from_hex(v.pop().unwrap().as_str()).unwrap_or(GroupId::default()),
+            addr: id_from_str(v.pop().unwrap().as_str()).unwrap_or(PeerId::default()),
             fid: v.pop().unwrap().as_i64(),
             id: v.pop().unwrap().as_i64(),
         }
@@ -113,19 +102,17 @@ impl Session {
             let id = unique_check.pop().unwrap().pop().unwrap().as_i64();
             self.id = id;
 
-            let sql = format!("UPDATE sessions SET gid = '{}', addr='{}', name = '{}', is_top = '{}', is_close = false WHERE id = {}",
-                self.gid.to_hex(),
-                self.addr.to_hex(),
+            let sql = format!("UPDATE sessions SET addr='{}', name = '{}', is_top = '{}', is_close = false WHERE id = {}",
+                id_to_string(&self.addr),
                 self.name,
                 self.is_top,
                 self.id,
             );
             db.update(&sql)?;
         } else {
-            let sql = format!("INSERT INTO sessions (fid, gid, addr, s_type, name, is_top, is_close, last_datetime, last_content, last_readed) VALUES ({}, '{}', '{}', {}, '{}', {}, {}, {}, '{}', {})",
+            let sql = format!("INSERT INTO sessions (fid, addr, s_type, name, is_top, is_close, last_datetime, last_content, last_readed) VALUES ({}, '{}', {}, '{}', {}, {}, {}, '{}', {})",
             self.fid,
-            self.gid.to_hex(),
-            self.addr.to_hex(),
+            id_to_string(&self.addr),
             self.s_type.to_int(),
             self.name,
             self.is_top,
@@ -142,7 +129,7 @@ impl Session {
     }
 
     pub fn get(db: &DStorage, id: &i64) -> Result<Session> {
-        let sql = format!("SELECT id, fid, gid, addr, s_type, name, is_top, is_close, last_datetime, last_content, last_readed FROM sessions WHERE id = {}", id);
+        let sql = format!("SELECT id, fid, addr, s_type, name, is_top, is_close, last_datetime, last_content, last_readed FROM sessions WHERE id = {}", id);
         let mut matrix = db.query(&sql)?;
         if matrix.len() > 0 {
             Ok(Session::from_values(matrix.pop().unwrap())) // safe unwrap()
@@ -152,7 +139,7 @@ impl Session {
     }
 
     pub fn list(db: &DStorage) -> Result<Vec<Session>> {
-        let matrix = db.query("SELECT id, fid, gid, addr, s_type, name, is_top, is_close, last_datetime, last_content, last_readed FROM sessions ORDER BY last_datetime DESC")?;
+        let matrix = db.query("SELECT id, fid, addr, s_type, name, is_top, is_close, last_datetime, last_content, last_readed FROM sessions ORDER BY last_datetime DESC")?;
         let mut sessions = vec![];
         for values in matrix {
             sessions.push(Session::from_values(values));
@@ -268,7 +255,7 @@ pub(crate) fn connect_session(
     fid: &i64,
     addr: &PeerId,
 ) -> Result<Option<Session>> {
-    let sql = format!("SELECT id, fid, gid, addr, s_type, name, is_top, is_close, last_datetime, last_content, last_readed FROM sessions WHERE s_type = {} AND fid = {}", s_type.to_int(), fid);
+    let sql = format!("SELECT id, fid, addr, s_type, name, is_top, is_close, last_datetime, last_content, last_readed FROM sessions WHERE s_type = {} AND fid = {}", s_type.to_int(), fid);
 
     let mut matrix = db.query(&sql)?;
     if matrix.len() > 0 {
