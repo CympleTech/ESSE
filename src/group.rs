@@ -245,6 +245,11 @@ impl Group {
         }
     }
 
+    pub fn keypair(&self) -> PeerKey {
+        let bytes = self.keypair.to_db_bytes();
+        PeerKey::from_db_bytes(&bytes).unwrap()
+    }
+
     pub fn db_key(&self, pid: &PeerId) -> Result<String> {
         Ok(self.account(pid)?.plainkey())
     }

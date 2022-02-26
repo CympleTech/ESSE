@@ -69,27 +69,19 @@ pub async fn start(db_path: String) -> Result<()> {
     for account in accounts {
         me.insert(account.pid, account);
     }
-    let gids: Vec<GroupId> = vec![]; // TODO add apps inject GROUP_ID
-    let peer_id = PeerId::default();
 
     let (_, _, p2p_config, rpc_config) = config.split();
-    let (tdn_send, tdn_recv) = new_send_channel();
     let (self_send, mut self_recv) = new_receive_channel();
-    let rpc_send = start_rpc(rpc_config, self_send).await?;
+    let rpc_send = start_rpc(rpc_config, self_send.clone()).await?;
 
-    let global = Arc::new(Global::init(me, tdn_send, db_path, rand_secret));
-
-    //let peer_id = start_main(gids, p2p_config, self_send, tdn_recv, rpc_send, Some(key)).await;
-    // TODO CHECK peer_id is equal.
-
-    // info!("Network Peer id : {}", peer_id.to_hex());
-
-    // let group = Arc::new(RwLock::new(
-    //     Group::init(rand_secret, sender.clone(), peer_id, me, db_path.clone()).await?,
-    // ));
-    // let layer = Arc::new(RwLock::new(
-    //     Layer::init(db_path, peer_id, group.clone()).await?,
-    // ));
+    let global = Arc::new(Global::init(
+        me,
+        db_path,
+        rand_secret,
+        p2p_config,
+        self_send,
+        rpc_send,
+    ));
 
     let rpc = init_rpc(global.clone());
     // //let mut group_rpcs: HashMap<u64, GroupId> = HashMap::new();
@@ -126,7 +118,7 @@ pub async fn start(db_path: String) -> Result<()> {
                 }
 
                 if let Ok(handle_result) = rpc.handle(params).await {
-                    handle(handle_result, uid, is_ws, &global, &rpc_send).await;
+                    handle(handle_result, uid, is_ws, &global).await;
                 }
             }
             ReceiveMessage::NetworkLost => {
@@ -223,13 +215,7 @@ pub async fn start(db_path: String) -> Result<()> {
 // }
 
 #[inline]
-async fn handle(
-    handle_result: HandleResult,
-    uid: u64,
-    is_ws: bool,
-    global: &Arc<Global>,
-    rpc_sender: &Sender<RpcSendMessage>,
-) {
+async fn handle(handle_result: HandleResult, uid: u64, is_ws: bool, global: &Arc<Global>) {
     let HandleResult {
         mut rpcs,
         mut groups,
@@ -240,7 +226,8 @@ async fn handle(
     loop {
         if rpcs.len() != 0 {
             let msg = rpcs.remove(0);
-            rpc_sender
+            global
+                .rpc_send
                 .send(RpcSendMessage(uid, msg, is_ws))
                 .await
                 .expect("TDN channel closed");
@@ -249,40 +236,42 @@ async fn handle(
         }
     }
 
-    let sender = global.sender.read().await;
-    loop {
-        if networks.len() != 0 {
-            let msg = networks.remove(0);
-            sender
-                .send(SendMessage::Network(msg))
-                .await
-                .expect("TDN channel closed");
-        } else {
-            break;
+    if let Ok(sender) = global.sender().await {
+        loop {
+            if groups.len() != 0 {
+                let msg = groups.remove(0);
+                sender
+                    .send(SendMessage::Group(msg))
+                    .await
+                    .expect("TDN channel closed");
+            } else {
+                break;
+            }
         }
-    }
 
-    loop {
-        if groups.len() != 0 {
-            let msg = groups.remove(0);
-            sender
-                .send(SendMessage::Group(msg))
-                .await
-                .expect("TDN channel closed");
-        } else {
-            break;
+        loop {
+            if layers.len() != 0 {
+                let (tgid, msg) = layers.remove(0);
+                sender
+                    .send(SendMessage::Layer(tgid, msg))
+                    .await
+                    .expect("TDN channel closed");
+            } else {
+                break;
+            }
         }
-    }
 
-    loop {
-        if layers.len() != 0 {
-            let (tgid, msg) = layers.remove(0);
-            sender
-                .send(SendMessage::Layer(tgid, msg))
-                .await
-                .expect("TDN channel closed");
-        } else {
-            break;
+        // must last send, because it will has stop type.
+        loop {
+            if networks.len() != 0 {
+                let msg = networks.remove(0);
+                sender
+                    .send(SendMessage::Network(msg))
+                    .await
+                    .expect("TDN channel closed");
+            } else {
+                break;
+            }
         }
     }
 }

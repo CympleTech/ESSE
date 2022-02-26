@@ -2,11 +2,14 @@ use esse_primitives::{id_from_str, id_to_str};
 use std::collections::HashMap;
 use std::net::SocketAddr;
 use std::sync::Arc;
-use tdn::types::{
-    group::GroupId,
-    message::{NetworkType, SendMessage, SendType, StateRequest, StateResponse},
-    primitives::{HandleResult, Peer, PeerId, Result},
-    rpc::{json, rpc_response, RpcError, RpcHandler, RpcParam},
+use tdn::{
+    prelude::{new_send_channel, start_main},
+    types::{
+        group::GroupId,
+        message::{NetworkType, SendMessage, SendType, StateRequest, StateResponse},
+        primitives::{HandleResult, Peer, PeerId, Result},
+        rpc::{json, rpc_response, RpcError, RpcHandler, RpcParam},
+    },
 };
 use tdn_did::{generate_mnemonic, Count};
 use tokio::sync::{
@@ -167,12 +170,8 @@ pub(crate) async fn inner_rpc(uid: u64, method: &str, global: &Arc<Global>) -> R
 
         let (s, mut r) = mpsc::channel::<StateResponse>(128);
         let _ = global
-            .sender
-            .read()
-            .await
             .send(SendMessage::Network(NetworkType::NetworkState(req, s)))
-            .await
-            .expect("TDN channel closed");
+            .await?;
 
         let param = match r.recv().await {
             Some(StateResponse::Stable(peers)) => network_stable(peers),
@@ -182,14 +181,7 @@ pub(crate) async fn inner_rpc(uid: u64, method: &str, global: &Arc<Global>) -> R
             }
         };
 
-        global
-            .sender
-            .read()
-            .await
-            .send(SendMessage::Rpc(uid, param, false))
-            .await
-            .expect("TDN channel closed");
-
+        global.send(SendMessage::Rpc(uid, param, false)).await?;
         return Ok(());
     }
 
@@ -385,7 +377,8 @@ fn new_rpc_handler(global: Arc<Global>) -> RpcHandler<Global> {
 
             let mut results = HandleResult::rpc(json!([id_to_str(&pid)]));
 
-            let running = state.reset(&pid, me_lock).await?;
+            let (tdn_send, tdn_recv) = new_send_channel();
+            let running = state.reset(&pid, me_lock, tdn_send).await?;
             if running {
                 return Ok(results);
             }
@@ -416,7 +409,18 @@ fn new_rpc_handler(global: Arc<Global>) -> RpcHandler<Global> {
             // }
             // drop(layer_lock);
 
-            debug!("Account Logined: {}.", id_to_str(&pid));
+            let key = state.group.read().await.keypair();
+            let peer_id = start_main(
+                state.gids.clone(),
+                state.p2p_config.clone(),
+                state.self_send.clone(),
+                tdn_recv,
+                None,
+                Some(key),
+            )
+            .await?;
+
+            debug!("Account Logined: {}.", id_to_str(&peer_id));
 
             Ok(results)
         },
@@ -426,29 +430,9 @@ fn new_rpc_handler(global: Arc<Global>) -> RpcHandler<Global> {
         "account-logout",
         |_params: Vec<RpcParam>, state: Arc<Global>| async move {
             let mut results = HandleResult::new();
-
-            // TODO broadcast to inner-group.
-            let group_lock = state.group.read().await;
-            drop(group_lock);
-
-            // TODO broadcast to layers.
-            let layer_lock = state.layer.read().await;
-            for (gid, sessions) in layer_lock.sessions.iter() {
-                for (pid, _) in sessions {
-                    // send a event that is offline.
-                    let data = bincode::serialize(&LayerEvent::Offline(*gid))?;
-                    let msg = SendType::Event(0, *pid, data);
-                    results.layers.push((*gid, msg));
-                }
-            }
-            drop(layer_lock);
-
+            results.networks.push(NetworkType::NetworkStop);
             debug!("Account Offline: {}.", id_to_str(&state.pid().await));
-
-            //let sender = state.sender.read().await.clone();
             state.clear().await;
-            //tokio::spawn(sleep_waiting_close_stable(sender, groups, layers));
-
             Ok(results)
         },
     );

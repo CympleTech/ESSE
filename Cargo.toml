@@ -60,6 +60,7 @@ dao_types = { version = "0.1", path = "./types/dao" }
 data = { version = "0.1", path = "./types/data" }
 
 openssl = { version = "0.10", features = ["vendored"] } # Add for cross-compile.
+console-subscriber = "0.1" # only use in bin daemon.
 
 [target.'cfg(target_os="android")'.dependencies]
 jni = { version = "0.19", default-features = false }

@@ -23,6 +23,8 @@ mod utils;
 
 #[tokio::main]
 async fn main() {
+    console_subscriber::init();
+
     let db_path = args().nth(1).unwrap_or("./.tdn".to_owned());
 
     if std::fs::metadata(&db_path).is_err() {
