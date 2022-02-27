@@ -2,8 +2,7 @@
 pub(super) const CHAT_VERSIONS: [&str; 3] = [
   "CREATE TABLE IF NOT EXISTS friends(
     id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-    gid TEXT NOT NULL,
-    addr TEXT NOT NULL,
+    pid TEXT NOT NULL,
     name TEXT NOT NULL,
     wallet TEXT,
     height INTEGER NOT NULL,
@@ -12,8 +11,7 @@ pub(super) const CHAT_VERSIONS: [&str; 3] = [
     datetime INTEGER NOT NULL);",
   "CREATE TABLE IF NOT EXISTS requests(
     id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-    gid TEXT NOT NULL,
-    addr TEXT NOT NULL,
+    pid TEXT NOT NULL,
     name TEXT,
     remark TEXT,
     is_me INTEGER NOT NULL,

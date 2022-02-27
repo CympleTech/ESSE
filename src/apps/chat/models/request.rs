@@ -1,7 +1,7 @@
+use esse_primitives::{id_from_str, id_to_str};
 use std::time::{SystemTime, UNIX_EPOCH};
 use tdn::types::{
-    group::GroupId,
-    primitive::{PeerId, Result},
+    primitives::{PeerId, Result},
     rpc::{json, RpcParam},
 };
 use tdn_storage::local::{DStorage, DsValue};
@@ -9,8 +9,7 @@ use tdn_storage::local::{DStorage, DsValue};
 #[derive(Clone)]
 pub(crate) struct Request {
     pub id: i64,
-    pub gid: GroupId,
-    pub addr: PeerId,
+    pub pid: PeerId,
     pub name: String,
     pub remark: String,
     pub is_me: bool,
@@ -22,8 +21,7 @@ pub(crate) struct Request {
 
 impl Request {
     pub fn new(
-        gid: GroupId,
-        addr: PeerId,
+        pid: PeerId,
         name: String,
         remark: String,
         is_me: bool,
@@ -37,8 +35,7 @@ impl Request {
 
         Request {
             id: 0,
-            gid,
-            addr,
+            pid,
             name,
             remark,
             is_me,
@@ -59,8 +56,7 @@ impl Request {
             is_me: v.pop().unwrap().as_bool(),
             remark: v.pop().unwrap().as_string(),
             name: v.pop().unwrap().as_string(),
-            addr: PeerId::from_hex(v.pop().unwrap().as_str()).unwrap_or(PeerId::default()),
-            gid: GroupId::from_hex(v.pop().unwrap().as_str()).unwrap_or(GroupId::default()),
+            pid: id_from_str(v.pop().unwrap().as_str()).unwrap_or(PeerId::default()),
             id: v.pop().unwrap().as_i64(),
         }
     }
@@ -68,8 +64,8 @@ impl Request {
     pub fn to_rpc(&self) -> RpcParam {
         json!([
             self.id,
-            self.gid.to_hex(),
-            self.addr.to_hex(),
+            id_to_str(&self.pid),
+            self.pid.to_hex(),
             self.name,
             self.remark,
             self.is_me,
@@ -80,8 +76,8 @@ impl Request {
         ])
     }
 
-    pub fn get_id(db: &DStorage, gid: &GroupId) -> Result<Request> {
-        let sql = format!("SELECT id, gid, addr, name, remark, is_me, is_ok, is_over, is_delivery, datetime FROM requests WHERE gid = '{}'", gid.to_hex());
+    pub fn get_id(db: &DStorage, pid: &PeerId) -> Result<Request> {
+        let sql = format!("SELECT id, pid, name, remark, is_me, is_ok, is_over, is_delivery, datetime FROM requests WHERE pid = '{}'", pid.to_hex());
         let mut matrix = db.query(&sql)?;
         if matrix.len() > 0 {
             Ok(Request::from_values(matrix.pop().unwrap())) // safe unwrap()
@@ -91,7 +87,7 @@ impl Request {
     }
 
     pub fn get(db: &DStorage, id: &i64) -> Result<Request> {
-        let sql = format!("SELECT id, gid, addr, name, remark, is_me, is_ok, is_over, is_delivery, datetime FROM requests WHERE id = {}", id);
+        let sql = format!("SELECT id, pid, name, remark, is_me, is_ok, is_over, is_delivery, datetime FROM requests WHERE id = {}", id);
         let mut matrix = db.query(&sql)?;
         if matrix.len() > 0 {
             Ok(Request::from_values(matrix.pop().unwrap())) // safe unwrap()
@@ -101,7 +97,7 @@ impl Request {
     }
 
     pub fn list(db: &DStorage) -> Result<Vec<Request>> {
-        let matrix = db.query("SELECT id, gid, addr, name, remark, is_me, is_ok, is_over, is_delivery, datetime FROM requests ORDER BY id DESC")?;
+        let matrix = db.query("SELECT id, pid, name, remark, is_me, is_ok, is_over, is_delivery, datetime FROM requests ORDER BY id DESC")?;
         let mut requests = vec![];
         for values in matrix {
             requests.push(Request::from_values(values));
@@ -110,9 +106,8 @@ impl Request {
     }
 
     pub fn insert(&mut self, db: &DStorage) -> Result<()> {
-        let sql = format!("INSERT INTO requests (gid, addr, name, remark, is_me, is_ok, is_over, is_delivery, datetime) VALUES ('{}', '{}', '{}', '{}', {}, {}, {}, {}, {})",
-            self.gid.to_hex(),
-            self.addr.to_hex(),
+        let sql = format!("INSERT INTO requests (pid, name, remark, is_me, is_ok, is_over, is_delivery, datetime) VALUES ('{}', '{}', '{}', {}, {}, {}, {}, {})",
+            id_to_str(&self.pid),
             self.name,
             self.remark,
             self.is_me,
@@ -127,9 +122,8 @@ impl Request {
     }
 
     pub fn update(&self, db: &DStorage) -> Result<usize> {
-        let sql = format!("UPDATE requests SET gid='{}', addr='{}', name='{}', remark='{}', is_me={}, is_ok={}, is_over={}, is_delivery={}, datetime={} WHERE id = {}",
-            self.gid.to_hex(),
-            self.addr.to_hex(),
+        let sql = format!("UPDATE requests SET pid='{}', name='{}', remark='{}', is_me={}, is_ok={}, is_over={}, is_delivery={}, datetime={} WHERE id = {}",
+            id_to_str(&self.pid),
             self.name,
             self.remark,
             self.is_me,

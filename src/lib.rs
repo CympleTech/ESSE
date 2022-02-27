@@ -11,14 +11,14 @@ mod account;
 mod apps;
 //mod consensus;
 //mod event;
+mod global;
 mod group;
 mod layer;
 mod migrate;
 mod primitives;
 mod rpc;
 mod server;
-//mod session;
-mod global;
+mod session;
 mod storage;
 mod utils;
 

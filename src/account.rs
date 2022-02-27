@@ -330,12 +330,12 @@ pub(crate) struct User {
     pub id: PeerId,
     pub name: String,
     pub wallet: String,
-    pub height: i64,
+    pub height: u64,
     pub avatar: Vec<u8>,
 }
 
 impl User {
-    pub fn new(id: PeerId, name: String, avatar: Vec<u8>, wallet: String, height: i64) -> Self {
+    pub fn new(id: PeerId, name: String, avatar: Vec<u8>, wallet: String, height: u64) -> Self {
         Self {
             id,
             name,
@@ -345,7 +345,7 @@ impl User {
         }
     }
 
-    pub fn info(name: String, wallet: String, height: i64, avatar: Vec<u8>) -> Self {
+    pub fn info(name: String, wallet: String, height: u64, avatar: Vec<u8>) -> Self {
         Self {
             id: PeerId::default(),
             name,

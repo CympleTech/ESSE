@@ -1,44 +1,39 @@
+use chat_types::{MessageType, NetworkMessage};
 use std::path::PathBuf;
-use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 use tdn::types::{
-    group::{EventId, GroupId},
-    primitive::{HandleResult, Result},
+    group::EventId,
+    primitives::{HandleResult, PeerId, Result},
     rpc::{json, RpcParam},
 };
 use tdn_storage::local::{DStorage, DsValue};
-use tokio::sync::RwLock;
-
-use chat_types::{MessageType, NetworkMessage};
-
-use crate::group::Group;
 
 use super::{from_network_message, to_network_message};
 
 pub(crate) async fn handle_nmsg(
-    group: &Arc<RwLock<Group>>,
+    own: &PeerId,
+    base: &PathBuf,
+    db_key: &str,
     nmsg: NetworkMessage,
     is_me: bool,
-    gid: GroupId,
-    base: &PathBuf,
     db: &DStorage,
     fid: i64,
     hash: EventId,
     results: &mut HandleResult,
 ) -> Result<Message> {
     // handle event.
-    let (m_type, raw) = from_network_message(group, nmsg, base, &gid, results).await?;
+    let (m_type, raw) = from_network_message(own, base, db_key, nmsg, results).await?;
     let mut msg = Message::new_with_id(hash, fid, is_me, m_type, raw, true);
     msg.insert(db)?;
     Ok(msg)
 }
 
 pub(crate) async fn from_model(
+    own: &PeerId,
     base: &PathBuf,
-    gid: &GroupId,
     model: Message,
 ) -> Result<NetworkMessage> {
-    to_network_message(base, gid, model.m_type, model.content).await
+    to_network_message(own, base, model.m_type, model.content).await
 }
 
 pub(crate) struct Message {
@@ -54,7 +49,7 @@ pub(crate) struct Message {
 
 impl Message {
     pub fn new(
-        gid: &GroupId,
+        pid: &PeerId,
         fid: i64,
         is_me: bool,
         m_type: MessageType,
@@ -68,7 +63,7 @@ impl Message {
             .unwrap_or(0) as i64; // safe for all life.
 
         let mut bytes = [0u8; 32];
-        bytes[0..8].copy_from_slice(&gid.0[0..8]);
+        bytes[0..8].copy_from_slice(&pid.0[0..8]);
         bytes[8..16].copy_from_slice(&(fid as u64).to_le_bytes()); // 8-bytes.
         bytes[16..24].copy_from_slice(&(datetime as u64).to_le_bytes()); // 8-bytes.
         let content_bytes = content.as_bytes();

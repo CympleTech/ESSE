@@ -347,3 +347,73 @@ pub(crate) fn consensus_db(base: &PathBuf, pid: &PeerId, db_key: &str) -> Result
     db_path.push(CONSENSUS_DB);
     DStorage::open(db_path, db_key)
 }
+
+pub(crate) fn session_db(base: &PathBuf, pid: &PeerId, db_key: &str) -> Result<DStorage> {
+    let mut db_path = base.clone();
+    db_path.push(pid.to_hex());
+    db_path.push(SESSION_DB);
+    DStorage::open(db_path, db_key)
+}
+
+pub(crate) fn chat_db(base: &PathBuf, pid: &PeerId, db_key: &str) -> Result<DStorage> {
+    let mut db_path = base.clone();
+    db_path.push(pid.to_hex());
+    db_path.push(CHAT_DB);
+    DStorage::open(db_path, db_key)
+}
+
+pub(crate) fn file_db(base: &PathBuf, pid: &PeerId, db_key: &str) -> Result<DStorage> {
+    let mut db_path = base.clone();
+    db_path.push(pid.to_hex());
+    db_path.push(FILE_DB);
+    DStorage::open(db_path, db_key)
+}
+
+pub(crate) fn _service_db(base: &PathBuf, pid: &PeerId, db_key: &str) -> Result<DStorage> {
+    let mut db_path = base.clone();
+    db_path.push(pid.to_hex());
+    db_path.push(SERVICE_DB);
+    DStorage::open(db_path, db_key)
+}
+
+pub(crate) fn jarvis_db(base: &PathBuf, pid: &PeerId, db_key: &str) -> Result<DStorage> {
+    let mut db_path = base.clone();
+    db_path.push(pid.to_hex());
+    db_path.push(JARVIS_DB);
+    DStorage::open(db_path, db_key)
+}
+
+pub(crate) fn group_db(base: &PathBuf, pid: &PeerId, db_key: &str) -> Result<DStorage> {
+    let mut db_path = base.clone();
+    db_path.push(pid.to_hex());
+    db_path.push(GROUP_DB);
+    DStorage::open(db_path, db_key)
+}
+
+pub(crate) fn _dao_db(base: &PathBuf, pid: &PeerId, db_key: &str) -> Result<DStorage> {
+    let mut db_path = base.clone();
+    db_path.push(pid.to_hex());
+    db_path.push(DAO_DB);
+    DStorage::open(db_path, db_key)
+}
+
+pub(crate) fn domain_db(base: &PathBuf, pid: &PeerId, db_key: &str) -> Result<DStorage> {
+    let mut db_path = base.clone();
+    db_path.push(pid.to_hex());
+    db_path.push(DOMAIN_DB);
+    DStorage::open(db_path, db_key)
+}
+
+pub(crate) fn wallet_db(base: &PathBuf, pid: &PeerId, db_key: &str) -> Result<DStorage> {
+    let mut db_path = base.clone();
+    db_path.push(pid.to_hex());
+    db_path.push(WALLET_DB);
+    DStorage::open(db_path, db_key)
+}
+
+pub(crate) fn _cloud_db(base: &PathBuf, pid: &PeerId, db_key: &str) -> Result<DStorage> {
+    let mut db_path = base.clone();
+    db_path.push(pid.to_hex());
+    db_path.push(CLOUD_DB);
+    DStorage::open(db_path, db_key)
+}

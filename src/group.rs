@@ -458,14 +458,6 @@ impl Group {
     //         }
     //     }
 
-    //     pub fn username(&self, pid: &PeerId) -> Result<String> {
-    //         if let Some(u) = self.accounts.get(pid) {
-    //             Ok(u.name.clone())
-    //         } else {
-    //             Err(anyhow!("user missing."))
-    //         }
-    //     }
-
     pub fn list_accounts(&self) -> &HashMap<PeerId, Account> {
         &self.accounts
     }
@@ -714,78 +706,6 @@ impl Group {
     //             }
     //         }
     //         Ok(())
-    //     }
-}
-
-impl Group {
-    //     pub(crate) fn session_db(&self, pid: &PeerId) -> Result<DStorage> {
-    //         let mut db_path = self.base.clone();
-    //         db_path.push(pid.to_hex());
-    //         db_path.push(SESSION_DB);
-    //         DStorage::open(db_path, &self.db_key(pid)?)
-    //     }
-
-    //     pub(crate) fn chat_db(&self, pid: &PeerId) -> Result<DStorage> {
-    //         let mut db_path = self.base.clone();
-    //         db_path.push(pid.to_hex());
-    //         db_path.push(CHAT_DB);
-    //         DStorage::open(db_path, &self.db_key(pid)?)
-    //     }
-
-    //     pub(crate) fn file_db(&self, pid: &PeerId) -> Result<DStorage> {
-    //         let mut db_path = self.base.clone();
-    //         db_path.push(pid.to_hex());
-    //         db_path.push(FILE_DB);
-    //         DStorage::open(db_path, &self.db_key(pid)?)
-    //     }
-
-    //     pub(crate) fn _service_db(&self, pid: &PeerId) -> Result<DStorage> {
-    //         let mut db_path = self.base.clone();
-    //         db_path.push(pid.to_hex());
-    //         db_path.push(SERVICE_DB);
-    //         DStorage::open(db_path, &self.db_key(pid)?)
-    //     }
-
-    //     pub(crate) fn jarvis_db(&self, pid: &PeerId) -> Result<DStorage> {
-    //         let mut db_path = self.base.clone();
-    //         db_path.push(pid.to_hex());
-    //         db_path.push(JARVIS_DB);
-    //         DStorage::open(db_path, &self.db_key(pid)?)
-    //     }
-
-    //     pub(crate) fn group_db(&self, pid: &PeerId) -> Result<DStorage> {
-    //         let mut db_path = self.base.clone();
-    //         db_path.push(pid.to_hex());
-    //         db_path.push(GROUP_DB);
-    //         DStorage::open(db_path, &self.db_key(pid)?)
-    //     }
-
-    //     pub(crate) fn _dao_db(&self, pid: &PeerId) -> Result<DStorage> {
-    //         let mut db_path = self.base.clone();
-    //         db_path.push(pid.to_hex());
-    //         db_path.push(DAO_DB);
-    //         DStorage::open(db_path, &self.db_key(pid)?)
-    //     }
-
-    //     pub(crate) fn domain_db(&self, pid: &PeerId) -> Result<DStorage> {
-    //         let mut db_path = self.base.clone();
-    //         db_path.push(pid.to_hex());
-    //         db_path.push(DOMAIN_DB);
-    //         DStorage::open(db_path, &self.db_key(pid)?)
-    //     }
-
-    //     pub(crate) fn wallet_db(&self, pid: &PeerId) -> Result<DStorage> {
-    //         let mut db_path = self.base.clone();
-    //         db_path.push(pid.to_hex());
-    //         db_path.push(WALLET_DB);
-    //         DStorage::open(db_path, &self.db_key(pid)?)
-    //     }
-
-    //     pub(crate) fn _cloud_db(&self, pid: &PeerId) -> Result<DStorage> {
-    //         let mut db_path = self.base.clone();
-    //         db_path.push(pid.to_hex());
-    //         db_path.push(CLOUD_DB);
-    //         DStorage::open(db_path, &self.db_key(pid)?)
     //     }
 }
 

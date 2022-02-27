@@ -1,4 +1,5 @@
 use esse_primitives::{id_from_str, id_to_str};
+use group_types::GroupChatId;
 use std::collections::HashMap;
 use std::net::SocketAddr;
 use std::sync::Arc;
@@ -24,8 +25,9 @@ use crate::global::Global;
 //use crate::apps::group::{add_layer, group_conn, GroupChat};
 //use crate::event::InnerEvent;
 use crate::group::Group;
-use crate::layer::{Layer, LayerEvent, Online};
-//use crate::session::{connect_session, Session, SessionType};
+use crate::layer::{Layer, LayerEvent};
+use crate::session::{connect_session, Session, SessionType};
+use crate::storage::session_db;
 
 pub(crate) fn init_rpc(global: Arc<Global>) -> RpcHandler<Global> {
     let mut handler = new_rpc_handler(global);
@@ -60,81 +62,68 @@ pub(crate) fn account_update(pid: &PeerId, name: &str, avatar: String) -> RpcPar
     rpc_response(0, "account-update", json!([id_to_str(pid), name, avatar]))
 }
 
-// #[inline]
-// pub(crate) fn session_create(mgid: GroupId, session: &Session) -> RpcParam {
-//     rpc_response(0, "session-create", session.to_rpc(), mgid)
-// }
+#[inline]
+pub(crate) fn session_create(session: &Session) -> RpcParam {
+    rpc_response(0, "session-create", session.to_rpc())
+}
 
-// #[inline]
-// pub(crate) fn session_last(
-//     mgid: GroupId,
-//     id: &i64,
-//     time: &i64,
-//     content: &str,
-//     readed: bool,
-// ) -> RpcParam {
-//     rpc_response(0, "session-last", json!([id, time, content, readed]), mgid)
-// }
+#[inline]
+pub(crate) fn session_last(id: &i64, time: &i64, content: &str, readed: bool) -> RpcParam {
+    rpc_response(0, "session-last", json!([id, time, content, readed]))
+}
 
-// #[inline]
-// pub(crate) fn notice_menu(mgid: GroupId, t: &SessionType) -> RpcParam {
-//     rpc_response(0, "notice-menu", json!([t.to_int()]), mgid)
-// }
+#[inline]
+pub(crate) fn notice_menu(t: &SessionType) -> RpcParam {
+    rpc_response(0, "notice-menu", json!([t.to_int()]))
+}
 
-// #[inline]
-// pub(crate) fn session_update_name(mgid: GroupId, id: &i64, name: &str) -> RpcParam {
-//     rpc_response(0, "session-update", json!([id, "", name, false]), mgid)
-// }
+#[inline]
+pub(crate) fn session_update_name(id: &i64, name: &str) -> RpcParam {
+    rpc_response(0, "session-update", json!([id, "", name, false]))
+}
 
-// #[inline]
-// pub(crate) fn session_update(
-//     mgid: GroupId,
-//     id: &i64,
-//     addr: &PeerId,
-//     name: &str,
-//     is_top: bool,
-// ) -> RpcParam {
-//     rpc_response(
-//         0,
-//         "session-update",
-//         json!([id, addr.to_hex(), name, is_top]),
-//         mgid,
-//     )
-// }
+#[inline]
+pub(crate) fn session_update(id: &i64, addr: &PeerId, name: &str, is_top: bool) -> RpcParam {
+    rpc_response(
+        0,
+        "session-update",
+        json!([id, addr.to_hex(), name, is_top]),
+    )
+}
 
-// #[inline]
-// pub(crate) fn session_connect(mgid: GroupId, id: &i64, addr: &PeerId) -> RpcParam {
-//     rpc_response(0, "session-connect", json!([id, addr.to_hex()]), mgid)
-// }
+#[inline]
+pub(crate) fn session_connect(id: &i64, addr: &PeerId) -> RpcParam {
+    rpc_response(0, "session-connect", json!([id, addr.to_hex()]))
+}
 
-// #[inline]
-// pub(crate) fn session_suspend(mgid: GroupId, id: &i64) -> RpcParam {
-//     rpc_response(0, "session-suspend", json!([id]), mgid)
-// }
+#[inline]
+pub(crate) fn session_suspend(id: &i64) -> RpcParam {
+    rpc_response(0, "session-suspend", json!([id]))
+}
 
-// #[inline]
-// pub(crate) fn session_lost(mgid: GroupId, id: &i64) -> RpcParam {
-//     rpc_response(0, "session-lost", json!([id]), mgid)
-// }
+#[inline]
+pub(crate) fn session_lost(id: &i64) -> RpcParam {
+    rpc_response(0, "session-lost", json!([id]))
+}
 
-// #[inline]
-// pub(crate) fn session_delete(mgid: GroupId, id: &i64) -> RpcParam {
-//     rpc_response(0, "session-delete", json!([id]), mgid)
-// }
+#[inline]
+pub(crate) fn session_delete(id: &i64) -> RpcParam {
+    rpc_response(0, "session-delete", json!([id]))
+}
 
-// #[inline]
-// pub(crate) fn session_close(mgid: GroupId, id: &i64) -> RpcParam {
-//     rpc_response(0, "session-close", json!([id]), mgid)
-// }
+#[inline]
+pub(crate) fn session_close(id: &i64) -> RpcParam {
+    rpc_response(0, "session-close", json!([id]))
+}
 
-// #[inline]
-// fn session_list(sessions: Vec<Session>) -> RpcParam {
-//     let mut results = vec![];
-//     for session in sessions {
-//         results.push(session.to_rpc());
-//     }
-//     json!(results)
-// }
+#[inline]
+fn session_list(sessions: Vec<Session>) -> RpcParam {
+    let mut results = vec![];
+    for session in sessions {
+        results.push(session.to_rpc());
+    }
+    json!(results)
+}
 
 #[inline]
 pub(crate) async fn sleep_waiting_close_stable(
@@ -437,123 +426,137 @@ fn new_rpc_handler(global: Arc<Global>) -> RpcHandler<Global> {
         },
     );
 
-    // handler.add_method(
-    //     "session-list",
-    //     |gid: GroupId, _params: Vec<RpcParam>, state: Arc<Global>| async move {
-    //         let db = state.group.read().await.session_db(&gid)?;
-    //         Ok(HandleResult::rpc(session_list(Session::list(&db)?)))
-    //     },
-    // );
+    handler.add_method(
+        "session-list",
+        |_: Vec<RpcParam>, state: Arc<Global>| async move {
+            let pid = state.pid().await;
+            let db_key = state.group.read().await.db_key(&pid)?;
+            let db = session_db(&state.base, &pid, &db_key)?;
+            Ok(HandleResult::rpc(session_list(Session::list(&db)?)))
+        },
+    );
 
-    // handler.add_method(
-    //     "session-connect",
-    //     |gid: GroupId, params: Vec<RpcParam>, state: Arc<Global>| async move {
-    //         let id = params[0].as_i64().ok_or(RpcError::ParseError)?;
-    //         let remote = GroupId::from_hex(params[1].as_str().ok_or(RpcError::ParseError)?)?;
+    handler.add_method(
+        "session-connect",
+        |params: Vec<RpcParam>, state: Arc<Global>| async move {
+            let id = params[0].as_i64().ok_or(RpcError::ParseError)?;
+            let remote = params[1].as_str().ok_or(RpcError::ParseError)?;
 
-    //         let group_lock = state.group.read().await;
-    //         let db = group_lock.session_db(&gid)?;
-    //         Session::readed(&db, &id)?;
+            let pid = state.pid().await;
+            let db_key = state.group.read().await.db_key(&pid)?;
+            let db = session_db(&state.base, &pid, &db_key)?;
+            Session::readed(&db, &id)?;
+            let s = Session::get(&db, &id)?;
+            drop(db);
 
-    //         let mut layer_lock = state.layer.write().await;
-    //         let online = layer_lock.running_mut(&gid)?.active(&remote, true);
-    //         drop(layer_lock);
-    //         if let Some(addr) = online {
-    //             return Ok(HandleResult::rpc(json!([id, addr.to_hex()])));
-    //         }
+            let mut layer_lock = state.layer.write().await;
 
-    //         let s = Session::get(&db, &id)?;
-    //         drop(db);
+            let mut results = HandleResult::new();
+            match s.s_type {
+                SessionType::Chat => {
+                    let remote_pid = id_from_str(remote)?;
+                    let online = layer_lock.chat_active(&remote_pid, true);
+                    if let Some(addr) = online {
+                        return Ok(HandleResult::rpc(json!([id, id_to_str(&addr)])));
+                    }
 
-    //         let mut results = HandleResult::new();
-    //         match s.s_type {
-    //             SessionType::Chat => {
-    //                 let proof = group_lock.prove_addr(&gid, &s.addr)?;
-    //                 results
-    //                     .layers
-    //                     .push((gid, s.gid, chat_conn(proof, Peer::peer(s.addr))));
-    //             }
-    //             SessionType::Group => {
-    //                 let proof = group_lock.prove_addr(&gid, &s.addr)?;
-    //                 add_layer(
-    //                     &mut results,
-    //                     gid,
-    //                     group_conn(proof, Peer::peer(s.addr), s.gid),
-    //                 );
-    //             }
-    //             _ => {}
-    //         }
-    //         Ok(results)
-    //     },
-    // );
+                    //results.layers.push((gid, s.gid, chat_conn(proof, Peer::peer(s.addr))));
+                }
+                SessionType::Group => {
+                    let remote_gid: GroupChatId =
+                        remote.parse().map_err(|_| RpcError::ParseError)?;
+                    let online = layer_lock.group_active(&remote_gid, true);
+                    if let Some(addr) = online {
+                        return Ok(HandleResult::rpc(json!([id, id_to_str(&addr)])));
+                    }
+                    // add_layer(
+                    //     &mut results,
+                    //     gid,
+                    //     group_conn(proof, Peer::peer(s.addr), s.gid),
+                    // );
+                }
+                _ => {}
+            }
 
-    // handler.add_method(
-    //     "session-suspend",
-    //     |gid: GroupId, params: Vec<RpcParam>, state: Arc<Global>| async move {
-    //         let id = params[0].as_i64().ok_or(RpcError::ParseError)?;
-    //         let remote = GroupId::from_hex(params[1].as_str().ok_or(RpcError::ParseError)?)?;
-    //         let must = params[2].as_bool().ok_or(RpcError::ParseError)?; // if need must suspend.
+            Ok(results)
+        },
+    );
 
-    //         let db = state.group.read().await.session_db(&gid)?;
-    //         let s = Session::get(&db, &id)?;
-    //         drop(db);
+    handler.add_method(
+        "session-suspend",
+        |params: Vec<RpcParam>, state: Arc<Global>| async move {
+            let id = params[0].as_i64().ok_or(RpcError::ParseError)?;
+            let remote = params[1].as_str().ok_or(RpcError::ParseError)?;
+            let must = params[2].as_bool().ok_or(RpcError::ParseError)?; // if need must suspend.
 
-    //         let msg = match s.s_type {
-    //             SessionType::Chat | SessionType::Group => {
-    //                 let event = LayerEvent::Suspend(s.gid);
-    //                 let data = bincode::serialize(&event)?;
-    //                 SendType::Event(0, s.addr, data)
-    //             }
-    //             _ => {
-    //                 return Ok(HandleResult::new()); // others has no online.
-    //             }
-    //         };
+            let pid = state.pid().await;
+            let db_key = state.group.read().await.db_key(&pid)?;
+            let db = session_db(&state.base, &pid, &db_key)?;
+            let s = Session::get(&db, &id)?;
+            drop(db);
 
-    //         let mut layer_lock = state.layer.write().await;
-    //         let suspend = layer_lock.running_mut(&gid)?.suspend(&remote, true, must)?;
-    //         drop(layer_lock);
+            let mut results = HandleResult::new();
+            let mut layer_lock = state.layer.write().await;
+            match s.s_type {
+                SessionType::Chat => {
+                    let remote_id = id_from_str(remote)?;
+                    let addr = layer_lock.chat_suspend(&remote_id, true, must)?;
+                    if addr.is_some() {
+                        results.rpcs.push(json!([id]))
+                    }
+                    //let event = LayerEvent::Suspend(CHAT_GROUP_ID);
+                    //let data = bincode::serialize(&event)?;
+                    //let msg = SendType::Event(0, s.pid, data);
+                    //results.layers.push((gid, s.gid, msg));
+                }
+                SessionType::Group => {
+                    let remote_gid: GroupChatId =
+                        remote.parse().map_err(|_| RpcError::ParseError)?;
+                    let addr = layer_lock.group_suspend(&remote_gid, true, must)?;
+                    if addr.is_some() {
+                        results.rpcs.push(json!([id]))
+                    }
+                    //let event = LayerEvent::Suspend(GROUP_CHAT_ID);
+                    //let data = bincode::serialize(&event)?;
+                    //let msg = SendType::Event(0, s.pid, data);
+                    //add_layer(&mut results, gid, msg);
+                }
+                _ => {
+                    return Ok(HandleResult::new()); // others has no online.
+                }
+            };
 
-    //         let mut results = HandleResult::new();
-    //         if suspend {
-    //             results.rpcs.push(json!([id]))
-    //         }
+            Ok(results)
+        },
+    );
 
-    //         match s.s_type {
-    //             SessionType::Chat => {
-    //                 results.layers.push((gid, s.gid, msg));
-    //             }
-    //             SessionType::Group => {
-    //                 add_layer(&mut results, gid, msg);
-    //             }
-    //             _ => {}
-    //         }
+    handler.add_method(
+        "session-readed",
+        |params: Vec<RpcParam>, state: Arc<Global>| async move {
+            let id = params[0].as_i64().ok_or(RpcError::ParseError)?;
 
-    //         Ok(results)
-    //     },
-    // );
+            let pid = state.pid().await;
+            let db_key = state.group.read().await.db_key(&pid)?;
+            let db = session_db(&state.base, &pid, &db_key)?;
+            Session::readed(&db, &id)?;
+            Ok(HandleResult::new())
+        },
+    );
 
-    // handler.add_method(
-    //     "session-readed",
-    //     |gid: GroupId, params: Vec<RpcParam>, state: Arc<Global>| async move {
-    //         let id = params[0].as_i64().ok_or(RpcError::ParseError)?;
-    //         let db = state.group.read().await.session_db(&gid)?;
-    //         Session::readed(&db, &id)?;
-    //         Ok(HandleResult::new())
-    //     },
-    // );
+    handler.add_method(
+        "session-update",
+        |params: Vec<RpcParam>, state: Arc<Global>| async move {
+            let id = params[0].as_i64().ok_or(RpcError::ParseError)?;
+            let is_top = params[1].as_bool().ok_or(RpcError::ParseError)?;
+            let is_close = params[2].as_bool().ok_or(RpcError::ParseError)?;
 
-    // handler.add_method(
-    //     "session-update",
-    //     |gid: GroupId, params: Vec<RpcParam>, state: Arc<Global>| async move {
-    //         let id = params[0].as_i64().ok_or(RpcError::ParseError)?;
-    //         let is_top = params[1].as_bool().ok_or(RpcError::ParseError)?;
-    //         let is_close = params[2].as_bool().ok_or(RpcError::ParseError)?;
-
-    //         let db = state.group.read().await.session_db(&gid)?;
-    //         Session::update(&db, &id, is_top, is_close)?;
-    //         Ok(HandleResult::new())
-    //     },
-    // );
+            let pid = state.pid().await;
+            let db_key = state.group.read().await.db_key(&pid)?;
+            let db = session_db(&state.base, &pid, &db_key)?;
+            Session::update(&db, &id, is_top, is_close)?;
+            Ok(HandleResult::new())
+        },
+    );
 
     handler
 }

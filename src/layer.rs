@@ -1,3 +1,4 @@
+use group_types::GroupChatId;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -13,7 +14,7 @@ use crate::account::User;
 //use crate::apps::chat::{chat_conn, LayerEvent as ChatLayerEvent};
 //use crate::apps::group::{group_conn, GROUP_ID};
 use crate::group::Group;
-//use crate::session::{Session, SessionType};
+use crate::session::{Session, SessionType};
 
 /// ESSE app's `BaseLayerEvent`.
 /// EVERY LAYER APP MUST EQUAL THE FIRST THREE FIELDS.
@@ -29,23 +30,102 @@ pub(crate) enum LayerEvent {
 
 /// ESSE layers.
 pub(crate) struct Layer {
-    /// running layers: (Layer_gid, layer sessions)
-    pub sessions: HashMap<GroupId, HashMap<PeerId, LayerSession>>,
+    /// friend pid => Session
+    pub chats: HashMap<PeerId, LayerSession>,
+    /// group chat id => Session
+    pub groups: HashMap<GroupChatId, LayerSession>,
+    /// delivery feedback.
+    pub delivery: HashMap<u64, i64>,
+    /// delivery counter.
+    delivery_count: usize,
 }
 
 impl Layer {
     pub fn init() -> Layer {
-        // add all inner-service layers
-        // add all third-service layers
-        let mut sessions = HashMap::new();
+        Layer {
+            chats: HashMap::new(),
+            groups: HashMap::new(),
+            delivery: HashMap::new(),
+            delivery_count: 0,
+        }
+    }
 
-        // runnings.insert(CHAT_GROUP_ID, RunningLayer::init());
-
-        Layer { sessions }
+    pub fn delivery(&mut self, db_id: i64) {
+        self.delivery.insert(self.delivery_count as u64, db_id);
+        self.delivery_count += 1;
     }
 
     pub fn clear(&mut self) {
-        let _ = self.sessions.iter_mut().map(|(_, s)| s.clear());
+        self.chats.clear();
+        self.groups.clear();
+        self.delivery.clear();
+    }
+
+    pub fn is_addr_online(&self, addr: &PeerId) -> bool {
+        if self.chats.contains_key(addr) {
+            return true;
+        } else {
+            for (_, session) in &self.groups {
+                if session.pid == *addr {
+                    return true;
+                }
+            }
+        }
+        false
+    }
+
+    pub fn chat_active(&mut self, pid: &PeerId, is_me: bool) -> Option<PeerId> {
+        if let Some(session) = self.chats.get_mut(pid) {
+            Some(session.active(is_me))
+        } else {
+            None
+        }
+    }
+
+    pub fn group_active(&mut self, gid: &GroupChatId, is_me: bool) -> Option<PeerId> {
+        if let Some(session) = self.groups.get_mut(gid) {
+            Some(session.active(is_me))
+        } else {
+            None
+        }
+    }
+
+    pub fn chat_suspend(&mut self, pid: &PeerId, me: bool, m: bool) -> Result<Option<PeerId>> {
+        if let Some(session) = self.chats.get_mut(pid) {
+            Ok(session.suspend(me, m))
+        } else {
+            Err(anyhow!("session missing!"))
+        }
+    }
+
+    pub fn group_suspend(&mut self, g: &GroupChatId, me: bool, m: bool) -> Result<Option<PeerId>> {
+        if let Some(session) = self.groups.get_mut(g) {
+            Ok(session.suspend(me, m))
+        } else {
+            Err(anyhow!("session missing!"))
+        }
+    }
+
+    pub fn chat_is_online(&self, pid: &PeerId) -> bool {
+        self.chats.contains_key(pid)
+    }
+
+    pub fn chat_rm_online(&mut self, pid: &PeerId) -> Option<PeerId> {
+        self.chats.remove(pid).map(|session| session.pid)
+    }
+
+    pub fn chat_add(&mut self, pid: PeerId, sid: i64, fid: i64) {
+        if !self.chats.contains_key(&pid) {
+            self.chats.insert(pid, LayerSession::new(pid, sid, fid));
+        }
+    }
+
+    pub fn chat_session(&self, pid: &PeerId) -> Result<(i64, i64)> {
+        if let Some(session) = self.chats.get(pid) {
+            Ok((session.s_id, session.db_id))
+        } else {
+            Err(anyhow!("session missing!"))
+        }
     }
 
     // pub fn remove_running(&mut self, gid: &GroupId) -> HashMap<PeerId, GroupId> {
@@ -151,33 +231,16 @@ impl Layer {
     // }
 }
 
-/// online info.
-#[derive(Eq, PartialEq)]
-pub(crate) enum Online {
-    /// connected to this device.
-    Direct(PeerId),
-    /// connected to other device.
-    Relay(PeerId),
-}
-
-impl Online {
-    fn addr(&self) -> &PeerId {
-        match self {
-            Online::Direct(ref addr) | Online::Relay(ref addr) => addr,
-        }
-    }
-}
-
-pub(crate) struct OnlineSession {
-    pub online: Online,
-    /// session database id.
-    pub db_id: i64,
-    /// session ref's service(friend/group) database id.
-    pub db_fid: i64,
-    pub suspend_me: bool,
-    pub suspend_remote: bool,
-    pub remain: u16, // keep-alive remain minutes
-}
+// pub(crate) struct OnlineSession {
+//     pub pid: PeerId,
+//     /// session database id.
+//     pub id: i64,
+//     /// session ref's service(friend/group) database id.
+//     pub fid: i64,
+//     pub suspend_me: bool,
+//     pub suspend_remote: bool,
+//     pub remain: u16, // keep-alive remain minutes
+// }
 
 // impl OnlineSession {
 //     fn new(online: Online, db_id: i64, db_fid: i64) -> Self {
@@ -207,13 +270,11 @@ pub(crate) struct OnlineSession {
 
 /// online connected layer session.
 pub(crate) struct LayerSession {
-    /// session online type.
-    pub online: Online,
-    /// current layer consensus(height).
-    pub consensus: i64,
+    /// session network id.
+    pub pid: PeerId,
     /// session database id.
     pub s_id: i64,
-    /// layer database id.
+    /// layer service database id.
     pub db_id: i64,
     /// if session is suspend by me.
     pub suspend_me: bool,
@@ -224,49 +285,46 @@ pub(crate) struct LayerSession {
 }
 
 impl LayerSession {
-    // pub fn increased(&mut self) -> i64 {
-    //     self.consensus += 1;
-    //     self.consensus
-    // }
+    fn new(pid: PeerId, s_id: i64, db_id: i64) -> Self {
+        Self {
+            pid,
+            s_id,
+            db_id,
+            suspend_me: false,
+            suspend_remote: false,
+            remain: 0,
+        }
+    }
 
-    // pub fn active(&mut self, gid: &GroupId, is_me: bool) -> Option<PeerId> {
-    //     if let Some(online) = self.sessions.get_mut(gid) {
-    //         if is_me {
-    //             online.suspend_me = false;
-    //         } else {
-    //             online.suspend_remote = false;
-    //         }
+    pub fn active(&mut self, is_me: bool) -> PeerId {
+        if is_me {
+            self.suspend_me = false;
+        } else {
+            self.suspend_remote = false;
+        }
+        self.remain = 0;
+        self.pid
+    }
 
-    //         online.remain = 0;
-    //         Some(*online.online.addr())
-    //     } else {
-    //         None
-    //     }
-    // }
+    pub fn suspend(&mut self, is_me: bool, must: bool) -> Option<PeerId> {
+        if must {
+            self.suspend_me = true;
+            self.suspend_remote = true;
+        }
 
-    // pub fn suspend(&mut self, gid: &GroupId, is_me: bool, must: bool) -> Result<bool> {
-    //     if let Some(online) = self.sessions.get_mut(gid) {
-    //         if must {
-    //             online.suspend_me = true;
-    //             online.suspend_remote = true;
-    //         }
+        if is_me {
+            self.suspend_me = true;
+        } else {
+            self.suspend_remote = true;
+        }
 
-    //         if is_me {
-    //             online.suspend_me = true;
-    //         } else {
-    //             online.suspend_remote = true;
-    //         }
-
-    //         if online.suspend_remote && online.suspend_me {
-    //             online.remain = 6; // keep-alive 10~11 minutes 120s/time
-    //             Ok(true)
-    //         } else {
-    //             Ok(false)
-    //         }
-    //     } else {
-    //         Err(anyhow!("remote not online"))
-    //     }
-    // }
+        if self.suspend_remote && self.suspend_me {
+            self.remain = 6; // keep-alive 10~11 minutes 120s/time
+            Some(self.pid)
+        } else {
+            None
+        }
+    }
 
     // pub fn get_online_id(&self, gid: &GroupId) -> Result<(i64, i64)> {
     //     debug!("onlines: {:?}, find: {:?}", self.sessions.keys(), gid);
@@ -302,33 +360,7 @@ impl LayerSession {
     //         .collect()
     // }
 
-    // pub fn is_online(&self, gid: &GroupId) -> bool {
-    //     self.sessions.contains_key(gid)
-    // }
-
     // /// check add online.
-    // pub fn check_add_online(
-    //     &mut self,
-    //     gid: GroupId,
-    //     online: Online,
-    //     id: i64,
-    //     fid: i64,
-    // ) -> Result<()> {
-    //     if let Some(o) = self.sessions.get(&gid) {
-    //         match (&o.online, &online) {
-    //             (Online::_Relay(..), Online::Direct(..)) => {
-    //                 self.sessions
-    //                     .insert(gid, OnlineSession::new(online, id, fid));
-    //                 Ok(())
-    //             }
-    //             _ => Err(anyhow!("remote had online")),
-    //         }
-    //     } else {
-    //         self.sessions
-    //             .insert(gid, OnlineSession::new(online, id, fid));
-    //         Ok(())
-    //     }
-    // }
 
     // /// check offline, and return is direct.
     // pub fn check_offline(&mut self, gid: &GroupId, addr: &PeerId) -> bool {

@@ -1,4 +1,4 @@
-use esse_primitives::{id_from_str, id_to_string};
+use esse_primitives::{id_from_str, id_to_str};
 use tdn::types::{
     primitives::{PeerId, Result},
     rpc::{json, RpcParam},
@@ -36,7 +36,7 @@ impl SessionType {
 pub(crate) struct Session {
     pub id: i64,
     fid: i64,
-    pub addr: PeerId,
+    pub pid: PeerId,
     pub s_type: SessionType,
     name: String,
     is_top: bool,
@@ -47,10 +47,10 @@ pub(crate) struct Session {
 }
 
 impl Session {
-    pub fn new(fid: i64, addr: PeerId, s_type: SessionType, name: String, datetime: i64) -> Self {
+    pub fn new(fid: i64, pid: PeerId, s_type: SessionType, name: String, datetime: i64) -> Self {
         Self {
             fid,
-            addr,
+            pid,
             s_type,
             name,
             id: 0,
@@ -66,7 +66,7 @@ impl Session {
         json!([
             self.id,
             self.fid,
-            id_to_string(&self.addr),
+            id_to_str(&self.pid),
             self.s_type.to_int(),
             self.name,
             self.is_top,
@@ -86,7 +86,7 @@ impl Session {
             is_top: v.pop().unwrap().as_bool(),
             name: v.pop().unwrap().as_string(),
             s_type: SessionType::from_int(v.pop().unwrap().as_i64()),
-            addr: id_from_str(v.pop().unwrap().as_str()).unwrap_or(PeerId::default()),
+            pid: id_from_str(v.pop().unwrap().as_str()).unwrap_or(PeerId::default()),
             fid: v.pop().unwrap().as_i64(),
             id: v.pop().unwrap().as_i64(),
         }
@@ -102,17 +102,17 @@ impl Session {
             let id = unique_check.pop().unwrap().pop().unwrap().as_i64();
             self.id = id;
 
-            let sql = format!("UPDATE sessions SET addr='{}', name = '{}', is_top = '{}', is_close = false WHERE id = {}",
-                id_to_string(&self.addr),
+            let sql = format!("UPDATE sessions SET pid='{}', name = '{}', is_top = '{}', is_close = false WHERE id = {}",
+                id_to_str(&self.pid),
                 self.name,
                 self.is_top,
                 self.id,
             );
             db.update(&sql)?;
         } else {
-            let sql = format!("INSERT INTO sessions (fid, addr, s_type, name, is_top, is_close, last_datetime, last_content, last_readed) VALUES ({}, '{}', {}, '{}', {}, {}, {}, '{}', {})",
+            let sql = format!("INSERT INTO sessions (fid, pid, s_type, name, is_top, is_close, last_datetime, last_content, last_readed) VALUES ({}, '{}', {}, '{}', {}, {}, {}, '{}', {})",
             self.fid,
-            id_to_string(&self.addr),
+            id_to_str(&self.pid),
             self.s_type.to_int(),
             self.name,
             self.is_top,
@@ -129,7 +129,7 @@ impl Session {
     }
 
     pub fn get(db: &DStorage, id: &i64) -> Result<Session> {
-        let sql = format!("SELECT id, fid, addr, s_type, name, is_top, is_close, last_datetime, last_content, last_readed FROM sessions WHERE id = {}", id);
+        let sql = format!("SELECT id, fid, pid, s_type, name, is_top, is_close, last_datetime, last_content, last_readed FROM sessions WHERE id = {}", id);
         let mut matrix = db.query(&sql)?;
         if matrix.len() > 0 {
             Ok(Session::from_values(matrix.pop().unwrap())) // safe unwrap()
@@ -139,7 +139,7 @@ impl Session {
     }
 
     pub fn list(db: &DStorage) -> Result<Vec<Session>> {
-        let matrix = db.query("SELECT id, fid, addr, s_type, name, is_top, is_close, last_datetime, last_content, last_readed FROM sessions ORDER BY last_datetime DESC")?;
+        let matrix = db.query("SELECT id, fid, pid, s_type, name, is_top, is_close, last_datetime, last_content, last_readed FROM sessions ORDER BY last_datetime DESC")?;
         let mut sessions = vec![];
         for values in matrix {
             sessions.push(Session::from_values(values));
@@ -253,17 +253,17 @@ pub(crate) fn connect_session(
     db: &DStorage,
     s_type: &SessionType,
     fid: &i64,
-    addr: &PeerId,
+    pid: &PeerId,
 ) -> Result<Option<Session>> {
-    let sql = format!("SELECT id, fid, addr, s_type, name, is_top, is_close, last_datetime, last_content, last_readed FROM sessions WHERE s_type = {} AND fid = {}", s_type.to_int(), fid);
+    let sql = format!("SELECT id, fid, pid, s_type, name, is_top, is_close, last_datetime, last_content, last_readed FROM sessions WHERE s_type = {} AND fid = {}", s_type.to_int(), fid);
 
     let mut matrix = db.query(&sql)?;
     if matrix.len() > 0 {
         let session = Session::from_values(matrix.pop().unwrap()); // safe unwrap()
 
         let _ = db.update(&format!(
-            "UPDATE sessions SET addr = '{}' WHERE id = {}",
-            addr.to_hex(),
+            "UPDATE sessions SET pid = '{}' WHERE id = {}",
+            pid.to_hex(),
             session.id,
         ));
 
