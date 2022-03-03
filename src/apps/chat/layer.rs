@@ -22,8 +22,8 @@ use super::rpc;
 
 /// Chat connect data structure.
 /// params: Friend about me height
-#[derive(Serialize, Deserialize)]
-pub struct LayerConnect(pub i64);
+//#[derive(Serialize, Deserialize)]
+//pub struct LayerConnect(pub i64);
 
 /// ESSE chat layer Event.
 #[derive(Serialize, Deserialize)]
@@ -58,9 +58,9 @@ pub(crate) async fn handle(msg: RecvType, global: &Arc<Global>) -> Result<Handle
     let pid = global.pid().await;
 
     match msg {
-        RecvType::Connect(peer, data) | RecvType::ResultConnect(peer, data) => {
+        RecvType::Connect(peer, _) | RecvType::ResultConnect(peer, _) => {
             // ESSE chat layer connect date structure.
-            if let Ok(height) = handle_connect(pid, &peer, data, global, &mut results).await {
+            if let Ok(height) = handle_connect(pid, &peer, global, &mut results).await {
                 let peer_id = peer.id;
                 let msg = SendType::Result(0, peer, true, false, vec![]);
                 results.layers.push((CHAT_ID, msg));
@@ -74,10 +74,10 @@ pub(crate) async fn handle(msg: RecvType, global: &Arc<Global>) -> Result<Handle
                 results.layers.push((CHAT_ID, msg));
             }
         }
-        RecvType::Result(peer, is_ok, data) => {
+        RecvType::Result(peer, is_ok, _) => {
             // ESSE chat layer result date structure.
             if is_ok {
-                if let Ok(height) = handle_connect(pid, &peer, data, global, &mut results).await {
+                if let Ok(height) = handle_connect(pid, &peer, global, &mut results).await {
                     let info = LayerEvent::InfoReq(height);
                     let data = bincode::serialize(&info).unwrap_or(vec![]);
                     let msg = SendType::Event(0, peer.id, data);
@@ -134,7 +134,6 @@ pub(crate) async fn handle(msg: RecvType, global: &Arc<Global>) -> Result<Handle
 async fn handle_connect(
     pid: PeerId,
     peer: &Peer,
-    data: Vec<u8>,
     global: &Arc<Global>,
     results: &mut HandleResult,
 ) -> Result<u64> {
@@ -328,11 +327,18 @@ impl LayerEvent {
                 if !keep {
                     results.layers.push((CHAT_ID, SendType::Disconnect(fpid)))
                 }
+                // TODO close session
             }
         }
 
         Ok(results)
     }
+}
+
+pub(crate) fn chat_conn(pid: PeerId, results: &mut HandleResult) {
+    results
+        .layers
+        .push((CHAT_ID, SendType::Connect(0, Peer::peer(pid), vec![])));
 }
 
 // UPDATE SESSION.

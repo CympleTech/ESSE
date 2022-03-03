@@ -1,3 +1,8 @@
+use chat_types::CHAT_ID;
+use cloud_types::CLOUD_ID;
+use dao_types::DAO_ID;
+use domain_types::DOMAIN_ID;
+use group_types::GROUP_CHAT_ID;
 use std::collections::HashMap;
 use std::path::PathBuf;
 use tdn::{
@@ -49,7 +54,7 @@ impl Global {
         self_send: Sender<ReceiveMessage>,
         rpc_send: Sender<RpcSendMessage>,
     ) -> Self {
-        let gids = vec![];
+        let gids = vec![0, CHAT_ID, GROUP_CHAT_ID, DAO_ID, DOMAIN_ID, CLOUD_ID];
 
         Global {
             base,

@@ -22,8 +22,8 @@ use tokio::sync::{
 
 use crate::account::lang_from_i64;
 use crate::apps::app_rpc_inject;
+use crate::apps::chat::chat_conn;
 use crate::global::Global;
-//use crate::apps::chat::chat_conn;
 //use crate::apps::group::{add_layer, group_conn, GroupChat};
 //use crate::event::InnerEvent;
 use crate::group::Group;
@@ -464,8 +464,7 @@ fn new_rpc_handler(global: Arc<Global>) -> RpcHandler<Global> {
                     if let Some(addr) = online {
                         return Ok(HandleResult::rpc(json!([id, id_to_str(&addr)])));
                     }
-
-                    //results.layers.push((gid, s.gid, chat_conn(proof, Peer::peer(s.addr))));
+                    chat_conn(remote_pid, &mut results);
                 }
                 SessionType::Group => {
                     let remote_gid: GroupChatId =
