@@ -56,9 +56,9 @@ Widget _keyboradInput(Color color, Color bg, String text, Function callback) {
 
 class PinWords extends StatefulWidget {
   final Function callback;
-  final String gid;
+  final String pid;
 
-  PinWords({Key? key, required this.gid, required this.callback}) : super(key: key);
+  PinWords({Key? key, required this.pid, required this.callback}) : super(key: key);
 
   @override
   _PinWordsState createState() => _PinWordsState();
@@ -71,7 +71,7 @@ class _PinWordsState extends State<PinWords> {
 
   _checkPin() async {
     bool check = false;
-    final res = await httpPost('account-pin-check', [widget.gid, _pinWords]);
+    final res = await httpPost('account-pin-check', [widget.pid, _pinWords]);
     if (res.isOk) {
       check = res.params[0];
     } else {

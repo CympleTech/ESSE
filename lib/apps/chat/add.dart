@@ -26,9 +26,8 @@ import 'package:esse/apps/domain/models.dart';
 
 class ChatAdd extends StatefulWidget {
   final String id;
-  final String addr;
   final String name;
-  ChatAdd({Key? key, this.id = '', this.addr = '', this.name = ''}) : super(key: key);
+  ChatAdd({Key? key, this.id = '', this.name = ''}) : super(key: key);
 
   @override
   _ChatAddState createState() => _ChatAddState();
@@ -42,18 +41,16 @@ class _ChatAddState extends State<ChatAdd> {
 
   void _scanCallback(bool isOk, String app, List params) {
     Navigator.of(context).pop();
-    if (isOk && app == 'add-friend' && params.length == 3) {
+    if (isOk && app == 'add-friend' && params.length == 2) {
       setState(() {
           this._showHome = false;
-          final avatar = Avatar(name: params[2], width: 100.0, colorSurface: false);
-          String id = gidParse(params[0].trim());
-          String addr = addrParse(params[1]);
+          final avatar = Avatar(name: params[1], width: 100.0, colorSurface: false);
+          String id = pidParse(params[0].trim());
 
           this._coreScreen = _InfoScreen(
             callback: this._sendCallback,
             id: id,
-            addr: addr,
-            name: params[2],
+            name: params[1],
             bio: '',
             avatar: avatar,
           );
@@ -61,13 +58,12 @@ class _ChatAddState extends State<ChatAdd> {
     }
   }
 
-  void _searchCallBack(String id, String addr, String name, String bio, Avatar avatar) {
+  void _searchCallBack(String id, String name, String bio, Avatar avatar) {
     setState(() {
         this._showHome = false;
         this._coreScreen = _InfoScreen(
           callback: this._sendCallback,
           id: id,
-          addr: addr,
           name: name,
           bio: bio,
           avatar: avatar,
@@ -151,7 +147,6 @@ class _ChatAddState extends State<ChatAdd> {
                 callback: this._sendCallback,
                 name: widget.name,
                 id: widget.id,
-                addr: widget.addr,
                 bio: '',
                 avatar: avatar,
               );
@@ -196,9 +191,7 @@ class _ChatAddState extends State<ChatAdd> {
     final res = await httpPost('chat-request-list', []);
     if (res.isOk) {
       res.params.forEach((param) {
-          if (param.length == 10) {
-            this._requests[param[0]] = Request.fromList(param);
-          }
+          this._requests[param[0]] = Request.fromList(param);
       });
       setState(() {});
     } else {
@@ -235,8 +228,7 @@ class _ChatAddState extends State<ChatAdd> {
               context,
               Icons.info,
               lang.info,
-              UserInfo(app: 'add-friend',
-                id: account.gid, name: account.name, addr: Global.addr)
+              UserInfo(app: 'add-friend', id: account.pid, name: account.name)
             ),
             child: Padding(
               padding: const EdgeInsets.only(right: 10.0),
@@ -320,8 +312,7 @@ class _ChatAddState extends State<ChatAdd> {
         const SizedBox(height: 10.0),
         const Divider(height: 1.0, color: Color(0x40ADB0BB)),
         const SizedBox(height: 10.0),
-        _infoListTooltip(Icons.person, color.primary, gidText(request.gid), gidPrint(request.gid)),
-        _infoListTooltip(Icons.location_on, color.primary, addrText(request.addr), addrPrint(request.addr)),
+        _infoListTooltip(Icons.person, color.primary, pidText(request.pid), pidPrint(request.pid)),
         _infoList(Icons.turned_in, color.primary, request.remark),
         _infoList(Icons.access_time_rounded, color.primary, request.time.toString()),
         const SizedBox(height: 10.0),
@@ -415,9 +406,7 @@ class _ChatAddState extends State<ChatAdd> {
             InkWell(
               onTap: () {
                 Navigator.pop(context);
-                rpc.send('chat-request-create', [
-                    request.gid, request.addr, request.name, request.remark
-                ]);
+                rpc.send('chat-request-create', [request.pid, request.name, request.remark]);
                 setState(() {
                     this._requests.remove(request.id);
                 });
@@ -672,27 +661,23 @@ class _InputScreen extends StatefulWidget {
 
 class _InputScreenState extends State<_InputScreen> {
   TextEditingController userIdEditingController = TextEditingController();
-  TextEditingController addrEditingController = TextEditingController();
   TextEditingController remarkEditingController = TextEditingController();
   TextEditingController nameEditingController = TextEditingController();
   FocusNode userIdFocus = FocusNode();
-  FocusNode addrFocus = FocusNode();
   FocusNode remarkFocus = FocusNode();
 
   send() {
-    final id = gidParse(userIdEditingController.text.trim());
-    final addr = addrParse(addrEditingController.text.trim());
-    if (id == '' || addr == '') {
+    final id = pidParse(userIdEditingController.text.trim());
+    if (id == '') {
       return;
     }
 
     final name = nameEditingController.text.trim();
     final remark = remarkEditingController.text.trim();
 
-    rpc.send('chat-request-create', [id, addr, name, remark]);
+    rpc.send('chat-request-create', [id, name, remark]);
     setState(() {
         userIdEditingController.text = '';
-        addrEditingController.text = '';
         nameEditingController.text = '';
         remarkEditingController.text = '';
     });
@@ -715,12 +700,6 @@ class _InputScreenState extends State<_InputScreen> {
           focus: userIdFocus),
         const SizedBox(height: 20.0),
         InputText(
-          icon: Icons.location_on,
-          text: lang.address + ' (0x00..00)',
-          controller: addrEditingController,
-          focus: addrFocus),
-        const SizedBox(height: 20.0),
-        InputText(
           icon: Icons.turned_in,
           text: lang.remark,
           controller: remarkEditingController,
@@ -735,7 +714,6 @@ class _InputScreenState extends State<_InputScreen> {
 class _InfoScreen extends StatelessWidget {
   final Function callback;
   final String id;
-  final String addr;
   final String name;
   final String bio;
   final Avatar avatar;
@@ -744,7 +722,6 @@ class _InfoScreen extends StatelessWidget {
       Key? key,
       required this.callback,
       required this.id,
-      required this.addr,
       required this.name,
       required this.bio,
       required this.avatar,
@@ -773,19 +750,10 @@ class _InfoScreen extends StatelessWidget {
           ListTile(
             contentPadding: EdgeInsets.symmetric(horizontal: 20.0, vertical: 2.0),
             leading: Icon(Icons.person, color: color.primary),
-            title: Text(gidPrint(this.id), style: TextStyle(fontSize: 16.0)),
+            title: Text(pidPrint(this.id), style: TextStyle(fontSize: 16.0)),
             trailing: TextButton(
               child: Icon(Icons.copy, size: 20.0),
-              onPressed: () => Clipboard.setData(ClipboardData(text: gidText(this.id))),
-            )
-          ),
-          ListTile(
-            contentPadding: EdgeInsets.symmetric(horizontal: 20.0, vertical: 2.0),
-            leading: Icon(Icons.location_on, color: color.primary),
-            title: Text(addrPrint(this.addr), style: TextStyle(fontSize: 16.0)),
-            trailing: TextButton(
-              child: Icon(Icons.copy, size: 20.0),
-              onPressed: () => Clipboard.setData(ClipboardData(text: addrText(this.addr))),
+              onPressed: () => Clipboard.setData(ClipboardData(text: pidText(this.id))),
             )
           ),
           ListTile(
@@ -797,7 +765,7 @@ class _InfoScreen extends StatelessWidget {
           TextButton(
             child: Text(lang.addFriend, style: TextStyle(fontSize: 20.0)),
             onPressed: () {
-              rpc.send('chat-request-create', [this.id, this.addr, this.name, '']);
+              rpc.send('chat-request-create', [this.id, this.name, '']);
               this.callback();
             }
           ),

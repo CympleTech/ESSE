@@ -7,7 +7,9 @@ use tdn::{
     prelude::{new_send_channel, start_main},
     types::{
         group::GroupId,
-        message::{NetworkType, SendMessage, SendType, StateRequest, StateResponse},
+        message::{
+            NetworkType, RpcSendMessage, SendMessage, SendType, StateRequest, StateResponse,
+        },
         primitives::{HandleResult, Peer, PeerId, Result},
         rpc::{json, rpc_response, RpcError, RpcHandler, RpcParam},
     },
@@ -170,7 +172,10 @@ pub(crate) async fn inner_rpc(uid: u64, method: &str, global: &Arc<Global>) -> R
             }
         };
 
-        global.send(SendMessage::Rpc(uid, param, false)).await?;
+        global
+            .rpc_send
+            .send(RpcSendMessage(uid, param, false))
+            .await?;
         return Ok(());
     }
 

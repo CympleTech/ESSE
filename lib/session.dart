@@ -41,7 +41,7 @@ enum OnlineType {
 class Session {
   int id;
   int fid;
-  String gid;
+  String pid;
   String addr;
   SessionType type;
   String name;
@@ -147,7 +147,17 @@ class Session {
   }
 
   Avatar showAvatar({double width = 45.0}) {
-    final avatar = Global.avatarPath + this.gid + '.png';
+    String avatar = Global.avatarPath;
+    switch (this.type) {
+      case SessionType.Chat:
+        avatar + this.pid + '.png';
+        break;
+      case SessionType.Group:
+        avatar + 'group_' + this.pid + '.png';
+        break;
+      default:
+        break;
+    }
 
     Color color;
     switch (this.online) {
@@ -194,7 +204,7 @@ class Session {
   Session.fromList(List params)
       : this.id = params[0],
         this.fid = params[1],
-        this.gid = params[2],
+        this.pid = params[2],
         this.addr = params[3],
         this.type = SessionTypeExtension.fromInt(params[4]),
         this.name = params[5],

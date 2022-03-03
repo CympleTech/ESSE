@@ -47,7 +47,7 @@ class Member {
     this.addr = params[3];
     this.name = params[4];
     this.leave = params[5];
-    if (this.addr == Global.addr) {
+    if (this.mid == Global.pid) {
       this.online = true;
     }
   }

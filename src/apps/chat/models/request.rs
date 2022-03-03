@@ -65,7 +65,6 @@ impl Request {
         json!([
             self.id,
             id_to_str(&self.pid),
-            self.pid.to_hex(),
             self.name,
             self.remark,
             self.is_me,
@@ -77,7 +76,7 @@ impl Request {
     }
 
     pub fn get_id(db: &DStorage, pid: &PeerId) -> Result<Request> {
-        let sql = format!("SELECT id, pid, name, remark, is_me, is_ok, is_over, is_delivery, datetime FROM requests WHERE pid = '{}'", pid.to_hex());
+        let sql = format!("SELECT id, pid, name, remark, is_me, is_ok, is_over, is_delivery, datetime FROM requests WHERE pid = '{}'", id_to_str(pid));
         let mut matrix = db.query(&sql)?;
         if matrix.len() > 0 {
             Ok(Request::from_values(matrix.pop().unwrap())) // safe unwrap()

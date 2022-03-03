@@ -289,7 +289,7 @@ class _GroupChatDetailState extends State<GroupChatDetail> {
               final msg = this._messages[recentMessageKeys[index]]!;
               return ChatMessage(
                 avatar: this._members[msg.mid]!.showAvatar(isOnline: false),
-                fgid: this._members[msg.mid]!.mid,
+                fpid: this._members[msg.mid]!.mid,
                 name: this._members[msg.mid]!.name,
                 message: msg,
               );
@@ -336,7 +336,6 @@ class _MemberScreenState extends State<_MemberScreen> {
             app: 'add-friend',
             id: member.mid,
             name: member.name,
-            addr: member.addr,
             title: lang.qrFriend,
           ),
           0.0,

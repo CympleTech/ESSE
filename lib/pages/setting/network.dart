@@ -26,7 +26,6 @@ class _NetworkDetailState extends State<NetworkDetail> {
   changeWs() async {
     Global.changeWs(wsController.text);
     await rpc.init(wsController.text);
-    rpc.send('system-info', []);
     setState(() {});
   }
 
@@ -42,6 +41,7 @@ class _NetworkDetailState extends State<NetworkDetail> {
 
   void loadNetworkDht() async {
     final res = await httpPost('network-dht', []);
+    print(res);
     if (res.isOk) {
       this.networkDht.clear();
       res.params.forEach((p) {

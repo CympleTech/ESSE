@@ -182,11 +182,11 @@ class _SecurityPageState extends State<SecurityPage> {
       final mainAccount = loginedAccounts[0];
       Map<String, Account> accounts = {};
       loginedAccounts.forEach((account) {
-          accounts[account.gid] = account;
+          accounts[account.pid] = account;
       });
-      final res = await httpPost('account-login', [mainAccount.gid, ""]);
+      final res = await httpPost('account-login', [mainAccount.pid, ""]);
       if (res.isOk) {
-        _handleLogined(mainAccount.gid, "", accounts);
+        _handleLogined(mainAccount.pid, "", accounts);
         return;
       } else {
         showShadowDialog(
@@ -194,10 +194,10 @@ class _SecurityPageState extends State<SecurityPage> {
           Icons.security_rounded,
           "PIN",
           PinWords(
-            gid: mainAccount.gid,
+            pid: mainAccount.pid,
             callback: (key) async {
               Navigator.of(context).pop();
-              _handleLogined(mainAccount.gid, key, accounts);
+              _handleLogined(mainAccount.pid, key, accounts);
               return;
           }),
           0.0
@@ -215,7 +215,7 @@ class _SecurityPageState extends State<SecurityPage> {
 
       if (this._accounts.length > 0) {
         final accountId = this._accounts.keys.first;
-        this._selectedUserId = this._accounts[accountId]!.gid;
+        this._selectedUserId = this._accounts[accountId]!.pid;
         this._accountsLoaded = true;
       }
     } else {
@@ -242,7 +242,7 @@ class _SecurityPageState extends State<SecurityPage> {
       Icons.security_rounded,
       title,
       PinWords(
-        gid: this._selectedUserId,
+        pid: this._selectedUserId,
         callback: (pinWords) async {
           Navigator.of(context).pop();
           _verifyAfter(pinWords);
@@ -268,16 +268,16 @@ class _SecurityPageState extends State<SecurityPage> {
             iconEnabledColor: Color(0xFFADB0BB),
             isExpanded: true,
             value: this._selectedUserId,
-            onChanged: (String? gid) {
-              if (gid != null) {
+            onChanged: (String? pid) {
+              if (pid != null) {
                 setState(() {
-                    this._selectedUserId = gid;
+                    this._selectedUserId = pid;
                   });
               }
             },
             items: this._accounts.values.map((Account account) {
                 return DropdownMenuItem<String>(
-                  value: account.gid,
+                  value: account.pid,
                   child: Row(
                     children: [
                       Expanded(
@@ -287,7 +287,7 @@ class _SecurityPageState extends State<SecurityPage> {
                           style: TextStyle(fontSize: 16)
                         ),
                       ),
-                      Text(" (${gidPrint(account.gid)})", style: TextStyle(fontSize: 16)),
+                      Text(" (${pidPrint(account.pid)})", style: TextStyle(fontSize: 16)),
                     ]
                   ),
                 );

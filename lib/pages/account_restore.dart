@@ -324,7 +324,7 @@ class _AccountRestorePageState extends State<AccountRestorePage> {
             Navigator.of(context).pop();
             if (app == 'distribute' && params.length == 4) {
               final name = params[0];
-              //final id = gidParse(params[1]);
+              //final id = pidParse(params[1]);
               final addr = addrParse(params[2]);
               final mnemonicWords = params[3];
               setState(() {

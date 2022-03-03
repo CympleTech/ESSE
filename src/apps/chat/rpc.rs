@@ -258,9 +258,8 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<Global>) {
         "chat-request-create",
         |params: Vec<RpcParam>, state: Arc<Global>| async move {
             let remote_pid = id_from_str(params[0].as_str().ok_or(RpcError::ParseError)?)?;
-            let remote_addr = PeerId::from_hex(params[1].as_str().ok_or(RpcError::ParseError)?)?;
-            let remote_name = params[2].as_str().ok_or(RpcError::ParseError)?.to_string();
-            let remark = params[3].as_str().ok_or(RpcError::ParseError)?.to_string();
+            let remote_name = params[1].as_str().ok_or(RpcError::ParseError)?.to_string();
+            let remark = params[2].as_str().ok_or(RpcError::ParseError)?.to_string();
 
             let pid = state.pid().await;
             let db_key = state.group.read().await.db_key(&pid)?;

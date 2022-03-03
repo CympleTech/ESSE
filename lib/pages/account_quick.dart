@@ -140,15 +140,20 @@ class _AccountQuickPageState extends State<AccountQuickPage> {
     ]);
 
     if (res.isOk) {
-      // save this User
-      final account = Account(res.params[0], name, avatar);
+      final pid = res.params[0];
+      final login = await httpPost('account-login', [pid, lock]);
 
-      Provider.of<AccountProvider>(context, listen: false).addAccount(account, lock);
-      Provider.of<DeviceProvider>(context, listen: false).updateActived();
+      if (login.isOk) {
+        // save this User
+        final account = Account(pid, name, avatar);
 
-      Navigator.push(context, MaterialPageRoute(builder: (_) => AccountDomainScreen(
-            name: name,
-      )));
+        Provider.of<AccountProvider>(context, listen: false).addAccount(account, lock);
+        Provider.of<DeviceProvider>(context, listen: false).updateActived();
+
+        Navigator.push(context, MaterialPageRoute(builder: (_) => AccountDomainScreen(
+              name: name,
+        )));
+      }
     } else {
       // TODO tostor error
       print(res.error);

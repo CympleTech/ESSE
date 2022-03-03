@@ -72,6 +72,7 @@ impl Friend {
     pub fn to_session(&self) -> Session {
         Session::new(
             self.id,
+            id_to_str(&self.pid),
             self.pid,
             SessionType::Chat,
             self.name.clone(),

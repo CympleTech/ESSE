@@ -31,6 +31,7 @@ pub(crate) fn app_rpc_inject(handler: &mut RpcHandler<Global>) {
     //cloud::new_rpc_handler(handler);
 }
 
+#[allow(non_snake_case)]
 pub(crate) async fn app_layer_handle(
     fgid: GroupId,
     msg: RecvType,
@@ -55,7 +56,7 @@ pub(crate) async fn app_layer_handle(
 
                 let mut delete = vec![];
                 for (gid, session) in &layer.groups {
-                    if session.pid == peer.id {
+                    if session.addr == peer.id {
                         delete.push(*gid);
                         results.rpcs.push(session_lost(&session.s_id));
                     }

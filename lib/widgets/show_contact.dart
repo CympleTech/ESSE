@@ -40,7 +40,7 @@ class _ContactListState extends State<ContactList> {
         List<Friend> offlines = [];
         res.params.forEach((params) {
             final friend = Friend.fromList(params);
-            if (!widget.filters.contains(friend.gid)) {
+            if (!widget.filters.contains(friend.pid)) {
               if (friend.online) {
                 onlines.add(friend);
               } else {
@@ -52,7 +52,7 @@ class _ContactListState extends State<ContactList> {
       } else {
         res.params.forEach((params) {
             final friend = Friend.fromList(params);
-            if (!widget.filters.contains(friend.gid)) {
+            if (!widget.filters.contains(friend.pid)) {
               this._friends.add(friend);
             }
         });

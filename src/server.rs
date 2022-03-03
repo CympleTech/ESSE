@@ -18,9 +18,9 @@ use tokio::{
 use tdn_storage::local::DStorage;
 
 use crate::account::Account;
-//use crate::apps::app_layer_handle;
+use crate::apps::app_layer_handle;
 use crate::global::Global;
-use crate::group::Group;
+use crate::group::{handle as group_handle, Group};
 use crate::layer::Layer;
 use crate::migrate::{main_migrate, ACCOUNT_DB};
 use crate::primitives::network_seeds;
@@ -93,14 +93,14 @@ pub async fn start(db_path: String) -> Result<()> {
     while let Some(message) = self_recv.recv().await {
         match message {
             ReceiveMessage::Group(g_msg) => {
-                //if let Ok(handle_result) = group.write().await.handle(g_msg, now_rpc_uid).await {
-                //handle(handle_result, now_rpc_uid, true, &sender).await;
-                //}
+                if let Ok(handle_result) = group_handle(g_msg, &global).await {
+                    handle(handle_result, now_rpc_uid, true, &global).await;
+                }
             }
             ReceiveMessage::Layer(fgid, l_msg) => {
-                // if let Ok(handle_result) = app_layer_handle(&layer, fgid, tgid, l_msg).await {
-                //     handle(handle_result, now_rpc_uid, true, &sender).await;
-                // }
+                if let Ok(handle_result) = app_layer_handle(fgid, l_msg, &global).await {
+                    handle(handle_result, now_rpc_uid, true, &global).await;
+                }
             }
             ReceiveMessage::Rpc(uid, params, is_ws) => {
                 if !is_ws {

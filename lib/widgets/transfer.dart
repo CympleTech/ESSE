@@ -353,13 +353,13 @@ class _TransferState extends State<Transfer> {
               return;
             }
             final amount = restoreBalance(a, this._selectedToken.decimal);
-            final gid = context.read<AccountProvider>().activedAccount.gid;
+            final pid = context.read<AccountProvider>().activedAccount.pid;
             showShadowDialog(
               context,
               Icons.security_rounded,
               lang.verifyPin,
               PinWords(
-                gid: gid,
+                pid: pid,
                 callback: (key) async {
                   if (this._main.length < 2) {
                     return;

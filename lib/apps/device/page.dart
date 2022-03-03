@@ -48,11 +48,11 @@ class _DevicesPageState extends State<DevicesPage> {
     ));
   }
 
-  _showQrCode(String name, String id, String addr, String lock, ColorScheme color, lang) async {
+  _showQrCode(String name, String id, String lock, ColorScheme color, lang) async {
     final res = await httpPost('account-mnemonic', [lock]);
     if (res.isOk) {
       final words = res.params[0];
-      final info = json.encode({'app': 'distribute', 'params': [name, gidText(id), addrText(addr), words]});
+      final info = json.encode({'app': 'distribute', 'params': [name, pidText(id), words]});
       showShadowDialog(context, Icons.qr_code_rounded, lang.deviceQrcode,
         Column(
           children: [
@@ -109,7 +109,7 @@ class _DevicesPageState extends State<DevicesPage> {
   }
 
   Widget deviceWidget(ColorScheme color, Device device, bool isDesktop, double widgetWidth, lang) {
-    final bool isLocal = device.addr == Global.addr;
+    final bool isLocal = true; // TODO
     final String name = isLocal ? (device.name + " (${lang.deviceLocal})") : device.name;
 
     return Container(
@@ -126,10 +126,6 @@ class _DevicesPageState extends State<DevicesPage> {
             ? Icon(Icons.cloud_done_rounded, size: 38.0, color: Color(0xFF6174FF))
             : Icon(Icons.cloud_off_rounded, size: 38.0, color: Colors.grey),
             title: Text(name),
-            subtitle: Container(
-              padding: const EdgeInsets.only(top: 8.0),
-              child: Text(addrPrint(device.addr))
-            ),
           ),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -207,13 +203,12 @@ class _DevicesPageState extends State<DevicesPage> {
                   Icons.security_rounded,
                   lang.verifyPin,
                   PinWords(
-                    gid: account.gid,
+                    pid: account.pid,
                     callback: (key) async {
                       Navigator.of(context).pop();
                       _showQrCode(
                         account.name,
-                        account.gid,
-                        Global.addr,
+                        account.pid,
                         key,
                         color,
                         lang,

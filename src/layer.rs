@@ -1,3 +1,4 @@
+use esse_primitives::id_to_str;
 use group_types::GroupChatId;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -66,7 +67,7 @@ impl Layer {
             return true;
         } else {
             for (_, session) in &self.groups {
-                if session.pid == *addr {
+                if session.addr == *addr {
                     return true;
                 }
             }
@@ -111,12 +112,13 @@ impl Layer {
     }
 
     pub fn chat_rm_online(&mut self, pid: &PeerId) -> Option<PeerId> {
-        self.chats.remove(pid).map(|session| session.pid)
+        self.chats.remove(pid).map(|session| session.addr)
     }
 
     pub fn chat_add(&mut self, pid: PeerId, sid: i64, fid: i64) {
         if !self.chats.contains_key(&pid) {
-            self.chats.insert(pid, LayerSession::new(pid, sid, fid));
+            self.chats
+                .insert(pid, LayerSession::new(id_to_str(&pid), pid, sid, fid));
         }
     }
 
@@ -270,8 +272,10 @@ impl Layer {
 
 /// online connected layer session.
 pub(crate) struct LayerSession {
-    /// session network id.
-    pub pid: PeerId,
+    /// session refs symbol id (Chat is friend's pid, Group is GroupChatId)
+    pub pid: String,
+    /// session network addr.
+    pub addr: PeerId,
     /// session database id.
     pub s_id: i64,
     /// layer service database id.
@@ -285,9 +289,10 @@ pub(crate) struct LayerSession {
 }
 
 impl LayerSession {
-    fn new(pid: PeerId, s_id: i64, db_id: i64) -> Self {
+    fn new(pid: String, addr: PeerId, s_id: i64, db_id: i64) -> Self {
         Self {
             pid,
+            addr,
             s_id,
             db_id,
             suspend_me: false,
@@ -303,7 +308,7 @@ impl LayerSession {
             self.suspend_remote = false;
         }
         self.remain = 0;
-        self.pid
+        self.addr
     }
 
     pub fn suspend(&mut self, is_me: bool, must: bool) -> Option<PeerId> {
@@ -320,7 +325,7 @@ impl LayerSession {
 
         if self.suspend_remote && self.suspend_me {
             self.remain = 6; // keep-alive 10~11 minutes 120s/time
-            Some(self.pid)
+            Some(self.addr)
         } else {
             None
         }

@@ -120,7 +120,7 @@ class _JarvisDetailState extends State<JarvisDetail> {
               itemCount: recentMessageKeys.length,
               reverse: true,
               itemBuilder: (BuildContext context, index) => ChatMessage(
-                fgid: '',
+                fpid: '',
                 name: lang.jarvis,
                 message: this._messages[recentMessageKeys[index]]!,
               )
