@@ -443,11 +443,12 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<Global>) {
 
             let mut results = HandleResult::rpc(json!(msg.to_rpc()));
 
+            let tid = state.layer.write().await.delivery(msg.id);
             let event = LayerEvent::Message(msg.hash, nm);
             let data = bincode::serialize(&event).unwrap_or(vec![]);
             results
                 .layers
-                .push((CHAT_ID, SendType::Event(0, fpid, data)));
+                .push((CHAT_ID, SendType::Event(tid, fpid, data)));
 
             // UPDATE SESSION.
             let s_db = session_db(&state.base, &pid, &db_key)?;

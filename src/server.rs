@@ -97,8 +97,8 @@ pub async fn start(db_path: String) -> Result<()> {
                     handle(handle_result, now_rpc_uid, true, &global).await;
                 }
             }
-            ReceiveMessage::Layer(fgid, l_msg) => {
-                if let Ok(handle_result) = app_layer_handle(fgid, l_msg, &global).await {
+            ReceiveMessage::Layer(fgid, tgid, l_msg) => {
+                if let Ok(handle_result) = app_layer_handle(fgid, tgid, l_msg, &global).await {
                     handle(handle_result, now_rpc_uid, true, &global).await;
                 }
             }

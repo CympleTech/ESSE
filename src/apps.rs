@@ -1,3 +1,8 @@
+use chat_types::CHAT_ID;
+use cloud_types::CLOUD_ID;
+use dao_types::DAO_ID;
+use domain_types::DOMAIN_ID;
+use group_types::GROUP_CHAT_ID;
 use std::sync::Arc;
 use tdn::types::{
     group::GroupId,
@@ -31,22 +36,22 @@ pub(crate) fn app_rpc_inject(handler: &mut RpcHandler<Global>) {
     //cloud::new_rpc_handler(handler);
 }
 
-#[allow(non_snake_case)]
 pub(crate) async fn app_layer_handle(
     fgid: GroupId,
+    tgid: GroupId,
     msg: RecvType,
     global: &Arc<Global>,
 ) -> Result<HandleResult> {
-    match fgid {
-        CHAT_ID => chat::handle(msg, global).await,
-        //CHAT_ID => chat::handle_peer(layer, mgid, msg).await,
-        //(_, group::GROUP_ID) => group::handle_server(layer, fgid, msg).await,
-        //(dao::GROUP_ID, _) => dao::handle(layer, fgid, mgid, false, msg).await,
-        //(domain::GROUP_ID, _) => domain::handle(layer, mgid, msg).await,
-        //(cloud::GROUP_ID, _) => cloud::handle(layer, mgid, msg).await,
-        //_ => chat::handle(layer, fgid, mgid, msg).await,
+    debug!("TODO GOT LAYER MESSAGE: ====== {} -> {} ===== ", fgid, tgid);
+    match (fgid, tgid) {
+        (CHAT_ID, 0) | (0, CHAT_ID) => chat::handle(msg, global).await,
+        (GROUP_CHAT_ID, 0) => chat::handle(msg, global).await,
+        (DAO_ID, 0) => chat::handle(msg, global).await,
+        (DOMAIN_ID, 0) => chat::handle(msg, global).await,
+        (CLOUD_ID, 0) => chat::handle(msg, global).await,
         _ => match msg {
             RecvType::Leave(peer) => {
+                debug!("Peer leaved: {}", peer.id.to_hex());
                 let mut results = HandleResult::new();
                 let mut layer = global.layer.write().await;
 
@@ -68,7 +73,10 @@ pub(crate) async fn app_layer_handle(
 
                 Ok(results)
             }
-            _ => Err(anyhow!("nothing!")),
+            _ => {
+                warn!("LAYER MISSING: {:?}", msg);
+                Err(anyhow!("nothing!"))
+            }
         },
     }
 }

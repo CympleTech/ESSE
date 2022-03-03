@@ -1,5 +1,7 @@
+use chat_types::CHAT_ID;
 use esse_primitives::{id_from_str, id_to_str};
 use group_types::GroupChatId;
+use group_types::GROUP_CHAT_ID;
 use std::collections::HashMap;
 use std::net::SocketAddr;
 use std::sync::Arc;
@@ -22,12 +24,12 @@ use tokio::sync::{
 
 use crate::account::lang_from_i64;
 use crate::apps::app_rpc_inject;
-use crate::apps::chat::chat_conn;
+use crate::apps::chat::{chat_conn, LayerEvent as ChatLayerEvent};
 use crate::global::Global;
 //use crate::apps::group::{add_layer, group_conn, GroupChat};
 //use crate::event::InnerEvent;
 use crate::group::Group;
-use crate::layer::{Layer, LayerEvent};
+use crate::layer::Layer;
 use crate::session::{connect_session, Session, SessionType};
 use crate::storage::session_db;
 
@@ -504,26 +506,22 @@ fn new_rpc_handler(global: Arc<Global>) -> RpcHandler<Global> {
             match s.s_type {
                 SessionType::Chat => {
                     let remote_id = id_from_str(remote)?;
-                    let addr = layer_lock.chat_suspend(&remote_id, true, must)?;
-                    if addr.is_some() {
-                        results.rpcs.push(json!([id]))
+                    if layer_lock.chat_suspend(&remote_id, true, must)?.is_some() {
+                        results.rpcs.push(json!([id]));
                     }
-                    //let event = LayerEvent::Suspend(CHAT_GROUP_ID);
-                    //let data = bincode::serialize(&event)?;
-                    //let msg = SendType::Event(0, s.pid, data);
-                    //results.layers.push((gid, s.gid, msg));
+                    let data = bincode::serialize(&ChatLayerEvent::Suspend)?;
+                    let msg = SendType::Event(0, remote_id, data);
+                    results.layers.push((CHAT_ID, msg));
                 }
                 SessionType::Group => {
                     let remote_gid: GroupChatId =
                         remote.parse().map_err(|_| RpcError::ParseError)?;
-                    let addr = layer_lock.group_suspend(&remote_gid, true, must)?;
-                    if addr.is_some() {
-                        results.rpcs.push(json!([id]))
+                    if layer_lock.group_suspend(&remote_gid, true, must)?.is_some() {
+                        results.rpcs.push(json!([id]));
                     }
-                    //let event = LayerEvent::Suspend(GROUP_CHAT_ID);
-                    //let data = bincode::serialize(&event)?;
-                    //let msg = SendType::Event(0, s.pid, data);
-                    //add_layer(&mut results, gid, msg);
+                    //let data = bincode::serialize(&GroupLayerEvent::Suspend(remote_gid))?;
+                    //let msg = SendType::Event(0, s.addr, data);
+                    //results.layers.push((GROUP_CHAT_ID, msg));
                 }
                 _ => {
                     return Ok(HandleResult::new()); // others has no online.

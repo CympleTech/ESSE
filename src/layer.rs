@@ -5,7 +5,6 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Arc;
 use tdn::types::{
-    group::GroupId,
     message::SendType,
     primitives::{HandleResult, Peer, PeerId, Result},
 };
@@ -16,18 +15,6 @@ use crate::account::User;
 //use crate::apps::group::{group_conn, GROUP_ID};
 use crate::group::Group;
 use crate::session::{Session, SessionType};
-
-/// ESSE app's `BaseLayerEvent`.
-/// EVERY LAYER APP MUST EQUAL THE FIRST THREE FIELDS.
-#[derive(Serialize, Deserialize)]
-pub(crate) enum LayerEvent {
-    /// Offline. params: remote_id.
-    Offline(GroupId),
-    /// Suspend. params: remote_id.
-    Suspend(GroupId),
-    /// Actived. params: remote_id.
-    Actived(GroupId),
-}
 
 /// ESSE layers.
 pub(crate) struct Layer {
@@ -51,9 +38,11 @@ impl Layer {
         }
     }
 
-    pub fn delivery(&mut self, db_id: i64) {
-        self.delivery.insert(self.delivery_count as u64, db_id);
+    pub fn delivery(&mut self, db_id: i64) -> u64 {
+        let next = self.delivery_count as u64;
+        self.delivery.insert(next, db_id);
         self.delivery_count += 1;
+        next
     }
 
     pub fn clear(&mut self) {

@@ -114,7 +114,7 @@ pub(crate) async fn handle(msg: RecvType, global: &Arc<Global>) -> Result<Handle
                     rpc::request_delivery(id, is_ok)
                 }
                 DeliveryType::Result => {
-                    // response. TODO better for it.
+                    // response. TODO better for agree send.
                     Request::delivery(&db, id, is_ok)?;
                     rpc::request_delivery(id, is_ok)
                 }
