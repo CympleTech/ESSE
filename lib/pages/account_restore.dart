@@ -25,23 +25,16 @@ class _AccountRestorePageState extends State<AccountRestorePage> {
   bool _statusChecked = false;
   String _name = '';
 
-  TextEditingController _addrController = new TextEditingController();
-  FocusNode _addrFocus = new FocusNode();
-  bool _addrOnline = false;
-  bool _addrChecked = false;
-
   Language _selectedLang = Language.English;
   TextEditingController _wordController = new TextEditingController();
   FocusNode _wordFocus = new FocusNode();
   List<String> _mnemoicWords = [];
   bool _wordChecked = false;
+  bool _loading = false;
 
   @override
   initState() {
     super.initState();
-    _addrFocus.addListener(() {
-      setState(() {});
-    });
     _wordFocus.addListener(() {
       setState(() {});
     });
@@ -65,6 +58,11 @@ class _AccountRestorePageState extends State<AccountRestorePage> {
           onDeleted: () => _deleteWord(index),
           deleteIconColor: Color(0xFFADB0BB)));
     });
+
+    double maxHeight = (MediaQuery.of(context).size.height - 600) / 2;
+    if (maxHeight < 20.0) {
+      maxHeight = 20.0;
+    }
 
     return Scaffold(
       body: SafeArea(
@@ -104,84 +102,10 @@ class _AccountRestorePageState extends State<AccountRestorePage> {
                             onPressed: _scanQr,
                             child: Icon(Icons.qr_code_scanner_rounded)),
                     ])),
-                    const SizedBox(height: 32.0),
-                    Text(
-                      'Online Network Address',
-                      style:
-                      TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 16.0),
+                    SizedBox(height: maxHeight),
                     Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: <Widget>[
-                        Container(
-                          height: 50.0,
-                          width: 600.0,
-                          child: Row(children: [
-                              Expanded(
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 20.0),
-                                  decoration: BoxDecoration(
-                                    color: color.surface,
-                                    border: Border.all(
-                                      color: this._addrFocus.hasFocus
-                                      ? color.primary
-                                      : color.surface),
-                                    borderRadius: BorderRadius.circular(10.0),
-                                  ),
-                                  child: TextField(
-                                    style: TextStyle(fontSize: 16.0),
-                                    decoration: InputDecoration(
-                                      border: InputBorder.none,
-                                      hintText: lang.address),
-                                    controller: this._addrController,
-                                    focusNode: this._addrFocus,
-                                    onSubmitted: (_v) => _checkAddrOnline(),
-                                    onChanged: (v) {
-                                      if (v.length > 0 &&
-                                        !this._addrChecked) {
-                                        setState(() {
-                                            this._addrChecked = true;
-                                        });
-                                      }
-                                  }),
-                                ),
-                              ),
-                              if (this._addrOnline)
-                              Container(
-                                padding: const EdgeInsets.only(left: 8.0),
-                                child: Icon(Icons.cloud_done_rounded,
-                                  color: Colors.green),
-                              ),
-                              const SizedBox(width: 8.0),
-                              Container(
-                                width: 100.0,
-                                child: InkWell(
-                                  onTap: this._addrChecked
-                                  ? _checkAddrOnline
-                                  : null,
-                                  child: Container(
-                                    height: 45.0,
-                                    decoration: BoxDecoration(
-                                      color: this._addrChecked
-                                      ? Color(0xFF6174FF)
-                                      : Color(0xFFADB0BB),
-                                      borderRadius:
-                                      BorderRadius.circular(10.0)),
-                                    child: Center(
-                                      child: Text(lang.search,
-                                        style: TextStyle(
-                                          fontSize: 16.0,
-                                          color: Colors.white))),
-                              ))),
-                        ])),
-                        const SizedBox(height: 32.0),
-                        Text(
-                          'Mnemoic Words',
-                          style: TextStyle(
-                            fontSize: 18.0, fontWeight: FontWeight.bold),
-                        ),
                         Container(
                           width: 600.0,
                           height: 45.0,
@@ -305,8 +229,8 @@ class _AccountRestorePageState extends State<AccountRestorePage> {
                         ])),
                         const SizedBox(height: 32.0),
                         ButtonText(
-                          text: lang.next,
-                          enable: _statusChecked,
+                          text: this._loading ? lang.waiting : lang.next,
+                          enable: _statusChecked && !this._loading,
                           action: () => _mnemonicRegister(lang.unknown, lang.setPin),
                         ),
                         _footer(
@@ -322,31 +246,18 @@ class _AccountRestorePageState extends State<AccountRestorePage> {
       MaterialPageRoute(
         builder: (context) => QRScan(callback: (isOk, app, params) {
             Navigator.of(context).pop();
-            if (app == 'distribute' && params.length == 4) {
+            if (app == 'distribute' && params.length == 2) {
               final name = params[0];
-              //final id = pidParse(params[1]);
-              final addr = addrParse(params[2]);
-              final mnemonicWords = params[3];
+              final mnemonicWords = params[1];
               setState(() {
-                  this._addrOnline = true;
-                  this._addrChecked = false;
                   this._wordController.text = '';
                   this._wordChecked = false;
                   this._statusChecked = true;
                   this._name = name;
-                  this._addrController.text = addrText(addr);
                   this._mnemoicWords = mnemonicWords.split(" ");
               });
             }
     })));
-  }
-
-  _checkAddrOnline() {
-    FocusScope.of(context).unfocus();
-    setState(() {
-      this._addrOnline = true;
-      this._addrChecked = false;
-    });
   }
 
   _addWord() {
@@ -386,10 +297,6 @@ class _AccountRestorePageState extends State<AccountRestorePage> {
     if (this._name == '') {
       this._name = defaultName;
     }
-    final addr = addrParse(this._addrController.text.trim());
-    if (addr.length < 2) {
-      return;
-    }
 
     showShadowDialog(
       context,
@@ -398,9 +305,11 @@ class _AccountRestorePageState extends State<AccountRestorePage> {
       SetPinWords(
         callback: (lock) async {
           Navigator.of(context).pop();
+          setState(() { this._loading = false; });
+
           // send to core node service by rpc.
           final res = await httpPost('account-restore', [
-              _selectedLang.toInt(), mnemonic, "", this._name, lock, addr
+              _selectedLang.toInt(), mnemonic, "", this._name, lock
           ]);
 
           if (res.isOk) {
@@ -412,6 +321,7 @@ class _AccountRestorePageState extends State<AccountRestorePage> {
 
             Navigator.of(context).pushNamedAndRemoveUntil("/", (Route<dynamic> route) => false);
           } else {
+            setState(() { this._loading = true; });
             // TODO tostor error
             print(res.error);
           }

@@ -31,6 +31,7 @@ class _SecurityPageState extends State<SecurityPage> {
   Map<String, Account> _accounts = {};
   bool _loaded = false;
   bool _accountsLoaded = false;
+  bool _loading = false;
 
   String _selectedUserId = '';
 
@@ -106,7 +107,8 @@ class _SecurityPageState extends State<SecurityPage> {
                       const SizedBox(height: 40.0),
                       loginForm(color, lang),
                       const SizedBox(height: 20.0),
-                      ButtonText(text: lang.ok, enable: _accountsLoaded,
+                      ButtonText(text: this._loading ? lang.waiting : lang.ok,
+                        enable: _accountsLoaded && !this._loading,
                         action: () => loginAction(lang.verifyPin, color, lang)),
                       const SizedBox(height: 20.0),
                       InkWell(
@@ -228,10 +230,12 @@ class _SecurityPageState extends State<SecurityPage> {
   }
 
   void _verifyAfter(String lock) async {
+    setState(() { this._loading = true; });
     final res = await httpPost('account-login', [this._selectedUserId, lock]);
     if (res.isOk) {
       _handleLogined(this._selectedUserId, lock, this._accounts);
     } else {
+      setState(() { this._loading = false; });
       toast(context, res.error);
     }
   }

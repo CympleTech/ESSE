@@ -31,6 +31,7 @@ class _AccountGeneratePageState extends State<AccountGeneratePage> {
   bool _mnemonicChecked = false;
   bool _registerChecked = false;
   bool _isAccount = false;
+  bool _loading = false;
 
   TextEditingController _nameController = new TextEditingController();
   FocusNode _nameFocus = new FocusNode();
@@ -91,22 +92,32 @@ class _AccountGeneratePageState extends State<AccountGeneratePage> {
       SetPinWords(
         callback: (lock) async {
           Navigator.of(context).pop();
+          setState(() { this._loading = true; });
+
           // send to core node service by rpc.
           final res = await httpPost('account-create', [
               _selectedLang.toInt(), mnemonic, "", name, lock, avatar
           ]);
 
           if (res.isOk) {
-            // save this User
-            final account = Account(res.params[0], name, avatar);
+            final pid = res.params[0];
+            final login = await httpPost('account-login', [pid, lock]);
 
-            Provider.of<AccountProvider>(context, listen: false).addAccount(account, lock);
-            Provider.of<DeviceProvider>(context, listen: false).updateActived();
+            if (login.isOk) {
+              // save this User
+              final account = Account(pid, name, avatar);
 
-            Navigator.push(context, MaterialPageRoute(builder: (_) => AccountDomainScreen(
-                  name: name,
-            )));
+              Provider.of<AccountProvider>(context, listen: false).addAccount(account, lock);
+              Provider.of<DeviceProvider>(context, listen: false).updateActived();
+
+              Navigator.push(context, MaterialPageRoute(builder: (_) => AccountDomainScreen(
+                    name: name,
+              )));
+            } else {
+              setState(() { this._loading = false; });
+            }
           } else {
+            setState(() { this._loading = false; });
             // TODO tostor error
             print(res.error);
           }
@@ -272,8 +283,9 @@ class _AccountGeneratePageState extends State<AccountGeneratePage> {
               }),
             ),
             const SizedBox(height: 32.0),
-            ButtonText(text: lang.ok, action: () => registerNewAction(lang.setPin),
-              enable: this._registerChecked),
+            ButtonText(text: this._loading ? lang.waiting : lang.ok,
+              action: () => registerNewAction(lang.setPin),
+              enable: this._registerChecked && !this._loading),
             _footer(lang.hasAccount, () => Navigator.of(context).pop()),
         ])
     ]);

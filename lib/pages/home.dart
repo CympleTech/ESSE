@@ -108,12 +108,10 @@ class _HomeListState extends State<HomeList> {
               } else {
                 Navigator.push(context, MaterialPageRoute(builder: (_) => widget));
               }
-            } else if (app == 'distribute' && params.length == 4) {
+            } else if (app == 'distribute' && params.length == 2) {
               //final _name = params[0].trim();
-              //final id = pidParse(params[1]);
-              final addr = addrParse(params[2]);
-              //final _mnemonicWords = params[3];
-              Provider.of<DeviceProvider>(context, listen: false).connect(addr);
+              //final _mnemonicWords = params[1];
+              //Provider.of<DeviceProvider>(context, listen: false).connect(addr);
             }
     })));
   }
