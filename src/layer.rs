@@ -1,3 +1,4 @@
+use chat_types::CHAT_ID;
 use esse_primitives::id_to_str;
 use group_types::GroupChatId;
 use serde::{Deserialize, Serialize};
@@ -11,7 +12,7 @@ use tdn::types::{
 use tokio::sync::RwLock;
 
 use crate::account::User;
-//use crate::apps::chat::{chat_conn, LayerEvent as ChatLayerEvent};
+use crate::apps::chat::LayerEvent as ChatLayerEvent;
 //use crate::apps::group::{group_conn, GROUP_ID};
 use crate::group::Group;
 use crate::session::{Session, SessionType};
@@ -56,7 +57,7 @@ impl Layer {
             return true;
         } else {
             for (_, session) in &self.groups {
-                if session.addr == *addr {
+                if session.addrs.contains(addr) {
                     return true;
                 }
             }
@@ -101,13 +102,12 @@ impl Layer {
     }
 
     pub fn chat_rm_online(&mut self, pid: &PeerId) -> Option<PeerId> {
-        self.chats.remove(pid).map(|session| session.addr)
+        self.chats.remove(pid).map(|session| session.addrs[0])
     }
 
-    pub fn chat_add(&mut self, pid: PeerId, sid: i64, fid: i64) {
+    pub fn chat_add(&mut self, pid: PeerId, sid: i64, fid: i64, h: i64) {
         if !self.chats.contains_key(&pid) {
-            self.chats
-                .insert(pid, LayerSession::new(id_to_str(&pid), pid, sid, fid));
+            self.chats.insert(pid, LayerSession::new(pid, sid, fid, h));
         }
     }
 
@@ -116,6 +116,44 @@ impl Layer {
             Ok((session.s_id, session.db_id))
         } else {
             Err(anyhow!("session missing!"))
+        }
+    }
+
+    pub fn group_add(&mut self, gid: GroupChatId, pid: PeerId, sid: i64, fid: i64, h: i64) {
+        if !self.groups.contains_key(&gid) {
+            self.groups.insert(gid, LayerSession::new(pid, sid, fid, h));
+        }
+    }
+
+    pub fn group(&self, gid: &GroupChatId) -> Result<&LayerSession> {
+        if let Some(session) = self.groups.get(gid) {
+            Ok(session)
+        } else {
+            Err(anyhow!("session missing!"))
+        }
+    }
+
+    pub fn group_rm_online(&mut self, gid: &GroupChatId) -> Option<Vec<PeerId>> {
+        self.groups.remove(gid).map(|session| session.addrs)
+    }
+
+    pub fn group_increased(&mut self, gid: &GroupChatId) -> Result<i64> {
+        if let Some(session) = self.groups.get_mut(gid) {
+            Ok(session.increased())
+        } else {
+            Err(anyhow!("session missing!"))
+        }
+    }
+
+    pub fn group_add_member(&mut self, gid: &GroupChatId, addr: PeerId) {
+        if let Some(session) = self.groups.get_mut(gid) {
+            session.addrs.push(addr);
+        }
+    }
+
+    pub fn group_del_member(&mut self, gid: &GroupChatId, index: usize) {
+        if let Some(session) = self.groups.get_mut(gid) {
+            session.addrs.remove(index);
         }
     }
 
@@ -209,17 +247,16 @@ impl Layer {
     //     }
     // }
 
-    // pub fn broadcast(&self, user: User, results: &mut HandleResult) {
-    //     let gid = user.id;
-    //     let info = ChatLayerEvent::InfoRes(user);
-    //     let data = bincode::serialize(&info).unwrap_or(vec![]);
-    //     if let Some(running) = self.runnings.get(&gid) {
-    //         for (fgid, online) in &running.sessions {
-    //             let msg = SendType::Event(0, *online.online.addr(), data.clone());
-    //             results.layers.push((gid, *fgid, msg));
-    //         }
-    //     }
-    // }
+    pub fn broadcast(&self, user: User, results: &mut HandleResult) {
+        let gid = user.id;
+        let info = ChatLayerEvent::InfoRes(user);
+        let data = bincode::serialize(&info).unwrap_or(vec![]);
+
+        for fpid in self.chats.keys() {
+            let msg = SendType::Event(0, *fpid, data.clone());
+            results.layers.push((CHAT_ID, msg));
+        }
+    }
 }
 
 // pub(crate) struct OnlineSession {
@@ -261,10 +298,9 @@ impl Layer {
 
 /// online connected layer session.
 pub(crate) struct LayerSession {
-    /// session refs symbol id (Chat is friend's pid, Group is GroupChatId)
-    pub pid: String,
+    pub height: i64,
     /// session network addr.
-    pub addr: PeerId,
+    pub addrs: Vec<PeerId>,
     /// session database id.
     pub s_id: i64,
     /// layer service database id.
@@ -278,16 +314,25 @@ pub(crate) struct LayerSession {
 }
 
 impl LayerSession {
-    fn new(pid: String, addr: PeerId, s_id: i64, db_id: i64) -> Self {
+    fn new(addr: PeerId, s_id: i64, db_id: i64, height: i64) -> Self {
         Self {
-            pid,
-            addr,
             s_id,
             db_id,
+            height,
+            addrs: vec![addr],
             suspend_me: false,
             suspend_remote: false,
             remain: 0,
         }
+    }
+
+    pub fn info(&self) -> (i64, i64, i64) {
+        (self.height, self.s_id, self.db_id)
+    }
+
+    pub fn increased(&mut self) -> i64 {
+        self.height += 1;
+        self.height
     }
 
     pub fn active(&mut self, is_me: bool) -> PeerId {
@@ -297,7 +342,7 @@ impl LayerSession {
             self.suspend_remote = false;
         }
         self.remain = 0;
-        self.addr
+        self.addrs[0]
     }
 
     pub fn suspend(&mut self, is_me: bool, must: bool) -> Option<PeerId> {
@@ -314,7 +359,7 @@ impl LayerSession {
 
         if self.suspend_remote && self.suspend_me {
             self.remain = 6; // keep-alive 10~11 minutes 120s/time
-            Some(self.addr)
+            Some(self.addrs[0])
         } else {
             None
         }

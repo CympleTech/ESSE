@@ -1,7 +1,7 @@
+use esse_primitives::{id_from_str, id_to_str};
 use std::path::PathBuf;
 use tdn::types::{
-    group::GroupId,
-    primitive::{PeerId, Result},
+    primitives::{PeerId, Result},
     rpc::{json, RpcParam},
 };
 use tdn_storage::local::{DStorage, DsValue};
@@ -16,36 +16,32 @@ pub(crate) struct Member {
     pub height: i64,
     /// group's db id.
     pub fid: i64,
-    /// member's Did(GroupId)
-    pub m_id: GroupId,
-    /// member's addresse.
-    pub m_addr: PeerId,
+    /// member's Did(PeerId)
+    pub pid: PeerId,
     /// member's name.
-    pub m_name: String,
+    pub name: String,
     /// if leave from group.
     pub leave: bool,
 }
 
 impl Member {
-    pub fn new(height: i64, fid: i64, m_id: GroupId, m_addr: PeerId, m_name: String) -> Self {
+    pub fn new(height: i64, fid: i64, pid: PeerId, name: String) -> Self {
         Self {
             height,
             fid,
-            m_id,
-            m_addr,
-            m_name,
+            pid,
+            name,
             leave: false,
             id: 0,
         }
     }
 
-    pub fn info(id: i64, fid: i64, m_id: GroupId, m_addr: PeerId, m_name: String) -> Self {
+    pub fn info(id: i64, fid: i64, pid: PeerId, name: String) -> Self {
         Self {
             id,
             fid,
-            m_id,
-            m_addr,
-            m_name,
+            pid,
+            name,
             leave: false,
             height: 0,
         }
@@ -55,9 +51,8 @@ impl Member {
         json!([
             self.id,
             self.fid,
-            self.m_id.to_hex(),
-            self.m_addr.to_hex(),
-            self.m_name,
+            id_to_str(&self.pid),
+            self.name,
             self.leave,
         ])
     }
@@ -65,9 +60,8 @@ impl Member {
     fn from_values(mut v: Vec<DsValue>) -> Self {
         Self {
             leave: v.pop().unwrap().as_bool(),
-            m_name: v.pop().unwrap().as_string(),
-            m_addr: PeerId::from_hex(v.pop().unwrap().as_string()).unwrap_or(Default::default()),
-            m_id: GroupId::from_hex(v.pop().unwrap().as_string()).unwrap_or(Default::default()),
+            name: v.pop().unwrap().as_string(),
+            pid: id_from_str(v.pop().unwrap().as_str()).unwrap_or(Default::default()),
             fid: v.pop().unwrap().as_i64(),
             height: v.pop().unwrap().as_i64(),
             id: v.pop().unwrap().as_i64(),
@@ -76,7 +70,7 @@ impl Member {
 
     pub fn list(db: &DStorage, fid: &i64) -> Result<Vec<Member>> {
         let matrix = db.query(&format!(
-            "SELECT id, height, fid, mid, addr, name, leave FROM members WHERE fid = {}",
+            "SELECT id, height, fid, pid, name, leave FROM members WHERE fid = {}",
             fid
         ))?;
         let mut groups = vec![];
@@ -88,28 +82,24 @@ impl Member {
 
     pub fn insert(&mut self, db: &DStorage) -> Result<()> {
         let mut unique_check = db.query(&format!(
-            "SELECT id from members WHERE fid = {} AND mid = '{}'",
+            "SELECT id from members WHERE fid = {} AND pid = '{}'",
             self.fid,
-            self.m_id.to_hex()
+            id_to_str(&self.pid)
         ))?;
         if unique_check.len() > 0 {
             let id = unique_check.pop().unwrap().pop().unwrap().as_i64();
             self.id = id;
             let sql = format!(
-                "UPDATE members SET height = {}, addr='{}', name = '{}', leave = false WHERE id = {}",
-                self.height,
-                self.m_addr.to_hex(),
-                self.m_name,
-                self.id,
+                "UPDATE members SET height = {}, name = '{}', leave = false WHERE id = {}",
+                self.height, self.name, self.id,
             );
             db.update(&sql)?;
         } else {
-            let sql = format!("INSERT INTO members (height, fid, mid, addr, name, leave) VALUES ({}, {}, '{}', '{}', '{}', false)",
+            let sql = format!("INSERT INTO members (height, fid, pid, name, leave) VALUES ({}, {}, '{}', '{}', false)",
             self.height,
             self.fid,
-            self.m_id.to_hex(),
-            self.m_addr.to_hex(),
-            self.m_name,
+            id_to_str(&self.pid),
+            self.name,
         );
             let id = db.insert(&sql)?;
             self.id = id;
@@ -119,7 +109,7 @@ impl Member {
 
     pub fn _get(db: &DStorage, id: &i64) -> Result<Member> {
         let mut matrix = db.query(&format!(
-            "SELECT id, height, fid, mid, addr, name, leave FROM members WHERE id = {}",
+            "SELECT id, height, fid, pid, name, leave FROM members WHERE id = {}",
             id,
         ))?;
         if matrix.len() > 0 {
@@ -129,11 +119,11 @@ impl Member {
         }
     }
 
-    pub fn get_id(db: &DStorage, fid: &i64, gid: &GroupId) -> Result<i64> {
+    pub fn get_id(db: &DStorage, fid: &i64, pid: &PeerId) -> Result<i64> {
         let mut matrix = db.query(&format!(
-            "SELECT id FROM members WHERE fid = {} AND mid = '{}'",
+            "SELECT id FROM members WHERE fid = {} AND pid = '{}'",
             fid,
-            gid.to_hex()
+            id_to_str(pid)
         ))?;
         if matrix.len() > 0 {
             Ok(matrix.pop().unwrap().pop().unwrap().as_i64()) // safe unwrap.
@@ -142,31 +132,10 @@ impl Member {
         }
     }
 
-    pub fn addr_update(db: &DStorage, fid: &i64, mid: &GroupId, addr: &PeerId) -> Result<i64> {
-        let mdid = Self::get_id(db, fid, mid)?;
+    pub fn update(db: &DStorage, id: &i64, height: &i64, name: &str) -> Result<usize> {
         let sql = format!(
-            "UPDATE members SET addr='{}' WHERE fid = {} AND mid = '{}'",
-            addr.to_hex(),
-            fid,
-            mid.to_hex(),
-        );
-        db.update(&sql)?;
-        Ok(mdid)
-    }
-
-    pub fn update(
-        db: &DStorage,
-        id: &i64,
-        height: &i64,
-        addr: &PeerId,
-        name: &str,
-    ) -> Result<usize> {
-        let sql = format!(
-            "UPDATE members SET height = {}, addr='{}', name='{}' WHERE id = {}",
-            height,
-            addr.to_hex(),
-            name,
-            id,
+            "UPDATE members SET height = {}, name='{}' WHERE id = {}",
+            height, name, id,
         );
         db.update(&sql)
     }
@@ -186,26 +155,23 @@ impl Member {
 
     pub async fn sync(
         base: &PathBuf,
-        gid: &GroupId,
+        gid: &PeerId,
         db: &DStorage,
         fid: &i64,
         from: &i64,
         to: &i64,
-    ) -> Result<(
-        Vec<(i64, GroupId, PeerId, String, Vec<u8>)>,
-        Vec<(i64, GroupId)>,
-    )> {
-        let sql = format!("SELECT id, height, fid, mid, addr, name, leave FROM members WHERE fid = {} AND height BETWEEN {} AND {}", fid, from, to);
+    ) -> Result<(Vec<(i64, PeerId, String, Vec<u8>)>, Vec<(i64, PeerId)>)> {
+        let sql = format!("SELECT id, height, fid, pid, name, leave FROM members WHERE fid = {} AND height BETWEEN {} AND {}", fid, from, to);
         let matrix = db.query(&sql)?;
         let mut adds = vec![];
         let mut leaves = vec![];
         for values in matrix {
             let m = Self::from_values(values);
             if m.leave {
-                leaves.push((m.height, m.m_id));
+                leaves.push((m.height, m.pid));
             } else {
-                let mavatar = read_avatar(base, gid, &m.m_id).await.unwrap_or(vec![]);
-                adds.push((m.height, m.m_id, m.m_addr, m.m_name, mavatar))
+                let mavatar = read_avatar(base, gid, &m.pid).await.unwrap_or(vec![]);
+                adds.push((m.height, m.pid, m.name, mavatar))
             }
         }
         Ok((adds, leaves))

@@ -1,8 +1,8 @@
+use group_types::GroupChatId;
 use rand::Rng;
 use std::time::{SystemTime, UNIX_EPOCH};
 use tdn::types::{
-    group::GroupId,
-    primitive::{PeerId, Result},
+    primitives::{PeerId, Result},
     rpc::{json, RpcParam},
 };
 use tdn_storage::local::{DStorage, DsValue};
@@ -18,11 +18,11 @@ pub(crate) struct GroupChat {
     /// consensus height.
     pub height: i64,
     /// group chat id.
-    pub g_id: GroupId,
+    pub gid: GroupChatId,
     /// group chat server addresse.
-    pub g_addr: PeerId,
+    pub addr: PeerId,
     /// group chat name.
-    pub g_name: String,
+    pub name: String,
     /// group is delete by owner.
     pub close: bool,
     /// group is in my device.
@@ -30,13 +30,13 @@ pub(crate) struct GroupChat {
 }
 
 impl GroupChat {
-    pub fn new(g_addr: PeerId, g_name: String) -> Self {
-        let g_id = GroupId(rand::thread_rng().gen::<[u8; 32]>());
+    pub fn new(addr: PeerId, name: String) -> Self {
+        let gid = rand::thread_rng().gen::<GroupChatId>();
 
         Self {
-            g_id,
-            g_addr,
-            g_name,
+            gid,
+            addr,
+            name,
             id: 0,
             height: 0,
             close: false,
@@ -44,11 +44,11 @@ impl GroupChat {
         }
     }
 
-    pub fn from(g_id: GroupId, height: i64, g_addr: PeerId, g_name: String) -> Self {
+    pub fn from(gid: GroupChatId, height: i64, addr: PeerId, name: String) -> Self {
         Self {
-            g_id,
-            g_addr,
-            g_name,
+            gid,
+            addr,
+            name,
             height,
             close: false,
             local: false,
@@ -65,10 +65,10 @@ impl GroupChat {
 
         Session::new(
             self.id,
-            self.g_id,
-            self.g_addr,
+            self.gid.to_string(),
+            self.addr,
             SessionType::Group,
-            self.g_name.clone(),
+            self.name.clone(),
             datetime,
         )
     }
@@ -76,9 +76,9 @@ impl GroupChat {
     pub fn to_rpc(&self) -> RpcParam {
         json!([
             self.id,
-            self.g_id.to_hex(),
-            self.g_addr.to_hex(),
-            self.g_name,
+            self.gid,
+            self.addr.to_hex(),
+            self.name,
             self.close,
             self.local,
         ])
@@ -88,9 +88,9 @@ impl GroupChat {
         Self {
             local: v.pop().unwrap().as_bool(),
             close: v.pop().unwrap().as_bool(),
-            g_name: v.pop().unwrap().as_string(),
-            g_addr: PeerId::from_hex(v.pop().unwrap().as_string()).unwrap_or(Default::default()),
-            g_id: GroupId::from_hex(v.pop().unwrap().as_string()).unwrap_or(Default::default()),
+            name: v.pop().unwrap().as_string(),
+            addr: PeerId::from_hex(v.pop().unwrap().as_string()).unwrap_or(Default::default()),
+            gid: v.pop().unwrap().as_i64() as GroupChatId,
             height: v.pop().unwrap().as_i64(),
             id: v.pop().unwrap().as_i64(),
         }
@@ -98,7 +98,7 @@ impl GroupChat {
 
     pub fn local(db: &DStorage) -> Result<Vec<GroupChat>> {
         let matrix = db.query(
-            "SELECT id, height, gcd, addr, name, is_close, is_local FROM groups WHERE is_local = true",
+            "SELECT id, height, gid, addr, name, is_close, is_local FROM groups WHERE is_local = true",
         )?;
         let mut groups = vec![];
         for values in matrix {
@@ -109,7 +109,7 @@ impl GroupChat {
 
     pub fn all(db: &DStorage) -> Result<Vec<GroupChat>> {
         let matrix =
-            db.query("SELECT id, height, gcd, addr, name, is_close, is_local FROM groups")?;
+            db.query("SELECT id, height, gid, addr, name, is_close, is_local FROM groups")?;
         let mut groups = vec![];
         for values in matrix {
             groups.push(Self::from_values(values));
@@ -119,7 +119,7 @@ impl GroupChat {
 
     pub fn get(db: &DStorage, id: &i64) -> Result<GroupChat> {
         let sql = format!(
-            "SELECT id, height, gcd, addr, name, is_close, is_local FROM groups WHERE id = {}",
+            "SELECT id, height, gid, addr, name, is_close, is_local FROM groups WHERE id = {}",
             id
         );
         let mut matrix = db.query(&sql)?;
@@ -131,11 +131,8 @@ impl GroupChat {
         }
     }
 
-    pub fn get_id(db: &DStorage, gid: &GroupId) -> Result<GroupChat> {
-        let sql = format!(
-            "SELECT id, height, gcd, addr, name, is_close, is_local FROM groups WHERE gcd = '{}'",
-            gid.to_hex()
-        );
+    pub fn get_id(db: &DStorage, gid: &GroupChatId, addr: &PeerId) -> Result<GroupChat> {
+        let sql = format!("SELECT id, height, gid, addr, name, is_close, is_local FROM groups WHERE gid = {} AND addr = '{}'", gid, addr.to_hex());
         let mut matrix = db.query(&sql)?;
         if matrix.len() > 0 {
             let values = matrix.pop().unwrap(); // safe unwrap()
@@ -147,27 +144,20 @@ impl GroupChat {
 
     pub fn insert(&mut self, db: &DStorage) -> Result<()> {
         let mut unique_check = db.query(&format!(
-            "SELECT id from groups WHERE gcd = '{}'",
-            self.g_id.to_hex()
+            "SELECT id from groups WHERE gid = {} AND addr = '{}'",
+            self.gid,
+            self.addr.to_hex()
         ))?;
         if unique_check.len() > 0 {
-            let id = unique_check.pop().unwrap().pop().unwrap().as_i64();
-            self.id = id;
-            let sql = format!(
-                "UPDATE groups SET height = {}, addr='{}', name = '{}' WHERE id = {}",
-                self.height,
-                self.g_addr.to_hex(),
-                self.g_name,
-                self.id
-            );
-            db.update(&sql)?;
+            self.gid += 1;
+            return self.insert(db);
         } else {
             let sql = format!(
-                "INSERT INTO groups (height, gcd, addr, name, is_close, is_local) VALUES ({}, '{}', '{}', '{}', {}, {})",
+                "INSERT INTO groups (height, gid, addr, name, is_close, is_local) VALUES ({}, {}, '{}', '{}', {}, {})",
                 self.height,
-                self.g_id.to_hex(),
-                self.g_addr.to_hex(),
-                self.g_name,
+                self.gid,
+                self.addr.to_hex(),
+                self.name,
                 self.close,
                 self.local,
             );
@@ -187,8 +177,8 @@ impl GroupChat {
         db.update(&sql)
     }
 
-    pub fn close(db: &DStorage, gcd: &GroupId) -> Result<GroupChat> {
-        let group = Self::get_id(db, gcd)?;
+    pub fn close(db: &DStorage, gid: &GroupChatId, addr: &PeerId) -> Result<GroupChat> {
+        let group = Self::get_id(db, gid, addr)?;
         let sql = format!("UPDATE groups SET is_close = true WHERE id = {}", group.id);
         db.update(&sql)?;
         Ok(group)

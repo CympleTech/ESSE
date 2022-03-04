@@ -159,7 +159,7 @@ async fn handle_connect(
     results.rpcs.push(session_connect(&sid, &peer.id));
 
     // 4. active this session.
-    global.layer.write().await.chat_add(peer.id, sid, f.id);
+    global.layer.write().await.chat_add(peer.id, sid, f.id, 0);
 
     Ok(f.height as u64)
 }

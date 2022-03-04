@@ -106,9 +106,6 @@ class _UserInfoState extends State<UserInfo> {
         ),
         if (widget.title != null)
         Text(widget.title!, style: TextStyle(fontSize: 16.0, fontStyle: FontStyle.italic)),
-        const SizedBox(height: 10),
-        const Divider(height: 1.0, color: Color(0x40ADB0BB)),
-        const SizedBox(height: 20),
         InkWell(
           onTap: () {
             Clipboard.setData(ClipboardData(text: pidText(widget.id)));
@@ -117,11 +114,12 @@ class _UserInfoState extends State<UserInfo> {
             });
           },
           child: Container(
-            width: 250.0,
+            padding: const EdgeInsets.symmetric(vertical: 10.0),
             child: Row(
               children: [
                 Expanded(
                   child: Text(pidText(widget.id, widget.pre),
+                    textAlign: TextAlign.center,
                     style: TextStyle(fontSize: 14, color: idColor))),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 10.0),
@@ -132,6 +130,7 @@ class _UserInfoState extends State<UserInfo> {
             ),
           )
         ),
+        const Divider(height: 1.0, color: Color(0x40ADB0BB)),
         const SizedBox(height: 16),
         if (widget.remark != null)
         Container(

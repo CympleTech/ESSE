@@ -1,8 +1,7 @@
 use std::sync::Arc;
 use tdn::types::{
-    group::GroupId,
-    message::SendMessage,
-    primitive::{HandleResult, Result},
+    message::RpcSendMessage,
+    primitives::{HandleResult, Result},
     rpc::{json, rpc_response, RpcError, RpcHandler, RpcParam},
 };
 use tdn_did::{generate_btc_account, generate_eth_account, secp256k1::SecretKey};
@@ -16,7 +15,9 @@ use web3::{
     Web3,
 };
 
-use crate::rpc::RpcState;
+use crate::global::Global;
+use crate::storage::{account_db, wallet_db};
+use crate::utils::crypto::{decrypt, encrypt};
 
 use super::{
     models::{Address, Balance, ChainToken, Network, Token},
@@ -42,34 +43,25 @@ fn token_list(network: Network, tokens: Vec<Token>) -> RpcParam {
 }
 
 #[inline]
-fn res_balance(
-    gid: GroupId,
-    address: &str,
-    network: &Network,
-    balance: &str,
-    token: Option<&Token>,
-) -> RpcParam {
+fn res_balance(address: &str, network: &Network, balance: &str, token: Option<&Token>) -> RpcParam {
     if let Some(t) = token {
         rpc_response(
             0,
             "wallet-balance",
             json!([address, network.to_i64(), balance, t.to_rpc()]),
-            gid,
         )
     } else {
         rpc_response(
             0,
             "wallet-balance",
             json!([address, network.to_i64(), balance]),
-            gid,
         )
     }
 }
 
 async fn loop_token(
-    sender: Sender<SendMessage>,
+    sender: Sender<RpcSendMessage>,
     db: DStorage,
-    gid: GroupId,
     network: Network,
     address: String,
     c_token: Option<Token>,
@@ -83,8 +75,8 @@ async fn loop_token(
         let transport = Http::new(node)?;
         let web3 = Web3::new(transport);
         let balance = token_balance(&web3, &token.contract, &address, &token.chain).await?;
-        let res = res_balance(gid, &address, &network, &balance, Some(&token));
-        sender.send(SendMessage::Rpc(0, res, true)).await?;
+        let res = res_balance(&address, &network, &balance, Some(&token));
+        sender.send(RpcSendMessage(0, res, true)).await?;
     } else {
         match chain {
             ChainToken::ETH => {
@@ -93,19 +85,19 @@ async fn loop_token(
                 let balance = web3.eth().balance(address.parse()?, None).await?;
                 let balance = balance.to_string();
                 let _ = Address::update_balance(&db, &address, &network, &balance);
-                let res = res_balance(gid, &address, &network, &balance, None);
-                sender.send(SendMessage::Rpc(0, res, true)).await?;
+                let res = res_balance(&address, &network, &balance, None);
+                sender.send(RpcSendMessage(0, res, true)).await?;
 
                 for token in tokens {
                     //tokio::time::sleep(std::time::Duration::from_secs(1)).await;
                     let balance =
                         token_balance(&web3, &token.contract, &address, &token.chain).await?;
-                    let res = res_balance(gid, &address, &network, &balance, Some(&token));
+                    let res = res_balance(&address, &network, &balance, Some(&token));
 
                     // update & clean balances.
                     // TODO
 
-                    sender.send(SendMessage::Rpc(0, res, true)).await?;
+                    sender.send(RpcSendMessage(0, res, true)).await?;
                 }
             }
             ChainToken::BTC => {
@@ -119,9 +111,8 @@ async fn loop_token(
 }
 
 async fn token_check(
-    sender: Sender<SendMessage>,
+    sender: Sender<RpcSendMessage>,
     db: DStorage,
-    gid: GroupId,
     chain: ChainToken,
     network: Network,
     address: String,
@@ -160,8 +151,8 @@ async fn token_check(
         .query("balanceOf", (account,), None, Default::default(), None)
         .await?;
     let balance = balance.to_string();
-    let res = res_balance(gid, &address, &network, &balance, Some(&token));
-    sender.send(SendMessage::Rpc(0, res, true)).await?;
+    let res = res_balance(&address, &network, &balance, Some(&token));
+    sender.send(RpcSendMessage(0, res, true)).await?;
 
     Ok(())
 }
@@ -320,15 +311,18 @@ async fn nft_check(node: &str, c_str: &str, hash: &str) -> Result<String> {
     Ok(format!("{:?}", owner))
 }
 
-pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
-    handler.add_method("wallet-echo", |_, params, _| async move {
+pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<Global>) {
+    handler.add_method("wallet-echo", |params, _| async move {
         Ok(HandleResult::rpc(json!(params)))
     });
 
     handler.add_method(
         "wallet-list",
-        |gid: GroupId, _params: Vec<RpcParam>, state: Arc<RpcState>| async move {
-            let db = state.group.read().await.wallet_db(&gid)?;
+        |_params: Vec<RpcParam>, state: Arc<Global>| async move {
+            let pid = state.pid().await;
+            let db_key = state.group.read().await.db_key(&pid)?;
+            let db = wallet_db(&state.base, &pid, &db_key)?;
+
             let addresses = Address::list(&db)?;
             Ok(HandleResult::rpc(wallet_list(addresses)))
         },
@@ -336,17 +330,20 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
 
     handler.add_method(
         "wallet-generate",
-        |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
+        |params: Vec<RpcParam>, state: Arc<Global>| async move {
             let chain = ChainToken::from_i64(params[0].as_i64().ok_or(RpcError::ParseError)?);
             let lock = params[1].as_str().ok_or(RpcError::ParseError)?;
 
+            let pid = state.pid().await;
+            let db_key = state.group.read().await.db_key(&pid)?;
+            let db = wallet_db(&state.base, &pid, &db_key)?;
+
             let group_lock = state.group.read().await;
-            let mnemonic = group_lock.mnemonic(&gid, lock)?;
-            let account = group_lock.account(&gid)?;
+            let mnemonic = group_lock.mnemonic(&pid, lock, &state.secret)?;
+            let account = group_lock.account(&pid)?;
             let lang = account.lang();
             let pass = account.pass.to_string();
             let account_index = account.index as u32;
-            let db = group_lock.wallet_db(&gid)?;
             drop(group_lock);
 
             let mut results = HandleResult::new();
@@ -373,16 +370,16 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             address.insert(&db)?;
             results.rpcs.push(address.to_rpc());
             if address.main {
+                let a_db = account_db(&state.base, &state.secret)?;
                 let mut group_lock = state.group.write().await;
-                let a_db = group_lock.account_db()?;
-                let account = group_lock.account_mut(&gid)?;
+                let account = group_lock.account_mut(&pid)?;
                 account.wallet = address.chain.update_main(&address.address, &account.wallet);
                 account.pub_height = account.pub_height + 1;
                 account.update_info(&a_db)?;
-                let user = group_lock.clone_user(&gid)?;
+                let user = group_lock.clone_user(&pid)?;
                 drop(group_lock);
 
-                // broadcast all friends.
+                // broadcast to all friends.
                 state.layer.read().await.broadcast(user, &mut results);
             }
             Ok(results)
@@ -391,7 +388,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
 
     handler.add_method(
         "wallet-import",
-        |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
+        |params: Vec<RpcParam>, state: Arc<Global>| async move {
             let chain = ChainToken::from_i64(params[0].as_i64().ok_or(RpcError::ParseError)?);
             let secret = params[1].as_str().ok_or(RpcError::ParseError)?;
             let lock = params[2].as_str().ok_or(RpcError::ParseError)?;
@@ -399,10 +396,15 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             let sk: SecretKey = secret.parse().or(Err(RpcError::ParseError))?;
             let addr = format!("{:?}", (&sk).address());
 
+            let pid = state.pid().await;
+
             let group_lock = state.group.read().await;
-            let cbytes = group_lock.encrypt(&gid, lock, sk.as_ref())?;
-            let db = group_lock.wallet_db(&gid)?;
+            let ckey = &group_lock.account(&pid)?.encrypt;
+            let db_key = group_lock.db_key(&pid)?;
+            let cbytes = encrypt(&state.secret, lock, ckey, sk.as_ref())?;
             drop(group_lock);
+
+            let db = wallet_db(&state.base, &pid, &db_key)?;
 
             let mut address = Address::import(chain, addr, cbytes);
             address.insert(&db)?;
@@ -412,14 +414,13 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
 
     handler.add_method(
         "wallet-token",
-        |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
-            let network = Network::from_i64(params[0].as_i64().ok_or(RpcError::ParseError)?);
+        |params: Vec<RpcParam>, state: Arc<Global>| async move {
+            let net = Network::from_i64(params[0].as_i64().ok_or(RpcError::ParseError)?);
             let address = params[1].as_str().ok_or(RpcError::ParseError)?.to_owned();
 
-            let group_lock = state.group.read().await;
-            let db = group_lock.wallet_db(&gid)?;
-            let sender = group_lock.sender();
-            drop(group_lock);
+            let pid = state.pid().await;
+            let db_key = state.group.read().await.db_key(&pid)?;
+            let db = wallet_db(&state.base, &pid, &db_key)?;
 
             let c_str = if params.len() == 4 {
                 let cid = params[2].as_i64().ok_or(RpcError::ParseError)?;
@@ -429,34 +430,32 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
                 None
             };
 
-            let tokens = Token::list(&db, &network)?;
-            tokio::spawn(loop_token(sender, db, gid, network, address, c_str));
-            Ok(HandleResult::rpc(token_list(network, tokens)))
+            let tokens = Token::list(&db, &net)?;
+            tokio::spawn(loop_token(state.rpc_send.clone(), db, net, address, c_str));
+            Ok(HandleResult::rpc(token_list(net, tokens)))
         },
     );
 
     handler.add_method(
         "wallet-token-import",
-        |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
+        |params: Vec<RpcParam>, state: Arc<Global>| async move {
             let chain = ChainToken::from_i64(params[0].as_i64().ok_or(RpcError::ParseError)?);
-            let network = Network::from_i64(params[1].as_i64().ok_or(RpcError::ParseError)?);
-            let address = params[2].as_str().ok_or(RpcError::ParseError)?.to_owned();
-            let c_str = params[3].as_str().ok_or(RpcError::ParseError)?.to_owned();
+            let net = Network::from_i64(params[1].as_i64().ok_or(RpcError::ParseError)?);
+            let addr = params[2].as_str().ok_or(RpcError::ParseError)?.to_owned();
+            let c = params[3].as_str().ok_or(RpcError::ParseError)?.to_owned();
 
-            let group_lock = state.group.read().await;
-            let db = group_lock.wallet_db(&gid)?;
-            let sender = group_lock.sender();
-            drop(group_lock);
+            let pid = state.pid().await;
+            let db_key = state.group.read().await.db_key(&pid)?;
+            let db = wallet_db(&state.base, &pid, &db_key)?;
 
-            tokio::spawn(token_check(sender, db, gid, chain, network, address, c_str));
-
+            tokio::spawn(token_check(state.rpc_send.clone(), db, chain, net, addr, c));
             Ok(HandleResult::new())
         },
     );
 
     handler.add_method(
         "wallet-gas-price",
-        |_gid: GroupId, params: Vec<RpcParam>, _state: Arc<RpcState>| async move {
+        |params: Vec<RpcParam>, _state: Arc<Global>| async move {
             let chain = ChainToken::from_i64(params[0].as_i64().ok_or(RpcError::ParseError)?);
             let network = Network::from_i64(params[1].as_i64().ok_or(RpcError::ParseError)?);
             let from = params[2].as_str().ok_or(RpcError::ParseError)?;
@@ -471,7 +470,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
 
     handler.add_method(
         "wallet-transfer",
-        |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
+        |params: Vec<RpcParam>, state: Arc<Global>| async move {
             let chain = ChainToken::from_i64(params[0].as_i64().ok_or(RpcError::ParseError)?);
             let network = Network::from_i64(params[1].as_i64().ok_or(RpcError::ParseError)?);
             let from = params[2].as_i64().ok_or(RpcError::ParseError)?;
@@ -480,20 +479,23 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             let c_str = params[5].as_str().ok_or(RpcError::ParseError)?;
             let lock = params[6].as_str().ok_or(RpcError::ParseError)?;
 
+            let pid = state.pid().await;
             let group_lock = state.group.read().await;
-            if !group_lock.check_lock(&gid, &lock) {
+            if !group_lock.check_lock(&pid, &lock) {
                 return Err(RpcError::Custom("Lock is invalid!".to_owned()));
             }
-            let db = group_lock.wallet_db(&gid)?;
+            let db_key = group_lock.db_key(&pid)?;
+            let db = wallet_db(&state.base, &pid, &db_key)?;
             let address = Address::get(&db, &from)?;
 
             let (mnemonic, pbytes) = if address.is_gen() {
-                (group_lock.mnemonic(&gid, lock)?, vec![])
+                (group_lock.mnemonic(&pid, lock, &state.secret)?, vec![])
             } else {
-                let pbytes = group_lock.decrypt(&gid, lock, address.secret.as_ref())?;
+                let ckey = &group_lock.account(&pid)?.encrypt;
+                let pbytes = decrypt(&state.secret, lock, ckey, address.secret.as_ref())?;
                 (String::new(), pbytes)
             };
-            let account = group_lock.account(&gid)?;
+            let account = group_lock.account(&pid)?;
             let lang = account.lang();
             let pass = account.pass.to_string();
             let account_index = account.index as u32;
@@ -553,11 +555,13 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
 
     handler.add_method(
         "wallet-nft",
-        |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
+        |params: Vec<RpcParam>, state: Arc<Global>| async move {
             let address = params[0].as_i64().ok_or(RpcError::ParseError)?;
             let token = params[1].as_i64().ok_or(RpcError::ParseError)?;
 
-            let db = state.group.read().await.wallet_db(&gid)?;
+            let pid = state.pid().await;
+            let db_key = state.group.read().await.db_key(&pid)?;
+            let db = wallet_db(&state.base, &pid, &db_key)?;
             let nfts = Balance::list(&db, &address, &token)?;
 
             let mut results = vec![];
@@ -570,12 +574,14 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
 
     handler.add_method(
         "wallet-nft-add",
-        |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
+        |params: Vec<RpcParam>, state: Arc<Global>| async move {
             let address = params[0].as_i64().ok_or(RpcError::ParseError)?;
             let token = params[1].as_i64().ok_or(RpcError::ParseError)?;
             let hash = params[2].as_str().ok_or(RpcError::ParseError)?.to_owned();
 
-            let db = state.group.read().await.wallet_db(&gid)?;
+            let pid = state.pid().await;
+            let db_key = state.group.read().await.db_key(&pid)?;
+            let db = wallet_db(&state.base, &pid, &db_key)?;
             let t = Token::get(&db, &token)?;
             let a = Address::get(&db, &address)?;
 
@@ -598,13 +604,13 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
 
     handler.add_method(
         "wallet-main",
-        |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
+        |params: Vec<RpcParam>, state: Arc<Global>| async move {
             let id = params[0].as_i64().ok_or(RpcError::ParseError)?;
 
-            let group_lock = state.group.read().await;
-            let db = group_lock.wallet_db(&gid)?;
-            let a_db = group_lock.account_db()?;
-            drop(group_lock);
+            let pid = state.pid().await;
+            let db_key = state.group.read().await.db_key(&pid)?;
+            let db = wallet_db(&state.base, &pid, &db_key)?;
+            let a_db = account_db(&state.base, &state.secret)?;
 
             let address = Address::get(&db, &id)?;
             Address::main(&db, &id)?;
@@ -612,11 +618,11 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             let mut results = HandleResult::new();
 
             let mut group_lock = state.group.write().await;
-            let account = group_lock.account_mut(&gid)?;
+            let account = group_lock.account_mut(&pid)?;
             account.wallet = address.chain.update_main(&address.address, &account.wallet);
             account.pub_height = account.pub_height + 1;
             account.update_info(&a_db)?;
-            let user = group_lock.clone_user(&gid)?;
+            let user = group_lock.clone_user(&pid)?;
             drop(group_lock);
 
             // broadcast all friends.

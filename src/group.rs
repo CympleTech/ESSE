@@ -443,20 +443,19 @@ impl Group {
         Ok((pheight, oheight))
     }
 
-    //     pub fn clone_user(&self, pid: &PeerId) -> Result<User> {
-    //         if let Some(u) = self.accounts.get(pid) {
-    //             Ok(User::new(
-    //                 u.pid,
-    //                 self.addr,
-    //                 u.name.clone(),
-    //                 u.avatar.clone(),
-    //                 u.wallet.clone(),
-    //                 u.pub_height,
-    //             ))
-    //         } else {
-    //             Err(anyhow!("user missing."))
-    //         }
-    //     }
+    pub fn clone_user(&self, pid: &PeerId) -> Result<User> {
+        if let Some(u) = self.accounts.get(pid) {
+            Ok(User::new(
+                u.pid,
+                u.name.clone(),
+                u.avatar.clone(),
+                u.wallet.clone(),
+                u.pub_height,
+            ))
+        } else {
+            Err(anyhow!("user missing."))
+        }
+    }
 
     pub fn list_accounts(&self) -> &HashMap<PeerId, Account> {
         &self.accounts
@@ -547,15 +546,6 @@ impl Group {
         account.update(&account_db)?;
         account_db.close()
     }
-
-    //     pub fn encrypt(&self, pid: &PeerId, lock: &str, bytes: &[u8]) -> Result<Vec<u8>> {
-    //         let ckey = &self.account(pid)?.encrypt;
-    //         encrypt(&self.secret, lock, ckey, bytes)
-    //     }
-    //     pub fn decrypt(&self, pid: &PeerId, lock: &str, bytes: &[u8]) -> Result<Vec<u8>> {
-    //         let ckey = &self.account(pid)?.encrypt;
-    //         decrypt(&self.secret, lock, ckey, bytes)
-    //     }
 
     //     pub fn create_message(&self, pid: &PeerId, addr: Peer) -> Result<SendType> {
     //         let user = self.clone_user(pid)?;
