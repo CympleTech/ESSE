@@ -62,20 +62,20 @@ pub enum LayerEvent {
 
 impl LayerEvent {
     /// get event's group id.
-    pub fn gcd(&self) -> &GroupChatId {
+    pub fn gid(&self) -> &GroupChatId {
         match self {
-            Self::Offline(gcd) => gcd,
-            Self::Suspend(gcd) => gcd,
-            Self::Actived(gcd) => gcd,
-            Self::MemberOnline(gcd, ..) => gcd,
-            Self::MemberOffline(gcd, ..) => gcd,
-            Self::MemberOnlineSync(gcd) => gcd,
-            Self::MemberOnlineSyncResult(gcd, ..) => gcd,
-            Self::GroupName(gcd, ..) => gcd,
-            Self::GroupClose(gcd) => gcd,
-            Self::Sync(gcd, ..) => gcd,
-            Self::SyncReq(gcd, ..) => gcd,
-            Self::SyncRes(gcd, ..) => gcd,
+            Self::Offline(gid) => gid,
+            Self::Suspend(gid) => gid,
+            Self::Actived(gid) => gid,
+            Self::MemberOnline(gid, ..) => gid,
+            Self::MemberOffline(gid, ..) => gid,
+            Self::MemberOnlineSync(gid) => gid,
+            Self::MemberOnlineSyncResult(gid, ..) => gid,
+            Self::GroupName(gid, ..) => gid,
+            Self::GroupClose(gid) => gid,
+            Self::Sync(gid, ..) => gid,
+            Self::SyncReq(gid, ..) => gid,
+            Self::SyncRes(gid, ..) => gid,
         }
     }
 }

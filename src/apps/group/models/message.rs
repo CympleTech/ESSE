@@ -138,8 +138,8 @@ impl Message {
     }
 
     pub async fn sync(
-        own: &PeerId,
         base: &PathBuf,
+        own: &PeerId,
         db: &DStorage,
         fid: &i64,
         from: &i64,
@@ -191,17 +191,17 @@ pub(crate) async fn handle_network_message(
     base: &PathBuf,
     db_key: &str,
     height: i64,
-    gdid: i64,
+    id: i64,
     mid: PeerId,
     msg: NetworkMessage,
     datetime: i64,
     results: &mut HandleResult,
 ) -> Result<Message> {
     let db = group_db(base, own, db_key)?;
-    let mdid = Member::get_id(&db, &gdid, &mid)?;
+    let mdid = Member::get_id(&db, &id, &mid)?;
     let is_me = &mid == own;
     let (m_type, raw) = from_network_message(own, base, db_key, msg, results).await?;
-    let mut msg = Message::new_with_time(height, gdid, mdid, is_me, m_type, raw, datetime);
+    let mut msg = Message::new_with_time(height, id, mdid, is_me, m_type, raw, datetime);
     msg.insert(&db)?;
     Ok(msg)
 }

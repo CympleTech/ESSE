@@ -85,10 +85,9 @@ class _GroupChatDetailState extends State<GroupChatDetail> {
     }
   }
 
-  // [group_id, member_id, member_addr]
+  // [group_id, member_id]
   _memberOnline(List params) {
     if (_group.id == params[0] && this._members.containsKey(params[1])) {
-      this._members[params[1]]!.addr = params[2];
       this._members[params[1]]!.online = true;
       setState(() {});
     }

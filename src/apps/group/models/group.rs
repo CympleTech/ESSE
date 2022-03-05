@@ -177,7 +177,13 @@ impl GroupChat {
         db.update(&sql)
     }
 
-    pub fn close(db: &DStorage, gid: &GroupChatId, addr: &PeerId) -> Result<GroupChat> {
+    pub fn close(db: &DStorage, id: &i64) -> Result<GroupChat> {
+        let sql = format!("UPDATE groups SET is_close = true WHERE id = {}", id);
+        db.update(&sql)?;
+        Self::get(db, id)
+    }
+
+    pub fn close_id(db: &DStorage, gid: &GroupChatId, addr: &PeerId) -> Result<GroupChat> {
         let group = Self::get_id(db, gid, addr)?;
         let sql = format!("UPDATE groups SET is_close = true WHERE id = {}", group.id);
         db.update(&sql)?;

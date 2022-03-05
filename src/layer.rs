@@ -119,12 +119,6 @@ impl Layer {
         }
     }
 
-    pub fn group_add(&mut self, gid: GroupChatId, pid: PeerId, sid: i64, fid: i64, h: i64) {
-        if !self.groups.contains_key(&gid) {
-            self.groups.insert(gid, LayerSession::new(pid, sid, fid, h));
-        }
-    }
-
     pub fn group(&self, gid: &GroupChatId) -> Result<&LayerSession> {
         if let Some(session) = self.groups.get(gid) {
             Ok(session)
@@ -133,16 +127,22 @@ impl Layer {
         }
     }
 
-    pub fn group_rm_online(&mut self, gid: &GroupChatId) -> Option<Vec<PeerId>> {
-        self.groups.remove(gid).map(|session| session.addrs)
-    }
-
-    pub fn group_increased(&mut self, gid: &GroupChatId) -> Result<i64> {
+    pub fn group_mut(&mut self, gid: &GroupChatId) -> Result<&mut LayerSession> {
         if let Some(session) = self.groups.get_mut(gid) {
-            Ok(session.increased())
+            Ok(session)
         } else {
             Err(anyhow!("session missing!"))
         }
+    }
+
+    pub fn group_add(&mut self, gid: GroupChatId, pid: PeerId, sid: i64, fid: i64, h: i64) {
+        if !self.groups.contains_key(&gid) {
+            self.groups.insert(gid, LayerSession::new(pid, sid, fid, h));
+        }
+    }
+
+    pub fn group_del(&mut self, gid: &GroupChatId) -> Option<Vec<PeerId>> {
+        self.groups.remove(gid).map(|session| session.addrs)
     }
 
     pub fn group_add_member(&mut self, gid: &GroupChatId, addr: PeerId) {
@@ -155,6 +155,16 @@ impl Layer {
         if let Some(session) = self.groups.get_mut(gid) {
             session.addrs.remove(index);
         }
+    }
+
+    pub fn group_del_online(&mut self, gid: &GroupChatId, addr: &PeerId) -> bool {
+        if let Some(session) = self.groups.get_mut(gid) {
+            if let Some(pos) = session.addrs.iter().position(|x| x == addr) {
+                session.addrs.remove(pos);
+                return true;
+            }
+        }
+        false
     }
 
     // pub fn remove_running(&mut self, gid: &GroupId) -> HashMap<PeerId, GroupId> {
@@ -248,7 +258,6 @@ impl Layer {
     // }
 
     pub fn broadcast(&self, user: User, results: &mut HandleResult) {
-        let gid = user.id;
         let info = ChatLayerEvent::InfoRes(user);
         let data = bincode::serialize(&info).unwrap_or(vec![]);
 
@@ -256,6 +265,8 @@ impl Layer {
             let msg = SendType::Event(0, *fpid, data.clone());
             results.layers.push((CHAT_ID, msg));
         }
+
+        // TODO GROUPS
     }
 }
 
@@ -326,8 +337,8 @@ impl LayerSession {
         }
     }
 
-    pub fn info(&self) -> (i64, i64, i64) {
-        (self.height, self.s_id, self.db_id)
+    pub fn info(&self) -> (i64, i64, i64, PeerId) {
+        (self.height, self.s_id, self.db_id, self.addrs[0])
     }
 
     pub fn increased(&mut self) -> i64 {

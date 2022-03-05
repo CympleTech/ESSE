@@ -124,7 +124,6 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<Global>) {
 
             let mut m = Member::new(gh, id, pid, me.name);
             m.insert(&db)?;
-            let mid = m.id;
             let _ = write_avatar(&state.base, &pid, &pid, &me.avatar).await;
 
             // Add new session.
@@ -192,7 +191,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<Global>) {
 
             if g.local {
                 // local save.
-                let new_h = state.layer.write().await.group_increased(&gid)?;
+                let new_h = state.layer.write().await.group_mut(&gid)?.increased();
 
                 let mut mem = Member::new(new_h, g.id, f.pid, f.name);
                 mem.insert(&group_db)?;
@@ -236,7 +235,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<Global>) {
 
             if group.local {
                 // local save.
-                let new_h = state.layer.write().await.group_increased(&gid)?;
+                let new_h = state.layer.write().await.group_mut(&gid)?.increased();
 
                 let mut msg = Message::new_with_time(new_h, id, mid, true, m_type, raw, datetime);
                 msg.insert(&db)?;
@@ -311,7 +310,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<Global>) {
             if g.local {
                 // dissolve group.
                 let data = bincode::serialize(&LayerEvent::GroupClose(g.gid))?;
-                if let Some(addrs) = state.layer.write().await.group_rm_online(&g.gid) {
+                if let Some(addrs) = state.layer.write().await.group_del(&g.gid) {
                     for addr in addrs {
                         let s = SendType::Event(0, addr, data.clone());
                         results.layers.push((GROUP_CHAT_ID, s));

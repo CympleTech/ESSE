@@ -1,14 +1,11 @@
 use chat_types::CHAT_ID;
 use esse_primitives::{id_from_str, id_to_str};
-use group_types::GroupChatId;
-use group_types::GROUP_CHAT_ID;
-use std::collections::HashMap;
+use group_types::{GroupChatId, LayerEvent as GroupLayerEvent, GROUP_CHAT_ID};
 use std::net::SocketAddr;
 use std::sync::Arc;
 use tdn::{
     prelude::{new_send_channel, start_main},
     types::{
-        group::GroupId,
         message::{
             NetworkType, RpcSendMessage, SendMessage, SendType, StateRequest, StateResponse,
         },
@@ -17,21 +14,15 @@ use tdn::{
     },
 };
 use tdn_did::{generate_mnemonic, Count};
-use tokio::sync::{
-    mpsc::{self, error::SendError, Sender},
-    RwLock,
-};
 
 use crate::account::lang_from_i64;
 use crate::apps::app_rpc_inject;
 use crate::apps::chat::{chat_conn, LayerEvent as ChatLayerEvent};
+use crate::apps::group::{group_conn, GroupChat};
 use crate::global::Global;
-//use crate::apps::group::{add_layer, group_conn, GroupChat};
 //use crate::event::InnerEvent;
-use crate::group::Group;
-use crate::layer::Layer;
 use crate::session::{connect_session, Session, SessionType};
-use crate::storage::session_db;
+use crate::storage::{group_db, session_db};
 
 pub(crate) fn init_rpc(global: Arc<Global>) -> RpcHandler<Global> {
     let mut handler = new_rpc_handler(global);
@@ -130,28 +121,6 @@ fn session_list(sessions: Vec<Session>) -> RpcParam {
 }
 
 #[inline]
-pub(crate) async fn sleep_waiting_close_stable(
-    sender: Sender<SendMessage>,
-    groups: HashMap<PeerId, ()>,
-    layers: HashMap<PeerId, GroupId>,
-) -> std::result::Result<(), SendError<SendMessage>> {
-    tokio::time::sleep(std::time::Duration::from_secs(10)).await;
-    for (addr, _) in groups {
-        sender
-            .send(SendMessage::Group(SendType::Disconnect(addr)))
-            .await?;
-    }
-
-    for (faddr, fgid) in layers {
-        sender
-            .send(SendMessage::Layer(fgid, SendType::Disconnect(faddr)))
-            .await?;
-    }
-
-    Ok(())
-}
-
-#[inline]
 pub(crate) async fn inner_rpc(uid: u64, method: &str, global: &Arc<Global>) -> Result<()> {
     // Inner network default rpc method. only use in http-rpc.
     if method == "network-stable" || method == "network-dht" {
@@ -161,7 +130,7 @@ pub(crate) async fn inner_rpc(uid: u64, method: &str, global: &Arc<Global>) -> R
             _ => return Ok(()),
         };
 
-        let (s, mut r) = mpsc::channel::<StateResponse>(128);
+        let (s, mut r) = tokio::sync::mpsc::channel::<StateResponse>(128);
         let _ = global
             .send(SendMessage::Network(NetworkType::NetworkState(req, s)))
             .await?;
@@ -371,7 +340,7 @@ fn new_rpc_handler(global: Arc<Global>) -> RpcHandler<Global> {
             let pid = id_from_str(params[0].as_str().ok_or(RpcError::ParseError)?)?;
             let me_lock = params[1].as_str().ok_or(RpcError::ParseError)?;
 
-            let mut results = HandleResult::rpc(json!([id_to_str(&pid)]));
+            let results = HandleResult::rpc(json!([id_to_str(&pid)]));
 
             let (tdn_send, tdn_recv) = new_send_channel();
             let running = state.reset(&pid, me_lock, tdn_send).await?;
@@ -379,31 +348,20 @@ fn new_rpc_handler(global: Arc<Global>) -> RpcHandler<Global> {
                 return Ok(results);
             }
 
-            // TODO load all local services created by this account.
+            // load all local services created by this account.
+            let db_key = state.group.read().await.db_key(&pid)?;
+            let group_db = group_db(&state.base, &pid, &db_key)?;
+            let s_db = session_db(&state.base, &pid, &db_key)?;
             // 1. group chat.
-            // let self_addr = layer_lock.addr.clone();
-            // let group_lock = state.group.read().await;
-            // let group_db = group_lock.group_db(&ogid)?;
-            // let s_db = group_lock.session_db(&ogid)?;
-            // drop(group_lock);
-            // let group_chats = GroupChat::local(&group_db)?;
-            // for g in group_chats {
-            //     layer_lock.add_running(&g.g_id, ogid, g.id, g.height)?;
-            //     results.networks.push(NetworkType::AddGroup(g.g_id));
-
-            //     // 2. online group to self group onlines.
-            //     if let Some(session) =
-            //         connect_session(&s_db, &SessionType::Group, &g.id, &self_addr)?
-            //     {
-            //         layer_lock.running_mut(&ogid)?.check_add_online(
-            //             g.g_id,
-            //             Online::Direct(self_addr),
-            //             session.id,
-            //             g.id,
-            //         )?;
-            //     }
-            // }
-            // drop(layer_lock);
+            let group_chats = GroupChat::local(&group_db)?;
+            let mut layer = state.layer.write().await;
+            for g in group_chats {
+                // 2. online group to self group onlines.
+                if let Some(s) = connect_session(&s_db, &SessionType::Group, &g.id, &pid)? {
+                    layer.group_add(g.gid, g.addr, s.id, g.id, g.height);
+                }
+            }
+            drop(layer);
 
             let key = state.group.read().await.keypair();
             let peer_id = start_main(
@@ -475,11 +433,7 @@ fn new_rpc_handler(global: Arc<Global>) -> RpcHandler<Global> {
                     if let Some(addr) = online {
                         return Ok(HandleResult::rpc(json!([id, id_to_str(&addr)])));
                     }
-                    // add_layer(
-                    //     &mut results,
-                    //     gid,
-                    //     group_conn(proof, Peer::peer(s.addr), s.gid),
-                    // );
+                    group_conn(s.addr, remote_gid, &mut results);
                 }
                 _ => {}
             }
@@ -519,9 +473,9 @@ fn new_rpc_handler(global: Arc<Global>) -> RpcHandler<Global> {
                     if layer_lock.group_suspend(&remote_gid, true, must)?.is_some() {
                         results.rpcs.push(json!([id]));
                     }
-                    //let data = bincode::serialize(&GroupLayerEvent::Suspend(remote_gid))?;
-                    //let msg = SendType::Event(0, s.addr, data);
-                    //results.layers.push((GROUP_CHAT_ID, msg));
+                    let data = bincode::serialize(&GroupLayerEvent::Suspend(remote_gid))?;
+                    let msg = SendType::Event(0, s.addr, data);
+                    results.layers.push((GROUP_CHAT_ID, msg));
                 }
                 _ => {
                     return Ok(HandleResult::new()); // others has no online.
