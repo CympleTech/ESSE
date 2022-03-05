@@ -2,7 +2,7 @@ use rand::Rng;
 use serde::{Deserialize, Serialize};
 use std::time::{SystemTime, UNIX_EPOCH};
 use tdn::types::{
-    primitive::Result,
+    primitives::Result,
     rpc::{json, RpcParam},
 };
 use tdn_storage::local::{DStorage, DsValue};

@@ -1,5 +1,5 @@
 use tdn::types::{
-    primitive::{PeerId, Result},
+    primitives::{PeerId, Result},
     rpc::{json, RpcParam},
 };
 use tdn_storage::local::{DStorage, DsValue};

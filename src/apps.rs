@@ -17,25 +17,25 @@ use crate::rpc::session_lost;
 use crate::storage::group_db;
 
 pub(crate) mod chat;
-//pub(crate) mod cloud;
+pub(crate) mod cloud;
 pub(crate) mod device;
-//pub(crate) mod domain;
-//pub(crate) mod file;
+pub(crate) mod domain;
+pub(crate) mod file;
 pub(crate) mod group;
 pub(crate) mod jarvis;
-//pub(crate) mod dao;
 pub(crate) mod wallet;
+//pub(crate) mod dao;
 
 pub(crate) fn app_rpc_inject(handler: &mut RpcHandler<Global>) {
-    //device::new_rpc_handler(handler);
+    device::new_rpc_handler(handler);
     chat::new_rpc_handler(handler);
     jarvis::new_rpc_handler(handler);
-    //domain::new_rpc_handler(handler);
-    //file::new_rpc_handler(handler);
+    domain::new_rpc_handler(handler);
+    file::new_rpc_handler(handler);
     group::new_rpc_handler(handler);
     wallet::new_rpc_handler(handler);
+    cloud::new_rpc_handler(handler);
     //dao::new_rpc_handler(handler);
-    //cloud::new_rpc_handler(handler);
 }
 
 pub(crate) async fn app_layer_handle(
@@ -48,9 +48,9 @@ pub(crate) async fn app_layer_handle(
     match (fgid, tgid) {
         (CHAT_ID, 0) | (0, CHAT_ID) => chat::handle(msg, global).await,
         (GROUP_CHAT_ID, 0) | (0, GROUP_CHAT_ID) => group::handle(msg, global).await,
-        (DAO_ID, 0) => chat::handle(msg, global).await,
-        (DOMAIN_ID, 0) => chat::handle(msg, global).await,
-        (CLOUD_ID, 0) => chat::handle(msg, global).await,
+        (DOMAIN_ID, 0) | (0, DOMAIN_ID) => domain::handle(msg, global).await,
+        (CLOUD_ID, 0) | (0, CLOUD_ID) => cloud::handle(msg, global).await,
+        (DAO_ID, 0) | (0, DAO_ID) => chat::handle(msg, global).await,
         _ => match msg {
             RecvType::Leave(peer) => {
                 debug!("Peer leaved: {}", peer.id.to_hex());

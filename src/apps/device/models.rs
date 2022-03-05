@@ -63,32 +63,6 @@ impl Device {
         Ok(devices)
     }
 
-    pub fn distributes(db: &DStorage) -> Result<Vec<(Peer, i64, bool)>> {
-        let matrix = db.query("SELECT id, peer FROM devices")?;
-        let mut devices = vec![];
-        for mut v in matrix {
-            if v.len() == 3 {
-                let peer = Peer::from_string(v.pop().unwrap().as_str()).unwrap_or(Peer::default());
-                let id = v.pop().unwrap().as_i64();
-                devices.push((peer, id, false));
-            }
-        }
-        Ok(devices)
-    }
-
-    pub fn device_info(db: &DStorage) -> Result<(String, String)> {
-        let mut matrix = db.query("SELECT name, info FROM devices ORDER BY id LIMIT 1")?;
-        if matrix.len() > 0 {
-            let mut values = matrix.pop().unwrap(); // safe unwrap()
-            if values.len() == 2 {
-                let info = values.pop().unwrap().as_string();
-                let name = values.pop().unwrap().as_string();
-                return Ok((name, info));
-            }
-        }
-        Ok((String::new(), String::new()))
-    }
-
     pub fn insert(&mut self, db: &DStorage) -> Result<()> {
         let sql = format!(
             "INSERT INTO devices (name, info, peer, lasttime) VALUES ('{}', '{}', '{}', {})",

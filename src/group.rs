@@ -30,12 +30,8 @@ pub(crate) struct Group {
     pub accounts: HashMap<PeerId, Account>,
     /// current account secret keypair.
     pub keypair: PeerKey,
-    /// current account device's name.
-    pub device_name: String,
-    /// current account device's info.
-    pub device_info: String,
     /// current account distribute connected devices.
-    pub distributes: Vec<(Peer, i64, bool)>,
+    pub distributes: Vec<Device>,
     /// current account uptime
     pub uptime: u32,
 }
@@ -238,8 +234,6 @@ impl Group {
         Group {
             accounts,
             keypair: PeerKey::default(),
-            device_name: String::new(),
-            device_info: String::new(),
             distributes: vec![],
             uptime: 0,
         }
@@ -254,25 +248,25 @@ impl Group {
         Ok(self.account(pid)?.plainkey())
     }
 
-    pub fn online(&mut self, peer: &Peer) -> Result<i64> {
-        for i in self.distributes.iter_mut() {
-            if &i.0 == peer {
-                i.2 = true;
-                return Ok(i.1);
-            }
-        }
-        Err(anyhow!("missing distribute device"))
-    }
+    // pub fn online(&mut self, peer: &Peer) -> Result<i64> {
+    //     for i in self.distributes.iter_mut() {
+    //         if &i.0 == peer {
+    //             i.2 = true;
+    //             return Ok(i.1);
+    //         }
+    //     }
+    //     Err(anyhow!("missing distribute device"))
+    // }
 
-    pub fn offline(&mut self, peer: &Peer) -> Result<i64> {
-        for i in self.distributes.iter_mut() {
-            if &i.0 == peer {
-                i.2 = false;
-                return Ok(i.1);
-            }
-        }
-        Err(anyhow!("missing distribute device"))
-    }
+    // pub fn offline(&mut self, peer: &Peer) -> Result<i64> {
+    //     for i in self.distributes.iter_mut() {
+    //         if &i.0 == peer {
+    //             i.2 = false;
+    //             return Ok(i.1);
+    //         }
+    //     }
+    //     Err(anyhow!("missing distribute device"))
+    // }
 
     pub fn check_lock(&self, pid: &PeerId, lock: &str) -> bool {
         if let Some(account) = self.accounts.get(pid) {
@@ -427,12 +421,8 @@ impl Group {
         self.keypair = keypair;
 
         let db = consensus_db(base, pid, &self.db_key(pid)?)?;
-        self.distributes = Device::distributes(&db)?;
-
-        let (device_name, device_info) = Device::device_info(&db)?;
+        self.distributes = Device::list(&db)?;
         db.close()?;
-        self.device_name = device_name;
-        self.device_info = device_info;
 
         let start = SystemTime::now();
         self.uptime = start
@@ -545,6 +535,14 @@ impl Group {
         account.pin(secret, lock, new)?;
         account.update(&account_db)?;
         account_db.close()
+    }
+
+    pub fn device(&self) -> Result<&Device> {
+        if self.distributes.len() > 0 {
+            Ok(&self.distributes[0])
+        } else {
+            Err(anyhow!("no devices"))
+        }
     }
 
     //     pub fn create_message(&self, pid: &PeerId, addr: Peer) -> Result<SendType> {

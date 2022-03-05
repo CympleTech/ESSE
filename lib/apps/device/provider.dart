@@ -32,7 +32,7 @@ class DeviceProvider extends ChangeNotifier {
     this.clear();
 
     // load status.
-    rpc.send('device-status', [this.devices[id]!.addr]);
+    rpc.send('device-status', [id]);
   }
 
   connect(String addr) {

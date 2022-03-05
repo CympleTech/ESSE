@@ -275,21 +275,22 @@ class DeviceListenPage extends StatefulWidget {
 class _DeviceListenPageState extends State<DeviceListenPage> {
   Widget percentWidget(double cpu_p, String cpu_u, double radius, Color color) {
     return Container(
-      width: radius + 10,
+      margin: const EdgeInsets.symmetric(vertical: 10.0),
+      width: radius * 2,
       alignment: Alignment.center,
       child: CircularPercentIndicator(
         radius: radius,
         lineWidth: 16.0,
         animation: true,
         percent: cpu_p/100,
-        center: Text("${cpu_p}%",
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20.0),
-        ),
-        footer: Padding(
-          padding: const EdgeInsets.only(top: 8.0, bottom: 32.0),
-          child: Text(cpu_u,
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17.0),
-          ),
+        center: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Text("${cpu_p}%", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20.0)),
+            const SizedBox(height: 4.0),
+            Text(cpu_u)
+          ]
         ),
         circularStrokeCap: CircularStrokeCap.round,
         progressColor: color,
@@ -305,17 +306,28 @@ class _DeviceListenPageState extends State<DeviceListenPage> {
     final status = context.watch<DeviceProvider>().status;
     final uptimes = status.uptime.uptime();
 
-    double radius = MediaQuery.of(context).size.width / 2 - 40;
-    if (radius > 150) {
-      radius = 150;
+    double radius = MediaQuery.of(context).size.width / 4 - 10;
+    if (radius > 100) {
+      radius = 100;
+    } else {
+      radius = MediaQuery.of(context).size.width / 2 - 50;
+      if (radius > 99) {
+        radius = 99;
+      }
     }
 
-    double height = MediaQuery.of(context).size.height / 2 - radius - 60;
-    if (height < 16) {
-      height = 16;
-    } else if (!isDesktop) {
-      height = 32;
-    }
+    final w1 = percentWidget(
+      status.cpu_p(), "CPU: ${status.cpu_u()} cores", radius, Color(0xFF6174FF),
+    );
+    final w2 = percentWidget(
+      status.memory_p(), "${lang.memory}: ${status.memory_u()}", radius, Colors.blue,
+    );
+    final w3 = percentWidget(
+      status.swap_p(), "${lang.swap}: ${status.memory_u()}", radius, Colors.green,
+    );
+    final w4 = percentWidget(
+      status.disk_p(), "${lang.disk}: ${status.disk_u()}", radius, Colors.purple,
+    );
 
     return Scaffold(
       body: SafeArea(
@@ -350,47 +362,21 @@ class _DeviceListenPageState extends State<DeviceListenPage> {
                   const SizedBox(height: 10.0),
                 ]
               ),
-              SizedBox(height: height),
+              const SizedBox(height: 20.0),
               Expanded(
                 child: SingleChildScrollView(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          percentWidget(
-                            status.cpu_p(),
-                            "CPU: ${status.cpu_u()} cores",
-                            radius,
-                            Color(0xFF6174FF),
-                          ),
-                          percentWidget(
-                            status.memory_p(),
-                            "${lang.memory}: ${status.memory_u()}",
-                            radius,
-                            Colors.blue,
-                          ),
-                        ]
+                    children:
+                    radius == 100 ? [
+                      Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [w1, w2]
                       ),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          percentWidget(
-                            status.swap_p(),
-                            "${lang.swap}: ${status.memory_u()}",
-                            radius,
-                            Colors.green,
-                          ),
-                          percentWidget(
-                            status.disk_p(),
-                            "${lang.disk}: ${status.disk_u()}",
-                            radius,
-                            Colors.purple,
-                          ),
-                        ]
+                      const SizedBox(height: 40.0),
+                      Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [w3, w4]
                       ),
-                    ]
+                    ] : [w1, w2, w3, w4]
                   ),
                 )
               )
