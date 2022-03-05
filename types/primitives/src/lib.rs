@@ -77,11 +77,11 @@ pub mod bs32 {
 
 use tdn_types::primitives::{new_io_error, PeerId, PEER_ID_LENGTH};
 
-pub fn id_to_string(peer: &PeerId) -> String {
+pub fn id_to_str(peer: &PeerId) -> String {
     bs32::encode(&peer.0)
 }
 
-pub fn id_from_string(s: &str) -> std::io::Result<PeerId> {
+pub fn id_from_str(s: &str) -> std::io::Result<PeerId> {
     let data = bs32::decode(s).ok_or(new_io_error("id from string is failure."))?;
     if data.len() != PEER_ID_LENGTH {
         return Err(new_io_error("id from string is failure."));

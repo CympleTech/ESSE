@@ -14,12 +14,12 @@ const DEFAULT_ONLINE_INIT = 8;
 const DEFAULT_ONLINE_DELAY = 5;
 
 class AccountProvider extends ChangeNotifier {
-  Map<String, Account> accounts = {}; // account's gid and account.
-  String activedAccountId = ''; // actived account gid.
+  Map<String, Account> accounts = {}; // account's pid and account.
+  String activedAccountId = ''; // actived account pid.
   Account get activedAccount => this.accounts[activedAccountId]!;
 
   /// current user's did.
-  String get id => this.activedAccount.gid;
+  String get id => this.activedAccount.pid;
 
   bool systemAppFriendAddNew = false;
 
@@ -48,7 +48,6 @@ class AccountProvider extends ChangeNotifier {
     rpc.addNotice(_accountNotice);
 
     // rpc
-    rpc.addListener('account-system-info', _systemInfo);
     rpc.addListener('account-update', _accountUpdate);
     rpc.addListener('account-login', _accountLogin);
 
@@ -65,28 +64,26 @@ class AccountProvider extends ChangeNotifier {
   }
 
   /// when security load accounts from cache.
-  autoAccounts(String gid, String pin, Map<String, Account> accounts) {
-    Global.changeGid(gid);
+  autoAccounts(String pid, String pin, Map<String, Account> accounts) {
+    Global.changePid(pid);
     this.accounts = accounts;
 
-    this.activedAccountId = gid;
+    this.activedAccountId = pid;
     this.activedAccount.online = true;
     this.activedAccount.pin = pin;
 
     rpc.send('session-list', []);
-    new Future.delayed(Duration(seconds: DEFAULT_ONLINE_INIT),
-      () => rpc.send('account-online', [gid]));
 
-    initLogined(gid, this.accounts.values.toList());
+    initLogined(pid, this.accounts.values.toList());
     this.coreShowWidget = DefaultCoreShow();
   }
 
   /// when security add account.
   addAccount(Account account, String pin) {
-    Global.changeGid(account.gid);
-    this.accounts[account.gid] = account;
+    Global.changePid(account.pid);
+    this.accounts[account.pid] = account;
 
-    this.activedAccountId = account.gid;
+    this.activedAccountId = account.pid;
     this.activedAccount.online = true;
     this.activedAccount.pin = pin;
 
@@ -94,11 +91,11 @@ class AccountProvider extends ChangeNotifier {
     updateLogined(account);
   }
 
-  updateActivedAccount(String gid, String pin) {
-    Global.changeGid(gid);
+  updateActivedAccount(String pid, String pin) {
+    Global.changePid(pid);
     this.clearActivedAccount();
 
-    this.activedAccountId = gid;
+    this.activedAccountId = pid;
     this.activedAccount.online = true;
     this.activedAccount.pin = pin;
     this.activedAccount.hasNew = false;
@@ -113,11 +110,9 @@ class AccountProvider extends ChangeNotifier {
 
     if (!this.activedAccount.online) {
       this.activedAccount.online = true;
-      new Future.delayed(Duration(seconds: DEFAULT_ONLINE_DELAY),
-          () => rpc.send('account-online', [gid]));
     }
 
-    mainLogined(gid);
+    mainLogined(pid);
     notifyListeners();
   }
 
@@ -133,25 +128,22 @@ class AccountProvider extends ChangeNotifier {
     clearLogined();
   }
 
-  onlineAccount(String gid, String pin) {
-    this.accounts[gid]!.online = true;
-    this.accounts[gid]!.pin = pin;
+  onlineAccount(String pid, String pin) {
+    this.accounts[pid]!.online = true;
+    this.accounts[pid]!.pin = pin;
 
-    rpc.send('account-login', [gid, pin]);
-
-    new Future.delayed(Duration(seconds: DEFAULT_ONLINE_DELAY),
-        () => rpc.send('account-online', [gid]));
+    rpc.send('account-login', [pid, pin]);
     notifyListeners();
   }
 
-  offlineAccount(String gid) {
-    this.accounts[gid]!.online = false;
-    this.accounts[gid]!.pin = '';
+  offlineAccount(String pid) {
+    this.accounts[pid]!.online = false;
+    this.accounts[pid]!.pin = '';
 
-    if (gid == this.activedAccountId) {
+    if (pid == this.activedAccountId) {
       this.clearActivedAccount();
     }
-    rpc.send('account-offline', [gid]);
+    rpc.send('account-offline', [pid]);
 
     notifyListeners();
   }
@@ -181,7 +173,7 @@ class AccountProvider extends ChangeNotifier {
 
   clearActivedSession(SessionType type) {
     if (this.actived > 0 && this.activedSession.type == type) {
-      rpc.send('session-suspend', [this.actived, this.activedSession.gid,
+      rpc.send('session-suspend', [this.actived, this.activedSession.pid,
           this.activedSession.type == SessionType.Group]
       );
       this.actived = 0;
@@ -202,7 +194,7 @@ class AccountProvider extends ChangeNotifier {
 
     if (id > 0) {
       if (this.actived != id && this.actived > 0) {
-        rpc.send('session-suspend', [this.actived, this.activedSession.gid,
+        rpc.send('session-suspend', [this.actived, this.activedSession.pid,
             this.activedSession.type == SessionType.Group]
         );
       }
@@ -219,7 +211,7 @@ class AccountProvider extends ChangeNotifier {
               }
           });
         }
-        rpc.send('session-connect', [id, this.activedSession.gid]);
+        rpc.send('session-connect', [id, this.activedSession.pid]);
         notifyListeners();
       }
     }
@@ -237,17 +229,13 @@ class AccountProvider extends ChangeNotifier {
   }
 
   // -- callback when receive rpc info. -- //
-  _systemInfo(List params) {
-    Global.addr = params[0];
-  }
-
   _accountLogin(List _params) {
     // nothing.
   }
 
-  _accountNotice(String gid) {
-    if (this.accounts.containsKey(gid)) {
-      this.accounts[gid]!.hasNew = true;
+  _accountNotice(String pid) {
+    if (this.accounts.containsKey(pid)) {
+      this.accounts[pid]!.hasNew = true;
       notifyListeners();
     }
   }
@@ -261,10 +249,10 @@ class AccountProvider extends ChangeNotifier {
   }
 
   _accountUpdate(List params) {
-    final gid = params[0];
-    this.accounts[gid]!.name = params[1];
+    final pid = params[0];
+    this.accounts[pid]!.name = params[1];
     if (params[2].length > 1) {
-      this.accounts[gid]!.updateAvatar(params[2]);
+      this.accounts[pid]!.updateAvatar(params[2]);
     }
     notifyListeners();
   }

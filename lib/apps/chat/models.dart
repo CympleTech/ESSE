@@ -8,9 +8,8 @@ import 'package:esse/apps/primitives.dart';
 
 class Friend {
   int id = 0;
-  String gid = '';
+  String pid = '';
   String name = '';
-  String addr = '';
   String wallet = '';
   String remark = '';
   bool isClosed = false;
@@ -18,10 +17,10 @@ class Friend {
   bool online = false;
 
   // new friend from network
-  Friend(this.gid, this.name, this.addr);
+  Friend(this.pid, this.name);
 
   Avatar showAvatar({bool needOnline = false, double width = 45.0}) {
-    final avatar = Global.avatarPath + this.gid + '.png';
+    final avatar = Global.avatarPath + this.pid + '.png';
     if (needOnline) {
       return Avatar(width: width, name: this.name, avatarPath: avatar,
         online: this.online,
@@ -34,23 +33,21 @@ class Friend {
 
   Friend.fromList(List params) {
     this.id = params[0];
-    this.gid = params[1];
-    this.addr = params[2];
-    this.name = params[3];
-    this.wallet = params[4];
-    this.remark = params[5];
-    this.isClosed = params[6];
-    this.time = RelativeTime.fromInt(params[7]);
-    if (params.length == 9) {
-      this.online = params[8];
+    this.pid = params[1];
+    this.name = params[2];
+    this.wallet = params[3];
+    this.remark = params[4];
+    this.isClosed = params[5];
+    this.time = RelativeTime.fromInt(params[6]);
+    if (params.length == 8) {
+      this.online = params[7];
     }
   }
 }
 
 class Request {
   int id = 0;
-  String gid = '';
-  String addr = '';
+  String pid = '';
   String name = '';
   String remark = '';
   bool isMe = true;
@@ -59,33 +56,32 @@ class Request {
   bool isDelivery = false;
   RelativeTime time = RelativeTime();
 
-  Request(this.gid, this.addr, this.name, this.remark);
+  Request(this.pid, this.name, this.remark);
 
   overIt(bool isOk) {
     this.over = true;
     this.ok = isOk;
   }
 
-  Friend toFriend(String gid) {
-    return Friend(gid, this.name, this.addr);
+  Friend toFriend(String pid) {
+    return Friend(pid, this.name);
   }
 
   Avatar showAvatar([double width = 45.0]) {
-    final avatar = Global.avatarPath + this.gid + '.png';
+    final avatar = Global.avatarPath + this.pid + '.png';
     return Avatar(width: width, name: this.name, avatarPath: avatar);
   }
 
   Request.fromList(List params) {
     this.id = params[0];
-    this.gid = params[1];
-    this.addr = params[2];
-    this.name = params[3];
-    this.remark = params[4];
-    this.isMe = params[5];
-    this.ok = params[6];
-    this.over = params[7];
-    this.isDelivery = params[8];
-    this.time = RelativeTime.fromInt(params[9]);
+    this.pid = params[1];
+    this.name = params[2];
+    this.remark = params[3];
+    this.isMe = params[4];
+    this.ok = params[5];
+    this.over = params[6];
+    this.isDelivery = params[7];
+    this.time = RelativeTime.fromInt(params[8]);
   }
 }
 

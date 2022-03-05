@@ -34,9 +34,9 @@ panic = 'abort'
 anyhow = "1.0"
 log = "0.4"
 rand = "0.8"
-once_cell = "1.8"
+once_cell = "1.9"
 simplelog = "0.11"
-image = "0.23"
+image = "0.24"
 base64 = "0.13"
 hex = "0.4"
 sha2 = "0.10"
@@ -44,13 +44,14 @@ argon2 = "0.3"
 blake3 = "1.3"
 bincode = "1.3"
 aes-gcm = "0.9"
-sysinfo = "0.21"
+sysinfo = "0.23"
 serde = { version = "1", features = ["derive"] }
 tokio = { version = "1", features = ["full"] }
-web3 = { version = "0.17", default-features = false, features = ["http-tls", "signing"] }
-tdn = { version = "0.7", default-features = false, features = ["full"] }
+web3 = { version = "0.18", default-features = false, features = ["http-tls", "signing"] }
+tdn = { version = "0.7", default-features = false, features = ["std"] }
 tdn_did = { version = "0.7" }
 tdn_storage = { git = "https://github.com/cympletech/tdn", branch="main" }
+esse_primitives = { version = "0.1", path = "./types/primitives" }
 chat_types = { version = "0.1", path = "./types/chat" }
 group_types = { version = "0.1", path = "./types/group" }
 cloud_types = { version = "0.1", path = "./types/cloud" }
@@ -59,6 +60,7 @@ dao_types = { version = "0.1", path = "./types/dao" }
 data = { version = "0.1", path = "./types/data" }
 
 openssl = { version = "0.10", features = ["vendored"] } # Add for cross-compile.
+console-subscriber = "0.1" # only use in bin daemon.
 
 [target.'cfg(target_os="android")'.dependencies]
 jni = { version = "0.19", default-features = false }
@@ -66,6 +68,8 @@ jni = { version = "0.19", default-features = false }
 
 # DEBUG patch.
 [patch.crates-io]
+chamomile = { git = "https://github.com/cympletech/chamomile" }
+chamomile_types = { git = "https://github.com/cympletech/chamomile" }
 tdn = { git = "https://github.com/cympletech/tdn" }
 tdn_types = { git = "https://github.com/cympletech/tdn" }
 tdn_did = { git = "https://github.com/cympletech/tdn" }

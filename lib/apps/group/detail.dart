@@ -85,10 +85,9 @@ class _GroupChatDetailState extends State<GroupChatDetail> {
     }
   }
 
-  // [group_id, member_id, member_addr]
+  // [group_id, member_id]
   _memberOnline(List params) {
     if (_group.id == params[0] && this._members.containsKey(params[1])) {
-      this._members[params[1]]!.addr = params[2];
       this._members[params[1]]!.online = true;
       setState(() {});
     }
@@ -289,7 +288,7 @@ class _GroupChatDetailState extends State<GroupChatDetail> {
               final msg = this._messages[recentMessageKeys[index]]!;
               return ChatMessage(
                 avatar: this._members[msg.mid]!.showAvatar(isOnline: false),
-                fgid: this._members[msg.mid]!.mid,
+                fpid: this._members[msg.mid]!.mid,
                 name: this._members[msg.mid]!.name,
                 message: msg,
               );
@@ -336,7 +335,6 @@ class _MemberScreenState extends State<_MemberScreen> {
             app: 'add-friend',
             id: member.mid,
             name: member.name,
-            addr: member.addr,
             title: lang.qrFriend,
           ),
           0.0,

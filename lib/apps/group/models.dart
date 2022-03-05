@@ -35,7 +35,6 @@ class Member {
   int id = 0;
   int fid = 0;
   String mid = '';
-  String addr = '';
   String name = '';
   bool leave = false;
   bool online = false;
@@ -44,10 +43,9 @@ class Member {
     this.id = params[0];
     this.fid = params[1];
     this.mid = params[2];
-    this.addr = params[3];
-    this.name = params[4];
-    this.leave = params[5];
-    if (this.addr == Global.addr) {
+    this.name = params[3];
+    this.leave = params[4];
+    if (this.mid == Global.pid) {
       this.online = true;
     }
   }

@@ -9,8 +9,9 @@ use std::os::raw::c_char;
 
 mod account;
 mod apps;
-mod consensus;
-mod event;
+//mod consensus;
+//mod event;
+mod global;
 mod group;
 mod layer;
 mod migrate;

@@ -22,13 +22,13 @@ import 'package:esse/apps/wallet/models.dart' show NetworkExtension, Network, To
 
 class ChatMessage extends StatelessWidget {
   final Widget? avatar;
-  final String fgid;
+  final String fpid;
   final String name;
   final BaseMessage message;
 
-  const ChatMessage({Key? key, required this.fgid, required this.name, required this.message, this.avatar}): super(key: key);
+  const ChatMessage({Key? key, required this.fpid, required this.name, required this.message, this.avatar}): super(key: key);
 
-  Widget _showContactCard(Widget avatar, String gid, String name, String title, ColorScheme color, [String pre='EH']) {
+  Widget _showContactCard(Widget avatar, String pid, String name, String title, ColorScheme color, [String pre='EH']) {
     return Container(
       padding: const EdgeInsets.only(top: 10, bottom: 6.0, left: 10.0, right: 10.0),
       width: 200.0,
@@ -41,7 +41,7 @@ class ChatMessage extends StatelessWidget {
                 child: Column(children: [
                     Text(name, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: color.onPrimary, fontSize: 16.0)),
                     const SizedBox(height: 4.0),
-                    Text(gidPrint(gid, pre), style: TextStyle(color: Colors.grey, fontSize: 12.0)),
+                    Text(pidPrint(pid, pre), style: TextStyle(color: Colors.grey, fontSize: 12.0)),
           ]))]),
           const SizedBox(height: 5.0),
           const Divider(height: 1.0, color: Color(0x40ADB0BB)),
@@ -220,7 +220,7 @@ class ChatMessage extends StatelessWidget {
   }
 
   Widget _showContact(context, lang, color, maxWidth) {
-    // contact [name, gid, addr, avatar]
+    // contact [name, pid, avatar]
     final infos = message.showContact();
     if (infos[1].length > 0) {
       return GestureDetector(
@@ -229,7 +229,7 @@ class ChatMessage extends StatelessWidget {
           Icons.person_rounded,
           lang.contactCard,
           UserInfo(
-            showQr: false, id: infos[1], addr: infos[2], name: infos[0],
+            showQr: false, id: infos[1], name: infos[0],
             remark: lang.fromContactCard(name),
             avatar: Avatar(width: 100.0, name: infos[0], avatarPath: infos[3]),
             callback: () {
@@ -251,7 +251,7 @@ class ChatMessage extends StatelessWidget {
   }
 
   Widget _showInvite(context, lang, color, maxWidth) {
-    // contact [type, gid, addr, name, proof, key]
+    // contact [type, pid, addr, name, proof, key]
     final infos = message.showInvite();
     if (infos[1].length > 0) {
       final GroupType gtype = infos[0];
@@ -260,7 +260,7 @@ class ChatMessage extends StatelessWidget {
           context,
           Icons.groups_rounded,
           lang.groupChat,
-          UserInfo(showQr: false, id: infos[1], addr: infos[2], name: infos[3], pre: 'EG',
+          UserInfo(showQr: false, id: infos[1], name: infos[3], pre: 'EG',
             title: gtype.lang(lang),
             avatar: Container(width: 100.0, height: 100.0,
               padding: const EdgeInsets.all(8.0),
@@ -271,7 +271,7 @@ class ChatMessage extends StatelessWidget {
               Navigator.pop(context);
               // TOOD join invite.
               // Provider.of<GroupChatProvider>(context, listen: false).join(
-              //   gtype, infos[1], infos[2], infos[3], fgid, infos[4], infos[5]
+              //   gtype, infos[1], infos[2], infos[3], fpid, infos[4], infos[5]
               // );
             },
           ),

@@ -1,19 +1,17 @@
+use esse_primitives::id_from_str;
 use std::collections::HashMap;
 use std::path::PathBuf;
-use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 use tdn::types::{
-    group::GroupId,
-    primitive::{HandleResult, Result},
+    primitives::{HandleResult, PeerId, Result},
     rpc::{json, RpcParam},
 };
 use tdn_storage::local::{DStorage, DsValue};
-use tokio::sync::RwLock;
 
 use chat_types::{MessageType, NetworkMessage};
 
 use crate::apps::chat::{from_network_message, raw_to_network_message, to_network_message as tnm};
-use crate::group::Group;
+use crate::storage::group_db;
 
 use super::Member;
 
@@ -141,18 +139,17 @@ impl Message {
 
     pub async fn sync(
         base: &PathBuf,
-        gid: &GroupId,
+        own: &PeerId,
         db: &DStorage,
         fid: &i64,
         from: &i64,
         to: &i64,
-    ) -> Result<Vec<(i64, GroupId, NetworkMessage, i64)>> {
-        let sql = format!("SELECT id, mid FROM members WHERE fid = {}", fid);
+    ) -> Result<Vec<(i64, PeerId, NetworkMessage, i64)>> {
+        let sql = format!("SELECT id, pid FROM members WHERE fid = {}", fid);
         let m = db.query(&sql)?;
         let mut members = HashMap::new();
         for mut v in m {
-            let m_s = v.pop().unwrap().as_string();
-            let mid = GroupId::from_hex(m_s).unwrap_or(Default::default());
+            let mid = id_from_str(v.pop().unwrap().as_str()).unwrap_or(Default::default());
             let id = v.pop().unwrap().as_i64();
             members.insert(id, mid);
         }
@@ -162,8 +159,8 @@ impl Message {
         let mut messages = vec![];
         for values in matrix {
             let msg = Message::from_values(values);
-            if let Ok(nmsg) = tnm(base, gid, msg.m_type, msg.content).await {
-                let mid = members.get(&msg.mid).cloned().unwrap_or(GroupId::default());
+            if let Ok(nmsg) = tnm(own, base, msg.m_type, msg.content).await {
+                let mid = members.get(&msg.mid).cloned().unwrap_or(PeerId::default());
                 messages.push((msg.height, mid, nmsg, msg.datetime))
             }
         }
@@ -173,9 +170,9 @@ impl Message {
 }
 
 pub(crate) async fn to_network_message(
-    group: &Arc<RwLock<Group>>,
+    own: &PeerId,
     base: &PathBuf,
-    gid: &GroupId,
+    db_key: &str,
     mtype: MessageType,
     content: &str,
 ) -> Result<(NetworkMessage, i64, String)> {
@@ -185,26 +182,26 @@ pub(crate) async fn to_network_message(
         .map(|s| s.as_secs())
         .unwrap_or(0) as i64; // safe for all life.
 
-    let (nmsg, raw) = raw_to_network_message(group, base, gid, &mtype, content).await?;
+    let (nmsg, raw) = raw_to_network_message(own, base, db_key, &mtype, content).await?;
     Ok((nmsg, datetime, raw))
 }
 
 pub(crate) async fn handle_network_message(
-    group: &Arc<RwLock<Group>>,
+    own: &PeerId,
+    base: &PathBuf,
+    db_key: &str,
     height: i64,
-    gdid: i64,
-    mid: GroupId,
-    mgid: &GroupId,
+    id: i64,
+    mid: PeerId,
     msg: NetworkMessage,
     datetime: i64,
-    base: &PathBuf,
     results: &mut HandleResult,
 ) -> Result<Message> {
-    let db = group.read().await.group_db(mgid)?;
-    let mdid = Member::get_id(&db, &gdid, &mid)?;
-    let is_me = &mid == mgid;
-    let (m_type, raw) = from_network_message(group, msg, base, mgid, results).await?;
-    let mut msg = Message::new_with_time(height, gdid, mdid, is_me, m_type, raw, datetime);
+    let db = group_db(base, own, db_key)?;
+    let mdid = Member::get_id(&db, &id, &mid)?;
+    let is_me = &mid == own;
+    let (m_type, raw) = from_network_message(own, base, db_key, msg, results).await?;
+    let mut msg = Message::new_with_time(height, id, mdid, is_me, m_type, raw, datetime);
     msg.insert(&db)?;
     Ok(msg)
 }

@@ -1025,7 +1025,7 @@ class _TransferTokenState extends State<_TransferToken> {
                         items: this._nft.map((value) {
                             return DropdownMenuItem<String>(
                               value: value,
-                              child: Text(gidPrint(value, '', 6)),
+                              child: Text(pidPrint(value, '', 6)),
                             );
                         }).toList(),
                       ),
@@ -1090,13 +1090,13 @@ class _TransferTokenState extends State<_TransferToken> {
               return;
             }
             final amount = restoreBalance(a, widget.token.decimal);
-            final gid = context.read<AccountProvider>().activedAccount.gid;
+            final pid = context.read<AccountProvider>().activedAccount.pid;
             showShadowDialog(
               context,
               Icons.security_rounded,
               lang.verifyPin,
               PinWords(
-                gid: gid,
+                pid: pid,
                 callback: (key) async {
                   Navigator.of(context).pop();
                   rpc.send('wallet-transfer', [
@@ -1248,7 +1248,7 @@ class _ImportNftState extends State<_ImportNft> {
             itemBuilder: (BuildContext context, int index) {
               final hash = this._nft[index];
               return ListTile(
-                title: Text('TokenID: ' + gidPrint(hash, '', 6)),
+                title: Text('TokenID: ' + pidPrint(hash, '', 6)),
                 trailing: IconButton(icon: Icon(Icons.link, color: color.primary),
                   onPressed: () {
                     launch(widget.token.nftUrl(hash));

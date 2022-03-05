@@ -98,23 +98,20 @@ class _HomeListState extends State<HomeList> {
       MaterialPageRoute(
         builder: (context) => QRScan(callback: (isOk, app, params) {
             Navigator.of(context).pop();
-            if (app == 'add-friend' && params.length == 3) {
-              final id = gidParse(params[0]);
-              final addr = addrParse(params[1]);
-              final name = params[2].trim();
-              final widget = ChatAdd(id: id, addr: addr, name: name);
+            if (app == 'add-friend' && params.length == 2) {
+              final id = pidParse(params[0]);
+              final name = params[1].trim();
+              final widget = ChatAdd(id: id, name: name);
               Provider.of<AccountProvider>(context, listen: false).systemAppFriendAddNew = false;
               if (isDesktop) {
                 Provider.of<AccountProvider>(context, listen: false).updateActivedWidget(widget);
               } else {
                 Navigator.push(context, MaterialPageRoute(builder: (_) => widget));
               }
-            } else if (app == 'distribute' && params.length == 4) {
+            } else if (app == 'distribute' && params.length == 2) {
               //final _name = params[0].trim();
-              //final id = gidParse(params[1]);
-              final addr = addrParse(params[2]);
-              //final _mnemonicWords = params[3];
-              Provider.of<DeviceProvider>(context, listen: false).connect(addr);
+              //final _mnemonicWords = params[1];
+              //Provider.of<DeviceProvider>(context, listen: false).connect(addr);
             }
     })));
   }
@@ -174,8 +171,7 @@ class _HomeListState extends State<HomeList> {
                         UserInfo(
                           app: 'add-friend',
                           id: provider.id,
-                          name: provider.activedAccount.name,
-                          addr: Global.addr));
+                          name: provider.activedAccount.name));
                     }
                   },
                   itemBuilder: (context) {
@@ -312,7 +308,7 @@ class DrawerWidget extends StatelessWidget {
             ? () {
                 Navigator.of(context).pop();
                 Provider.of<AccountProvider>(context, listen: false)
-                    .updateActivedAccount(account.gid, account.pin);
+                    .updateActivedAccount(account.pid, account.pin);
                 Provider.of<DeviceProvider>(context, listen: false)
                     .updateActived();
               }
@@ -340,18 +336,18 @@ class DrawerWidget extends StatelessWidget {
                         Icons.security_rounded,
                         lang.verifyPin,
                         PinWords(
-                          gid: account.gid,
+                          pid: account.pid,
                           callback: (key) async {
                             Navigator.of(context).pop();
                             Provider.of<AccountProvider>(context,
                               listen: false)
-                            .onlineAccount(account.gid, key);
+                            .onlineAccount(account.pid, key);
                         }),
                         0.0,
                       );
                     } else {
                       Provider.of<AccountProvider>(context, listen: false)
-                          .offlineAccount(account.gid);
+                          .offlineAccount(account.pid);
                     }
                   },
                 ),
@@ -380,8 +376,8 @@ class DrawerWidget extends StatelessWidget {
     final accounts = provider.accounts;
 
     List<Widget> accountsWidget = [];
-    accounts.forEach((gid, account) {
-      if (gid != me.gid) {
+    accounts.forEach((pid, account) {
+      if (pid != me.pid) {
         accountsWidget.add(_listAccount(context, account, color.primary, lang));
       }
     });

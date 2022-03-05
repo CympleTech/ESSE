@@ -1,5 +1,5 @@
 use std::path::PathBuf;
-use tdn::types::primitive::Result;
+use tdn::types::primitives::Result;
 use tdn_storage::local::DStorage;
 
 pub mod consensus;

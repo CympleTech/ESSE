@@ -154,7 +154,7 @@ class BaseMessage {
 
   List showInvite() {
     var type = GroupType.Tmp;
-    var gid = '';
+    var pid = '';
     var addr = '';
     var name = '';
     var proof = '';
@@ -166,12 +166,12 @@ class BaseMessage {
     }
 
     final raw_0 = this.content.substring(iType + 2);
-    final iGid = raw_0.indexOf(';;');
-    if (iGid > 0) {
-      gid = raw_0.substring(0, iGid);
+    final iPid = raw_0.indexOf(';;');
+    if (iPid > 0) {
+      pid = raw_0.substring(0, iPid);
     }
 
-    final raw_1 = raw_0.substring(iGid + 2);
+    final raw_1 = raw_0.substring(iPid + 2);
     final iAddr = raw_1.indexOf(';;');
     if (iAddr > 0) {
       addr = raw_1.substring(0, iAddr);
@@ -183,7 +183,7 @@ class BaseMessage {
       name = raw_2.substring(0, iName).replaceAll('-;', ';');
     } else {
       name = raw_2.replaceAll('-;', ';');
-      return [type, gid, addr, name, proof, key];
+      return [type, pid, addr, name, proof, key];
     }
 
     final raw_3 = raw_2.substring(iName + 2);
@@ -195,7 +195,7 @@ class BaseMessage {
       proof = raw_3;
     }
 
-    return [type, gid, addr, name, proof, key];
+    return [type, pid, addr, name, proof, key];
   }
 
   // [hash, to, amount, name, network]

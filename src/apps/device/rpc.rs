@@ -1,39 +1,37 @@
 use std::sync::Arc;
 use tdn::types::{
-    group::GroupId,
-    primitive::{HandleResult, Peer, PeerId},
+    primitives::HandleResult,
     rpc::{json, rpc_response, RpcError, RpcHandler, RpcParam},
 };
 
-use crate::group::GroupEvent;
-use crate::rpc::RpcState;
+use crate::global::Global;
+//use crate::group::GroupEvent;
 use crate::utils::device_status::device_status as local_device_status;
 
 use super::Device;
 
 #[inline]
-pub(crate) fn device_create(mgid: GroupId, device: &Device) -> RpcParam {
-    rpc_response(0, "device-create", json!(device.to_rpc()), mgid)
+pub(crate) fn device_create(device: &Device) -> RpcParam {
+    rpc_response(0, "device-create", json!(device.to_rpc()))
 }
 
 #[inline]
-pub(crate) fn _device_remove(mgid: GroupId, id: i64) -> RpcParam {
-    rpc_response(0, "device-remove", json!([id]), mgid)
+pub(crate) fn _device_remove(id: i64) -> RpcParam {
+    rpc_response(0, "device-remove", json!([id]))
 }
 
 #[inline]
-pub(crate) fn device_online(mgid: GroupId, id: i64) -> RpcParam {
-    rpc_response(0, "device-online", json!([id]), mgid)
+pub(crate) fn device_online(id: i64) -> RpcParam {
+    rpc_response(0, "device-online", json!([id]))
 }
 
 #[inline]
-pub(crate) fn device_offline(mgid: GroupId, id: i64) -> RpcParam {
-    rpc_response(0, "device-offline", json!([id]), mgid)
+pub(crate) fn device_offline(id: i64) -> RpcParam {
+    rpc_response(0, "device-offline", json!([id]))
 }
 
 #[inline]
 pub(crate) fn device_status(
-    mgid: GroupId,
     cpu: u32,
     memory: u32,
     swap: u32,
@@ -48,12 +46,11 @@ pub(crate) fn device_status(
         0,
         "device-status",
         json!([cpu, memory, swap, disk, cpu_p, memory_p, swap_p, disk_p, uptime]),
-        mgid,
     )
 }
 
 #[inline]
-fn device_list(devices: Vec<Device>) -> RpcParam {
+fn device_list(devices: &[Device]) -> RpcParam {
     let mut results = vec![];
     for device in devices {
         results.push(device.to_rpc());
@@ -61,30 +58,27 @@ fn device_list(devices: Vec<Device>) -> RpcParam {
     json!(results)
 }
 
-pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
-    handler.add_method("device-echo", |_, params, _| async move {
+pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<Global>) {
+    handler.add_method("device-echo", |params, _| async move {
         Ok(HandleResult::rpc(json!(params)))
     });
 
     handler.add_method(
         "device-list",
-        |gid: GroupId, _params: Vec<RpcParam>, state: Arc<RpcState>| async move {
-            let db = state.group.read().await.consensus_db(&gid)?;
-            let devices = Device::list(&db)?;
-            drop(db);
-            let online_devices = state.group.read().await.online_devices(&gid, devices);
-            Ok(HandleResult::rpc(device_list(online_devices)))
+        |_params: Vec<RpcParam>, state: Arc<Global>| async move {
+            let devices = &state.group.read().await.distributes;
+            Ok(HandleResult::rpc(device_list(devices)))
         },
     );
 
     handler.add_method(
         "device-status",
-        |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
-            let addr = PeerId::from_hex(params[0].as_str().ok_or(RpcError::ParseError)?)?;
+        |params: Vec<RpcParam>, state: Arc<Global>| async move {
+            let id = params[0].as_i64().ok_or(RpcError::ParseError)?;
 
             let group_lock = state.group.read().await;
-            if &addr == group_lock.addr() {
-                let uptime = group_lock.uptime(&gid)?;
+            if id == group_lock.device()?.id {
+                let uptime = group_lock.uptime;
                 let (cpu, memory, swap, disk, cpu_p, memory_p, swap_p, disk_p) =
                     local_device_status();
                 return Ok(HandleResult::rpc(json!([
@@ -93,47 +87,24 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             }
             drop(group_lock);
 
-            let msg = state
-                .group
-                .write()
-                .await
-                .event_message(addr, &GroupEvent::StatusRequest)?;
-
-            Ok(HandleResult::group(gid, msg))
+            //let msg = state.group.write().await.event_message(addr, &GroupEvent::StatusRequest)?;
+            //Ok(HandleResult::group(msg))
+            Ok(HandleResult::new())
         },
     );
 
     handler.add_method(
-        "device-create",
-        |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
-            let addr = PeerId::from_hex(params[0].as_str().ok_or(RpcError::ParseError)?)?;
-
-            let msg = state
-                .group
-                .read()
-                .await
-                .create_message(&gid, Peer::peer(addr))?;
-            Ok(HandleResult::group(gid, msg))
-        },
-    );
-
-    handler.add_method(
-        "device-connect",
-        |gid: GroupId, params: Vec<RpcParam>, state: Arc<RpcState>| async move {
-            let addr = PeerId::from_hex(params[0].as_str().ok_or(RpcError::ParseError)?)?;
-
-            let msg = state
-                .group
-                .read()
-                .await
-                .connect_message(&gid, Peer::peer(addr))?;
-            Ok(HandleResult::group(gid, msg))
+        "device-search",
+        |_params: Vec<RpcParam>, state: Arc<Global>| async move {
+            //let msg = state.group.read().await.create_message(&gid, Peer::peer(addr))?;
+            //Ok(HandleResult::group(gid, msg))
+            Ok(HandleResult::new())
         },
     );
 
     handler.add_method(
         "device-delete",
-        |_gid: GroupId, params: Vec<RpcParam>, _state: Arc<RpcState>| async move {
+        |params: Vec<RpcParam>, _state: Arc<Global>| async move {
             let _id = params[0].as_i64().ok_or(RpcError::ParseError)?;
             // TODO delete a device.
             Ok(HandleResult::new())

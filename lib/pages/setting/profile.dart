@@ -167,8 +167,7 @@ class _ProfileDetailState extends State<ProfileDetail> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.max,
                   children: [
-                    _infoListTooltip(Icons.person, color.primary, gidText(account.gid), gidPrint(account.gid)),
-                    _infoListTooltip(Icons.location_on, color.primary, addrText(Global.addr), addrPrint(Global.addr)),
+                    _infoListTooltip(Icons.person, color.primary, pidText(account.pid), pidPrint(account.pid)),
                     SizedBox(
                       height: 40.0,
                       child: Row(
@@ -177,8 +176,8 @@ class _ProfileDetailState extends State<ProfileDetail> {
                             size: 20.0, color: color.primary),
                           const SizedBox(width: 20.0),
                           TextButton(
-                            onPressed: () => _pinCheck(account.gid,
-                              (key) => _changePin(context, account.gid, key, lang.setPin),
+                            onPressed: () => _pinCheck(account.pid,
+                              (key) => _changePin(context, account.pid, key, lang.setPin),
                               lang.verifyPin, color
                             ),
                             child: Text(lang.change + ' PIN'),
@@ -200,8 +199,8 @@ class _ProfileDetailState extends State<ProfileDetail> {
                             child: Text(lang.hide + ' ' + lang.mnemonic),
                           )
                           : TextButton(
-                            onPressed: () => _pinCheck(account.gid,
-                              (key) => _showMnemonic(account.gid, key), lang.verifyPin, color),
+                            onPressed: () => _pinCheck(account.pid,
+                              (key) => _showMnemonic(account.pid, key), lang.verifyPin, color),
                             child: Text(lang.show + ' ' + lang.mnemonic),
                           ),
                       ]),
@@ -278,13 +277,13 @@ class _ProfileDetailState extends State<ProfileDetail> {
     }
   }
 
-  _pinCheck(String gid, Function callback, String title, color) {
+  _pinCheck(String pid, Function callback, String title, color) {
     showShadowDialog(
       context,
       Icons.security_rounded,
       title,
       PinWords(
-        gid: gid,
+        pid: pid,
         callback: (key) async {
           Navigator.of(context).pop();
           callback(key);

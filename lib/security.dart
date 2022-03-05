@@ -31,6 +31,7 @@ class _SecurityPageState extends State<SecurityPage> {
   Map<String, Account> _accounts = {};
   bool _loaded = false;
   bool _accountsLoaded = false;
+  bool _loading = false;
 
   String _selectedUserId = '';
 
@@ -106,7 +107,8 @@ class _SecurityPageState extends State<SecurityPage> {
                       const SizedBox(height: 40.0),
                       loginForm(color, lang),
                       const SizedBox(height: 20.0),
-                      ButtonText(text: lang.ok, enable: _accountsLoaded,
+                      ButtonText(text: this._loading ? lang.waiting : lang.ok,
+                        enable: _accountsLoaded && !this._loading,
                         action: () => loginAction(lang.verifyPin, color, lang)),
                       const SizedBox(height: 20.0),
                       InkWell(
@@ -175,9 +177,6 @@ class _SecurityPageState extends State<SecurityPage> {
       await rpc.init(Global.wsRpc);
     }
 
-    // init system info.
-    rpc.send('account-system-info', []);
-
     // check if has logined.
     final loginedAccounts = await getLogined();
     if (loginedAccounts.length != 0) {
@@ -185,11 +184,11 @@ class _SecurityPageState extends State<SecurityPage> {
       final mainAccount = loginedAccounts[0];
       Map<String, Account> accounts = {};
       loginedAccounts.forEach((account) {
-          accounts[account.gid] = account;
+          accounts[account.pid] = account;
       });
-      final res = await httpPost('account-login', [mainAccount.gid, ""]);
+      final res = await httpPost('account-login', [mainAccount.pid, ""]);
       if (res.isOk) {
-        _handleLogined(mainAccount.gid, "", accounts);
+        _handleLogined(mainAccount.pid, "", accounts);
         return;
       } else {
         showShadowDialog(
@@ -197,10 +196,10 @@ class _SecurityPageState extends State<SecurityPage> {
           Icons.security_rounded,
           "PIN",
           PinWords(
-            gid: mainAccount.gid,
+            pid: mainAccount.pid,
             callback: (key) async {
               Navigator.of(context).pop();
-              _handleLogined(mainAccount.gid, key, accounts);
+              _handleLogined(mainAccount.pid, key, accounts);
               return;
           }),
           0.0
@@ -218,7 +217,7 @@ class _SecurityPageState extends State<SecurityPage> {
 
       if (this._accounts.length > 0) {
         final accountId = this._accounts.keys.first;
-        this._selectedUserId = this._accounts[accountId]!.gid;
+        this._selectedUserId = this._accounts[accountId]!.pid;
         this._accountsLoaded = true;
       }
     } else {
@@ -231,10 +230,12 @@ class _SecurityPageState extends State<SecurityPage> {
   }
 
   void _verifyAfter(String lock) async {
+    setState(() { this._loading = true; });
     final res = await httpPost('account-login', [this._selectedUserId, lock]);
     if (res.isOk) {
       _handleLogined(this._selectedUserId, lock, this._accounts);
     } else {
+      setState(() { this._loading = false; });
       toast(context, res.error);
     }
   }
@@ -245,7 +246,7 @@ class _SecurityPageState extends State<SecurityPage> {
       Icons.security_rounded,
       title,
       PinWords(
-        gid: this._selectedUserId,
+        pid: this._selectedUserId,
         callback: (pinWords) async {
           Navigator.of(context).pop();
           _verifyAfter(pinWords);
@@ -271,16 +272,16 @@ class _SecurityPageState extends State<SecurityPage> {
             iconEnabledColor: Color(0xFFADB0BB),
             isExpanded: true,
             value: this._selectedUserId,
-            onChanged: (String? gid) {
-              if (gid != null) {
+            onChanged: (String? pid) {
+              if (pid != null) {
                 setState(() {
-                    this._selectedUserId = gid;
+                    this._selectedUserId = pid;
                   });
               }
             },
             items: this._accounts.values.map((Account account) {
                 return DropdownMenuItem<String>(
-                  value: account.gid,
+                  value: account.pid,
                   child: Row(
                     children: [
                       Expanded(
@@ -290,7 +291,7 @@ class _SecurityPageState extends State<SecurityPage> {
                           style: TextStyle(fontSize: 16)
                         ),
                       ),
-                      Text(" (${gidPrint(account.gid)})", style: TextStyle(fontSize: 16)),
+                      Text(" (${pidPrint(account.pid)})", style: TextStyle(fontSize: 16)),
                     ]
                   ),
                 );

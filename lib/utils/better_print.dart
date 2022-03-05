@@ -1,16 +1,16 @@
-String gidText(String? gid, [String pre='EH']) {
-  if (gid == null) {
+String pidText(String? pid, [String pre='EH']) {
+  if (pid == null) {
     return '';
   }
-  return pre + gid.toUpperCase();
+  return pre + pid.toUpperCase();
 }
 
-String gidPrint(String? gid, [String pre='EH', int n = 4]) {
-  if (gid == null) {
+String pidPrint(String? pid, [String pre='EH', int n = 6]) {
+  if (pid == null) {
     return '';
   }
 
-  final info = gid.toUpperCase();
+  final info = pid.toUpperCase();
   final len = info.length;
   if (len > n+n) {
     return pre + info.substring(0, n) + '...' + info.substring(len - n, len);
@@ -19,11 +19,11 @@ String gidPrint(String? gid, [String pre='EH', int n = 4]) {
   }
 }
 
-String gidParse(String gid, [String pre='EH']) {
-  if (gid.length > 2 && gid.substring(0, 2) == pre) {
-    return gid.substring(2);
+String pidParse(String pid, [String pre='EH']) {
+  if (pid.length > 2 && pid.substring(0, 2) == pre) {
+    return pid.substring(2);
   } else {
-    return gid;
+    return pid;
   }
 }
 

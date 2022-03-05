@@ -1,23 +1,17 @@
+use domain_types::LayerServerEvent;
 use std::sync::Arc;
 use tdn::types::{
-    group::GroupId,
     message::RecvType,
-    primitive::{HandleResult, Result},
+    primitives::{HandleResult, Result},
 };
-use tokio::sync::RwLock;
 
-use domain_types::{LayerServerEvent, ServerEvent};
-
-use crate::layer::Layer;
+use crate::global::Global;
+use crate::storage::domain_db;
 
 use super::models::{Name, Provider};
 use super::rpc;
 
-pub(crate) async fn handle(
-    layer: &Arc<RwLock<Layer>>,
-    ogid: GroupId,
-    msg: RecvType,
-) -> Result<HandleResult> {
+pub(crate) async fn handle(msg: RecvType, global: &Arc<Global>) -> Result<HandleResult> {
     let mut results = HandleResult::new();
 
     match msg {
@@ -30,17 +24,19 @@ pub(crate) async fn handle(
         }
         RecvType::Event(addr, bytes) => {
             // server & client handle it.
-            let LayerServerEvent(event, _proof) = bincode::deserialize(&bytes)?;
+            let event: LayerServerEvent = bincode::deserialize(&bytes)?;
 
-            let db = layer.read().await.group.read().await.domain_db(&ogid)?;
+            let pid = global.pid().await;
+            let db_key = global.group.read().await.db_key(&pid)?;
+            let db = domain_db(&global.base, &pid, &db_key)?;
 
             match event {
-                ServerEvent::Status(name, support_request) => {
+                LayerServerEvent::Status(name, support_request) => {
                     let mut provider = Provider::get_by_addr(&db, &addr)?;
                     provider.ok(&db, name, support_request)?;
-                    results.rpcs.push(rpc::add_provider(ogid, &provider));
+                    results.rpcs.push(rpc::add_provider(&provider));
                 }
-                ServerEvent::Result(name, is_ok) => {
+                LayerServerEvent::Result(name, is_ok) => {
                     let provider = Provider::get_by_addr(&db, &addr)?;
                     let mut user = Name::get_by_name_provider(&db, &name, &provider.id)?;
 
@@ -48,39 +44,39 @@ pub(crate) async fn handle(
                         Name::active(&db, &user.id, true)?;
                         user.is_ok = true;
                         user.is_actived = true;
-                        results.rpcs.push(rpc::register_success(ogid, &user));
+                        results.rpcs.push(rpc::register_success(&user));
                     } else {
                         user.delete(&db)?;
-                        results.rpcs.push(rpc::register_failure(ogid, &name));
+                        results.rpcs.push(rpc::register_failure(&name));
                     }
                 }
-                ServerEvent::Info(uname, ugid, uaddr, ubio, uavatar) => {
-                    results.rpcs.push(rpc::search_result(
-                        ogid, &uname, &ugid, &uaddr, &ubio, &uavatar,
-                    ));
+                LayerServerEvent::Info(upid, uname, ubio, uavatar) => {
+                    results
+                        .rpcs
+                        .push(rpc::search_result(&upid, &uname, &ubio, &uavatar));
                 }
-                ServerEvent::None(uname) => {
-                    results.rpcs.push(rpc::search_none(ogid, &uname));
+                LayerServerEvent::None(uname) => {
+                    results.rpcs.push(rpc::search_none(&uname));
                 }
-                ServerEvent::Actived(uname, is_actived) => {
+                LayerServerEvent::Actived(uname, is_actived) => {
                     let provider = Provider::get_by_addr(&db, &addr)?;
                     let name = Name::get_by_name_provider(&db, &uname, &provider.id)?;
                     Name::active(&db, &name.id, is_actived)?;
 
                     let ps = Provider::list(&db)?;
                     let names = Name::list(&db)?;
-                    results.rpcs.push(rpc::domain_list(ogid, &ps, &names));
+                    results.rpcs.push(rpc::domain_list(&ps, &names));
                 }
-                ServerEvent::Deleted(uname) => {
+                LayerServerEvent::Deleted(uname) => {
                     let provider = Provider::get_by_addr(&db, &addr)?;
                     let name = Name::get_by_name_provider(&db, &uname, &provider.id)?;
                     name.delete(&db)?;
 
                     let ps = Provider::list(&db)?;
                     let names = Name::list(&db)?;
-                    results.rpcs.push(rpc::domain_list(ogid, &ps, &names));
+                    results.rpcs.push(rpc::domain_list(&ps, &names));
                 }
-                ServerEvent::Response(_ugid, _uname, _is_ok) => {}
+                LayerServerEvent::Response(_ugid, _uname, _is_ok) => {}
             }
         }
         RecvType::Delivery(_t, _tid, _is_ok) => {

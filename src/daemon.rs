@@ -8,8 +8,9 @@ use std::env::args;
 
 mod account;
 mod apps;
-mod consensus;
-mod event;
+//mod consensus;
+//mod event;
+mod global;
 mod group;
 mod layer;
 mod migrate;
@@ -22,6 +23,8 @@ mod utils;
 
 #[tokio::main]
 async fn main() {
+    console_subscriber::init();
+
     let db_path = args().nth(1).unwrap_or("./.tdn".to_owned());
 
     if std::fs::metadata(&db_path).is_err() {

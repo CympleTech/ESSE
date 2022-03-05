@@ -11,7 +11,6 @@ class UserInfo extends StatefulWidget {
   final String? app;
   final String id;
   final String name;
-  final String addr;
   final String? title;
   final String? remark;
   final String? bio;
@@ -23,7 +22,6 @@ class UserInfo extends StatefulWidget {
 
   UserInfo({Key? key,
       required this.id,
-      required this.addr,
       required this.name,
       this.app,
       this.remark,
@@ -37,7 +35,7 @@ class UserInfo extends StatefulWidget {
     if (this.showQr) {
       this.qrInfo = {
         "app": this.app,
-        "params": [gidText(this.id, this.pre), addrText(this.addr), this.name],
+        "params": [pidText(this.id, this.pre), this.name],
       };
     }
   }
@@ -48,7 +46,6 @@ class UserInfo extends StatefulWidget {
 
 class _UserInfoState extends State<UserInfo> {
   bool idCopy = false;
-  bool addrCopy = false;
 
   @override
   Widget build(BuildContext context) {
@@ -57,7 +54,7 @@ class _UserInfoState extends State<UserInfo> {
 
 
     Color idColor = idCopy ? color.primary : color.onPrimary;
-    Color addrColor = addrCopy ? color.primary : color.onPrimary;
+    print(pidText(widget.id));
 
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -109,52 +106,32 @@ class _UserInfoState extends State<UserInfo> {
         ),
         if (widget.title != null)
         Text(widget.title!, style: TextStyle(fontSize: 16.0, fontStyle: FontStyle.italic)),
-        const SizedBox(height: 10),
-        const Divider(height: 1.0, color: Color(0x40ADB0BB)),
-        const SizedBox(height: 20),
         InkWell(
           onTap: () {
-            Clipboard.setData(ClipboardData(text: gidText(widget.id)));
+            Clipboard.setData(ClipboardData(text: pidText(widget.id)));
             setState(() {
                 idCopy = true;
-                addrCopy = false;
             });
           },
           child: Container(
-            width: 250.0,
+            padding: const EdgeInsets.symmetric(vertical: 10.0),
             child: Row(
               children: [
-                Icon(Icons.person, size: 20.0, color: color.primary),
-                Spacer(),
-                Text(gidPrint(widget.id, widget.pre), style: TextStyle(fontSize: 14, color: idColor)),
-                Spacer(),
-                Icon(idCopy ? Icons.file_copy : Icons.copy, size: 20.0, color: color.primary),
+                Expanded(
+                  child: Text(pidText(widget.id, widget.pre),
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 14, color: idColor))),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                  child: Icon(idCopy ? Icons.file_copy : Icons.copy,
+                    size: 20.0, color: color.primary),
+                ),
               ]
             ),
           )
         ),
+        const Divider(height: 1.0, color: Color(0x40ADB0BB)),
         const SizedBox(height: 16),
-        InkWell(
-          onTap: () {
-            Clipboard.setData(ClipboardData(text: addrText(widget.addr)));
-            setState(() {
-                idCopy = false;
-                addrCopy = true;
-            });
-          },
-          child: Container(
-            width: 250.0,
-            child: Row(
-              children: [
-                Icon(Icons.location_on, size: 20.0, color: color.primary),
-                Spacer(),
-                Text(addrPrint(widget.addr), style: TextStyle(fontSize: 14, color: addrColor)),
-                Spacer(),
-                Icon(addrCopy ? Icons.file_copy : Icons.copy, size: 20.0, color: color.primary),
-              ]
-            ),
-          )
-        ),
         if (widget.remark != null)
         Container(
           width: 250.0,

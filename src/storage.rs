@@ -1,12 +1,17 @@
+use esse_primitives::id_to_str;
 use image::{load_from_memory, DynamicImage, GenericImageView};
 use rand::{distributions::Alphanumeric, thread_rng, Rng};
 use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
+use tdn::types::primitives::{PeerId, Result};
+use tdn_storage::local::DStorage;
 use tokio::fs;
 
-use tdn::types::{group::GroupId, primitive::Result};
-
 use crate::migrate::account_init_migrate;
+use crate::migrate::{
+    ACCOUNT_DB, CHAT_DB, CLOUD_DB, CONSENSUS_DB, DAO_DB, DOMAIN_DB, FILE_DB, GROUP_DB, JARVIS_DB,
+    SERVICE_DB, SESSION_DB, WALLET_DB,
+};
 
 const FILES_DIR: &'static str = "files";
 const IMAGE_DIR: &'static str = "images";
@@ -56,11 +61,11 @@ pub(crate) async fn read_file(base: &PathBuf) -> Result<Vec<u8>> {
 pub(crate) async fn copy_file(
     target: &PathBuf,
     base: &PathBuf,
-    gid: &GroupId,
+    pid: &PeerId,
     name: &str,
 ) -> Result<()> {
     let mut path = base.clone();
-    path.push(gid.to_hex());
+    path.push(id_to_str(pid));
     path.push(FILES_DIR);
     path.push(name);
     fs::copy(target, path).await?;
@@ -69,12 +74,12 @@ pub(crate) async fn copy_file(
 
 pub(crate) async fn write_file(
     base: &PathBuf,
-    gid: &GroupId,
+    pid: &PeerId,
     name: &str,
     bytes: &[u8],
 ) -> Result<String> {
     let mut path = base.clone();
-    path.push(gid.to_hex());
+    path.push(id_to_str(pid));
     path.push(FILES_DIR);
     path.push(name);
     fs::write(path, bytes).await?;
@@ -83,12 +88,12 @@ pub(crate) async fn write_file(
 
 pub(crate) fn write_file_sync(
     base: &PathBuf,
-    gid: &GroupId,
+    pid: &PeerId,
     name: &str,
     bytes: Vec<u8>,
 ) -> Result<String> {
     let mut path = base.clone();
-    path.push(gid.to_hex());
+    path.push(id_to_str(pid));
     path.push(FILES_DIR);
     path.push(name);
     tokio::spawn(async move { fs::write(path, bytes).await });
@@ -96,9 +101,9 @@ pub(crate) fn write_file_sync(
     Ok(name.to_owned())
 }
 
-pub(crate) async fn read_db_file(base: &PathBuf, gid: &GroupId, name: &str) -> Result<Vec<u8>> {
+pub(crate) async fn read_db_file(base: &PathBuf, pid: &PeerId, name: &str) -> Result<Vec<u8>> {
     let mut path = base.clone();
-    path.push(gid.to_hex());
+    path.push(id_to_str(pid));
     path.push(FILES_DIR);
     path.push(name);
     if path.exists() {
@@ -108,9 +113,9 @@ pub(crate) async fn read_db_file(base: &PathBuf, gid: &GroupId, name: &str) -> R
     }
 }
 
-pub(crate) async fn read_image(base: &PathBuf, gid: &GroupId, name: &str) -> Result<Vec<u8>> {
+pub(crate) async fn read_image(base: &PathBuf, pid: &PeerId, name: &str) -> Result<Vec<u8>> {
     let mut path = base.clone();
-    path.push(gid.to_hex());
+    path.push(id_to_str(pid));
     path.push(IMAGE_DIR);
     path.push(name);
     if path.exists() {
@@ -143,9 +148,9 @@ fn image_thumb(bytes: &[u8]) -> Result<DynamicImage> {
     }
 }
 
-pub(crate) fn write_image_sync(base: &PathBuf, gid: &GroupId, bytes: Vec<u8>) -> Result<String> {
+pub(crate) fn write_image_sync(base: &PathBuf, pid: &PeerId, bytes: Vec<u8>) -> Result<String> {
     let mut path = base.clone();
-    path.push(gid.to_hex());
+    path.push(id_to_str(pid));
 
     let thumb = image_thumb(&bytes)?;
     let name = image_name();
@@ -164,9 +169,9 @@ pub(crate) fn write_image_sync(base: &PathBuf, gid: &GroupId, bytes: Vec<u8>) ->
     Ok(name)
 }
 
-pub(crate) async fn write_image(base: &PathBuf, gid: &GroupId, bytes: &[u8]) -> Result<String> {
+pub(crate) async fn write_image(base: &PathBuf, pid: &PeerId, bytes: &[u8]) -> Result<String> {
     let mut path = base.clone();
-    path.push(gid.to_hex());
+    path.push(id_to_str(pid));
 
     let thumb = image_thumb(bytes)?;
     let name = image_name();
@@ -186,19 +191,15 @@ pub(crate) async fn write_image(base: &PathBuf, gid: &GroupId, bytes: &[u8]) -> 
 }
 
 #[inline]
-fn avatar_png(gid: &GroupId) -> String {
-    let mut gs = gid.to_hex();
+fn avatar_png(pid: &PeerId) -> String {
+    let mut gs = id_to_str(pid);
     gs.push_str(".png");
     gs
 }
 
-pub(crate) async fn read_avatar(
-    base: &PathBuf,
-    gid: &GroupId,
-    remote: &GroupId,
-) -> Result<Vec<u8>> {
+pub(crate) async fn read_avatar(base: &PathBuf, pid: &PeerId, remote: &PeerId) -> Result<Vec<u8>> {
     let mut path = base.clone();
-    path.push(gid.to_hex());
+    path.push(id_to_str(pid));
     path.push(AVATAR_DIR);
     path.push(avatar_png(remote));
     if path.exists() {
@@ -208,9 +209,9 @@ pub(crate) async fn read_avatar(
     }
 }
 
-pub(crate) fn read_avatar_sync(base: &PathBuf, gid: &GroupId, remote: &GroupId) -> Result<Vec<u8>> {
+pub(crate) fn read_avatar_sync(base: &PathBuf, pid: &PeerId, remote: &PeerId) -> Result<Vec<u8>> {
     let mut path = base.clone();
-    path.push(gid.to_hex());
+    path.push(id_to_str(pid));
     path.push(AVATAR_DIR);
     path.push(avatar_png(remote));
     if path.exists() {
@@ -222,15 +223,15 @@ pub(crate) fn read_avatar_sync(base: &PathBuf, gid: &GroupId, remote: &GroupId) 
 
 pub(crate) async fn write_avatar(
     base: &PathBuf,
-    gid: &GroupId,
-    remote: &GroupId,
+    pid: &PeerId,
+    remote: &PeerId,
     bytes: &[u8],
 ) -> Result<()> {
     if bytes.len() < 1 {
         return Ok(());
     }
     let mut path = base.clone();
-    path.push(gid.to_hex());
+    path.push(id_to_str(pid));
     path.push(AVATAR_DIR);
     path.push(avatar_png(remote));
     Ok(fs::write(path, bytes).await?)
@@ -238,24 +239,24 @@ pub(crate) async fn write_avatar(
 
 pub(crate) fn write_avatar_sync(
     base: &PathBuf,
-    gid: &GroupId,
-    remote: &GroupId,
+    pid: &PeerId,
+    remote: &PeerId,
     bytes: Vec<u8>,
 ) -> Result<()> {
     if bytes.len() < 1 {
         return Ok(());
     }
     let mut path = base.clone();
-    path.push(gid.to_hex());
+    path.push(id_to_str(pid));
     path.push(AVATAR_DIR);
     path.push(avatar_png(remote));
     tokio::spawn(async move { fs::write(path, bytes).await });
     Ok(())
 }
 
-pub(crate) async fn delete_avatar(base: &PathBuf, gid: &GroupId, remote: &GroupId) -> Result<()> {
+pub(crate) async fn delete_avatar(base: &PathBuf, pid: &PeerId, remote: &PeerId) -> Result<()> {
     let mut path = base.clone();
-    path.push(gid.to_hex());
+    path.push(id_to_str(pid));
     path.push(AVATAR_DIR);
     path.push(avatar_png(remote));
     if path.exists() {
@@ -265,9 +266,9 @@ pub(crate) async fn delete_avatar(base: &PathBuf, gid: &GroupId, remote: &GroupI
     }
 }
 
-pub(crate) fn delete_avatar_sync(base: &PathBuf, gid: &GroupId, remote: &GroupId) -> Result<()> {
+pub(crate) fn delete_avatar_sync(base: &PathBuf, pid: &PeerId, remote: &PeerId) -> Result<()> {
     let mut path = base.clone();
-    path.push(gid.to_hex());
+    path.push(id_to_str(pid));
     path.push(AVATAR_DIR);
     path.push(avatar_png(remote));
     if path.exists() {
@@ -276,9 +277,9 @@ pub(crate) fn delete_avatar_sync(base: &PathBuf, gid: &GroupId, remote: &GroupId
     Ok(())
 }
 
-pub(crate) async fn read_record(base: &PathBuf, gid: &GroupId, name: &str) -> Result<Vec<u8>> {
+pub(crate) async fn read_record(base: &PathBuf, pid: &PeerId, name: &str) -> Result<Vec<u8>> {
     let mut path = base.clone();
-    path.push(gid.to_hex());
+    path.push(id_to_str(pid));
     path.push(RECORD_DIR);
     path.push(name);
     if path.exists() {
@@ -290,7 +291,7 @@ pub(crate) async fn read_record(base: &PathBuf, gid: &GroupId, name: &str) -> Re
 
 pub(crate) fn write_record_sync(
     base: &PathBuf,
-    gid: &GroupId,
+    pid: &PeerId,
     t: u32,
     bytes: Vec<u8>,
 ) -> Result<String> {
@@ -301,7 +302,7 @@ pub(crate) fn write_record_sync(
         .unwrap_or(0u128);
 
     let mut path = base.clone();
-    path.push(gid.to_hex());
+    path.push(id_to_str(pid));
     path.push(RECORD_DIR);
     path.push(format!("{}.m4a", datetime));
     tokio::spawn(async move { fs::write(path, bytes).await });
@@ -309,27 +310,110 @@ pub(crate) fn write_record_sync(
     Ok(format!("{}_{}.m4a", t, datetime))
 }
 
-pub(crate) async fn _delete_record(base: &PathBuf, gid: &GroupId, name: &str) -> Result<()> {
+pub(crate) async fn _delete_record(base: &PathBuf, pid: &PeerId, name: &str) -> Result<()> {
     let mut path = base.clone();
-    path.push(gid.to_hex());
+    path.push(id_to_str(pid));
     path.push(RECORD_DIR);
     path.push(name);
     Ok(fs::remove_file(path).await?)
 }
 
-pub(crate) fn _write_emoji(base: &PathBuf, gid: &GroupId) -> Result<()> {
+pub(crate) fn _write_emoji(base: &PathBuf, pid: &PeerId) -> Result<()> {
     let mut path = base.clone();
-    path.push(gid.to_hex());
+    path.push(id_to_str(pid));
     path.push(EMOJI_DIR);
     Ok(())
 }
 
 /// account independent db and storage directory.
-pub(crate) async fn account_init(base: &PathBuf, key: &str, gid: &GroupId) -> Result<()> {
+pub(crate) async fn account_init(base: &PathBuf, key: &str, pid: &PeerId) -> Result<()> {
     let mut db_path = base.clone();
-    db_path.push(gid.to_hex());
+    db_path.push(id_to_str(pid));
     init_local_files(&db_path).await?;
 
     // Inner Database.
     account_init_migrate(&db_path, key)
+}
+
+pub(crate) fn account_db(base: &PathBuf, secret: &[u8]) -> Result<DStorage> {
+    let mut db_path = base.clone();
+    db_path.push(ACCOUNT_DB);
+    DStorage::open(db_path, &hex::encode(secret))
+}
+
+pub(crate) fn consensus_db(base: &PathBuf, pid: &PeerId, db_key: &str) -> Result<DStorage> {
+    let mut db_path = base.clone();
+    db_path.push(id_to_str(pid));
+    db_path.push(CONSENSUS_DB);
+    DStorage::open(db_path, db_key)
+}
+
+pub(crate) fn session_db(base: &PathBuf, pid: &PeerId, db_key: &str) -> Result<DStorage> {
+    let mut db_path = base.clone();
+    db_path.push(id_to_str(pid));
+    db_path.push(SESSION_DB);
+    DStorage::open(db_path, db_key)
+}
+
+pub(crate) fn chat_db(base: &PathBuf, pid: &PeerId, db_key: &str) -> Result<DStorage> {
+    let mut db_path = base.clone();
+    db_path.push(id_to_str(pid));
+    db_path.push(CHAT_DB);
+    DStorage::open(db_path, db_key)
+}
+
+pub(crate) fn file_db(base: &PathBuf, pid: &PeerId, db_key: &str) -> Result<DStorage> {
+    let mut db_path = base.clone();
+    db_path.push(id_to_str(pid));
+    db_path.push(FILE_DB);
+    DStorage::open(db_path, db_key)
+}
+
+pub(crate) fn _service_db(base: &PathBuf, pid: &PeerId, db_key: &str) -> Result<DStorage> {
+    let mut db_path = base.clone();
+    db_path.push(id_to_str(pid));
+    db_path.push(SERVICE_DB);
+    DStorage::open(db_path, db_key)
+}
+
+pub(crate) fn jarvis_db(base: &PathBuf, pid: &PeerId, db_key: &str) -> Result<DStorage> {
+    let mut db_path = base.clone();
+    db_path.push(id_to_str(pid));
+    db_path.push(JARVIS_DB);
+    DStorage::open(db_path, db_key)
+}
+
+pub(crate) fn group_db(base: &PathBuf, pid: &PeerId, db_key: &str) -> Result<DStorage> {
+    let mut db_path = base.clone();
+    db_path.push(id_to_str(pid));
+    db_path.push(GROUP_DB);
+    DStorage::open(db_path, db_key)
+}
+
+pub(crate) fn _dao_db(base: &PathBuf, pid: &PeerId, db_key: &str) -> Result<DStorage> {
+    let mut db_path = base.clone();
+    db_path.push(id_to_str(pid));
+    db_path.push(DAO_DB);
+    DStorage::open(db_path, db_key)
+}
+
+pub(crate) fn domain_db(base: &PathBuf, pid: &PeerId, db_key: &str) -> Result<DStorage> {
+    let mut db_path = base.clone();
+    db_path.push(id_to_str(pid));
+    db_path.push(DOMAIN_DB);
+    DStorage::open(db_path, db_key)
+}
+
+pub(crate) fn wallet_db(base: &PathBuf, pid: &PeerId, db_key: &str) -> Result<DStorage> {
+    let mut db_path = base.clone();
+    db_path.push(id_to_str(pid));
+    db_path.push(WALLET_DB);
+    DStorage::open(db_path, db_key)
+}
+
+pub(crate) fn _cloud_db(base: &PathBuf, pid: &PeerId, db_key: &str) -> Result<DStorage> {
+    let mut db_path = base.clone();
+    db_path.push(id_to_str(pid));
+    db_path.push(CLOUD_DB);
+    DStorage::open(db_path, db_key)
 }

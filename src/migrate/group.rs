@@ -3,7 +3,7 @@ pub(super) const GROUP_VERSIONS: [&str; 3] = [
   "CREATE TABLE IF NOT EXISTS groups(
     id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
     height INTEGER NOT NULL,
-    gcd TEXT NOT NULL,
+    gid INTEGER NOT NULL,
     addr TEXT NOT NULL,
     name TEXT NOT NULL,
     is_close INTEGER NOT NULL,
@@ -12,8 +12,7 @@ pub(super) const GROUP_VERSIONS: [&str; 3] = [
     id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
     height INTEGER NOT NULL,
     fid INTEGER NOT NULL,
-    mid TEXT NOT NULL,
-    addr TEXT NOT NULL,
+    pid TEXT NOT NULL,
     name TEXT NOT NULL,
     leave INTEGER NOT NULL);",
   "CREATE TABLE IF NOT EXISTS messages(

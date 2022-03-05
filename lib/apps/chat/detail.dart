@@ -26,7 +26,7 @@ class ChatDetail extends StatefulWidget {
 
 class _ChatDetailState extends State<ChatDetail> {
   bool _loading = false;
-  Friend _friend = Friend('', '', '');
+  Friend _friend = Friend('', '');
   Map<int, Message> _messages = {};
 
   @override
@@ -83,7 +83,7 @@ class _ChatDetailState extends State<ChatDetail> {
   }
 
   _send(MessageType mtype, String raw) {
-    rpc.send('chat-message-create', [_friend.id, _friend.gid, mtype.toInt(), raw]);
+    rpc.send('chat-message-create', [_friend.id, _friend.pid, mtype.toInt(), raw]);
   }
 
   @override
@@ -165,9 +165,8 @@ class _ChatDetailState extends State<ChatDetail> {
                     lang.friendInfo,
                     UserInfo(
                       app: 'add-friend',
-                      id: _friend.gid,
+                      id: _friend.pid,
                       name: _friend.name,
-                      addr: _friend.addr,
                       title: lang.qrFriend,
                       remark: _friend.remark,
                     ),
@@ -207,7 +206,7 @@ class _ChatDetailState extends State<ChatDetail> {
                   );
                 } else if (value == 4) {
                   rpc.send('chat-request-create', [
-                      _friend.gid, _friend.addr, _friend.name, lang.fromContactCard(meName)
+                      _friend.pid, _friend.name, lang.fromContactCard(meName)
                   ]);
                 } else if (value == 5) {
                   showDialog(
@@ -264,7 +263,7 @@ class _ChatDetailState extends State<ChatDetail> {
               itemCount: recentMessageKeys.length,
               reverse: true,
               itemBuilder: (BuildContext context, index) => ChatMessage(
-                fgid: _friend.gid,
+                fpid: _friend.pid,
                 name: _friend.name,
                 message: this._messages[recentMessageKeys[index]]!,
               )

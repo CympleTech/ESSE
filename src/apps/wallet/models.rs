@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use tdn::types::{
-    primitive::Result,
+    primitives::Result,
     rpc::{json, RpcParam},
 };
 

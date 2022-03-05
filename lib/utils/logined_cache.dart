@@ -14,7 +14,7 @@ Future<List<Account>> getLogined() async {
       final fields = prefs.getStringList(id);
       if (fields != null && fields.length == 5) {
         accounts.add(Account(
-          fields[0], // gid
+          fields[0], // pid
           fields[1], // name
           fields[2], // avatar
           false,
@@ -28,7 +28,7 @@ Future<List<Account>> getLogined() async {
   return accounts;
 }
 
-initLogined(String gid, List<Account> accounts) async {
+initLogined(String pid, List<Account> accounts) async {
   SharedPreferences prefs = await SharedPreferences.getInstance();
   final ids = prefs.getStringList(LOGINED_CACHE_NAME);
   if (ids != null) {
@@ -37,19 +37,19 @@ initLogined(String gid, List<Account> accounts) async {
     });
   }
 
-  List<String> newIds = [gid];
+  List<String> newIds = [pid];
   accounts.forEach((account) {
     final List<String> fields = [
-      account.gid,
+      account.pid,
       account.name,
       account.encodeAvatar(),
     ];
 
-    if (account.gid != gid) {
-      newIds.add(account.gid);
+    if (account.pid != pid) {
+      newIds.add(account.pid);
     }
 
-    prefs.setStringList(account.gid, fields);
+    prefs.setStringList(account.pid, fields);
   });
 
   prefs.setStringList(LOGINED_CACHE_NAME, newIds);
@@ -64,44 +64,44 @@ updateLogined(Account account) async {
   }
 
 
-  if (!ids.contains(account.gid)) {
-    ids.add(account.gid);
+  if (!ids.contains(account.pid)) {
+    ids.add(account.pid);
     prefs.setStringList(LOGINED_CACHE_NAME, ids);
   }
 
   final List<String> fields = [
-    account.gid,
+    account.pid,
     account.name,
     account.encodeAvatar(),
   ];
 
-  prefs.setStringList(account.gid, fields);
+  prefs.setStringList(account.pid, fields);
 }
 
 /// change main logined account.
-mainLogined(String gid) async {
+mainLogined(String pid) async {
   SharedPreferences prefs = await SharedPreferences.getInstance();
   List<String>? ids = prefs.getStringList(LOGINED_CACHE_NAME);
   if (ids == null) {
     ids = [];
   }
 
-  ids.remove(gid);
-  ids.insert(0, gid);
+  ids.remove(pid);
+  ids.insert(0, pid);
   prefs.setStringList(LOGINED_CACHE_NAME, ids);
 }
 
 /// remove auto-login accounts.
-removeLogined(String gid) async {
+removeLogined(String pid) async {
   SharedPreferences prefs = await SharedPreferences.getInstance();
-  prefs.remove(gid);
+  prefs.remove(pid);
   List<String>? ids = prefs.getStringList(LOGINED_CACHE_NAME);
   if (ids == null) {
     ids = [];
   }
 
-  if (ids.contains(gid)) {
-    ids.remove(gid);
+  if (ids.contains(pid)) {
+    ids.remove(pid);
     prefs.setStringList(LOGINED_CACHE_NAME, ids);
   }
 }

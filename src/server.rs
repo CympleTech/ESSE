@@ -5,7 +5,10 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use tdn::{
     prelude::*,
-    types::primitive::{HandleResult, Result},
+    types::{
+        message::RpcSendMessage,
+        primitives::{HandleResult, Result},
+    },
 };
 use tokio::{
     sync::mpsc::{error::SendError, Sender},
@@ -16,13 +19,14 @@ use tdn_storage::local::DStorage;
 
 use crate::account::Account;
 use crate::apps::app_layer_handle;
-use crate::group::Group;
+use crate::global::Global;
+use crate::group::{handle as group_handle, Group};
 use crate::layer::Layer;
 use crate::migrate::{main_migrate, ACCOUNT_DB};
 use crate::primitives::network_seeds;
 use crate::rpc::{init_rpc, inner_rpc};
 
-pub const DEFAULT_WS_ADDR: &'static str = "127.0.0.1:8080";
+pub const DEFAULT_WS_ADDR: &'static str = "127.0.0.1:7366";
 pub const DEFAULT_LOG_FILE: &'static str = "esse.log.txt";
 
 pub static RPC_WS_UID: OnceCell<u64> = OnceCell::new();
@@ -61,49 +65,46 @@ pub async fn start(db_path: String) -> Result<()> {
     let account_db = DStorage::open(account_db_path, &hex::encode(&rand_secret))?;
     let accounts = Account::all(&account_db)?;
     account_db.close()?;
-    let mut me: HashMap<GroupId, Account> = HashMap::new();
+    let mut me: HashMap<PeerId, Account> = HashMap::new();
     for account in accounts {
-        me.insert(account.gid, account);
+        me.insert(account.pid, account);
     }
-    config.group_ids = me.keys().cloned().collect();
 
-    let (peer_id, sender, mut recver) = start_with_config(config).await?;
-    info!("Network Peer id : {}", peer_id.to_hex());
+    let (_, _, p2p_config, rpc_config) = config.split();
+    let (self_send, mut self_recv) = new_receive_channel();
+    let rpc_send = start_rpc(rpc_config, self_send.clone()).await?;
 
-    let group = Arc::new(RwLock::new(
-        Group::init(rand_secret, sender.clone(), peer_id, me, db_path.clone()).await?,
+    let global = Arc::new(Global::init(
+        me,
+        db_path,
+        rand_secret,
+        p2p_config,
+        self_send,
+        rpc_send,
     ));
-    let layer = Arc::new(RwLock::new(
-        Layer::init(db_path, peer_id, group.clone()).await?,
-    ));
 
-    let rpc = init_rpc(peer_id, group.clone(), layer.clone());
-    //let mut group_rpcs: HashMap<u64, GroupId> = HashMap::new();
+    let rpc = init_rpc(global.clone());
+    // //let mut group_rpcs: HashMap<u64, GroupId> = HashMap::new();
     let mut now_rpc_uid = 0;
 
-    // running session remain task.
-    tokio::spawn(session_remain(peer_id, layer.clone(), sender.clone()));
+    // // running session remain task.
+    // tokio::spawn(session_remain(peer_id, layer.clone(), sender.clone()));
 
-    while let Some(message) = recver.recv().await {
+    while let Some(message) = self_recv.recv().await {
         match message {
-            ReceiveMessage::Group(fgid, g_msg) => {
-                if let Ok(handle_result) = group
-                    .write()
-                    .await
-                    .handle(fgid, g_msg, &layer, now_rpc_uid)
-                    .await
-                {
-                    handle(handle_result, now_rpc_uid, true, &sender).await;
+            ReceiveMessage::Group(g_msg) => {
+                if let Ok(handle_result) = group_handle(g_msg, &global).await {
+                    handle(handle_result, now_rpc_uid, true, &global).await;
                 }
             }
             ReceiveMessage::Layer(fgid, tgid, l_msg) => {
-                if let Ok(handle_result) = app_layer_handle(&layer, fgid, tgid, l_msg).await {
-                    handle(handle_result, now_rpc_uid, true, &sender).await;
+                if let Ok(handle_result) = app_layer_handle(fgid, tgid, l_msg, &global).await {
+                    handle(handle_result, now_rpc_uid, true, &global).await;
                 }
             }
             ReceiveMessage::Rpc(uid, params, is_ws) => {
                 if !is_ws {
-                    if inner_rpc(uid, params["method"].as_str().unwrap(), &sender)
+                    if inner_rpc(uid, params["method"].as_str().unwrap(), &global)
                         .await
                         .is_ok()
                     {
@@ -117,23 +118,22 @@ pub async fn start(db_path: String) -> Result<()> {
                 }
 
                 if let Ok(handle_result) = rpc.handle(params).await {
-                    handle(handle_result, uid, is_ws, &sender).await;
+                    handle(handle_result, uid, is_ws, &global).await;
                 }
             }
             ReceiveMessage::NetworkLost => {
-                sender
+                global
                     .send(SendMessage::Network(NetworkType::NetworkReboot))
-                    .await
-                    .expect("TDN channel closed");
-                let t_sender = sender.clone();
-                let g_conns = group.read().await.all_distribute_conns();
-                let l_conns = layer
-                    .read()
-                    .await
-                    .all_layer_conns()
-                    .await
-                    .unwrap_or(HashMap::new());
-                tokio::spawn(sleep_waiting_reboot(t_sender, g_conns, l_conns));
+                    .await?;
+                // let t_sender = tdn_send.clone();
+                // let g_conns = group.read().await.all_distribute_conns();
+                // let l_conns = layer
+                //     .read()
+                //     .await
+                //     .all_layer_conns()
+                //     .await
+                //     .unwrap_or(HashMap::new());
+                // tokio::spawn(sleep_waiting_reboot(t_sender, g_conns, l_conns));
             }
         }
     }
@@ -141,81 +141,81 @@ pub async fn start(db_path: String) -> Result<()> {
     Ok(())
 }
 
+// #[inline]
+// async fn sleep_waiting_reboot(
+//     sender: Sender<SendMessage>,
+//     groups: HashMap<GroupId, Vec<SendType>>,
+//     layers: HashMap<GroupId, Vec<(GroupId, SendType)>>,
+// ) -> std::result::Result<(), SendError<SendMessage>> {
+//     tokio::time::sleep(std::time::Duration::from_secs(10)).await;
+
+//     for (gid, conns) in groups {
+//         for conn in conns {
+//             sender.send(SendMessage::Group(gid, conn)).await?;
+//         }
+//     }
+
+//     for (fgid, conns) in layers {
+//         for (tgid, conn) in conns {
+//             sender.send(SendMessage::Layer(fgid, tgid, conn)).await?;
+//         }
+//     }
+
+//     Ok(())
+// }
+
+// async fn session_remain(
+//     self_addr: PeerId,
+//     layer: Arc<RwLock<Layer>>,
+//     sender: Sender<SendMessage>,
+// ) -> Result<()> {
+//     loop {
+//         tokio::time::sleep(std::time::Duration::from_secs(120)).await;
+//         if let Some(uid) = RPC_WS_UID.get() {
+//             let mut layer_lock = layer.write().await;
+//             let mut rpcs = vec![];
+//             let mut addrs = HashMap::new();
+
+//             for (_, running) in layer_lock.runnings.iter_mut() {
+//                 let closed = running.close_suspend(&self_addr);
+//                 for (gid, addr, sid) in closed {
+//                     addrs.insert(addr, false);
+//                     rpcs.push(crate::rpc::session_lost(gid, &sid));
+//                 }
+//             }
+//             drop(layer_lock);
+
+//             let layer_lock = layer.read().await;
+//             for (_, running) in layer_lock.runnings.iter() {
+//                 for (addr, keep) in addrs.iter_mut() {
+//                     if running.check_addr_online(addr) {
+//                         *keep = true;
+//                     }
+//                 }
+//             }
+//             drop(layer_lock);
+
+//             for rpc in rpcs {
+//                 let _ = sender.send(SendMessage::Rpc(*uid, rpc, true)).await;
+//             }
+
+//             for (addr, keep) in addrs {
+//                 if !keep {
+//                     let _ = sender
+//                         .send(SendMessage::Layer(
+//                             GroupId::default(),
+//                             GroupId::default(),
+//                             SendType::Disconnect(addr),
+//                         ))
+//                         .await;
+//                 }
+//             }
+//         }
+//     }
+// }
+
 #[inline]
-async fn sleep_waiting_reboot(
-    sender: Sender<SendMessage>,
-    groups: HashMap<GroupId, Vec<SendType>>,
-    layers: HashMap<GroupId, Vec<(GroupId, SendType)>>,
-) -> std::result::Result<(), SendError<SendMessage>> {
-    tokio::time::sleep(std::time::Duration::from_secs(10)).await;
-
-    for (gid, conns) in groups {
-        for conn in conns {
-            sender.send(SendMessage::Group(gid, conn)).await?;
-        }
-    }
-
-    for (fgid, conns) in layers {
-        for (tgid, conn) in conns {
-            sender.send(SendMessage::Layer(fgid, tgid, conn)).await?;
-        }
-    }
-
-    Ok(())
-}
-
-async fn session_remain(
-    self_addr: PeerId,
-    layer: Arc<RwLock<Layer>>,
-    sender: Sender<SendMessage>,
-) -> Result<()> {
-    loop {
-        tokio::time::sleep(std::time::Duration::from_secs(120)).await;
-        if let Some(uid) = RPC_WS_UID.get() {
-            let mut layer_lock = layer.write().await;
-            let mut rpcs = vec![];
-            let mut addrs = HashMap::new();
-
-            for (_, running) in layer_lock.runnings.iter_mut() {
-                let closed = running.close_suspend(&self_addr);
-                for (gid, addr, sid) in closed {
-                    addrs.insert(addr, false);
-                    rpcs.push(crate::rpc::session_lost(gid, &sid));
-                }
-            }
-            drop(layer_lock);
-
-            let layer_lock = layer.read().await;
-            for (_, running) in layer_lock.runnings.iter() {
-                for (addr, keep) in addrs.iter_mut() {
-                    if running.check_addr_online(addr) {
-                        *keep = true;
-                    }
-                }
-            }
-            drop(layer_lock);
-
-            for rpc in rpcs {
-                let _ = sender.send(SendMessage::Rpc(*uid, rpc, true)).await;
-            }
-
-            for (addr, keep) in addrs {
-                if !keep {
-                    let _ = sender
-                        .send(SendMessage::Layer(
-                            GroupId::default(),
-                            GroupId::default(),
-                            SendType::Disconnect(addr),
-                        ))
-                        .await;
-                }
-            }
-        }
-    }
-}
-
-#[inline]
-async fn handle(handle_result: HandleResult, uid: u64, is_ws: bool, sender: &Sender<SendMessage>) {
+async fn handle(handle_result: HandleResult, uid: u64, is_ws: bool, global: &Arc<Global>) {
     let HandleResult {
         mut rpcs,
         mut groups,
@@ -226,8 +226,9 @@ async fn handle(handle_result: HandleResult, uid: u64, is_ws: bool, sender: &Sen
     loop {
         if rpcs.len() != 0 {
             let msg = rpcs.remove(0);
-            sender
-                .send(SendMessage::Rpc(uid, msg, is_ws))
+            global
+                .rpc_send
+                .send(RpcSendMessage(uid, msg, is_ws))
                 .await
                 .expect("TDN channel closed");
         } else {
@@ -235,39 +236,42 @@ async fn handle(handle_result: HandleResult, uid: u64, is_ws: bool, sender: &Sen
         }
     }
 
-    loop {
-        if networks.len() != 0 {
-            let msg = networks.remove(0);
-            sender
-                .send(SendMessage::Network(msg))
-                .await
-                .expect("TDN channel closed");
-        } else {
-            break;
+    if let Ok(sender) = global.sender().await {
+        loop {
+            if groups.len() != 0 {
+                let msg = groups.remove(0);
+                sender
+                    .send(SendMessage::Group(msg))
+                    .await
+                    .expect("TDN channel closed");
+            } else {
+                break;
+            }
         }
-    }
 
-    loop {
-        if groups.len() != 0 {
-            let (gid, msg) = groups.remove(0);
-            sender
-                .send(SendMessage::Group(gid, msg))
-                .await
-                .expect("TDN channel closed");
-        } else {
-            break;
+        loop {
+            if layers.len() != 0 {
+                let (tgid, msg) = layers.remove(0);
+                sender
+                    .send(SendMessage::Layer(tgid, msg))
+                    .await
+                    .expect("TDN channel closed");
+            } else {
+                break;
+            }
         }
-    }
 
-    loop {
-        if layers.len() != 0 {
-            let (fgid, tgid, msg) = layers.remove(0);
-            sender
-                .send(SendMessage::Layer(fgid, tgid, msg))
-                .await
-                .expect("TDN channel closed");
-        } else {
-            break;
+        // must last send, because it will has stop type.
+        loop {
+            if networks.len() != 0 {
+                let msg = networks.remove(0);
+                sender
+                    .send(SendMessage::Network(msg))
+                    .await
+                    .expect("TDN channel closed");
+            } else {
+                break;
+            }
         }
     }
 }
