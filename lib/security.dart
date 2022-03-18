@@ -165,8 +165,8 @@ class _SecurityPageState extends State<SecurityPage> {
     );
   }
 
-  _handleLogined(String mainId, String mainPin, Map<String, Account> accounts) {
-    Provider.of<AccountProvider>(context, listen: false).autoAccounts(mainId, mainPin, accounts);
+  _handleLogined(Account account) {
+    Provider.of<AccountProvider>(context, listen: false).init(account);
     Provider.of<DeviceProvider>(context, listen: false).updateActived();
     Navigator.of(context).pushNamedAndRemoveUntil("/", (Route<dynamic> route) => false);
   }
@@ -178,17 +178,12 @@ class _SecurityPageState extends State<SecurityPage> {
     }
 
     // check if has logined.
-    final loginedAccounts = await getLogined();
-    if (loginedAccounts.length != 0) {
+    final loginedAccount = await getLogined();
+    if (loginedAccount != null) {
       print("INFO: START LOGINED USE CACHE");
-      final mainAccount = loginedAccounts[0];
-      Map<String, Account> accounts = {};
-      loginedAccounts.forEach((account) {
-          accounts[account.pid] = account;
-      });
-      final res = await httpPost('account-login', [mainAccount.pid, ""]);
+      final res = await httpPost('account-login', [loginedAccount.pid, ""]);
       if (res.isOk) {
-        _handleLogined(mainAccount.pid, "", accounts);
+        _handleLogined(loginedAccount);
         return;
       } else {
         showShadowDialog(
@@ -196,10 +191,11 @@ class _SecurityPageState extends State<SecurityPage> {
           Icons.security_rounded,
           "PIN",
           PinWords(
-            pid: mainAccount.pid,
+            pid: loginedAccount.pid,
             callback: (key) async {
               Navigator.of(context).pop();
-              _handleLogined(mainAccount.pid, key, accounts);
+              loginedAccount.pin = key;
+              _handleLogined(loginedAccount);
               return;
           }),
           0.0
@@ -233,7 +229,9 @@ class _SecurityPageState extends State<SecurityPage> {
     setState(() { this._loading = true; });
     final res = await httpPost('account-login', [this._selectedUserId, lock]);
     if (res.isOk) {
-      _handleLogined(this._selectedUserId, lock, this._accounts);
+      Account account = this._accounts[this._selectedUserId]!;
+      account.pin = lock;
+      _handleLogined(account);
     } else {
       setState(() { this._loading = false; });
       toast(context, res.error);

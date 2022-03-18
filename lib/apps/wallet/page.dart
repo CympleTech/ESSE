@@ -200,7 +200,7 @@ class _WalletDetailState extends State<WalletDetail> with SingleTickerProviderSt
           child: ElevatedButton(
             style: ElevatedButton.styleFrom(onPrimary: color.surface),
             onPressed: () {
-              final pin = context.read<AccountProvider>().activedAccount.pin;
+              final pin = context.read<AccountProvider>().pin;
               rpc.send('wallet-generate', [ChainToken.ETH.toInt(), pin]);
             },
             child: Padding(
@@ -659,7 +659,7 @@ class _ImportAccount extends StatelessWidget {
             if (secret.length < 32) {
               return;
             }
-            final pin = context.read<AccountProvider>().activedAccount.pin;
+            final pin = context.read<AccountProvider>().pin;
             rpc.send('wallet-import', [chain.toInt(), secret, pin]);
             Navigator.pop(context);
         }),
@@ -1090,7 +1090,7 @@ class _TransferTokenState extends State<_TransferToken> {
               return;
             }
             final amount = restoreBalance(a, widget.token.decimal);
-            final pid = context.read<AccountProvider>().activedAccount.pid;
+            final pid = context.read<AccountProvider>().id;
             showShadowDialog(
               context,
               Icons.security_rounded,

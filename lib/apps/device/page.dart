@@ -196,8 +196,7 @@ class _DevicesPageState extends State<DevicesPage> {
                 _inputAddress(lang);
               } else if (value == 1) {
                 // show qrcode.
-                final account = Provider.of<AccountProvider>(
-                  context, listen: false).activedAccount;
+                final account = Provider.of<AccountProvider>(context, listen: false).account;
                 showShadowDialog(
                   context,
                   Icons.security_rounded,

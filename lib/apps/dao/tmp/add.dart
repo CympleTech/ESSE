@@ -261,7 +261,7 @@ class _GroupAddPageState extends State<GroupAddPage> {
     rpc.send('group-chat-request-list', [false]);
 
     new Future.delayed(Duration.zero, () {
-        _myName = context.read<AccountProvider>().activedAccount.name;
+        _myName = context.read<AccountProvider>().account.name;
         setState(() {});
     });
   }

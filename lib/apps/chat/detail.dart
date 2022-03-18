@@ -107,7 +107,7 @@ class _ChatDetailState extends State<ChatDetail> {
 
     final accountProvider = context.watch<AccountProvider>();
     final session = accountProvider.activedSession;
-    final meName = accountProvider.activedAccount.name;
+    final meName = accountProvider.account.name;
     this._friend.online = session.isActive();
 
     final recentMessageKeys = this._messages.keys.toList().reversed.toList();
