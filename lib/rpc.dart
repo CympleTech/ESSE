@@ -59,7 +59,6 @@ class WebSocketsNotifications {
   bool _closed = true;
 
   Map<String, List> _listeners = new Map<String, List>();
-  Function? _notice;
 
   bool isLinked() {
     return !_closed;
@@ -114,10 +113,6 @@ class WebSocketsNotifications {
     if (_channel != null) {
       _channel!.sink.add(json.encode(jsonrpc));
     }
-  }
-
-  addNotice(Function noticeCallback) {
-    _notice = noticeCallback;
   }
 
   addListener(String method, Function callback, [bool notice = false]) {

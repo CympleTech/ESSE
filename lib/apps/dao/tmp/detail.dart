@@ -175,7 +175,7 @@ class _GroupChatDetailState extends State<GroupChatDetail> {
 
     final accountProvider = context.watch<AccountProvider>();
     final session = accountProvider.activedSession;
-    //final meName = accountProvider.activedAccount.name;
+    //final meName = accountProvider.account.name;
     final isOnline = session.isActive();
 
     return Scaffold(
@@ -631,7 +631,7 @@ class _MemberWidget extends StatelessWidget {
     //final isLight = color.brightness == Brightness.light;
     //final isDesktop = isDisplayDesktop(context);
     final accountProvider = context.read<AccountProvider>();
-    final myId = accountProvider.activedAccountId;
+    final myId = accountProvider.id;
     final isOnline = accountProvider.activedSession.isActive();
 
     final provider = context.watch<GroupChatProvider>();

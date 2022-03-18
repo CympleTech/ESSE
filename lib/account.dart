@@ -127,16 +127,13 @@ class Account {
   String pid = '';
   String name = '';
   Uint8List? avatar;
-  bool online = false;
-  bool hasNew = false;
   String pin = '';
 
-  Account(String pid, String name, [String avatar = "", bool online = false]) {
+  Account(String pid, String name, [String avatar = "", String pin = ""]) {
     this.pid = pid;
     this.name = name;
     this.updateAvatar(avatar);
-    this.online = online;
-    this.hasNew = false;
+    this.pin = pin;
   }
 
   String encodeAvatar() {
@@ -155,14 +152,11 @@ class Account {
     }
   }
 
-  Avatar showAvatar({double width = 45.0, bool online = false, bool needOnline = true}) {
+  Avatar showAvatar({double width = 45.0}) {
     return Avatar(
       width: width,
       name: this.name,
       avatar: this.avatar,
-      online: needOnline,
-      onlineColor: this.online ? const Color(0xFF0EE50A) : const Color(0xFFEDEDED),
-      hasNew: this.hasNew,
     );
   }
 }

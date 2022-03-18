@@ -169,7 +169,7 @@ class _GroupChatDetailState extends State<GroupChatDetail> {
 
     final accountProvider = context.watch<AccountProvider>();
     final session = accountProvider.activedSession;
-    final meName = accountProvider.activedAccount.name;
+    final meName = accountProvider.account.name;
     final isOnline = session.isActive();
     final recentMessageKeys = this._messages.keys.toList().reversed.toList();
 

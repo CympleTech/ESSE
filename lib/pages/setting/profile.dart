@@ -43,7 +43,7 @@ class _ProfileDetailState extends State<ProfileDetail> {
   Widget build(BuildContext context) {
     final color = Theme.of(context).colorScheme;
     final lang = AppLocalizations.of(context);
-    final account = context.watch<AccountProvider>().activedAccount;
+    final account = context.watch<AccountProvider>().account;
     final noImage = account.avatar == null;
 
     return Scaffold(

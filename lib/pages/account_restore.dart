@@ -314,9 +314,9 @@ class _AccountRestorePageState extends State<AccountRestorePage> {
 
           if (res.isOk) {
             // save this User
-            final account = Account(res.params[0], this._name, lock);
+            final account = Account(res.params[0], this._name, "", lock);
 
-            Provider.of<AccountProvider>(context, listen: false).addAccount(account, lock);
+            Provider.of<AccountProvider>(context, listen: false).init(account);
             Provider.of<DeviceProvider>(context, listen: false).updateActived();
 
             Navigator.of(context).pushNamedAndRemoveUntil("/", (Route<dynamic> route) => false);

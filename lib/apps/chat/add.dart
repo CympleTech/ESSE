@@ -209,7 +209,7 @@ class _ChatAddState extends State<ChatAdd> {
       this._coreScreen = _coreShow(color, lang);
     }
 
-    final account = context.read<AccountProvider>().activedAccount;
+    final account = context.read<AccountProvider>().account;
     final requestKeys = this._requests.keys.toList().reversed.toList();
 
     return Scaffold(

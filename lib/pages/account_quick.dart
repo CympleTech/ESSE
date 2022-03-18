@@ -149,9 +149,9 @@ class _AccountQuickPageState extends State<AccountQuickPage> {
 
       if (login.isOk) {
         // save this User
-        final account = Account(pid, name, avatar);
+        final account = Account(pid, name, avatar, lock);
 
-        Provider.of<AccountProvider>(context, listen: false).addAccount(account, lock);
+        Provider.of<AccountProvider>(context, listen: false).init(account);
         Provider.of<DeviceProvider>(context, listen: false).updateActived();
 
         Navigator.push(context, MaterialPageRoute(builder: (_) => AccountDomainScreen(

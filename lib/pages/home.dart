@@ -171,7 +171,7 @@ class _HomeListState extends State<HomeList> {
                         UserInfo(
                           app: 'add-friend',
                           id: provider.id,
-                          name: provider.activedAccount.name));
+                          name: provider.account.name));
                     }
                   },
                   itemBuilder: (context) {
@@ -302,59 +302,6 @@ class _HomeListState extends State<HomeList> {
 class DrawerWidget extends StatelessWidget {
   const DrawerWidget({Key? key}) : super(key: key);
 
-  Widget _listAccount(context, Account account, Color color, lang) {
-    return InkWell(
-        onTap: account.online
-            ? () {
-                Navigator.of(context).pop();
-                Provider.of<AccountProvider>(context, listen: false)
-                    .updateActivedAccount(account.pid, account.pin);
-                Provider.of<DeviceProvider>(context, listen: false)
-                    .updateActived();
-              }
-            : null,
-        child: Padding(
-            padding:
-                const EdgeInsets.symmetric(vertical: 5.0, horizontal: 10.0),
-            child: Row(children: [
-              account.showAvatar(online: account.online),
-              const SizedBox(width: 10.0),
-              Expanded(
-                child: Text(account.name,
-                    maxLines: 1, overflow: TextOverflow.ellipsis),
-              ),
-              const SizedBox(width: 10.0),
-              Transform.scale(
-                scale: 0.7,
-                child: CupertinoSwitch(
-                  activeColor: color,
-                  value: account.online,
-                  onChanged: (value) {
-                    if (value) {
-                      showShadowDialog(
-                        context,
-                        Icons.security_rounded,
-                        lang.verifyPin,
-                        PinWords(
-                          pid: account.pid,
-                          callback: (key) async {
-                            Navigator.of(context).pop();
-                            Provider.of<AccountProvider>(context,
-                              listen: false)
-                            .onlineAccount(account.pid, key);
-                        }),
-                        0.0,
-                      );
-                    } else {
-                      Provider.of<AccountProvider>(context, listen: false)
-                          .offlineAccount(account.pid);
-                    }
-                  },
-                ),
-              ),
-            ])));
-  }
-
   _showPage(Widget widget, bool isDesktop, context) {
     if (isDesktop) {
       Provider.of<AccountProvider>(context, listen: false)
@@ -371,16 +318,7 @@ class DrawerWidget extends StatelessWidget {
     final isLight = color.brightness == Brightness.light;
     final isDesktop = isDisplayDesktop(context);
 
-    final provider = context.watch<AccountProvider>();
-    final me = provider.activedAccount;
-    final accounts = provider.accounts;
-
-    List<Widget> accountsWidget = [];
-    accounts.forEach((pid, account) {
-      if (pid != me.pid) {
-        accountsWidget.add(_listAccount(context, account, color.primary, lang));
-      }
-    });
+    final me = context.watch<AccountProvider>().account;
 
     return Drawer(
         child: BackdropFilter(
@@ -399,26 +337,17 @@ class DrawerWidget extends StatelessWidget {
                 padding: EdgeInsets.zero,
                 children: <Widget>[
                   Padding(
+                    padding: const EdgeInsets.only(top: 20.0),
+                    child: Center(
+                      child: me.showAvatar(width: 100.0)),
+                  ),
+                  Padding(
                     padding: const EdgeInsets.symmetric(vertical: 20.0),
                     child: Center(
-                        child: me.showAvatar(width: 100.0, needOnline: false)),
-                  ),
-                  Theme(
-                    data: Theme.of(context)
-                        .copyWith(dividerColor: Colors.transparent),
-                    child: ExpansionTile(
-                      title: Container(
-                          padding: const EdgeInsets.only(left: 25.0),
-                          alignment: Alignment.center,
-                          child: Text(
-                            "${me.name}",
-                            style: TextStyle(
-                                fontWeight: FontWeight.bold, fontSize: 16.0),
-                          )),
-                      children: accountsWidget,
-                    ),
-                  ),
-                  const SizedBox(height: 5.0),
+                      child: Text(
+                        "${me.name}",
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16.0),
+                  ))),
                   const Divider(height: 1.0, color: Color(0x40ADB0BB)),
                   ListTile(
                       leading: Icon(Icons.person, color: color.primary),
