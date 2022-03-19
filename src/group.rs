@@ -20,7 +20,7 @@ use crate::apps::device::Device;
 //use crate::event::{InnerEvent, StatusEvent, SyncEvent};
 //use crate::layer::Layer;
 //use crate::rpc;
-use crate::storage::{account_db, account_init, consensus_db, write_avatar};
+use crate::storage::{account_db, account_init, consensus_db, wallet_db, write_avatar};
 use crate::utils::crypto::{decrypt, encrypt};
 use crate::utils::device_status::{device_info, device_status as local_device_status};
 
@@ -463,7 +463,7 @@ impl Group {
         secret: &[u8],
     ) -> Result<(i64, PeerId)> {
         let account_index = self.accounts.len() as u32;
-        let (mut account, sk) = Account::generate(
+        let (mut account, sk, mut wallet) = Account::generate(
             account_index,
             secret,
             lang,
@@ -489,11 +489,16 @@ impl Group {
         let _ = write_avatar(base, &account_id, &account_id, &account.avatar).await;
         self.accounts.insert(account.pid, account);
 
+        let db_key = self.db_key(&account_id)?;
+        let wallet_db = wallet_db(base, &account_id, &db_key)?;
+        wallet.insert(&wallet_db)?;
+        wallet_db.close()?;
+
         let (device_name, device_info) = device_info();
         let mut device = Device::new(device_name, device_info, Peer::peer(account_id));
-        let db = consensus_db(base, &account_id, &self.db_key(&account_id)?)?;
-        device.insert(&db)?;
-        db.close()?;
+        let device_db = consensus_db(base, &account_id, &db_key)?;
+        device.insert(&device_db)?;
+        device_db.close()?;
 
         Ok((account_did, account_id))
     }

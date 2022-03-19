@@ -5,11 +5,13 @@ use tdn::types::{
     group::EventId,
     primitives::{PeerId, PeerKey, Result},
 };
-use tdn_did::{generate_peer, Language};
+use tdn_did::{generate_eth_account, generate_peer, secp256k1::SecretKey, Language};
 use tdn_storage::local::{DStorage, DsValue};
+use web3::signing::Key;
 
 use esse_primitives::{id_from_str, id_to_str};
 
+use crate::apps::wallet::models::{Address, ChainToken};
 use crate::utils::crypto::{
     check_pin, decrypt, decrypt_key, encrypt_key, encrypt_multiple, hash_pin,
 };
@@ -78,6 +80,7 @@ impl Account {
         secret: Vec<u8>,
         encrypt: Vec<u8>,
         plainkey: Vec<u8>,
+        wallet: String,
     ) -> Self {
         let start = SystemTime::now();
         let datetime = start
@@ -89,7 +92,6 @@ impl Account {
             id: 0,
             pub_height: 1,
             own_height: 0,
-            wallet: String::new(),
             event: EventId::default(),
             pid,
             index,
@@ -100,6 +102,7 @@ impl Account {
             mnemonic,
             secret,
             encrypt,
+            wallet,
             plainkey,
             avatar,
             datetime,
@@ -113,20 +116,28 @@ impl Account {
     pub fn generate(
         index: u32,
         salt: &[u8], // &[u8; 32]
-        lang: i64,
+        rlang: i64,
         mnemonic: &str,
         pass: &str,
         name: &str,
         lock: &str,
         avatar: Vec<u8>,
-    ) -> Result<(Account, PeerKey)> {
+    ) -> Result<(Account, PeerKey, Address)> {
+        let lang = lang_from_i64(rlang);
         let sk = generate_peer(
-            lang_from_i64(lang),
+            lang,
             mnemonic,
             index,
             0, // account default multiple address index is 0.
             if pass.len() > 0 { Some(pass) } else { None },
         )?;
+
+        // Default ETH wallet account.
+        let wallet_pass = if pass.len() > 0 { Some(pass) } else { None };
+        let wallet_sk = generate_eth_account(lang, mnemonic, index, 0, wallet_pass)?;
+        let wallet_address = format!("{:?}", (&wallet_sk).address());
+        let wallet = ChainToken::ETH.update_main(&wallet_address, "");
+        let w = Address::new(ChainToken::ETH, 0, wallet_address, true);
 
         let key = rand::thread_rng().gen::<[u8; 32]>();
         let ckey = encrypt_key(salt, lock, &key)?;
@@ -144,7 +155,7 @@ impl Account {
             Account::new(
                 sk.peer_id(),
                 index,
-                lang,
+                rlang,
                 pass.to_string(),
                 name.to_string(),
                 hash_pin(lock)?,
@@ -153,8 +164,10 @@ impl Account {
                 secret,
                 ckey,
                 key.to_vec(),
+                wallet,
             ),
             sk,
+            w,
         ))
     }
 
