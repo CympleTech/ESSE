@@ -39,14 +39,11 @@ pub async fn start(db_path: String) -> Result<()> {
 
     init_log(db_path.clone());
 
-    let mut config = Config::load_save(db_path.clone()).await;
+    let mut config = Config::default();
     config.db_path = Some(db_path.clone());
     config.p2p_allowlist.append(&mut network_seeds());
-    // use self sign to bootstrap peer.
-    if config.rpc_ws.is_none() {
-        // set default ws addr.
-        config.rpc_ws = Some(DEFAULT_WS_ADDR.parse().unwrap());
-    }
+    config.rpc_ws = Some(DEFAULT_WS_ADDR.parse().unwrap());
+    let config = Config::load_save(db_path.clone(), config).await?;
 
     info!("Config RPC HTTP : {:?}", config.rpc_addr);
     info!("Config RPC WS   : {:?}", config.rpc_ws);
