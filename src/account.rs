@@ -5,7 +5,7 @@ use tdn::types::{
     group::EventId,
     primitives::{PeerId, PeerKey, Result},
 };
-use tdn_did::{generate_eth_account, generate_peer, secp256k1::SecretKey, Language};
+use tdn_did::{generate_eth_account, generate_peer, Language};
 use tdn_storage::local::{DStorage, DsValue};
 use web3::signing::Key;
 
