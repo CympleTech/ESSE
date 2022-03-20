@@ -532,13 +532,13 @@ class _DomainSearchScreenState extends State<_DomainSearchScreen> {
   }
 
   _searchResult(List params) {
-    if (params.length == 5) {
+    if (params.length == 4) {
       String name = params[0].trim();
       Avatar avatar = Avatar(name: name, width: 100.0, colorSurface: false);
-      if (params[4].length > 0) {
+      if (params[3].length > 0) {
         avatar = Avatar(
           name: name,
-          avatar: base64.decode(params[4]),
+          avatar: base64.decode(params[3]),
           width: 100.0,
           colorSurface: false
         );
@@ -546,9 +546,8 @@ class _DomainSearchScreenState extends State<_DomainSearchScreen> {
 
       widget.callback(
         params[1],
-        params[2],
         name,
-        params[3],
+        params[2],
         avatar,
       );
     } else {
