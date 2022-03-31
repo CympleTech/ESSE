@@ -19,7 +19,7 @@ pub(crate) async fn handle(msg: RecvType, global: &Arc<Global>) -> Result<Handle
             info!("cloud message nerver to here.")
         }
         RecvType::Event(_addr, bytes) => {
-            let LayerServerEvent(_event) = bincode::deserialize(&bytes)?;
+            let _event: LayerServerEvent = bincode::deserialize(&bytes)?;
         }
         RecvType::Delivery(_t, _tid, _is_ok) => {
             // MAYBE

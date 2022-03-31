@@ -16,7 +16,7 @@ const List<InnerService> INNER_SERVICES = [
   InnerService.GroupChat,
   //InnerService.Dao,
   InnerService.Domain,
-  //InnerService.Cloud,
+  InnerService.Cloud,
   InnerService.Jarvis,
 ];
 

@@ -228,7 +228,14 @@ impl LayerEvent {
                         r.is_over = true;
                         r.is_ok = true;
                         r.update(&db)?;
-                        let friend = Friend::from_remote(&db, fpid, r.name, "".to_owned())?;
+                        let friend = Friend::from_remote(
+                            &db,
+                            fpid,
+                            r.name,
+                            "".to_owned(),
+                            PeerId::default(),
+                            [0u8; 32],
+                        )?;
                         results.rpcs.push(rpc::request_agree(r.id, &friend));
 
                         // ADD NEW SESSION.
@@ -282,9 +289,11 @@ impl LayerEvent {
                 let account = Account::get(&a_db, &pid)?;
                 if account.pub_height > height {
                     let info = LayerEvent::InfoRes(User::info(
+                        account.pub_height,
                         account.name,
                         account.wallet,
-                        account.pub_height,
+                        account.cloud,
+                        account.cloud_key,
                         account.avatar,
                     ));
                     let data = bincode::serialize(&info).unwrap_or(vec![]);
@@ -302,9 +311,11 @@ impl LayerEvent {
                 f.name = remote.name;
                 f.wallet = remote.wallet;
                 f.height = remote.height as i64;
+                f.cloud = remote.cloud;
+                f.cloud_key = remote.cloud_key;
                 f.remote_update(&db)?;
                 drop(db);
-                write_avatar_sync(&global.base, &pid, &remote.id, remote.avatar)?;
+                write_avatar_sync(&global.base, &pid, &f.pid, remote.avatar)?;
                 results.rpcs.push(rpc::friend_info(&f));
 
                 let s_db = session_db(&global.base, &pid, &db_key)?;

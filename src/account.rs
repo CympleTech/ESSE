@@ -56,12 +56,14 @@ pub(crate) struct Account {
     pub pass: String,
     pub name: String,
     pub avatar: Vec<u8>,
-    pub lock: String,     // hashed-lock.
-    pub secret: Vec<u8>,  // encrypted value.
-    pub encrypt: Vec<u8>, // encrypted encrypt key.
-    pub wallet: String,   // main wallet info.
-    pub pub_height: u64,  // public information height.
-    pub own_height: u64,  // own data consensus height.
+    pub lock: String,        // hashed-lock.
+    pub secret: Vec<u8>,     // encrypted value.
+    pub encrypt: Vec<u8>,    // encrypted encrypt key.
+    pub wallet: String,      // main wallet info.
+    pub cloud: PeerId,       // main cloud service.
+    pub cloud_key: [u8; 32], // main cloud session key.
+    pub pub_height: u64,     // public information height.
+    pub own_height: u64,     // own data consensus height.
     pub event: EventId,
     pub datetime: i64,
     plainkey: Vec<u8>,
@@ -81,6 +83,8 @@ impl Account {
         encrypt: Vec<u8>,
         plainkey: Vec<u8>,
         wallet: String,
+        cloud: PeerId,
+        cloud_key: [u8; 32],
     ) -> Self {
         let start = SystemTime::now();
         let datetime = start
@@ -103,6 +107,8 @@ impl Account {
             secret,
             encrypt,
             wallet,
+            cloud,
+            cloud_key,
             plainkey,
             avatar,
             datetime,
@@ -165,6 +171,8 @@ impl Account {
                 ckey,
                 key.to_vec(),
                 wallet,
+                PeerId::default(),
+                [0u8; 32],
             ),
             sk,
             w,
@@ -218,6 +226,14 @@ impl Account {
             event: EventId::from_hex(v.pop().unwrap().as_str()).unwrap_or(EventId::default()),
             own_height: v.pop().unwrap().as_i64() as u64,
             pub_height: v.pop().unwrap().as_i64() as u64,
+            cloud_key: hex::decode(v.pop().unwrap().as_str())
+                .map(|bytes| {
+                    let mut key = [0u8; 32];
+                    key.copy_from_slice(&bytes);
+                    key
+                })
+                .unwrap_or([0u8; 32]),
+            cloud: PeerId::from_hex(v.pop().unwrap().as_str()).unwrap_or(PeerId::default()),
             wallet: v.pop().unwrap().as_string(),
             avatar: base64::decode(v.pop().unwrap().as_str()).unwrap_or(vec![]),
             encrypt: base64::decode(v.pop().unwrap().as_str()).unwrap_or(vec![]),
@@ -236,7 +252,7 @@ impl Account {
 
     pub fn get(db: &DStorage, pid: &PeerId) -> Result<Account> {
         let sql = format!(
-            "SELECT id, pid, indx, lang, pass, name, lock, mnemonic, secret, encrypt, avatar, wallet, pub_height, own_height, event, datetime FROM accounts WHERE pid = '{}'",
+            "SELECT id, pid, indx, lang, pass, name, lock, mnemonic, secret, encrypt, avatar, wallet, cloud, cloud_key, pub_height, own_height, event, datetime FROM accounts WHERE pid = '{}'",
             id_to_str(pid)
         );
         let mut matrix = db.query(&sql)?;
@@ -250,7 +266,7 @@ impl Account {
 
     pub fn all(db: &DStorage) -> Result<Vec<Account>> {
         let matrix = db.query(
-            "SELECT id, pid, indx, lang, pass, name, lock, mnemonic, secret, encrypt, avatar, wallet, pub_height, own_height, event, datetime FROM accounts ORDER BY datetime DESC",
+            "SELECT id, pid, indx, lang, pass, name, lock, mnemonic, secret, encrypt, avatar, wallet, cloud, cloud_key, pub_height, own_height, event, datetime FROM accounts ORDER BY datetime DESC",
         )?;
         let mut accounts = vec![];
         for values in matrix {
@@ -269,7 +285,7 @@ impl Account {
             self.id = id;
             self.update(db)?;
         } else {
-            let sql = format!("INSERT INTO accounts (pid, indx, lang, pass, name, lock, mnemonic, secret, encrypt, avatar, wallet, pub_height, own_height, event, datetime) VALUES ('{}', {}, {}, '{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}', {}, {}, '{}', {})",
+            let sql = format!("INSERT INTO accounts (pid, indx, lang, pass, name, lock, mnemonic, secret, encrypt, avatar, wallet, cloud, cloud_key, pub_height, own_height, event, datetime) VALUES ('{}', {}, {}, '{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}', {}, {}, '{}', {})",
             id_to_str(&self.pid),
             self.index,
             self.lang,
@@ -281,6 +297,8 @@ impl Account {
             base64::encode(&self.encrypt),
             base64::encode(&self.avatar),
             self.wallet,
+            self.cloud.to_hex(),
+            hex::encode(&self.cloud_key),
             self.pub_height,
             self.own_height,
             self.event.to_hex(),
@@ -293,12 +311,14 @@ impl Account {
     }
 
     pub fn update(&self, db: &DStorage) -> Result<usize> {
-        let sql = format!("UPDATE accounts SET name='{}', lock='{}', encrypt='{}', avatar='{}', wallet='{}', pub_height={}, own_height={}, event='{}', datetime={} WHERE id = {}",
+        let sql = format!("UPDATE accounts SET name='{}', lock='{}', encrypt='{}', avatar='{}', wallet='{}', cloud='{}', cloud_key='{}', pub_height={}, own_height={}, event='{}', datetime={} WHERE id = {}",
             self.name,
             self.lock,
             base64::encode(&self.encrypt),
             base64::encode(&self.avatar),
             self.wallet,
+            self.cloud.to_hex(),
+            hex::encode(&self.cloud_key),
             self.pub_height,
             self.own_height,
             self.datetime,
@@ -310,10 +330,12 @@ impl Account {
 
     pub fn update_info(&self, db: &DStorage) -> Result<usize> {
         let sql = format!(
-            "UPDATE accounts SET name='{}', avatar='{}', wallet='{}', pub_height={} WHERE id = {}",
+            "UPDATE accounts SET name='{}', avatar='{}', wallet='{}', cloud='{}', cloud_key='{}', pub_height={} WHERE id = {}",
             self.name,
             base64::encode(&self.avatar),
             self.wallet,
+            self.cloud.to_hex(),
+            hex::encode(&self.cloud_key),
             self.pub_height,
             self.id,
         );
@@ -340,30 +362,29 @@ impl Account {
 
 #[derive(Serialize, Deserialize, Clone)]
 pub(crate) struct User {
-    pub id: PeerId,
+    pub height: u64,
     pub name: String,
     pub wallet: String,
-    pub height: u64,
+    pub cloud: PeerId,
+    pub cloud_key: [u8; 32],
     pub avatar: Vec<u8>,
 }
 
 impl User {
-    pub fn new(id: PeerId, name: String, avatar: Vec<u8>, wallet: String, height: u64) -> Self {
+    pub fn info(
+        height: u64,
+        name: String,
+        wallet: String,
+        cloud: PeerId,
+        cloud_key: [u8; 32],
+        avatar: Vec<u8>,
+    ) -> Self {
         Self {
-            id,
-            name,
-            avatar,
-            wallet,
             height,
-        }
-    }
-
-    pub fn info(name: String, wallet: String, height: u64, avatar: Vec<u8>) -> Self {
-        Self {
-            id: PeerId::default(),
             name,
             wallet,
-            height,
+            cloud,
+            cloud_key,
             avatar,
         }
     }

@@ -435,12 +435,13 @@ impl Group {
 
     pub fn clone_user(&self, pid: &PeerId) -> Result<User> {
         if let Some(u) = self.accounts.get(pid) {
-            Ok(User::new(
-                u.pid,
-                u.name.clone(),
-                u.avatar.clone(),
-                u.wallet.clone(),
+            Ok(User::info(
                 u.pub_height,
+                u.name.clone(),
+                u.wallet.clone(),
+                u.cloud.clone(),
+                u.cloud_key.clone(),
+                u.avatar.clone(),
             ))
         } else {
             Err(anyhow!("user missing."))

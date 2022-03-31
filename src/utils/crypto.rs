@@ -7,6 +7,7 @@ use argon2::{
     Argon2,
 };
 use sha2::{Digest, Sha256};
+use tdn::types::primitives::{PeerId, PeerKey};
 
 const FIX_PADDING: [u8; 19] = [
     69, 83, 83, 69, 70, 111, 114, 68, 97, 116, 97, 83, 101, 99, 117, 114, 105, 116, 121,
@@ -193,4 +194,10 @@ pub fn _decrypt_multiple(
         );
     }
     Ok(pbytes)
+}
+
+/// Compute the session key in the cloud.
+#[inline]
+pub fn cloud_key(key: &[u8; 32]) -> Aes256Gcm {
+    Aes256Gcm::new(GenericArray::from_slice(key))
 }
