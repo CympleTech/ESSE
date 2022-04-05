@@ -9,7 +9,7 @@ use tdn_did::Proof;
 
 use group_types::{Event, GroupLocation, GroupType, JoinProof, LayerEvent};
 
-use crate::apps::chat::{Friend, MessageType};
+use crate::group::{Friend, MessageType};
 use crate::layer::Online;
 use crate::rpc::{session_close, session_create, session_delete, session_last, RpcState};
 use crate::session::{Session, SessionType};
@@ -424,8 +424,8 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
                 .filter_map(|v| v.as_i64())
                 .collect();
 
-            let group_lock = state.own.read().await;
-            let base = group_lock.base().clone();
+            let own_lock = state.own.read().await;
+            let base = own_lock.base().clone();
 
             let chat = chat_db(&base, &gid)?;
             let group_db = group_db(&base, &gid)?;
@@ -434,7 +434,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             for fid in ids {
                 let friend = Friend::get_id(&chat, fid)?.ok_or(RpcError::ParseError)?;
                 if Member::get_id(&group_db, &id, &friend.gid).is_err() {
-                    let proof = group_lock.prove_addr(&gid, &friend.gid.into())?;
+                    let proof = own_lock.prove_addr(&gid, &friend.gid.into())?;
                     invites.push((friend.id, friend.gid, friend.addr, proof));
                 }
             }
@@ -467,7 +467,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
                     }
                 }
 
-                let (msg, nw, sc) = crate::apps::chat::LayerEvent::from_message(
+                let (msg, nw, sc) = crate::group::GroupEvent::from_message(
                     &base,
                     gid,
                     fid,
@@ -475,9 +475,8 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
                     contact_values,
                 )
                 .await?;
-                let event = crate::apps::chat::LayerEvent::Message(msg.hash, nw);
-                let s =
-                    crate::apps::chat::event_message(&mut layer_lock, msg.id, gid, faddr, &event);
+                let event = crate::group::GroupEvent::Message(msg.hash, nw);
+                let s = crate::group::event_message(&mut layer_lock, msg.id, gid, faddr, &event);
                 results.layers.push((gid, fgid, s));
 
                 if let Ok(id) =

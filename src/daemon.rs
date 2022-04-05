@@ -11,6 +11,7 @@ mod apps;
 //mod consensus;
 //mod event;
 mod global;
+mod group;
 mod layer;
 mod migrate;
 mod own;

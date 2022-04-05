@@ -1,7 +1,6 @@
 use cloud_types::CLOUD_ID;
 use dao_types::DAO_ID;
 use domain_types::DOMAIN_ID;
-use esse_primitives::ESSE_ID;
 use group_types::{GroupChatId, GROUP_CHAT_ID};
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -16,7 +15,6 @@ use crate::global::Global;
 use crate::rpc::session_lost;
 use crate::storage::group_db;
 
-pub(crate) mod chat;
 pub(crate) mod cloud;
 pub(crate) mod device;
 pub(crate) mod domain;
@@ -28,7 +26,6 @@ pub(crate) mod wallet;
 
 pub(crate) fn app_rpc_inject(handler: &mut RpcHandler<Global>) {
     device::new_rpc_handler(handler);
-    chat::new_rpc_handler(handler);
     jarvis::new_rpc_handler(handler);
     domain::new_rpc_handler(handler);
     file::new_rpc_handler(handler);
@@ -46,20 +43,15 @@ pub(crate) async fn app_layer_handle(
 ) -> Result<HandleResult> {
     debug!("TODO GOT LAYER MESSAGE: ====== {} -> {} ===== ", fgid, tgid);
     match (fgid, tgid) {
-        (ESSE_ID, 0) | (0, ESSE_ID) => chat::handle(msg, global).await,
         (GROUP_CHAT_ID, 0) | (0, GROUP_CHAT_ID) => group::handle(msg, global).await,
         (DOMAIN_ID, 0) | (0, DOMAIN_ID) => domain::handle(msg, global).await,
         (CLOUD_ID, 0) | (0, CLOUD_ID) => cloud::handle(msg, global).await,
-        (DAO_ID, 0) | (0, DAO_ID) => chat::handle(msg, global).await,
+        (DAO_ID, 0) | (0, DAO_ID) => cloud::handle(msg, global).await, // TODO DAO
         _ => match msg {
             RecvType::Leave(peer) => {
                 debug!("Peer leaved: {}", peer.id.to_hex());
                 let mut results = HandleResult::new();
                 let mut layer = global.layer.write().await;
-
-                if let Some(session) = layer.chats.remove(&peer.id) {
-                    results.rpcs.push(session_lost(&session.s_id));
-                }
 
                 let mut delete: HashMap<GroupChatId, Vec<usize>> = HashMap::new();
                 let pid = global.pid().await;

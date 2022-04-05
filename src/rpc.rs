@@ -1,4 +1,4 @@
-use esse_primitives::{id_from_str, id_to_str, ESSE_ID};
+use esse_primitives::{id_from_str, id_to_str};
 use group_types::{GroupChatId, LayerEvent as GroupLayerEvent, GROUP_CHAT_ID};
 use std::net::SocketAddr;
 use std::sync::Arc;
@@ -16,15 +16,20 @@ use tdn_did::{generate_mnemonic, Count};
 
 use crate::account::lang_from_i64;
 use crate::apps::app_rpc_inject;
-use crate::apps::chat::{chat_conn, LayerEvent as ChatLayerEvent};
-use crate::apps::group::{group_conn, GroupChat};
+use crate::apps::group::{group_conn as group_chat_conn, GroupChat};
 use crate::global::Global;
+use crate::group::{group_conn, group_rpc, GroupEvent};
 //use crate::event::InnerEvent;
 use crate::session::{connect_session, Session, SessionType};
 use crate::storage::{group_db, session_db};
 
 pub(crate) fn init_rpc(global: Arc<Global>) -> RpcHandler<Global> {
     let mut handler = new_rpc_handler(global);
+
+    // inject group rpcs
+    group_rpc(&mut handler);
+
+    // inject layers rpcs
     app_rpc_inject(&mut handler);
     handler
 }
@@ -174,15 +179,15 @@ fn new_rpc_handler(global: Arc<Global>) -> RpcHandler<Global> {
 
     handler.add_method("account-list", |_, state: Arc<Global>| async move {
         let mut accounts: Vec<Vec<String>> = vec![];
-        let group_lock = state.own.read().await;
-        for (pid, account) in group_lock.list_accounts().iter() {
+        let own_lock = state.own.read().await;
+        for (pid, account) in own_lock.list_accounts().iter() {
             accounts.push(vec![
                 id_to_str(pid),
                 account.name.clone(),
                 base64::encode(&account.avatar),
             ]);
         }
-        drop(group_lock);
+        drop(own_lock);
 
         Ok(HandleResult::rpc(json!(accounts)))
     });
@@ -270,21 +275,15 @@ fn new_rpc_handler(global: Arc<Global>) -> RpcHandler<Global> {
             let avatar_bytes = base64::decode(avatar).unwrap_or(vec![]);
             let pid = state.pid().await;
 
-            let mut group_lock = state.own.write().await;
-            group_lock.update_account(
-                pid,
-                name,
-                avatar_bytes.clone(),
-                &state.base,
-                &state.secret,
-            )?;
-            drop(group_lock);
+            let mut own_lock = state.own.write().await;
+            own_lock.update_account(pid, name, avatar_bytes.clone(), &state.base, &state.secret)?;
+            drop(own_lock);
 
             let results = HandleResult::new();
 
             // TODO broadcast to all devices.
-            //let user = group_lock.clone_user(&pid)?;
-            //group_lock.broadcast(&pid, &mut results)?;
+            //let user = own_lock.clone_user(&pid)?;
+            //own_lock.broadcast(&pid, &mut results)?;
 
             // TODO broadcast to all layers.
             //state.layer.read().await.broadcast(user, &mut results);
@@ -409,26 +408,23 @@ fn new_rpc_handler(global: Arc<Global>) -> RpcHandler<Global> {
             let s = Session::get(&db, &id)?;
             drop(db);
 
-            let mut layer_lock = state.layer.write().await;
-
             let mut results = HandleResult::new();
             match s.s_type {
                 SessionType::Chat => {
                     let remote_pid = id_from_str(remote)?;
-                    let online = layer_lock.chat_active(&remote_pid, true);
-                    if let Some(addr) = online {
-                        return Ok(HandleResult::rpc(json!([id, id_to_str(&addr)])));
+                    if state.group.write().await.active(&remote_pid, true).is_ok() {
+                        return Ok(HandleResult::rpc(json!([id, id_to_str(&remote_pid)])));
                     }
-                    chat_conn(remote_pid, &mut results);
+                    group_conn(remote_pid, &mut results);
                 }
                 SessionType::Group => {
                     let remote_gid: GroupChatId =
                         remote.parse().map_err(|_| RpcError::ParseError)?;
-                    let online = layer_lock.group_active(&remote_gid, true);
+                    let online = state.layer.write().await.group_active(&remote_gid, true);
                     if let Some(addr) = online {
                         return Ok(HandleResult::rpc(json!([id, id_to_str(&addr)])));
                     }
-                    group_conn(s.addr, remote_gid, &mut results);
+                    group_chat_conn(s.addr, remote_gid, &mut results);
                 }
                 _ => {}
             }
@@ -451,23 +447,23 @@ fn new_rpc_handler(global: Arc<Global>) -> RpcHandler<Global> {
             drop(db);
 
             let mut results = HandleResult::new();
-            let mut layer_lock = state.layer.write().await;
             match s.s_type {
                 SessionType::Chat => {
-                    let remote_id = id_from_str(remote)?;
-                    if layer_lock.chat_suspend(&remote_id, true, must)?.is_some() {
+                    let rid = id_from_str(remote)?;
+                    if state.group.write().await.suspend(&rid, true, must).is_ok() {
                         results.rpcs.push(json!([id]));
                     }
-                    let data = bincode::serialize(&ChatLayerEvent::Suspend)?;
-                    let msg = SendType::Event(0, remote_id, data);
-                    results.layers.push((ESSE_ID, msg));
+                    let data = bincode::serialize(&GroupEvent::Suspend)?;
+                    results.groups.push(SendType::Event(0, rid, data));
                 }
                 SessionType::Group => {
                     let remote_gid: GroupChatId =
                         remote.parse().map_err(|_| RpcError::ParseError)?;
+                    let mut layer_lock = state.layer.write().await;
                     if layer_lock.group_suspend(&remote_gid, true, must)?.is_some() {
                         results.rpcs.push(json!([id]));
                     }
+                    drop(layer_lock);
                     let data = bincode::serialize(&GroupLayerEvent::Suspend(remote_gid))?;
                     let msg = SendType::Event(0, s.addr, data);
                     results.layers.push((GROUP_CHAT_ID, msg));

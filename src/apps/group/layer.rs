@@ -7,8 +7,8 @@ use tdn::types::{
 };
 use tdn_storage::local::DStorage;
 
-use crate::apps::chat::Friend;
 use crate::global::Global;
+use crate::group::Friend;
 use crate::rpc::{
     session_close, session_connect, session_last, session_lost, session_suspend,
     session_update_name,

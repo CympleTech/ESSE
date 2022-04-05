@@ -338,13 +338,13 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<Global>) {
             let db_key = state.own.read().await.db_key(&pid)?;
             let db = wallet_db(&state.base, &pid, &db_key)?;
 
-            let group_lock = state.own.read().await;
-            let mnemonic = group_lock.mnemonic(&pid, lock, &state.secret)?;
-            let account = group_lock.account(&pid)?;
+            let own_lock = state.own.read().await;
+            let mnemonic = own_lock.mnemonic(&pid, lock, &state.secret)?;
+            let account = own_lock.account(&pid)?;
             let lang = account.lang();
             let pass = account.pass.to_string();
             let account_index = account.index as u32;
-            drop(group_lock);
+            drop(own_lock);
 
             let mut results = HandleResult::new();
 
@@ -371,16 +371,16 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<Global>) {
             results.rpcs.push(address.to_rpc());
             if address.main {
                 let a_db = account_db(&state.base, &state.secret)?;
-                let mut group_lock = state.own.write().await;
-                let account = group_lock.account_mut(&pid)?;
+                let mut own_lock = state.own.write().await;
+                let account = own_lock.account_mut(&pid)?;
                 account.wallet = address.chain.update_main(&address.address, &account.wallet);
                 account.pub_height = account.pub_height + 1;
                 account.update_info(&a_db)?;
-                let user = group_lock.clone_user(&pid)?;
-                drop(group_lock);
+                let user = own_lock.clone_user(&pid)?;
+                drop(own_lock);
 
                 // broadcast to all friends.
-                state.layer.read().await.broadcast(user, &mut results);
+                state.group.read().await.broadcast(user, &mut results);
             }
             Ok(results)
         },
@@ -398,11 +398,11 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<Global>) {
 
             let pid = state.pid().await;
 
-            let group_lock = state.own.read().await;
-            let ckey = &group_lock.account(&pid)?.encrypt;
-            let db_key = group_lock.db_key(&pid)?;
+            let own_lock = state.own.read().await;
+            let ckey = &own_lock.account(&pid)?.encrypt;
+            let db_key = own_lock.db_key(&pid)?;
             let cbytes = encrypt(&state.secret, lock, ckey, sk.as_ref())?;
-            drop(group_lock);
+            drop(own_lock);
 
             let db = wallet_db(&state.base, &pid, &db_key)?;
 
@@ -480,26 +480,26 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<Global>) {
             let lock = params[6].as_str().ok_or(RpcError::ParseError)?;
 
             let pid = state.pid().await;
-            let group_lock = state.own.read().await;
-            if !group_lock.check_lock(&pid, &lock) {
+            let own_lock = state.own.read().await;
+            if !own_lock.check_lock(&pid, &lock) {
                 return Err(RpcError::Custom("Lock is invalid!".to_owned()));
             }
-            let db_key = group_lock.db_key(&pid)?;
+            let db_key = own_lock.db_key(&pid)?;
             let db = wallet_db(&state.base, &pid, &db_key)?;
             let address = Address::get(&db, &from)?;
 
             let (mnemonic, pbytes) = if address.is_gen() {
-                (group_lock.mnemonic(&pid, lock, &state.secret)?, vec![])
+                (own_lock.mnemonic(&pid, lock, &state.secret)?, vec![])
             } else {
-                let ckey = &group_lock.account(&pid)?.encrypt;
+                let ckey = &own_lock.account(&pid)?.encrypt;
                 let pbytes = decrypt(&state.secret, lock, ckey, address.secret.as_ref())?;
                 (String::new(), pbytes)
             };
-            let account = group_lock.account(&pid)?;
+            let account = own_lock.account(&pid)?;
             let lang = account.lang();
             let pass = account.pass.to_string();
             let account_index = account.index as u32;
-            drop(group_lock);
+            drop(own_lock);
             let pass = if pass.len() > 0 {
                 Some(pass.as_ref())
             } else {
@@ -617,16 +617,16 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<Global>) {
 
             let mut results = HandleResult::new();
 
-            let mut group_lock = state.own.write().await;
-            let account = group_lock.account_mut(&pid)?;
+            let mut own_lock = state.own.write().await;
+            let account = own_lock.account_mut(&pid)?;
             account.wallet = address.chain.update_main(&address.address, &account.wallet);
             account.pub_height = account.pub_height + 1;
             account.update_info(&a_db)?;
-            let user = group_lock.clone_user(&pid)?;
-            drop(group_lock);
+            let user = own_lock.clone_user(&pid)?;
+            drop(own_lock);
 
             // broadcast all friends.
-            state.layer.read().await.broadcast(user, &mut results);
+            state.group.read().await.broadcast(user, &mut results);
 
             Ok(HandleResult::new())
         },

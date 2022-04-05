@@ -1,4 +1,4 @@
-use esse_primitives::{MessageType, ESSE_ID};
+use esse_primitives::MessageType;
 use group_types::{Event, LayerEvent, GROUP_CHAT_ID};
 use std::sync::Arc;
 use tdn::types::{
@@ -7,8 +7,8 @@ use tdn::types::{
     rpc::{json, rpc_response, RpcError, RpcHandler, RpcParam},
 };
 
-use crate::apps::chat::{raw_to_network_message, Friend, InviteType};
 use crate::global::Global;
+use crate::group::{raw_to_network_message, Friend, InviteType};
 use crate::rpc::{session_create, session_delete, session_update_name};
 use crate::session::{Session, SessionType};
 use crate::storage::{chat_db, group_db, read_avatar, session_db, write_avatar};
@@ -104,10 +104,10 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<Global>) {
             let name = params[0].as_str().ok_or(RpcError::ParseError)?.to_owned();
 
             let pid = state.pid().await;
-            let group_lock = state.own.read().await;
-            let db_key = group_lock.db_key(&pid)?;
-            let me = group_lock.clone_user(&pid)?;
-            drop(group_lock);
+            let own_lock = state.own.read().await;
+            let db_key = own_lock.db_key(&pid)?;
+            let me = own_lock.clone_user(&pid)?;
+            drop(own_lock);
 
             let db = group_db(&state.base, &pid, &db_key)?;
             let s_db = session_db(&state.base, &pid, &db_key)?;
@@ -172,16 +172,15 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<Global>) {
             let m_type = MessageType::Invite;
             let (nm, raw) =
                 raw_to_network_message(&pid, &state.base, &db_key, &m_type, &contact).await?;
-            let mut msg = crate::apps::chat::Message::new(&pid, f.id, true, m_type, raw, false);
+            let mut msg = crate::group::Message::new(&pid, f.id, true, m_type, raw, false);
             msg.insert(&chat_db)?;
-            let event = crate::apps::chat::LayerEvent::Message(msg.hash, nm);
+            let event = crate::group::GroupEvent::Message(msg.hash, nm);
             let tid = state.layer.write().await.delivery(msg.id);
             let data = bincode::serialize(&event).unwrap_or(vec![]);
-            let lmsg = SendType::Event(tid, f.pid, data);
-            results.layers.push((ESSE_ID, lmsg));
+            results.groups.push(SendType::Event(tid, f.pid, data));
 
             // update session.
-            crate::apps::chat::update_session(&s_db, &id, &msg, &mut results);
+            crate::group::update_session(&s_db, &id, &msg, &mut results);
 
             // handle group member
             let avatar = read_avatar(&state.base, &pid, &f.pid)

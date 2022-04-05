@@ -1,4 +1,4 @@
-use esse_primitives::{id_to_str, ESSE_ID};
+use esse_primitives::id_to_str;
 use group_types::GroupChatId;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -11,15 +11,13 @@ use tdn::types::{
 use tokio::sync::RwLock;
 
 use crate::account::User;
-use crate::apps::chat::LayerEvent as ChatLayerEvent;
+use crate::group::GroupEvent;
 //use crate::apps::group::{group_conn, GROUP_ID};
 use crate::own::Own;
 use crate::session::{Session, SessionType};
 
 /// ESSE layers.
 pub(crate) struct Layer {
-    /// friend pid => Session
-    pub chats: HashMap<PeerId, LayerSession>,
     /// group chat id => Session
     pub groups: HashMap<GroupChatId, LayerSession>,
     /// delivery feedback.
@@ -31,7 +29,6 @@ pub(crate) struct Layer {
 impl Layer {
     pub fn init() -> Layer {
         Layer {
-            chats: HashMap::new(),
             groups: HashMap::new(),
             delivery: HashMap::new(),
             delivery_count: 0,
@@ -46,30 +43,18 @@ impl Layer {
     }
 
     pub fn clear(&mut self) {
-        self.chats.clear();
         self.groups.clear();
         self.delivery.clear();
     }
 
     pub fn is_addr_online(&self, addr: &PeerId) -> bool {
-        if self.chats.contains_key(addr) {
-            return true;
-        } else {
-            for (_, session) in &self.groups {
-                if session.addrs.contains(addr) {
-                    return true;
-                }
+        for (_, session) in &self.groups {
+            if session.addrs.contains(addr) {
+                return true;
             }
         }
-        false
-    }
 
-    pub fn chat_active(&mut self, pid: &PeerId, is_me: bool) -> Option<PeerId> {
-        if let Some(session) = self.chats.get_mut(pid) {
-            Some(session.active(is_me))
-        } else {
-            None
-        }
+        false
     }
 
     pub fn group_active(&mut self, gid: &GroupChatId, is_me: bool) -> Option<PeerId> {
@@ -80,39 +65,9 @@ impl Layer {
         }
     }
 
-    pub fn chat_suspend(&mut self, pid: &PeerId, me: bool, m: bool) -> Result<Option<PeerId>> {
-        if let Some(session) = self.chats.get_mut(pid) {
-            Ok(session.suspend(me, m))
-        } else {
-            Err(anyhow!("session missing!"))
-        }
-    }
-
     pub fn group_suspend(&mut self, g: &GroupChatId, me: bool, m: bool) -> Result<Option<PeerId>> {
         if let Some(session) = self.groups.get_mut(g) {
             Ok(session.suspend(me, m))
-        } else {
-            Err(anyhow!("session missing!"))
-        }
-    }
-
-    pub fn chat_is_online(&self, pid: &PeerId) -> bool {
-        self.chats.contains_key(pid)
-    }
-
-    pub fn chat_rm_online(&mut self, pid: &PeerId) -> Option<PeerId> {
-        self.chats.remove(pid).map(|session| session.addrs[0])
-    }
-
-    pub fn chat_add(&mut self, pid: PeerId, sid: i64, fid: i64, h: i64) {
-        if !self.chats.contains_key(&pid) {
-            self.chats.insert(pid, LayerSession::new(pid, sid, fid, h));
-        }
-    }
-
-    pub fn chat_session(&self, pid: &PeerId) -> Result<(i64, i64)> {
-        if let Some(session) = self.chats.get(pid) {
-            Ok((session.s_id, session.db_id))
         } else {
             Err(anyhow!("session missing!"))
         }
@@ -211,22 +166,22 @@ impl Layer {
 
     // pub async fn all_layer_conns(&self) -> Result<HashMap<GroupId, Vec<(GroupId, SendType)>>> {
     //     let mut conns = HashMap::new();
-    //     let group_lock = self.group.read().await;
+    //     let own_lock = self.group.read().await;
     //     for mgid in self.runnings.keys() {
     //         let mut vecs = vec![];
 
-    //         let db = group_lock.session_db(&mgid)?;
+    //         let db = own_lock.session_db(&mgid)?;
     //         let sessions = Session::list(&db)?;
     //         drop(db);
 
     //         for s in sessions {
     //             match s.s_type {
     //                 SessionType::Chat => {
-    //                     let proof = group_lock.prove_addr(mgid, &s.addr)?;
+    //                     let proof = own_lock.prove_addr(mgid, &s.addr)?;
     //                     vecs.push((s.gid, chat_conn(proof, Peer::peer(s.addr))));
     //                 }
     //                 SessionType::Group => {
-    //                     let proof = group_lock.prove_addr(mgid, &s.addr)?;
+    //                     let proof = own_lock.prove_addr(mgid, &s.addr)?;
     //                     vecs.push((GROUP_ID, group_conn(proof, Peer::peer(s.addr), s.gid)));
     //                 }
     //                 _ => {}
@@ -256,17 +211,12 @@ impl Layer {
     //     }
     // }
 
-    pub fn broadcast(&self, user: User, results: &mut HandleResult) {
-        let info = ChatLayerEvent::InfoRes(user);
-        let data = bincode::serialize(&info).unwrap_or(vec![]);
+    // pub fn broadcast(&self, user: User, results: &mut HandleResult) {
+    //     let info = GroupEvent::InfoRes(user);
+    //     let data = bincode::serialize(&info).unwrap_or(vec![]);
 
-        for fpid in self.chats.keys() {
-            let msg = SendType::Event(0, *fpid, data.clone());
-            results.layers.push((ESSE_ID, msg));
-        }
-
-        // TODO GROUPS
-    }
+    //     // TODO GROUPS
+    // }
 }
 
 // pub(crate) struct OnlineSession {

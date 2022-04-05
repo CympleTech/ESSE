@@ -13,17 +13,17 @@ use tdn_storage::local::DStorage;
 use tokio::sync::{mpsc::Sender, RwLock};
 
 use crate::account::{Account, User};
-use crate::apps::chat::LayerEvent;
 use crate::consensus::Event as OldEvent;
+use crate::group::GroupEvent;
 use crate::layer::Layer;
 use crate::migrate::consensus::{
     ACCOUNT_TABLE_PATH, FILE_TABLE_PATH, FRIEND_TABLE_PATH, MESSAGE_TABLE_PATH, REQUEST_TABLE_PATH,
 };
 use crate::own::{Own, OwnEvent};
 
-use crate::apps::chat::rpc as chat_rpc;
-use crate::apps::chat::{from_model, Friend, Message, Request};
 use crate::apps::file::{FileDid, RootDirectory};
+use crate::group::rpc as chat_rpc;
+use crate::group::{from_model, Friend, Message, Request};
 use crate::rpc;
 use crate::storage::{delete_avatar_sync, read_avatar_sync, write_avatar_sync};
 
@@ -156,7 +156,7 @@ impl InnerEvent {
         layer: Arc<RwLock<Layer>>,
         gid: GroupId,
         fgid: GroupId,
-        event: LayerEvent,
+        event: GroupEvent,
     ) -> Result<()> {
         let addr = layer.read().await.running(&gid)?.online_direct(&fgid)?;
         let data = bincode::serialize(&event).unwrap_or(vec![]);
@@ -342,7 +342,7 @@ impl InnerEvent {
                         let ggid = gid.clone();
                         let fgid = f.gid;
                         let sender = group.sender();
-                        let layer_event = LayerEvent::Message(hash, m.clone());
+                        let layer_event = GroupEvent::Message(hash, m.clone());
                         tokio::spawn(InnerEvent::direct_layer_session(
                             sender,
                             layer_lock,

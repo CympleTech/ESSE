@@ -11,8 +11,8 @@ use tdn_storage::local::DStorage;
 use tokio::sync::mpsc::Sender;
 
 use crate::account::lang_from_i64;
-use crate::apps::chat::raw_to_network_message;
 use crate::global::Global;
+use crate::group::raw_to_network_message;
 use crate::storage::jarvis_db;
 use crate::utils::answer::load_answer;
 

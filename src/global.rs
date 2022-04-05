@@ -7,6 +7,7 @@ use tdn::{
 use tokio::{sync::mpsc::Sender, sync::RwLock};
 
 use crate::account::Account;
+use crate::group::Group;
 use crate::layer::Layer;
 use crate::own::Own;
 
@@ -20,6 +21,8 @@ pub(crate) struct Global {
     pub peer_own_height: RwLock<u64>,
     /// current own.
     pub own: RwLock<Own>,
+    /// current group.
+    pub group: RwLock<Group>,
     /// current layer.
     pub layer: RwLock<Layer>,
     /// message delivery tracking. uuid, me_gid, db_id.
@@ -62,6 +65,7 @@ impl Global {
             peer_pub_height: RwLock::new(0),
             peer_own_height: RwLock::new(0),
             own: RwLock::new(Own::init(accounts)),
+            group: RwLock::new(Group::init()),
             layer: RwLock::new(Layer::init()),
             p2p_send: RwLock::new(None),
             _delivery: RwLock::new(HashMap::new()),
@@ -90,6 +94,7 @@ impl Global {
 
     pub async fn clear(&self) {
         *self.peer_id.write().await = PeerId::default();
+        self.group.write().await.clear();
         self.layer.write().await.clear();
     }
 
@@ -108,6 +113,7 @@ impl Global {
                 .write()
                 .await
                 .reset(pid, lock, &self.base, &self.secret)?;
+        self.group.write().await.clear();
         self.layer.write().await.clear();
 
         *self.p2p_send.write().await = Some(send);

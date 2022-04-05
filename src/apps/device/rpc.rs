@@ -76,16 +76,16 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<Global>) {
         |params: Vec<RpcParam>, state: Arc<Global>| async move {
             let id = params[0].as_i64().ok_or(RpcError::ParseError)?;
 
-            let group_lock = state.own.read().await;
-            if id == group_lock.device()?.id {
-                let uptime = group_lock.uptime;
+            let own_lock = state.own.read().await;
+            if id == own_lock.device()?.id {
+                let uptime = own_lock.uptime;
                 let (cpu, memory, swap, disk, cpu_p, memory_p, swap_p, disk_p) =
                     local_device_status();
                 return Ok(HandleResult::rpc(json!([
                     cpu, memory, swap, disk, cpu_p, memory_p, swap_p, disk_p, uptime
                 ])));
             }
-            drop(group_lock);
+            drop(own_lock);
 
             //let msg = state.own.write().await.event_message(addr, &OwnEvent::StatusRequest)?;
             //Ok(HandleResult::group(msg))

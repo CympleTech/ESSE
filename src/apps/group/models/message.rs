@@ -8,7 +8,7 @@ use tdn::types::{
 };
 use tdn_storage::local::{DStorage, DsValue};
 
-use crate::apps::chat::{from_network_message, raw_to_network_message, to_network_message as tnm};
+use crate::group::{from_network_message, raw_to_network_message, to_network_message as tnm};
 use crate::storage::group_db;
 
 use super::Member;

@@ -1,5 +1,6 @@
-use esse_primitives::{MessageType, NetworkMessage, ESSE_ID};
+use esse_primitives::{MessageType, NetworkMessage};
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::sync::Arc;
 use tdn::types::{
     group::EventId,
@@ -17,74 +18,44 @@ use crate::rpc::{
 use crate::session::{connect_session, Session, SessionType};
 use crate::storage::{account_db, chat_db, session_db, write_avatar_sync};
 
-use super::models::{handle_nmsg, Friend, Message, Request};
 use super::rpc;
+use super::{
+    from_model, from_network_message, handle_nmsg, Friend, GroupEvent, InviteType, Message, Request,
+};
 
-/// Chat connect data structure.
-/// params: Friend about me height
-//#[derive(Serialize, Deserialize)]
-//pub struct LayerConnect(pub i64);
-
-/// ESSE chat layer Event.
-#[derive(Serialize, Deserialize)]
-pub(crate) enum LayerEvent {
-    /// offline. extend BaseLayerEvent.
-    Offline,
-    /// suspend. extend BaseLayerEvent.
-    Suspend,
-    /// actived. extend BaseLayerEvent.
-    Actived,
-    /// make friendship request.
-    /// params is name, remark.
-    Request(String, String),
-    /// agree friendship request.
-    /// params is gid.
-    Agree,
-    /// reject friendship request.
-    Reject,
-    /// receiver gid, sender gid, message.
-    Message(EventId, NetworkMessage),
-    /// request user info.
-    InfoReq(u64),
-    /// user full info.
-    InfoRes(User),
-    /// close friendship.
-    Close,
-}
-
-pub(crate) async fn handle(msg: RecvType, global: &Arc<Global>) -> Result<HandleResult> {
-    debug!("---------DEBUG--------- GOT CHAT EVENT");
+pub(crate) async fn group_handle(msg: RecvType, global: &Arc<Global>) -> Result<HandleResult> {
+    debug!("---------DEBUG--------- GOT GROUP MESSAGE");
     let mut results = HandleResult::new();
     let pid = global.pid().await;
 
     match msg {
         RecvType::Connect(peer, _) | RecvType::ResultConnect(peer, _) => {
-            // ESSE chat layer connect date structure.
+            // ESSE group connect date structure.
             if let Ok(height) = handle_connect(pid, &peer, global, &mut results).await {
                 let peer_id = peer.id;
                 let msg = SendType::Result(0, peer, true, false, vec![]);
-                results.layers.push((ESSE_ID, msg));
+                results.groups.push(msg);
 
-                let info = LayerEvent::InfoReq(height);
+                let info = GroupEvent::InfoReq(height);
                 let data = bincode::serialize(&info).unwrap_or(vec![]);
                 let msg = SendType::Event(0, peer_id, data);
-                results.layers.push((ESSE_ID, msg));
+                results.groups.push(msg);
             } else {
                 let msg = SendType::Result(0, peer, false, false, vec![]);
-                results.layers.push((ESSE_ID, msg));
+                results.groups.push(msg);
             }
         }
         RecvType::Result(peer, is_ok, _) => {
-            // ESSE chat layer result date structure.
+            // ESSE group result date structure.
             if is_ok {
                 if let Ok(height) = handle_connect(pid, &peer, global, &mut results).await {
-                    let info = LayerEvent::InfoReq(height);
+                    let info = GroupEvent::InfoReq(height);
                     let data = bincode::serialize(&info).unwrap_or(vec![]);
                     let msg = SendType::Event(0, peer.id, data);
-                    results.layers.push((ESSE_ID, msg));
+                    results.groups.push(msg);
                 } else {
                     let msg = SendType::Result(0, peer, false, false, vec![]);
-                    results.layers.push((ESSE_ID, msg));
+                    results.groups.push(msg);
                 }
             } else {
                 let db_key = global.own.read().await.db_key(&pid)?;
@@ -95,12 +66,12 @@ pub(crate) async fn handle(msg: RecvType, global: &Arc<Global>) -> Result<Handle
             }
         }
         RecvType::Event(fpid, bytes) => {
-            return LayerEvent::handle(pid, fpid, global, bytes).await;
+            return GroupEvent::handle(pid, fpid, global, bytes).await;
         }
         RecvType::Delivery(t, tid, is_ok) => {
-            let mut layer = global.layer.write().await;
-            let id = layer.delivery.remove(&tid).ok_or(anyhow!("delivery err"))?;
-            drop(layer);
+            let mut group = global.group.write().await;
+            let id = group.delivery.remove(&tid).ok_or(anyhow!("delivery err"))?;
+            drop(group);
             let db_key = global.own.read().await.db_key(&pid)?;
             let db = chat_db(&global.base, &pid, &db_key)?;
             let resp = match t {
@@ -125,7 +96,15 @@ pub(crate) async fn handle(msg: RecvType, global: &Arc<Global>) -> Result<Handle
         RecvType::Stream(_uid, _stream, _bytes) => {
             // TODO stream
         }
-        RecvType::Leave(..) => {} // nerver here.
+        RecvType::Leave(peer) => {
+            debug!("Peer leaved: {}", peer.id.to_hex());
+            let mut group_lock = global.group.write().await;
+            if let Ok((sid, _fid)) = group_lock.get(&peer.id) {
+                results.rpcs.push(session_lost(&sid));
+            }
+            group_lock.rm_online(&peer.id);
+            drop(group_lock);
+        }
     }
 
     Ok(results)
@@ -159,41 +138,41 @@ async fn handle_connect(
     results.rpcs.push(session_connect(&sid, &peer.id));
 
     // 4. active this session.
-    global.layer.write().await.chat_add(peer.id, sid, f.id, 0);
+    global.group.write().await.add(peer.id, sid, f.id, 0);
 
     Ok(f.height as u64)
 }
 
-impl LayerEvent {
+impl GroupEvent {
     pub async fn handle(
         pid: PeerId,
         fpid: PeerId,
         global: &Arc<Global>,
         bytes: Vec<u8>,
     ) -> Result<HandleResult> {
-        let event: LayerEvent = bincode::deserialize(&bytes)?;
+        let event: GroupEvent = bincode::deserialize(&bytes)?;
         let mut results = HandleResult::new();
 
         match event {
-            LayerEvent::Offline => {
-                let mut layer = global.layer.write().await;
-                let (sid, _fid) = layer.chat_session(&fpid)?;
-                let _ = layer.chat_rm_online(&fpid);
+            GroupEvent::Offline => {
+                let mut group = global.group.write().await;
+                let (sid, _fid) = group.get(&fpid)?;
+                group.rm_online(&fpid);
                 results.rpcs.push(session_lost(&sid));
             }
-            LayerEvent::Suspend => {
-                let mut layer = global.layer.write().await;
-                let (sid, _fid) = layer.chat_session(&fpid)?;
-                let _ = layer.chat_suspend(&fpid, false, false)?;
+            GroupEvent::Suspend => {
+                let mut group = global.group.write().await;
+                let (sid, _fid) = group.get(&fpid)?;
+                group.suspend(&fpid, false, false)?;
                 results.rpcs.push(session_suspend(&sid));
             }
-            LayerEvent::Actived => {
-                let mut layer = global.layer.write().await;
-                let (sid, _fid) = layer.chat_session(&fpid)?;
-                let _ = layer.chat_active(&fpid, false);
+            GroupEvent::Actived => {
+                let mut group = global.group.write().await;
+                let (sid, _fid) = group.get(&fpid)?;
+                group.active(&fpid, false)?;
                 results.rpcs.push(session_connect(&sid, &fpid));
             }
-            LayerEvent::Request(name, remark) => {
+            GroupEvent::Request(name, remark) => {
                 let db_key = global.own.read().await.db_key(&pid)?;
                 let db = chat_db(&global.base, &pid, &db_key)?;
 
@@ -212,12 +191,12 @@ impl LayerEvent {
                     results.rpcs.push(notice_menu(&SessionType::Chat));
                     return Ok(results);
                 } else {
-                    let data = bincode::serialize(&LayerEvent::Agree).unwrap_or(vec![]);
+                    let data = bincode::serialize(&GroupEvent::Agree).unwrap_or(vec![]);
                     let msg = SendType::Event(0, fpid, data);
-                    results.layers.push((ESSE_ID, msg));
+                    results.groups.push(msg);
                 }
             }
-            LayerEvent::Agree => {
+            GroupEvent::Agree => {
                 let db_key = global.own.read().await.db_key(&pid)?;
                 let db = chat_db(&global.base, &pid, &db_key)?;
 
@@ -247,7 +226,7 @@ impl LayerEvent {
                     drop(db);
                 }
             }
-            LayerEvent::Reject => {
+            GroupEvent::Reject => {
                 let db_key = global.own.read().await.db_key(&pid)?;
                 let db = chat_db(&global.base, &pid, &db_key)?;
 
@@ -258,8 +237,8 @@ impl LayerEvent {
                     results.rpcs.push(rpc::request_reject(request.id));
                 }
             }
-            LayerEvent::Message(hash, m) => {
-                let (_sid, fid) = global.layer.read().await.chat_session(&fpid)?;
+            GroupEvent::Message(hash, m) => {
+                let (_sid, fid) = global.group.read().await.get(&fpid)?;
                 let db_key = global.own.read().await.db_key(&pid)?;
                 let db = chat_db(&global.base, &pid, &db_key)?;
 
@@ -283,12 +262,12 @@ impl LayerEvent {
                     update_session(&s_db, &fid, &msg, &mut results);
                 }
             }
-            LayerEvent::InfoReq(height) => {
+            GroupEvent::InfoReq(height) => {
                 // check sync remote height.
                 let a_db = account_db(&global.base, &global.secret)?;
                 let account = Account::get(&a_db, &pid)?;
                 if account.pub_height > height {
-                    let info = LayerEvent::InfoRes(User::info(
+                    let info = GroupEvent::InfoRes(User::info(
                         account.pub_height,
                         account.name,
                         account.wallet,
@@ -298,11 +277,11 @@ impl LayerEvent {
                     ));
                     let data = bincode::serialize(&info).unwrap_or(vec![]);
                     let msg = SendType::Event(0, fpid, data);
-                    results.layers.push((ESSE_ID, msg));
+                    results.groups.push(msg);
                 }
             }
-            LayerEvent::InfoRes(remote) => {
-                let (sid, fid) = global.layer.read().await.chat_session(&fpid)?;
+            GroupEvent::InfoRes(remote) => {
+                let (sid, fid) = global.group.read().await.get(&fpid)?;
                 let db_key = global.own.read().await.db_key(&pid)?;
                 let db = chat_db(&global.base, &pid, &db_key)?;
 
@@ -322,12 +301,12 @@ impl LayerEvent {
                 let _ = Session::update_name(&s_db, &sid, &name);
                 results.rpcs.push(session_update_name(&sid, &name));
             }
-            LayerEvent::Close => {
-                let mut layer = global.layer.write().await;
-                let _ = layer.chat_rm_online(&fpid);
-                let (sid, fid) = global.layer.read().await.chat_session(&fpid)?;
-                let keep = layer.is_addr_online(&fpid);
-                drop(layer);
+            GroupEvent::Close => {
+                let mut group = global.group.write().await;
+                group.rm_online(&fpid);
+                let (sid, fid) = group.get(&fpid)?;
+                let keep = group.is_online(&fpid);
+                drop(group);
 
                 let db_key = global.own.read().await.db_key(&pid)?;
                 let db = chat_db(&global.base, &pid, &db_key)?;
@@ -336,7 +315,7 @@ impl LayerEvent {
                 drop(db);
                 results.rpcs.push(rpc::friend_close(fid));
                 if !keep {
-                    results.layers.push((ESSE_ID, SendType::Disconnect(fpid)))
+                    results.groups.push(SendType::Disconnect(fpid))
                 }
                 // TODO close session
             }
@@ -346,10 +325,10 @@ impl LayerEvent {
     }
 }
 
-pub(crate) fn chat_conn(pid: PeerId, results: &mut HandleResult) {
+pub(crate) fn group_conn(pid: PeerId, results: &mut HandleResult) {
     results
-        .layers
-        .push((ESSE_ID, SendType::Connect(0, Peer::peer(pid), vec![])));
+        .groups
+        .push(SendType::Connect(0, Peer::peer(pid), vec![]));
 }
 
 // UPDATE SESSION.

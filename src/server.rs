@@ -20,6 +20,7 @@ use tdn_storage::local::DStorage;
 use crate::account::Account;
 use crate::apps::app_layer_handle;
 use crate::global::Global;
+use crate::group::group_handle;
 use crate::layer::Layer;
 use crate::migrate::{main_migrate, ACCOUNT_DB};
 use crate::own::{handle as own_handle, Own};
@@ -94,8 +95,10 @@ pub async fn start(db_path: String) -> Result<()> {
                     handle(handle_result, now_rpc_uid, true, &global).await;
                 }
             }
-            ReceiveMessage::Group(_) => {
-                warn!("ESSE has no Group Message!");
+            ReceiveMessage::Group(g_msg) => {
+                if let Ok(handle_result) = group_handle(g_msg, &global).await {
+                    handle(handle_result, now_rpc_uid, true, &global).await;
+                }
             }
             ReceiveMessage::Layer(fgid, tgid, l_msg) => {
                 if let Ok(handle_result) = app_layer_handle(fgid, tgid, l_msg, &global).await {

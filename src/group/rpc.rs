@@ -1,4 +1,4 @@
-use esse_primitives::{id_from_str, MessageType, ESSE_ID};
+use esse_primitives::{id_from_str, MessageType};
 use std::sync::Arc;
 use tdn::types::{
     message::SendType,
@@ -11,8 +11,7 @@ use crate::global::Global;
 use crate::rpc::session_create;
 use crate::storage::{chat_db, delete_avatar, session_db};
 
-use super::layer::{update_session, LayerEvent};
-use super::{raw_to_network_message, Friend, Message, Request};
+use super::{raw_to_network_message, update_session, Friend, GroupEvent, Message, Request};
 
 #[inline]
 pub(crate) fn friend_info(friend: &Friend) -> RpcParam {
@@ -101,7 +100,7 @@ fn detail_list(friend: Friend, messages: Vec<Message>) -> RpcParam {
     json!([friend.to_rpc(), message_results])
 }
 
-pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<Global>) {
+pub(crate) fn group_rpc(handler: &mut RpcHandler<Global>) {
     handler.add_method("chat-echo", |params, _| async move {
         Ok(HandleResult::rpc(json!(params)))
     });
@@ -118,10 +117,10 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<Global>) {
             let friends = Friend::list(&db)?;
 
             let mut results = vec![];
-            let layer_lock = state.layer.read().await;
+            let group_lock = state.group.read().await;
             if need_online {
                 for friend in friends {
-                    let online = layer_lock.chat_is_online(&friend.pid);
+                    let online = group_lock.is_online(&friend.pid);
                     results.push(friend.to_rpc_online(online));
                 }
             } else {
@@ -129,7 +128,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<Global>) {
                     results.push(friend.to_rpc());
                 }
             }
-            drop(layer_lock);
+            drop(group_lock);
 
             Ok(HandleResult::rpc(json!(results)))
         },
@@ -177,16 +176,11 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<Global>) {
             friend.close(&db)?;
             drop(db);
 
-            let online = state.layer.write().await.chat_rm_online(&friend.pid);
-            if let Some(faddr) = online {
-                let data = bincode::serialize(&LayerEvent::Close)?;
-                results
-                    .layers
-                    .push((ESSE_ID, SendType::Event(0, friend.pid, data)));
-
-                results
-                    .layers
-                    .push((ESSE_ID, SendType::Disconnect(friend.pid)));
+            let online = state.group.write().await.rm_online(&friend.pid);
+            if online {
+                let data = bincode::serialize(&GroupEvent::Close)?;
+                results.groups.push(SendType::Event(0, friend.pid, data));
+                results.groups.push(SendType::Disconnect(friend.pid));
             }
 
             // state.own.write().await.broadcast(
@@ -215,18 +209,13 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<Global>) {
             Friend::delete(&db, &id)?;
             drop(db);
 
-            let online = state.layer.write().await.chat_rm_online(&friend.pid);
+            let online = state.group.write().await.rm_online(&friend.pid);
             delete_avatar(&state.base, &pid, &friend.pid).await?;
 
-            if let Some(faddr) = online {
-                let data = bincode::serialize(&LayerEvent::Close)?;
-                results
-                    .layers
-                    .push((ESSE_ID, SendType::Event(0, friend.pid, data)));
-
-                results
-                    .layers
-                    .push((ESSE_ID, SendType::Disconnect(friend.pid)));
+            if online {
+                let data = bincode::serialize(&GroupEvent::Close)?;
+                results.groups.push(SendType::Event(0, friend.pid, data));
+                results.groups.push(SendType::Disconnect(friend.pid));
             }
 
             // state.own.write().await.broadcast(
@@ -282,10 +271,9 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<Global>) {
             let mut results = HandleResult::rpc(json!(request.to_rpc()));
 
             let name = state.own.read().await.account(&pid)?.name.clone();
-            let req = LayerEvent::Request(name, request.remark);
+            let req = GroupEvent::Request(name, request.remark);
             let data = bincode::serialize(&req).unwrap_or(vec![]);
-            let msg = SendType::Event(0, request.pid, data);
-            results.layers.push((ESSE_ID, msg));
+            results.groups.push(SendType::Event(0, request.pid, data));
 
             Ok(results)
         },
@@ -330,9 +318,8 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<Global>) {
             session.insert(&s_db)?;
             results.rpcs.push(session_create(&session));
 
-            let data = bincode::serialize(&LayerEvent::Agree).unwrap_or(vec![]);
-            let msg = SendType::Event(0, friend.pid, data);
-            results.layers.push((ESSE_ID, msg));
+            let data = bincode::serialize(&GroupEvent::Agree).unwrap_or(vec![]);
+            results.groups.push(SendType::Event(0, friend.pid, data));
 
             Ok(results)
         },
@@ -353,9 +340,9 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<Global>) {
             req.update(&db)?;
             drop(db);
 
-            let data = bincode::serialize(&LayerEvent::Reject).unwrap_or(vec![]);
+            let data = bincode::serialize(&GroupEvent::Reject).unwrap_or(vec![]);
             let msg = SendType::Event(0, req.pid, data);
-            let mut results = HandleResult::layer(ESSE_ID, msg);
+            let mut results = HandleResult::group(msg);
 
             // state.own.write().await.broadcast(
             //     &gid,
@@ -449,12 +436,10 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<Global>) {
 
             let mut results = HandleResult::rpc(json!(msg.to_rpc()));
 
-            let tid = state.layer.write().await.delivery(msg.id);
-            let event = LayerEvent::Message(msg.hash, nm);
+            let tid = state.group.write().await.delivery(msg.id);
+            let event = GroupEvent::Message(msg.hash, nm);
             let data = bincode::serialize(&event).unwrap_or(vec![]);
-            results
-                .layers
-                .push((ESSE_ID, SendType::Event(tid, fpid, data)));
+            results.groups.push(SendType::Event(tid, fpid, data));
 
             // UPDATE SESSION.
             let s_db = session_db(&state.base, &pid, &db_key)?;

@@ -14,7 +14,7 @@ use group_types::{
 use tdn_did::Proof;
 use tdn_storage::local::DStorage;
 
-use crate::apps::chat::Friend;
+use crate::group::Friend;
 use crate::layer::{Layer, Online};
 use crate::rpc::{session_connect, session_create, session_last, session_lost, session_suspend};
 use crate::session::{connect_session, Session, SessionType};

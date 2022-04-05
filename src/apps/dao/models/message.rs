@@ -9,7 +9,7 @@ use tdn_storage::local::{DStorage, DsValue};
 
 use group_types::NetworkMessage;
 
-use crate::apps::chat::{Friend, MessageType};
+use crate::group::{Friend, MessageType};
 use crate::storage::{
     chat_db, group_db, read_avatar, read_file, read_record, write_avatar_sync, write_file_sync,
     write_image_sync, write_record_sync,
