@@ -51,7 +51,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<Global>) {
         "jarvis-list",
         |_params: Vec<RpcParam>, state: Arc<Global>| async move {
             let pid = state.pid().await;
-            let db_key = state.group.read().await.db_key(&pid)?;
+            let db_key = state.own.read().await.db_key(&pid)?;
             let db = jarvis_db(&state.base, &pid, &db_key)?;
             let devices = Message::list(&db)?;
             db.close()?;
@@ -71,7 +71,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<Global>) {
             let content = params[2].as_str().ok_or(RpcError::ParseError)?;
 
             let pid = state.pid().await;
-            let db_key = state.group.read().await.db_key(&pid)?;
+            let db_key = state.own.read().await.db_key(&pid)?;
             let db = jarvis_db(&state.base, &pid, &db_key)?;
 
             let (_, raw) =
@@ -91,7 +91,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<Global>) {
         |params: Vec<RpcParam>, state: Arc<Global>| async move {
             let id = params[0].as_i64().ok_or(RpcError::ParseError)?;
             let pid = state.pid().await;
-            let db_key = state.group.read().await.db_key(&pid)?;
+            let db_key = state.own.read().await.db_key(&pid)?;
             let db = jarvis_db(&state.base, &pid, &db_key)?;
             Message::delete(&db, id)?;
             db.close()?;

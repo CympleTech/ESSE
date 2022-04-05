@@ -27,7 +27,7 @@ pub(crate) async fn handle(msg: RecvType, global: &Arc<Global>) -> Result<Handle
             let event: LayerServerEvent = bincode::deserialize(&bytes)?;
 
             let pid = global.pid().await;
-            let db_key = global.group.read().await.db_key(&pid)?;
+            let db_key = global.own.read().await.db_key(&pid)?;
             let db = domain_db(&global.base, &pid, &db_key)?;
 
             match event {

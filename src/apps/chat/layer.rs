@@ -87,7 +87,7 @@ pub(crate) async fn handle(msg: RecvType, global: &Arc<Global>) -> Result<Handle
                     results.layers.push((ESSE_ID, msg));
                 }
             } else {
-                let db_key = global.group.read().await.db_key(&pid)?;
+                let db_key = global.own.read().await.db_key(&pid)?;
                 let db = chat_db(&global.base, &pid, &db_key)?;
                 let friend = Friend::get_id(&db, &peer.id)?;
                 results.rpcs.push(rpc::friend_close(friend.id));
@@ -101,7 +101,7 @@ pub(crate) async fn handle(msg: RecvType, global: &Arc<Global>) -> Result<Handle
             let mut layer = global.layer.write().await;
             let id = layer.delivery.remove(&tid).ok_or(anyhow!("delivery err"))?;
             drop(layer);
-            let db_key = global.group.read().await.db_key(&pid)?;
+            let db_key = global.own.read().await.db_key(&pid)?;
             let db = chat_db(&global.base, &pid, &db_key)?;
             let resp = match t {
                 DeliveryType::Event => {
@@ -137,7 +137,7 @@ async fn handle_connect(
     global: &Arc<Global>,
     results: &mut HandleResult,
 ) -> Result<u64> {
-    let db_key = global.group.read().await.db_key(&pid)?;
+    let db_key = global.own.read().await.db_key(&pid)?;
     let db = chat_db(&global.base, &pid, &db_key)?;
 
     // 1. check friendship.
@@ -194,7 +194,7 @@ impl LayerEvent {
                 results.rpcs.push(session_connect(&sid, &fpid));
             }
             LayerEvent::Request(name, remark) => {
-                let db_key = global.group.read().await.db_key(&pid)?;
+                let db_key = global.own.read().await.db_key(&pid)?;
                 let db = chat_db(&global.base, &pid, &db_key)?;
 
                 if Friend::get_id(&db, &fpid).is_err() {
@@ -218,7 +218,7 @@ impl LayerEvent {
                 }
             }
             LayerEvent::Agree => {
-                let db_key = global.group.read().await.db_key(&pid)?;
+                let db_key = global.own.read().await.db_key(&pid)?;
                 let db = chat_db(&global.base, &pid, &db_key)?;
 
                 // 1. check friendship.
@@ -248,7 +248,7 @@ impl LayerEvent {
                 }
             }
             LayerEvent::Reject => {
-                let db_key = global.group.read().await.db_key(&pid)?;
+                let db_key = global.own.read().await.db_key(&pid)?;
                 let db = chat_db(&global.base, &pid, &db_key)?;
 
                 if let Ok(mut request) = Request::get_id(&db, &fpid) {
@@ -260,7 +260,7 @@ impl LayerEvent {
             }
             LayerEvent::Message(hash, m) => {
                 let (_sid, fid) = global.layer.read().await.chat_session(&fpid)?;
-                let db_key = global.group.read().await.db_key(&pid)?;
+                let db_key = global.own.read().await.db_key(&pid)?;
                 let db = chat_db(&global.base, &pid, &db_key)?;
 
                 if !Message::exist(&db, &hash)? {
@@ -303,7 +303,7 @@ impl LayerEvent {
             }
             LayerEvent::InfoRes(remote) => {
                 let (sid, fid) = global.layer.read().await.chat_session(&fpid)?;
-                let db_key = global.group.read().await.db_key(&pid)?;
+                let db_key = global.own.read().await.db_key(&pid)?;
                 let db = chat_db(&global.base, &pid, &db_key)?;
 
                 let mut f = Friend::get(&db, &fid)?;
@@ -329,7 +329,7 @@ impl LayerEvent {
                 let keep = layer.is_addr_online(&fpid);
                 drop(layer);
 
-                let db_key = global.group.read().await.db_key(&pid)?;
+                let db_key = global.own.read().await.db_key(&pid)?;
                 let db = chat_db(&global.base, &pid, &db_key)?;
 
                 Friend::id_close(&db, fid)?;

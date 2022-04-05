@@ -112,7 +112,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<Global>) {
             let need_online = params[0].as_bool().ok_or(RpcError::ParseError)?;
 
             let pid = state.pid().await;
-            let db_key = state.group.read().await.db_key(&pid)?;
+            let db_key = state.own.read().await.db_key(&pid)?;
             let db = chat_db(&state.base, &pid, &db_key)?;
 
             let friends = Friend::list(&db)?;
@@ -143,7 +143,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<Global>) {
 
             let mut results = HandleResult::new();
             let pid = state.pid().await;
-            let db_key = state.group.read().await.db_key(&pid)?;
+            let db_key = state.own.read().await.db_key(&pid)?;
             let db = chat_db(&state.base, &pid, &db_key)?;
 
             let mut f = Friend::get(&db, &id)?;
@@ -151,7 +151,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<Global>) {
             f.me_update(&db)?;
             drop(db);
 
-            // state.group.write().await.broadcast(
+            // state.own.write().await.broadcast(
             //     &gid,
             //     InnerEvent::SessionFriendUpdate(f.gid, f.remark),
             //     FRIEND_TABLE_PATH,
@@ -170,7 +170,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<Global>) {
 
             let mut results = HandleResult::new();
             let pid = state.pid().await;
-            let db_key = state.group.read().await.db_key(&pid)?;
+            let db_key = state.own.read().await.db_key(&pid)?;
             let db = chat_db(&state.base, &pid, &db_key)?;
 
             let friend = Friend::get(&db, &id)?;
@@ -189,7 +189,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<Global>) {
                     .push((ESSE_ID, SendType::Disconnect(friend.pid)));
             }
 
-            // state.group.write().await.broadcast(
+            // state.own.write().await.broadcast(
             //     &gid,
             //     InnerEvent::SessionFriendClose(friend.gid),
             //     FRIEND_TABLE_PATH,
@@ -208,7 +208,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<Global>) {
 
             let mut results = HandleResult::new();
             let pid = state.pid().await;
-            let db_key = state.group.read().await.db_key(&pid)?;
+            let db_key = state.own.read().await.db_key(&pid)?;
             let db = chat_db(&state.base, &pid, &db_key)?;
 
             let friend = Friend::get(&db, &id)?;
@@ -229,7 +229,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<Global>) {
                     .push((ESSE_ID, SendType::Disconnect(friend.pid)));
             }
 
-            // state.group.write().await.broadcast(
+            // state.own.write().await.broadcast(
             //     &gid,
             //     InnerEvent::SessionFriendDelete(friend.gid),
             //     FRIEND_TABLE_PATH,
@@ -245,7 +245,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<Global>) {
         "chat-request-list",
         |_params: Vec<RpcParam>, state: Arc<Global>| async move {
             let pid = state.pid().await;
-            let db_key = state.group.read().await.db_key(&pid)?;
+            let db_key = state.own.read().await.db_key(&pid)?;
             let db = chat_db(&state.base, &pid, &db_key)?;
             let requests = Request::list(&db)?;
             drop(db);
@@ -261,7 +261,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<Global>) {
             let remark = params[2].as_str().ok_or(RpcError::ParseError)?.to_string();
 
             let pid = state.pid().await;
-            let db_key = state.group.read().await.db_key(&pid)?;
+            let db_key = state.own.read().await.db_key(&pid)?;
             let db = chat_db(&state.base, &pid, &db_key)?;
 
             if Friend::is_friend(&db, &remote_pid)? {
@@ -281,7 +281,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<Global>) {
 
             let mut results = HandleResult::rpc(json!(request.to_rpc()));
 
-            let name = state.group.read().await.account(&pid)?.name.clone();
+            let name = state.own.read().await.account(&pid)?.name.clone();
             let req = LayerEvent::Request(name, request.remark);
             let data = bincode::serialize(&req).unwrap_or(vec![]);
             let msg = SendType::Event(0, request.pid, data);
@@ -298,7 +298,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<Global>) {
 
             let mut results = HandleResult::new();
             let pid = state.pid().await;
-            let db_key = state.group.read().await.db_key(&pid)?;
+            let db_key = state.own.read().await.db_key(&pid)?;
             let db = chat_db(&state.base, &pid, &db_key)?;
 
             let mut request = Request::get(&db, &id)?;
@@ -344,7 +344,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<Global>) {
             let id = params[0].as_i64().ok_or(RpcError::ParseError)?;
 
             let pid = state.pid().await;
-            let db_key = state.group.read().await.db_key(&pid)?;
+            let db_key = state.own.read().await.db_key(&pid)?;
             let db = chat_db(&state.base, &pid, &db_key)?;
 
             let mut req = Request::get(&db, &id)?;
@@ -357,7 +357,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<Global>) {
             let msg = SendType::Event(0, req.pid, data);
             let mut results = HandleResult::layer(ESSE_ID, msg);
 
-            // state.group.write().await.broadcast(
+            // state.own.write().await.broadcast(
             //     &gid,
             //     InnerEvent::SessionRequestHandle(req.gid, false, vec![]),
             //     REQUEST_TABLE_PATH,
@@ -374,7 +374,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<Global>) {
             let id = params[0].as_i64().ok_or(RpcError::ParseError)?;
 
             let pid = state.pid().await;
-            let db_key = state.group.read().await.db_key(&pid)?;
+            let db_key = state.own.read().await.db_key(&pid)?;
             let db = chat_db(&state.base, &pid, &db_key)?;
 
             let req = Request::get(&db, &id)?;
@@ -387,7 +387,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<Global>) {
             drop(db);
 
             let results = HandleResult::new();
-            // state.group.write().await.broadcast(
+            // state.own.write().await.broadcast(
             //     &gid,
             //     InnerEvent::SessionRequestDelete(req.gid),
             //     REQUEST_TABLE_PATH,
@@ -404,7 +404,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<Global>) {
             let id = params[0].as_i64().ok_or(RpcError::ParseError)?;
 
             let pid = state.pid().await;
-            let db_key = state.group.read().await.db_key(&pid)?;
+            let db_key = state.own.read().await.db_key(&pid)?;
             let db = chat_db(&state.base, &pid, &db_key)?;
 
             let friend = Friend::get(&db, &id)?;
@@ -421,7 +421,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<Global>) {
             let fid = params[0].as_i64().ok_or(RpcError::ParseError)?;
 
             let pid = state.pid().await;
-            let db_key = state.group.read().await.db_key(&pid)?;
+            let db_key = state.own.read().await.db_key(&pid)?;
             let db = chat_db(&state.base, &pid, &db_key)?;
 
             let messages = Message::get_by_fid(&db, &fid)?;
@@ -439,7 +439,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<Global>) {
             let content = params[3].as_str().ok_or(RpcError::ParseError)?;
 
             let pid = state.pid().await;
-            let db_key = state.group.read().await.db_key(&pid)?;
+            let db_key = state.own.read().await.db_key(&pid)?;
             let db = chat_db(&state.base, &pid, &db_key)?;
 
             let (nm, raw) =
@@ -470,7 +470,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<Global>) {
             let id = params[0].as_i64().ok_or(RpcError::ParseError)?;
 
             let pid = state.pid().await;
-            let db_key = state.group.read().await.db_key(&pid)?;
+            let db_key = state.own.read().await.db_key(&pid)?;
             let db = chat_db(&state.base, &pid, &db_key)?;
 
             let msg = Message::get(&db, &id)?;

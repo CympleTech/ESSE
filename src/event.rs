@@ -15,11 +15,11 @@ use tokio::sync::{mpsc::Sender, RwLock};
 use crate::account::{Account, User};
 use crate::apps::chat::LayerEvent;
 use crate::consensus::Event as OldEvent;
-use crate::group::{Group, GroupEvent};
 use crate::layer::Layer;
 use crate::migrate::consensus::{
     ACCOUNT_TABLE_PATH, FILE_TABLE_PATH, FRIEND_TABLE_PATH, MESSAGE_TABLE_PATH, REQUEST_TABLE_PATH,
 };
+use crate::own::{Own, OwnEvent};
 
 use crate::apps::chat::rpc as chat_rpc;
 use crate::apps::chat::{from_model, Friend, Message, Request};
@@ -33,14 +33,14 @@ pub(crate) enum State {
     Account,
     Session,
     ChatMessage,
-    GroupMessage,
+    OwnMessage,
 }
 
 pub(crate) async fn _handle_state(
     _gid: GroupId,
     _addr: PeerId,
     state: State,
-    _group: &Arc<RwLock<Group>>,
+    _group: &Arc<RwLock<Own>>,
     _layer: &Arc<RwLock<Layer>>,
     _results: &mut HandleResult,
 ) -> Result<()> {
@@ -48,7 +48,7 @@ pub(crate) async fn _handle_state(
         State::Account => {}
         State::Session => {}
         State::ChatMessage => {}
-        State::GroupMessage => {}
+        State::OwnMessage => {}
     }
     Ok(())
 }

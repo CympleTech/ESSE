@@ -20,9 +20,9 @@ use tdn_storage::local::DStorage;
 use crate::account::Account;
 use crate::apps::app_layer_handle;
 use crate::global::Global;
-use crate::group::{handle as group_handle, Group};
 use crate::layer::Layer;
 use crate::migrate::{main_migrate, ACCOUNT_DB};
+use crate::own::{handle as own_handle, Own};
 use crate::primitives::network_seeds;
 use crate::rpc::{init_rpc, inner_rpc};
 
@@ -90,7 +90,7 @@ pub async fn start(db_path: String) -> Result<()> {
     while let Some(message) = self_recv.recv().await {
         match message {
             ReceiveMessage::Own(o_msg) => {
-                if let Ok(handle_result) = group_handle(o_msg, &global).await {
+                if let Ok(handle_result) = own_handle(o_msg, &global).await {
                     handle(handle_result, now_rpc_uid, true, &global).await;
                 }
             }
@@ -221,7 +221,7 @@ async fn handle(handle_result: HandleResult, uid: u64, is_ws: bool, global: &Arc
         mut rpcs,
         mut layers,
         mut networks,
-        groups: _, // no-group message.
+        mut groups,
     } = handle_result;
 
     loop {
@@ -243,6 +243,18 @@ async fn handle(handle_result: HandleResult, uid: u64, is_ws: bool, global: &Arc
                 let msg = owns.remove(0);
                 sender
                     .send(SendMessage::Own(msg))
+                    .await
+                    .expect("TDN channel closed");
+            } else {
+                break;
+            }
+        }
+
+        loop {
+            if groups.len() != 0 {
+                let msg = groups.remove(0);
+                sender
+                    .send(SendMessage::Group(msg))
                     .await
                     .expect("TDN channel closed");
             } else {

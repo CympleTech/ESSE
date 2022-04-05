@@ -22,7 +22,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<Global>) {
             let parent = params[1].as_i64().ok_or(RpcError::ParseError)?;
 
             let pid = state.pid().await;
-            let db_key = state.group.read().await.db_key(&pid)?;
+            let db_key = state.own.read().await.db_key(&pid)?;
             let db = file_db(&state.base, &pid, &db_key)?;
 
             let files: Vec<RpcParam> = File::list(&db, &root, &parent)?
@@ -42,7 +42,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<Global>) {
             let name = params[2].as_str().ok_or(RpcError::ParseError)?.to_owned();
 
             let pid = state.pid().await;
-            let db_key = state.group.read().await.db_key(&pid)?;
+            let db_key = state.own.read().await.db_key(&pid)?;
             let db = file_db(&state.base, &pid, &db_key)?;
 
             // genereate new file.
@@ -71,7 +71,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<Global>) {
                 .to_owned();
 
             let pid = state.pid().await;
-            let db_key = state.group.read().await.db_key(&pid)?;
+            let db_key = state.own.read().await.db_key(&pid)?;
             let db = file_db(&state.base, &pid, &db_key)?;
 
             let mut file = File::generate(root, parent, name);
@@ -91,7 +91,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<Global>) {
 
             // create new folder.
             let pid = state.pid().await;
-            let db_key = state.group.read().await.db_key(&pid)?;
+            let db_key = state.own.read().await.db_key(&pid)?;
             let db = file_db(&state.base, &pid, &db_key)?;
 
             let mut file = File::generate(root, parent, name);
@@ -110,7 +110,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<Global>) {
             let name = params[3].as_str().ok_or(RpcError::ParseError)?.to_owned();
 
             let pid = state.pid().await;
-            let db_key = state.group.read().await.db_key(&pid)?;
+            let db_key = state.own.read().await.db_key(&pid)?;
             let db = file_db(&state.base, &pid, &db_key)?;
 
             let mut file = File::get(&db, &id)?;
@@ -130,7 +130,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<Global>) {
             let starred = params[1].as_bool().ok_or(RpcError::ParseError)?;
 
             let pid = state.pid().await;
-            let db_key = state.group.read().await.db_key(&pid)?;
+            let db_key = state.own.read().await.db_key(&pid)?;
             let db = file_db(&state.base, &pid, &db_key)?;
 
             File::star(&db, &id, starred)?;
@@ -144,7 +144,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<Global>) {
             let id = params[0].as_i64().ok_or(RpcError::ParseError)?;
 
             let pid = state.pid().await;
-            let db_key = state.group.read().await.db_key(&pid)?;
+            let db_key = state.own.read().await.db_key(&pid)?;
             let db = file_db(&state.base, &pid, &db_key)?;
 
             // TODO trash a directory.
@@ -160,7 +160,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<Global>) {
             let id = params[0].as_i64().ok_or(RpcError::ParseError)?;
 
             let pid = state.pid().await;
-            let db_key = state.group.read().await.db_key(&pid)?;
+            let db_key = state.own.read().await.db_key(&pid)?;
             let db = file_db(&state.base, &pid, &db_key)?;
 
             // TODO deleted file & directory.

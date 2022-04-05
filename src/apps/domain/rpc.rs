@@ -62,7 +62,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<Global>) {
         "domain-list",
         |_params: Vec<RpcParam>, state: Arc<Global>| async move {
             let pid = state.pid().await;
-            let db_key = state.group.read().await.db_key(&pid)?;
+            let db_key = state.own.read().await.db_key(&pid)?;
             let db = domain_db(&state.base, &pid, &db_key)?;
 
             // list providers.
@@ -83,7 +83,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<Global>) {
 
             let mut results = HandleResult::new();
             let pid = state.pid().await;
-            let db_key = state.group.read().await.db_key(&pid)?;
+            let db_key = state.own.read().await.db_key(&pid)?;
             let db = domain_db(&state.base, &pid, &db_key)?;
 
             let mut p = Provider::prepare(provider);
@@ -102,7 +102,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<Global>) {
             let id = params[0].as_i64().ok_or(RpcError::ParseError)?;
 
             let pid = state.pid().await;
-            let db_key = state.group.read().await.db_key(&pid)?;
+            let db_key = state.own.read().await.db_key(&pid)?;
             let db = domain_db(&state.base, &pid, &db_key)?;
 
             let provider = Provider::get(&db, &id)?;
@@ -124,7 +124,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<Global>) {
             let id = params[0].as_i64().ok_or(RpcError::ParseError)?;
 
             let pid = state.pid().await;
-            let db_key = state.group.read().await.db_key(&pid)?;
+            let db_key = state.own.read().await.db_key(&pid)?;
             let db = domain_db(&state.base, &pid, &db_key)?;
 
             let names = Name::get_by_provider(&db, &id)?;
@@ -147,10 +147,10 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<Global>) {
             // save to db.
             let mut results = HandleResult::new();
             let pid = state.pid().await;
-            let db_key = state.group.read().await.db_key(&pid)?;
+            let db_key = state.own.read().await.db_key(&pid)?;
             let db = domain_db(&state.base, &pid, &db_key)?;
 
-            let me = state.group.read().await.clone_user(&pid)?;
+            let me = state.own.read().await.clone_user(&pid)?;
 
             let mut u = Name::prepare(name, bio, provider);
             u.insert(&db)?;

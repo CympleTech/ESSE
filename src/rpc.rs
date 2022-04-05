@@ -174,7 +174,7 @@ fn new_rpc_handler(global: Arc<Global>) -> RpcHandler<Global> {
 
     handler.add_method("account-list", |_, state: Arc<Global>| async move {
         let mut accounts: Vec<Vec<String>> = vec![];
-        let group_lock = state.group.read().await;
+        let group_lock = state.own.read().await;
         for (pid, account) in group_lock.list_accounts().iter() {
             accounts.push(vec![
                 id_to_str(pid),
@@ -210,7 +210,7 @@ fn new_rpc_handler(global: Arc<Global>) -> RpcHandler<Global> {
 
             let avatar_bytes = base64::decode(avatar).unwrap_or(vec![]);
             let (_id, pid) = state
-                .group
+                .own
                 .write()
                 .await
                 .add_account(
@@ -240,7 +240,7 @@ fn new_rpc_handler(global: Arc<Global>) -> RpcHandler<Global> {
             let lock = params[4].as_str().ok_or(RpcError::ParseError)?;
 
             let (_id, pid) = state
-                .group
+                .own
                 .write()
                 .await
                 .add_account(
@@ -270,7 +270,7 @@ fn new_rpc_handler(global: Arc<Global>) -> RpcHandler<Global> {
             let avatar_bytes = base64::decode(avatar).unwrap_or(vec![]);
             let pid = state.pid().await;
 
-            let mut group_lock = state.group.write().await;
+            let mut group_lock = state.own.write().await;
             group_lock.update_account(
                 pid,
                 name,
@@ -298,7 +298,7 @@ fn new_rpc_handler(global: Arc<Global>) -> RpcHandler<Global> {
         |params: Vec<RpcParam>, state: Arc<Global>| async move {
             let pid = id_from_str(params[0].as_str().ok_or(RpcError::ParseError)?)?;
             let lock = params[1].as_str().ok_or(RpcError::ParseError)?;
-            let res = state.group.read().await.check_lock(&pid, lock);
+            let res = state.own.read().await.check_lock(&pid, lock);
             Ok(HandleResult::rpc(json!([res])))
         },
     );
@@ -311,7 +311,7 @@ fn new_rpc_handler(global: Arc<Global>) -> RpcHandler<Global> {
             let pid = state.pid().await;
             let result = HandleResult::rpc(json!([new]));
             state
-                .group
+                .own
                 .write()
                 .await
                 .pin(&pid, old, new, &state.base, &state.secret)?;
@@ -324,11 +324,7 @@ fn new_rpc_handler(global: Arc<Global>) -> RpcHandler<Global> {
         |params: Vec<RpcParam>, state: Arc<Global>| async move {
             let lock = params[0].as_str().ok_or(RpcError::ParseError)?;
             let pid = state.pid().await;
-            let mnemonic = state
-                .group
-                .read()
-                .await
-                .mnemonic(&pid, lock, &state.secret)?;
+            let mnemonic = state.own.read().await.mnemonic(&pid, lock, &state.secret)?;
             Ok(HandleResult::rpc(json!([mnemonic])))
         },
     );
@@ -348,7 +344,7 @@ fn new_rpc_handler(global: Arc<Global>) -> RpcHandler<Global> {
             }
 
             // load all local services created by this account.
-            let db_key = state.group.read().await.db_key(&pid)?;
+            let db_key = state.own.read().await.db_key(&pid)?;
             let group_db = group_db(&state.base, &pid, &db_key)?;
             let s_db = session_db(&state.base, &pid, &db_key)?;
             // 1. group chat.
@@ -362,7 +358,7 @@ fn new_rpc_handler(global: Arc<Global>) -> RpcHandler<Global> {
             }
             drop(layer);
 
-            let key = state.group.read().await.keypair();
+            let key = state.own.read().await.keypair();
             let peer_id = start_main(
                 state.gids.clone(),
                 state.p2p_config.clone(),
@@ -394,7 +390,7 @@ fn new_rpc_handler(global: Arc<Global>) -> RpcHandler<Global> {
         "session-list",
         |_: Vec<RpcParam>, state: Arc<Global>| async move {
             let pid = state.pid().await;
-            let db_key = state.group.read().await.db_key(&pid)?;
+            let db_key = state.own.read().await.db_key(&pid)?;
             let db = session_db(&state.base, &pid, &db_key)?;
             Ok(HandleResult::rpc(session_list(Session::list(&db)?)))
         },
@@ -407,7 +403,7 @@ fn new_rpc_handler(global: Arc<Global>) -> RpcHandler<Global> {
             let remote = params[1].as_str().ok_or(RpcError::ParseError)?;
 
             let pid = state.pid().await;
-            let db_key = state.group.read().await.db_key(&pid)?;
+            let db_key = state.own.read().await.db_key(&pid)?;
             let db = session_db(&state.base, &pid, &db_key)?;
             Session::readed(&db, &id)?;
             let s = Session::get(&db, &id)?;
@@ -449,7 +445,7 @@ fn new_rpc_handler(global: Arc<Global>) -> RpcHandler<Global> {
             let must = params[2].as_bool().ok_or(RpcError::ParseError)?; // if need must suspend.
 
             let pid = state.pid().await;
-            let db_key = state.group.read().await.db_key(&pid)?;
+            let db_key = state.own.read().await.db_key(&pid)?;
             let db = session_db(&state.base, &pid, &db_key)?;
             let s = Session::get(&db, &id)?;
             drop(db);
@@ -491,7 +487,7 @@ fn new_rpc_handler(global: Arc<Global>) -> RpcHandler<Global> {
             let id = params[0].as_i64().ok_or(RpcError::ParseError)?;
 
             let pid = state.pid().await;
-            let db_key = state.group.read().await.db_key(&pid)?;
+            let db_key = state.own.read().await.db_key(&pid)?;
             let db = session_db(&state.base, &pid, &db_key)?;
             Session::readed(&db, &id)?;
             Ok(HandleResult::new())
@@ -506,7 +502,7 @@ fn new_rpc_handler(global: Arc<Global>) -> RpcHandler<Global> {
             let is_close = params[2].as_bool().ok_or(RpcError::ParseError)?;
 
             let pid = state.pid().await;
-            let db_key = state.group.read().await.db_key(&pid)?;
+            let db_key = state.own.read().await.db_key(&pid)?;
             let db = session_db(&state.base, &pid, &db_key)?;
             Session::update(&db, &id, is_top, is_close)?;
             Ok(HandleResult::new())

@@ -13,7 +13,7 @@ use tokio::sync::RwLock;
 use crate::account::User;
 use crate::apps::chat::LayerEvent as ChatLayerEvent;
 //use crate::apps::group::{group_conn, GROUP_ID};
-use crate::group::Group;
+use crate::own::Own;
 use crate::session::{Session, SessionType};
 
 /// ESSE layers.

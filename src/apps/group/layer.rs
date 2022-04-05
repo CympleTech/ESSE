@@ -51,7 +51,7 @@ pub(crate) async fn handle(msg: RecvType, global: &Arc<Global>) -> Result<Handle
                 let gid: GroupChatId = bincode::deserialize(&data)?;
 
                 let pid = global.pid().await;
-                let db_key = global.group.read().await.db_key(&pid)?;
+                let db_key = global.own.read().await.db_key(&pid)?;
                 let db = group_db(&global.base, &pid, &db_key)?;
                 let s_db = session_db(&global.base, &pid, &db_key)?;
 
@@ -94,7 +94,7 @@ async fn handle_connect(
     let (height, _, id, _) = global.layer.read().await.group(&gid)?.info();
 
     let pid = global.pid().await;
-    let db_key = global.group.read().await.db_key(&pid)?;
+    let db_key = global.own.read().await.db_key(&pid)?;
     let db = group_db(&global.base, &pid, &db_key)?;
 
     // check is member.
@@ -124,7 +124,7 @@ async fn handle_result(
     let LayerResult(gid, name, height) = bincode::deserialize(&data)?;
 
     let pid = global.pid().await;
-    let db_key = global.group.read().await.db_key(&pid)?;
+    let db_key = global.own.read().await.db_key(&pid)?;
     let db = group_db(&global.base, &pid, &db_key)?;
     let s_db = session_db(&global.base, &pid, &db_key)?;
 
@@ -184,7 +184,7 @@ async fn handle_event(
     let gid = event.gid();
     let (height, sid, id, gaddr) = global.layer.read().await.group(&gid)?.info();
     let pid = global.pid().await;
-    let db_key = global.group.read().await.db_key(&pid)?;
+    let db_key = global.own.read().await.db_key(&pid)?;
     let db = group_db(&global.base, &pid, &db_key)?;
     let is_server = gaddr == pid;
     if !is_server && gaddr != addr {

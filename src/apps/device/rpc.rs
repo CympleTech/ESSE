@@ -5,7 +5,7 @@ use tdn::types::{
 };
 
 use crate::global::Global;
-//use crate::group::GroupEvent;
+//use crate::own::OwnEvent;
 use crate::utils::device_status::device_status as local_device_status;
 
 use super::Device;
@@ -66,7 +66,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<Global>) {
     handler.add_method(
         "device-list",
         |_params: Vec<RpcParam>, state: Arc<Global>| async move {
-            let devices = &state.group.read().await.distributes;
+            let devices = &state.own.read().await.distributes;
             Ok(HandleResult::rpc(device_list(devices)))
         },
     );
@@ -76,7 +76,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<Global>) {
         |params: Vec<RpcParam>, state: Arc<Global>| async move {
             let id = params[0].as_i64().ok_or(RpcError::ParseError)?;
 
-            let group_lock = state.group.read().await;
+            let group_lock = state.own.read().await;
             if id == group_lock.device()?.id {
                 let uptime = group_lock.uptime;
                 let (cpu, memory, swap, disk, cpu_p, memory_p, swap_p, disk_p) =
@@ -87,7 +87,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<Global>) {
             }
             drop(group_lock);
 
-            //let msg = state.group.write().await.event_message(addr, &GroupEvent::StatusRequest)?;
+            //let msg = state.own.write().await.event_message(addr, &OwnEvent::StatusRequest)?;
             //Ok(HandleResult::group(msg))
             Ok(HandleResult::new())
         },
@@ -96,7 +96,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<Global>) {
     handler.add_method(
         "device-search",
         |_params: Vec<RpcParam>, state: Arc<Global>| async move {
-            //let msg = state.group.read().await.create_message(&gid, Peer::peer(addr))?;
+            //let msg = state.own.read().await.create_message(&gid, Peer::peer(addr))?;
             //Ok(HandleResult::group(gid, msg))
             Ok(HandleResult::new())
         },

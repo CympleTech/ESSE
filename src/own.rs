@@ -24,8 +24,8 @@ use crate::storage::{account_db, account_init, consensus_db, wallet_db, write_av
 use crate::utils::crypto::{decrypt, encrypt};
 use crate::utils::device_status::{device_info, device_status as local_device_status};
 
-/// Esse group.
-pub(crate) struct Group {
+/// ESSE own distributed accounts.
+pub(crate) struct Own {
     /// all accounts.
     pub accounts: HashMap<PeerId, Account>,
     /// current account secret keypair.
@@ -38,7 +38,7 @@ pub(crate) struct Group {
 
 /// Request for make distributed.
 #[derive(Serialize, Deserialize)]
-enum GroupConnect {
+enum OwnConnect {
     /// Params: User, consensus height, event_id, remote_name, remote_info, other_devices addr.
     Create(User, u64, EventId, String, String, Vec<PeerId>),
     /// connected.
@@ -47,7 +47,7 @@ enum GroupConnect {
 
 /// Esse group's Event.
 #[derive(Serialize, Deserialize)]
-pub(crate) enum GroupEvent {
+pub(crate) enum OwnEvent {
     /// Sync event.
     Event(u64, EventId, EventId),
     //Event(u64, EventId, EventId, InnerEvent),
@@ -97,8 +97,8 @@ pub(crate) async fn handle(msg: RecvType, global: &Arc<Global>) -> Result<Handle
             //self.hanlde_connect(&mut results, peer, data, true)?;
         }
         RecvType::Event(addr, bytes) => {
-            //let event: GroupEvent = bincode::deserialize(&bytes)?;
-            //return GroupEvent::handle(self, event, pid, addr, uid).await;
+            //let event: OwnEvent = bincode::deserialize(&bytes)?;
+            //return OwnEvent::handle(self, event, pid, addr, uid).await;
         }
         RecvType::Stream(_uid, _stream, _bytes) => {
             todo!();
@@ -121,7 +121,7 @@ pub(crate) async fn handle(msg: RecvType, global: &Arc<Global>) -> Result<Handle
 //         let pid = peer.id;
 
 //         let (remote_height, remote_event, others) = match connect {
-//             GroupConnect::Create(
+//             OwnConnect::Create(
 //                 remote,
 //                 remote_height,
 //                 remote_event,
@@ -185,7 +185,7 @@ pub(crate) async fn handle(msg: RecvType, global: &Arc<Global>) -> Result<Handle
 //                     (remote_height, remote_event, new_addrs)
 //                 }
 //             }
-//             GroupConnect::Connect(remote_height, remote_event) => {
+//             OwnConnect::Connect(remote_height, remote_event) => {
 //                 if self
 //                     .runnings
 //                     .get(pid)
@@ -229,9 +229,9 @@ pub(crate) async fn handle(msg: RecvType, global: &Arc<Global>) -> Result<Handle
 //     }
 // }
 
-impl Group {
-    pub fn init(accounts: HashMap<PeerId, Account>) -> Group {
-        Group {
+impl Own {
+    pub fn init(accounts: HashMap<PeerId, Account>) -> Own {
+        Own {
             accounts,
             keypair: PeerKey::default(),
             distributes: vec![],
@@ -562,7 +562,7 @@ impl Group {
     //         Ok(SendType::Connect(
     //             0,
     //             addr,
-    //             bincode::serialize(&GroupConnect::Create(
+    //             bincode::serialize(&OwnConnect::Create(
     //                 proof,
     //                 user,
     //                 height,
@@ -579,7 +579,7 @@ impl Group {
     //         let account = self.account(pid)?;
     //         let height = account.own_height;
     //         let event = account.event;
-    //         let data = bincode::serialize(&GroupConnect::Connect(height, event)).unwrap_or(vec![]);
+    //         let data = bincode::serialize(&OwnConnect::Connect(height, event)).unwrap_or(vec![]);
     //         Ok(SendType::Connect(0, addr, data))
     //     }
 
@@ -587,7 +587,7 @@ impl Group {
     //         let account = self.account(pid)?;
     //         let height = account.own_height;
     //         let event = account.event;
-    //         let data = bincode::serialize(&GroupConnect::Connect(height, event)).unwrap_or(vec![]);
+    //         let data = bincode::serialize(&OwnConnect::Connect(height, event)).unwrap_or(vec![]);
     //         Ok(SendType::Result(0, addr, true, false, data))
     //     }
 
@@ -604,7 +604,7 @@ impl Group {
     //             addr,
     //             true,
     //             false,
-    //             bincode::serialize(&GroupConnect::Create(
+    //             bincode::serialize(&OwnConnect::Create(
     //                 proof,
     //                 me,
     //                 height,
@@ -640,12 +640,12 @@ impl Group {
     //             (vec![], vec![], true)
     //         };
 
-    //         let event = GroupEvent::SyncCheck(ancestors, hashes, is_min);
+    //         let event = OwnEvent::SyncCheck(ancestors, hashes, is_min);
     //         let data = bincode::serialize(&event).unwrap_or(vec![]);
     //         Ok(SendType::Event(0, addr, data))
     //     }
 
-    //     pub fn event_message(&self, addr: PeerId, event: &GroupEvent) -> Result<SendType> {
+    //     pub fn event_message(&self, addr: PeerId, event: &OwnEvent) -> Result<SendType> {
     //         let data = bincode::serialize(event).unwrap_or(vec![]);
     //         Ok(SendType::Event(0, addr, data))
     //     }
@@ -673,7 +673,7 @@ impl Group {
     //         account_db.close()?;
     //         drop(account);
 
-    //         let e = GroupEvent::Event(eheight, eid, pre_event, event);
+    //         let e = OwnEvent::Event(eheight, eid, pre_event, event);
     //         let data = bincode::serialize(&e).unwrap_or(vec![]);
     //         let running = self.running(pid)?;
     //         for (addr, (_peer, _id, online)) in &running.distributes {
@@ -692,7 +692,7 @@ impl Group {
     //         results: &mut HandleResult,
     //     ) -> Result<()> {
     //         let running = self.running(pid)?;
-    //         let data = bincode::serialize(&GroupEvent::Status(event)).unwrap_or(vec![]);
+    //         let data = bincode::serialize(&OwnEvent::Status(event)).unwrap_or(vec![]);
     //         for (addr, (_peer, _id, online)) in &running.distributes {
     //             if *online {
     //                 let msg = SendType::Event(0, *addr, data.clone());
@@ -703,10 +703,10 @@ impl Group {
     //     }
 }
 
-// impl GroupEvent {
+// impl OwnEvent {
 //     pub async fn handle(
-//         group: &mut Group,
-//         event: GroupEvent,
+//         group: &mut Own,
+//         event: OwnEvent,
 //         pid: PeerId,
 //         addr: PeerId,
 //         //layer: &Arc<RwLock<Layer>>,
@@ -714,18 +714,18 @@ impl Group {
 //     ) -> Result<HandleResult> {
 //         let mut results = HandleResult::new();
 //         match event {
-//             GroupEvent::DeviceUpdate(_at, _name) => {
+//             OwnEvent::DeviceUpdate(_at, _name) => {
 //                 // TODO
 //             }
-//             GroupEvent::DeviceDelete(_at) => {
+//             OwnEvent::DeviceDelete(_at) => {
 //                 // TODO
 //             }
-//             GroupEvent::DeviceOffline => {
+//             OwnEvent::DeviceOffline => {
 //                 let v = group.running_mut(&pid)?;
 //                 let did = v.offline(&addr)?;
 //                 results.rpcs.push(device_rpc::device_offline(pid, did));
 //             }
-//             GroupEvent::StatusRequest => {
+//             OwnEvent::StatusRequest => {
 //                 let (cpu_n, mem_s, swap_s, disk_s, cpu_p, mem_p, swap_p, disk_p) =
 //                     local_device_status();
 //                 results.groups.push((
@@ -733,7 +733,7 @@ impl Group {
 //                     SendType::Event(
 //                         0,
 //                         addr,
-//                         bincode::serialize(&GroupEvent::StatusResponse(
+//                         bincode::serialize(&OwnEvent::StatusResponse(
 //                             cpu_n,
 //                             mem_s,
 //                             swap_s,
@@ -748,7 +748,7 @@ impl Group {
 //                     ),
 //                 ))
 //             }
-//             GroupEvent::StatusResponse(
+//             OwnEvent::StatusResponse(
 //                 cpu_n,
 //                 mem_s,
 //                 swap_s,
@@ -761,13 +761,13 @@ impl Group {
 //             ) => results.rpcs.push(device_rpc::device_status(
 //                 pid, cpu_n, mem_s, swap_s, disk_s, cpu_p, mem_p, swap_p, disk_p, uptime,
 //             )),
-//             GroupEvent::Event(eheight, eid, pre) => {
+//             OwnEvent::Event(eheight, eid, pre) => {
 //                 //inner_event.handle(group, pid, addr, eheight, eid, pre, &mut results, layer)?;
 //             }
-//             GroupEvent::Status => {
+//             OwnEvent::Status => {
 //                 //status_event.handle(group, pid, addr, &mut results, layer, uid)?;
 //             }
-//             GroupEvent::SyncCheck(ancestors, hashes, is_min) => {
+//             OwnEvent::SyncCheck(ancestors, hashes, is_min) => {
 //                 println!("sync check: {:?}", ancestors);
 //                 let account = group.account(&pid)?;
 //                 if ancestors.len() == 0 || hashes.len() == 0 {
@@ -789,7 +789,7 @@ impl Group {
 //                     drop(db);
 
 //                     if ours.len() == 0 {
-//                         let event = GroupEvent::SyncRequest(1, remote_height);
+//                         let event = OwnEvent::SyncRequest(1, remote_height);
 //                         let data = bincode::serialize(&event).unwrap_or(vec![]);
 //                         results.groups.push((pid, SendType::Event(0, addr, data)));
 //                         return Ok(results);
@@ -827,7 +827,7 @@ impl Group {
 //                     }
 
 //                     if ancestor != 0 {
-//                         let event = GroupEvent::SyncRequest(ancestor, remote_height);
+//                         let event = OwnEvent::SyncRequest(ancestor, remote_height);
 //                         let data = bincode::serialize(&event).unwrap_or(vec![]);
 //                         results.groups.push((pid, SendType::Event(0, addr, data)));
 //                     } else {
@@ -838,7 +838,7 @@ impl Group {
 //                     }
 //                 }
 //             }
-//             GroupEvent::SyncRequest(from, to) => {
+//             OwnEvent::SyncRequest(from, to) => {
 //                 println!("====== DEBUG Sync Request: from: {} to {}", from, to);
 //                 // every time sync MAX is 100.
 //                 let last_to = if to - from > 100 { to - 100 } else { to };
@@ -851,17 +851,17 @@ impl Group {
 //                 //     last_to,
 //                 // )
 //                 // .await?;
-//                 let event = GroupEvent::SyncResponse(from, last_to, to);
+//                 let event = OwnEvent::SyncResponse(from, last_to, to);
 //                 let data = bincode::serialize(&event).unwrap_or(vec![]);
 //                 results.groups.push((pid, SendType::Event(0, addr, data)));
 //             }
-//             GroupEvent::SyncResponse(from, last_to, to) => {
+//             OwnEvent::SyncResponse(from, last_to, to) => {
 //                 println!(
 //                     "====== DEBUG Sync Response: from: {} last {}, to {}",
 //                     from, last_to, to
 //                 );
 //                 if last_to < to {
-//                     let event = GroupEvent::SyncRequest(last_to + 1, to);
+//                     let event = OwnEvent::SyncRequest(last_to + 1, to);
 //                     let data = bincode::serialize(&event).unwrap_or(vec![]);
 //                     results.groups.push((pid, SendType::Event(0, addr, data)));
 //                 }

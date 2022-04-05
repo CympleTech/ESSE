@@ -274,7 +274,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             let _ = write_avatar(&base, &gid, &gcd, &avatar_bytes).await;
 
             let mut results = HandleResult::new();
-            let me = state.group.read().await.clone_user(&gid)?;
+            let me = state.own.read().await.clone_user(&gid)?;
 
             // add to rpcs.
             results.rpcs.push(json!(gc.to_rpc()));
@@ -343,8 +343,8 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             drop(db);
 
             // load avatar
-            let avatar = read_avatar(state.group.read().await.base(), &gid, &gc.g_id).await?;
-            let owner_avatar = state.group.read().await.clone_user(&gid)?.avatar;
+            let avatar = read_avatar(state.own.read().await.base(), &gid, &gc.g_id).await?;
+            let owner_avatar = state.own.read().await.clone_user(&gid)?.avatar;
             let addr = gc.g_addr;
             let info = gc.to_group_info(mname, avatar, owner_avatar);
 
@@ -389,7 +389,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             }
             drop(db);
 
-            let me = state.group.read().await.clone_user(&gid)?;
+            let me = state.own.read().await.clone_user(&gid)?;
             let join_proof = match gtype {
                 GroupType::Encrypted => {
                     // remark is inviter did.
@@ -424,7 +424,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
                 .filter_map(|v| v.as_i64())
                 .collect();
 
-            let group_lock = state.group.read().await;
+            let group_lock = state.own.read().await;
             let base = group_lock.base().clone();
 
             let chat = chat_db(&base, &gid)?;
@@ -533,7 +533,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<RpcState>) {
             let addr = state.layer.read().await.running(&gid)?.online(&gcd)?;
             let mut results = HandleResult::new();
 
-            let base = state.group.read().await.base().clone();
+            let base = state.own.read().await.base().clone();
             let (nmsg, datetime) = to_network_message(&base, &gid, m_type, m_content).await?;
             let event = Event::MessageCreate(gid, nmsg, datetime);
             let data = bincode::serialize(&LayerEvent::Sync(gcd, 0, event))?;

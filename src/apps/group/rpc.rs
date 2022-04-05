@@ -76,7 +76,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<Global>) {
         "group-list",
         |_params: Vec<RpcParam>, state: Arc<Global>| async move {
             let pid = state.pid().await;
-            let db_key = state.group.read().await.db_key(&pid)?;
+            let db_key = state.own.read().await.db_key(&pid)?;
             let db = group_db(&state.base, &pid, &db_key)?;
 
             Ok(HandleResult::rpc(group_list(GroupChat::all(&db)?)))
@@ -89,7 +89,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<Global>) {
             let id = params[0].as_i64().ok_or(RpcError::ParseError)?;
 
             let pid = state.pid().await;
-            let db_key = state.group.read().await.db_key(&pid)?;
+            let db_key = state.own.read().await.db_key(&pid)?;
             let db = group_db(&state.base, &pid, &db_key)?;
             let group = GroupChat::get(&db, &id)?;
             let members = Member::list(&db, &id)?;
@@ -104,7 +104,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<Global>) {
             let name = params[0].as_str().ok_or(RpcError::ParseError)?.to_owned();
 
             let pid = state.pid().await;
-            let group_lock = state.group.read().await;
+            let group_lock = state.own.read().await;
             let db_key = group_lock.db_key(&pid)?;
             let me = group_lock.clone_user(&pid)?;
             drop(group_lock);
@@ -157,7 +157,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<Global>) {
             let fid = params[1].as_i64().ok_or(RpcError::ParseError)?;
 
             let pid = state.pid().await;
-            let db_key = state.group.read().await.db_key(&pid)?;
+            let db_key = state.own.read().await.db_key(&pid)?;
             let group_db = group_db(&state.base, &pid, &db_key)?;
             let chat_db = chat_db(&state.base, &pid, &db_key)?;
             let s_db = session_db(&state.base, &pid, &db_key)?;
@@ -220,7 +220,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<Global>) {
             let m_content = params[2].as_str().ok_or(RpcError::ParseError)?;
 
             let pid = state.pid().await;
-            let db_key = state.group.read().await.db_key(&pid)?;
+            let db_key = state.own.read().await.db_key(&pid)?;
             let db = group_db(&state.base, &pid, &db_key)?;
             let s_db = session_db(&state.base, &pid, &db_key)?;
 
@@ -267,7 +267,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<Global>) {
 
             let mut results = HandleResult::new();
             let pid = state.pid().await;
-            let db_key = state.group.read().await.db_key(&pid)?;
+            let db_key = state.own.read().await.db_key(&pid)?;
             let db = group_db(&state.base, &pid, &db_key)?;
             let s_db = session_db(&state.base, &pid, &db_key)?;
 
@@ -299,7 +299,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<Global>) {
 
             let mut results = HandleResult::new();
             let pid = state.pid().await;
-            let db_key = state.group.read().await.db_key(&pid)?;
+            let db_key = state.own.read().await.db_key(&pid)?;
             let db = group_db(&state.base, &pid, &db_key)?;
             let s_db = session_db(&state.base, &pid, &db_key)?;
 

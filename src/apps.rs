@@ -63,7 +63,7 @@ pub(crate) async fn app_layer_handle(
 
                 let mut delete: HashMap<GroupChatId, Vec<usize>> = HashMap::new();
                 let pid = global.pid().await;
-                let db_key = global.group.read().await.db_key(&pid)?;
+                let db_key = global.own.read().await.db_key(&pid)?;
                 let db = group_db(&global.base, &pid, &db_key)?;
 
                 for (gid, session) in &layer.groups {

@@ -7,8 +7,8 @@ use tdn::{
 use tokio::{sync::mpsc::Sender, sync::RwLock};
 
 use crate::account::Account;
-use crate::group::Group;
 use crate::layer::Layer;
+use crate::own::Own;
 
 /// global status.
 pub(crate) struct Global {
@@ -18,8 +18,8 @@ pub(crate) struct Global {
     pub peer_pub_height: RwLock<u64>,
     /// current account own height.
     pub peer_own_height: RwLock<u64>,
-    /// current group.
-    pub group: RwLock<Group>,
+    /// current own.
+    pub own: RwLock<Own>,
     /// current layer.
     pub layer: RwLock<Layer>,
     /// message delivery tracking. uuid, me_gid, db_id.
@@ -61,7 +61,7 @@ impl Global {
             peer_id: RwLock::new(PeerId::default()),
             peer_pub_height: RwLock::new(0),
             peer_own_height: RwLock::new(0),
-            group: RwLock::new(Group::init(accounts)),
+            own: RwLock::new(Own::init(accounts)),
             layer: RwLock::new(Layer::init()),
             p2p_send: RwLock::new(None),
             _delivery: RwLock::new(HashMap::new()),
@@ -104,7 +104,7 @@ impl Global {
         }
 
         let (pheight, oheight) =
-            self.group
+            self.own
                 .write()
                 .await
                 .reset(pid, lock, &self.base, &self.secret)?;
