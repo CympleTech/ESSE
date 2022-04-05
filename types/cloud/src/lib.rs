@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use tdn_types::{group::GroupId, primitives::PeerId};
 
 /// Personal data cloud service default TDN GROUP ID.
-pub const CLOUD_ID: GroupId = 5;
+pub const CLOUD_ID: GroupId = 4;
 
 /// ESSE service to peer Event.
 #[derive(Serialize, Deserialize)]

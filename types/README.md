@@ -3,12 +3,11 @@
 ESSE bulit-in app open types.
 
 ### Default GROUP_ID
-- 0 - Own distributed devices.
-- 1 - Chat.
-- 2 - Group Chat.
-- 3 - DAO.
-- 4 - Domain.
-- 5 - Cloud.
+- 0 - ESSE (IM with friends).
+- 1 - Group Chat.
+- 2 - DAO.
+- 3 - Domain.
+- 4 - Cloud.
 
 ### Open Apps
 - Group Chat

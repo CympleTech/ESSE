@@ -4,10 +4,11 @@ version = "0.1.0"
 authors = ["CympleTech <dev@cympletech.com>"]
 edition = "2021"
 readme = "README.md"
-description = "ESSE common primitives."
+description = "ESSE common primitives and chat types."
 repository = "https://github.com/cympletech/esse_types/primitives"
-keywords = ["distributed", "p2p", "did", "ESSE"]
+keywords = ["distributed", "p2p", "chat", "ESSE"]
 license = "MIT/Apache-2.0"
 
 [dependencies]
-tdn_types = { version = "0.7", default-features = false }
+serde = { version = "1", features = ["derive"] }
+tdn_types = { version = "0.8", default-features = false }

@@ -1,4 +1,4 @@
-use chat_types::{MessageType, NetworkMessage};
+use esse_primitives::{MessageType, NetworkMessage};
 use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
 use tdn::types::{

@@ -10,7 +10,7 @@ keywords = ["distributed", "p2p", "DAO", "ESSE"]
 license = "MIT/Apache-2.0"
 
 [dependencies]
-chat_types = { path = "../chat", version = "0.1" }
+esse_primitives = { version = "0.1", path = "../primitives" }
 serde = { version = "1", features = ["derive"] }
-tdn_types = { version = "0.7", default-features = false }
-tdn_did = { version = "0.7", default-features = false }
+tdn_types = { version = "0.8", default-features = false }
+tdn_did = { version = "0.8", default-features = false }

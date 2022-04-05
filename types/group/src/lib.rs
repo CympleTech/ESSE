@@ -1,10 +1,9 @@
+use esse_primitives::NetworkMessage;
 use serde::{Deserialize, Serialize};
 use tdn_types::{group::GroupId, primitives::PeerId};
 
-use chat_types::NetworkMessage;
-
 /// Group chat app(service) default TDN GROUP ID.
-pub const GROUP_CHAT_ID: GroupId = 2;
+pub const GROUP_CHAT_ID: GroupId = 1;
 
 /// Group chat Group ID.
 pub type GroupChatId = u64;

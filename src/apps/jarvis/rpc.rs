@@ -1,3 +1,4 @@
+use esse_primitives::MessageType;
 use rand::Rng;
 use std::sync::Arc;
 use tdn::types::{
@@ -8,8 +9,6 @@ use tdn::types::{
 use tdn_did::Language;
 use tdn_storage::local::DStorage;
 use tokio::sync::mpsc::Sender;
-
-use chat_types::MessageType;
 
 use crate::account::lang_from_i64;
 use crate::apps::chat::raw_to_network_message;

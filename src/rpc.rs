@@ -1,5 +1,4 @@
-use chat_types::CHAT_ID;
-use esse_primitives::{id_from_str, id_to_str};
+use esse_primitives::{id_from_str, id_to_str, ESSE_ID};
 use group_types::{GroupChatId, LayerEvent as GroupLayerEvent, GROUP_CHAT_ID};
 use std::net::SocketAddr;
 use std::sync::Arc;
@@ -465,7 +464,7 @@ fn new_rpc_handler(global: Arc<Global>) -> RpcHandler<Global> {
                     }
                     let data = bincode::serialize(&ChatLayerEvent::Suspend)?;
                     let msg = SendType::Event(0, remote_id, data);
-                    results.layers.push((CHAT_ID, msg));
+                    results.layers.push((ESSE_ID, msg));
                 }
                 SessionType::Group => {
                     let remote_gid: GroupChatId =

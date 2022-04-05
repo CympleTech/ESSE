@@ -89,10 +89,13 @@ pub async fn start(db_path: String) -> Result<()> {
 
     while let Some(message) = self_recv.recv().await {
         match message {
-            ReceiveMessage::Group(g_msg) => {
-                if let Ok(handle_result) = group_handle(g_msg, &global).await {
+            ReceiveMessage::Own(o_msg) => {
+                if let Ok(handle_result) = group_handle(o_msg, &global).await {
                     handle(handle_result, now_rpc_uid, true, &global).await;
                 }
+            }
+            ReceiveMessage::Group(_) => {
+                warn!("ESSE has no Group Message!");
             }
             ReceiveMessage::Layer(fgid, tgid, l_msg) => {
                 if let Ok(handle_result) = app_layer_handle(fgid, tgid, l_msg, &global).await {
@@ -214,10 +217,11 @@ pub async fn start(db_path: String) -> Result<()> {
 #[inline]
 async fn handle(handle_result: HandleResult, uid: u64, is_ws: bool, global: &Arc<Global>) {
     let HandleResult {
+        mut owns,
         mut rpcs,
-        mut groups,
         mut layers,
         mut networks,
+        groups: _, // no-group message.
     } = handle_result;
 
     loop {
@@ -235,10 +239,10 @@ async fn handle(handle_result: HandleResult, uid: u64, is_ws: bool, global: &Arc
 
     if let Ok(sender) = global.sender().await {
         loop {
-            if groups.len() != 0 {
-                let msg = groups.remove(0);
+            if owns.len() != 0 {
+                let msg = owns.remove(0);
                 sender
-                    .send(SendMessage::Group(msg))
+                    .send(SendMessage::Own(msg))
                     .await
                     .expect("TDN channel closed");
             } else {

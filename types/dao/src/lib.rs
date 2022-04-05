@@ -1,10 +1,9 @@
+use esse_primitives::NetworkMessage;
 use serde::{Deserialize, Serialize};
 use tdn_types::{group::GroupId, primitives::PeerId};
 
-use chat_types::NetworkMessage;
-
 /// Dao app(service) default TDN GROUP ID.
-pub const DAO_ID: GroupId = 3;
+pub const DAO_ID: GroupId = 2;
 
 /// Dao ID type.
 pub type DaoId = u64;

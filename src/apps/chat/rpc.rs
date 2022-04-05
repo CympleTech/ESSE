@@ -1,5 +1,4 @@
-use chat_types::{MessageType, CHAT_ID};
-use esse_primitives::id_from_str;
+use esse_primitives::{id_from_str, MessageType, ESSE_ID};
 use std::sync::Arc;
 use tdn::types::{
     message::SendType,
@@ -183,11 +182,11 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<Global>) {
                 let data = bincode::serialize(&LayerEvent::Close)?;
                 results
                     .layers
-                    .push((CHAT_ID, SendType::Event(0, friend.pid, data)));
+                    .push((ESSE_ID, SendType::Event(0, friend.pid, data)));
 
                 results
                     .layers
-                    .push((CHAT_ID, SendType::Disconnect(friend.pid)));
+                    .push((ESSE_ID, SendType::Disconnect(friend.pid)));
             }
 
             // state.group.write().await.broadcast(
@@ -223,11 +222,11 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<Global>) {
                 let data = bincode::serialize(&LayerEvent::Close)?;
                 results
                     .layers
-                    .push((CHAT_ID, SendType::Event(0, friend.pid, data)));
+                    .push((ESSE_ID, SendType::Event(0, friend.pid, data)));
 
                 results
                     .layers
-                    .push((CHAT_ID, SendType::Disconnect(friend.pid)));
+                    .push((ESSE_ID, SendType::Disconnect(friend.pid)));
             }
 
             // state.group.write().await.broadcast(
@@ -286,7 +285,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<Global>) {
             let req = LayerEvent::Request(name, request.remark);
             let data = bincode::serialize(&req).unwrap_or(vec![]);
             let msg = SendType::Event(0, request.pid, data);
-            results.layers.push((CHAT_ID, msg));
+            results.layers.push((ESSE_ID, msg));
 
             Ok(results)
         },
@@ -333,7 +332,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<Global>) {
 
             let data = bincode::serialize(&LayerEvent::Agree).unwrap_or(vec![]);
             let msg = SendType::Event(0, friend.pid, data);
-            results.layers.push((CHAT_ID, msg));
+            results.layers.push((ESSE_ID, msg));
 
             Ok(results)
         },
@@ -356,7 +355,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<Global>) {
 
             let data = bincode::serialize(&LayerEvent::Reject).unwrap_or(vec![]);
             let msg = SendType::Event(0, req.pid, data);
-            let mut results = HandleResult::layer(CHAT_ID, msg);
+            let mut results = HandleResult::layer(ESSE_ID, msg);
 
             // state.group.write().await.broadcast(
             //     &gid,
@@ -455,7 +454,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<Global>) {
             let data = bincode::serialize(&event).unwrap_or(vec![]);
             results
                 .layers
-                .push((CHAT_ID, SendType::Event(tid, fpid, data)));
+                .push((ESSE_ID, SendType::Event(tid, fpid, data)));
 
             // UPDATE SESSION.
             let s_db = session_db(&state.base, &pid, &db_key)?;

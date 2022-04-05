@@ -1,3 +1,89 @@
+use serde::{Deserialize, Serialize};
+use tdn_types::{
+    group::GroupId,
+    primitives::{new_io_error, PeerId, PEER_ID_LENGTH},
+};
+
+/// ESSE chat service default TDN GROUP ID.
+pub const ESSE_ID: GroupId = 0;
+
+/// message type use in network.
+#[derive(Serialize, Deserialize, Clone)]
+pub enum NetworkMessage {
+    String(String),                   // content
+    Image(Vec<u8>),                   // image bytes.
+    File(String, Vec<u8>),            // filename, file bytes.
+    Contact(PeerId, String, Vec<u8>), // PeerId, name, avatar bytes.
+    Record(Vec<u8>, u32),             // record audio bytes.
+    Emoji,
+    Phone,
+    Video,
+    Invite(String),
+    Transfer(String),
+}
+
+/// common message types.
+#[derive(Copy, Clone, Eq, PartialEq)]
+pub enum MessageType {
+    String,
+    Image,
+    File,
+    Contact,
+    Record,
+    Emoji,
+    Phone,
+    Video,
+    Invite,
+    Transfer,
+}
+
+impl MessageType {
+    pub fn to_int(&self) -> i64 {
+        match self {
+            MessageType::String => 0,
+            MessageType::Image => 1,
+            MessageType::File => 2,
+            MessageType::Contact => 3,
+            MessageType::Record => 4,
+            MessageType::Emoji => 5,
+            MessageType::Phone => 6,
+            MessageType::Video => 7,
+            MessageType::Invite => 8,
+            MessageType::Transfer => 9,
+        }
+    }
+
+    pub fn from_int(i: i64) -> MessageType {
+        match i {
+            0 => MessageType::String,
+            1 => MessageType::Image,
+            2 => MessageType::File,
+            3 => MessageType::Contact,
+            4 => MessageType::Record,
+            5 => MessageType::Emoji,
+            6 => MessageType::Phone,
+            7 => MessageType::Video,
+            8 => MessageType::Invite,
+            9 => MessageType::Transfer,
+            _ => MessageType::String,
+        }
+    }
+}
+
+pub fn id_to_str(peer: &PeerId) -> String {
+    bs32::encode(&peer.0)
+}
+
+pub fn id_from_str(s: &str) -> std::io::Result<PeerId> {
+    let data = bs32::decode(s).ok_or(new_io_error("id from string is failure."))?;
+    if data.len() != PEER_ID_LENGTH {
+        return Err(new_io_error("id from string is failure."));
+    }
+    let mut bytes = [0u8; PEER_ID_LENGTH];
+    bytes.copy_from_slice(&data);
+    Ok(PeerId(bytes))
+}
+
 pub mod bs32 {
     use std::cmp::min;
 
@@ -73,20 +159,4 @@ pub mod bs32 {
         ret.truncate(output_length);
         Some(ret)
     }
-}
-
-use tdn_types::primitives::{new_io_error, PeerId, PEER_ID_LENGTH};
-
-pub fn id_to_str(peer: &PeerId) -> String {
-    bs32::encode(&peer.0)
-}
-
-pub fn id_from_str(s: &str) -> std::io::Result<PeerId> {
-    let data = bs32::decode(s).ok_or(new_io_error("id from string is failure."))?;
-    if data.len() != PEER_ID_LENGTH {
-        return Err(new_io_error("id from string is failure."));
-    }
-    let mut bytes = [0u8; PEER_ID_LENGTH];
-    bytes.copy_from_slice(&data);
-    Ok(PeerId(bytes))
 }

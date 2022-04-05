@@ -1,3 +1,4 @@
+use esse_primitives::NetworkMessage;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -10,8 +11,6 @@ use tdn::types::{
 };
 use tdn_storage::local::DStorage;
 use tokio::sync::{mpsc::Sender, RwLock};
-
-use chat_types::NetworkMessage;
 
 use crate::account::{Account, User};
 use crate::apps::chat::LayerEvent;

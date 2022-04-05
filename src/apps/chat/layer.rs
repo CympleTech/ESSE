@@ -1,4 +1,4 @@
-use chat_types::{MessageType, NetworkMessage, CHAT_ID};
+use esse_primitives::{MessageType, NetworkMessage, ESSE_ID};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tdn::types::{
@@ -63,15 +63,15 @@ pub(crate) async fn handle(msg: RecvType, global: &Arc<Global>) -> Result<Handle
             if let Ok(height) = handle_connect(pid, &peer, global, &mut results).await {
                 let peer_id = peer.id;
                 let msg = SendType::Result(0, peer, true, false, vec![]);
-                results.layers.push((CHAT_ID, msg));
+                results.layers.push((ESSE_ID, msg));
 
                 let info = LayerEvent::InfoReq(height);
                 let data = bincode::serialize(&info).unwrap_or(vec![]);
                 let msg = SendType::Event(0, peer_id, data);
-                results.layers.push((CHAT_ID, msg));
+                results.layers.push((ESSE_ID, msg));
             } else {
                 let msg = SendType::Result(0, peer, false, false, vec![]);
-                results.layers.push((CHAT_ID, msg));
+                results.layers.push((ESSE_ID, msg));
             }
         }
         RecvType::Result(peer, is_ok, _) => {
@@ -81,10 +81,10 @@ pub(crate) async fn handle(msg: RecvType, global: &Arc<Global>) -> Result<Handle
                     let info = LayerEvent::InfoReq(height);
                     let data = bincode::serialize(&info).unwrap_or(vec![]);
                     let msg = SendType::Event(0, peer.id, data);
-                    results.layers.push((CHAT_ID, msg));
+                    results.layers.push((ESSE_ID, msg));
                 } else {
                     let msg = SendType::Result(0, peer, false, false, vec![]);
-                    results.layers.push((CHAT_ID, msg));
+                    results.layers.push((ESSE_ID, msg));
                 }
             } else {
                 let db_key = global.group.read().await.db_key(&pid)?;
@@ -214,7 +214,7 @@ impl LayerEvent {
                 } else {
                     let data = bincode::serialize(&LayerEvent::Agree).unwrap_or(vec![]);
                     let msg = SendType::Event(0, fpid, data);
-                    results.layers.push((CHAT_ID, msg));
+                    results.layers.push((ESSE_ID, msg));
                 }
             }
             LayerEvent::Agree => {
@@ -298,7 +298,7 @@ impl LayerEvent {
                     ));
                     let data = bincode::serialize(&info).unwrap_or(vec![]);
                     let msg = SendType::Event(0, fpid, data);
-                    results.layers.push((CHAT_ID, msg));
+                    results.layers.push((ESSE_ID, msg));
                 }
             }
             LayerEvent::InfoRes(remote) => {
@@ -336,7 +336,7 @@ impl LayerEvent {
                 drop(db);
                 results.rpcs.push(rpc::friend_close(fid));
                 if !keep {
-                    results.layers.push((CHAT_ID, SendType::Disconnect(fpid)))
+                    results.layers.push((ESSE_ID, SendType::Disconnect(fpid)))
                 }
                 // TODO close session
             }
@@ -349,7 +349,7 @@ impl LayerEvent {
 pub(crate) fn chat_conn(pid: PeerId, results: &mut HandleResult) {
     results
         .layers
-        .push((CHAT_ID, SendType::Connect(0, Peer::peer(pid), vec![])));
+        .push((ESSE_ID, SendType::Connect(0, Peer::peer(pid), vec![])));
 }
 
 // UPDATE SESSION.

@@ -1,4 +1,4 @@
-use chat_types::MessageType;
+use esse_primitives::MessageType;
 use group_types::{Event, GroupChatId, LayerConnect, LayerEvent, LayerResult, GROUP_CHAT_ID};
 use std::sync::Arc;
 use tdn::types::{

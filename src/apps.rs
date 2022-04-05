@@ -1,7 +1,7 @@
-use chat_types::CHAT_ID;
 use cloud_types::CLOUD_ID;
 use dao_types::DAO_ID;
 use domain_types::DOMAIN_ID;
+use esse_primitives::ESSE_ID;
 use group_types::{GroupChatId, GROUP_CHAT_ID};
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -46,7 +46,7 @@ pub(crate) async fn app_layer_handle(
 ) -> Result<HandleResult> {
     debug!("TODO GOT LAYER MESSAGE: ====== {} -> {} ===== ", fgid, tgid);
     match (fgid, tgid) {
-        (CHAT_ID, 0) | (0, CHAT_ID) => chat::handle(msg, global).await,
+        (ESSE_ID, 0) | (0, ESSE_ID) => chat::handle(msg, global).await,
         (GROUP_CHAT_ID, 0) | (0, GROUP_CHAT_ID) => group::handle(msg, global).await,
         (DOMAIN_ID, 0) | (0, DOMAIN_ID) => domain::handle(msg, global).await,
         (CLOUD_ID, 0) | (0, CLOUD_ID) => cloud::handle(msg, global).await,

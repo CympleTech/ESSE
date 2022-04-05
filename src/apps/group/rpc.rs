@@ -1,4 +1,4 @@
-use chat_types::{MessageType, CHAT_ID};
+use esse_primitives::{MessageType, ESSE_ID};
 use group_types::{Event, LayerEvent, GROUP_CHAT_ID};
 use std::sync::Arc;
 use tdn::types::{
@@ -178,7 +178,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<Global>) {
             let tid = state.layer.write().await.delivery(msg.id);
             let data = bincode::serialize(&event).unwrap_or(vec![]);
             let lmsg = SendType::Event(tid, f.pid, data);
-            results.layers.push((CHAT_ID, lmsg));
+            results.layers.push((ESSE_ID, lmsg));
 
             // update session.
             crate::apps::chat::update_session(&s_db, &id, &msg, &mut results);

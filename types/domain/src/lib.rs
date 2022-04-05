@@ -4,7 +4,7 @@ use tdn_types::{group::GroupId, primitives::PeerId};
 // Same ID can has many name !.
 
 /// Group chat app(service) default TDN GROUP ID.
-pub const DOMAIN_ID: GroupId = 4;
+pub const DOMAIN_ID: GroupId = 3;
 
 /// ESSE domain service to peer layer Event.
 #[derive(Serialize, Deserialize)]

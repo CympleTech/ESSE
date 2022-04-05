@@ -1,11 +1,10 @@
+use esse_primitives::MessageType;
 use std::time::{SystemTime, UNIX_EPOCH};
 use tdn::types::{
     primitives::Result,
     rpc::{json, RpcParam},
 };
 use tdn_storage::local::{DStorage, DsValue};
-
-use chat_types::MessageType;
 
 pub(crate) struct Message {
     pub id: i64,

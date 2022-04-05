@@ -1,5 +1,4 @@
-use chat_types::CHAT_ID;
-use esse_primitives::id_to_str;
+use esse_primitives::{id_to_str, ESSE_ID};
 use group_types::GroupChatId;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -263,7 +262,7 @@ impl Layer {
 
         for fpid in self.chats.keys() {
             let msg = SendType::Event(0, *fpid, data.clone());
-            results.layers.push((CHAT_ID, msg));
+            results.layers.push((ESSE_ID, msg));
         }
 
         // TODO GROUPS

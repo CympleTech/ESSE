@@ -1,4 +1,4 @@
-use esse_primitives::id_from_str;
+use esse_primitives::{id_from_str, MessageType, NetworkMessage};
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -7,8 +7,6 @@ use tdn::types::{
     rpc::{json, RpcParam},
 };
 use tdn_storage::local::{DStorage, DsValue};
-
-use chat_types::{MessageType, NetworkMessage};
 
 use crate::apps::chat::{from_network_message, raw_to_network_message, to_network_message as tnm};
 use crate::storage::group_db;

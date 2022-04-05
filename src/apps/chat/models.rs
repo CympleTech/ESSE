@@ -6,8 +6,7 @@ pub(crate) use self::friend::Friend;
 pub(crate) use self::message::{from_model, handle_nmsg, Message};
 pub(crate) use self::request::Request;
 
-use chat_types::{MessageType, NetworkMessage};
-use esse_primitives::{id_from_str, id_to_str};
+use esse_primitives::{id_from_str, id_to_str, MessageType, NetworkMessage};
 use group_types::GroupChatId;
 use std::path::PathBuf;
 use tdn::types::primitives::{HandleResult, PeerId, Result};
