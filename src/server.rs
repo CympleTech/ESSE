@@ -10,22 +10,17 @@ use tdn::{
         primitives::{HandleResult, Result},
     },
 };
-use tokio::{
-    sync::mpsc::{error::SendError, Sender},
-    sync::RwLock,
-};
-
 use tdn_storage::local::DStorage;
+use tokio::{sync::mpsc::Sender, sync::RwLock};
 
 use crate::account::Account;
 use crate::apps::app_layer_handle;
 use crate::global::Global;
 use crate::group::group_handle;
-use crate::layer::Layer;
 use crate::migrate::{main_migrate, ACCOUNT_DB};
-use crate::own::{handle as own_handle, Own};
+use crate::own::handle as own_handle;
 use crate::primitives::network_seeds;
-use crate::rpc::{init_rpc, inner_rpc};
+use crate::rpc::{init_rpc, inner_rpc, session_lost};
 
 pub const DEFAULT_WS_ADDR: &'static str = "127.0.0.1:7366";
 pub const DEFAULT_LOG_FILE: &'static str = "esse.log.txt";
@@ -85,8 +80,8 @@ pub async fn start(db_path: String) -> Result<()> {
     // //let mut group_rpcs: HashMap<u64, GroupId> = HashMap::new();
     let mut now_rpc_uid = 0;
 
-    // // running session remain task.
-    // tokio::spawn(session_remain(peer_id, layer.clone(), sender.clone()));
+    // running session remain task.
+    tokio::spawn(session_remain(global.clone()));
 
     while let Some(message) = self_recv.recv().await {
         match message {
@@ -128,15 +123,6 @@ pub async fn start(db_path: String) -> Result<()> {
                 global
                     .send(SendMessage::Network(NetworkType::NetworkReboot))
                     .await?;
-                // let t_sender = tdn_send.clone();
-                // let g_conns = group.read().await.all_distribute_conns();
-                // let l_conns = layer
-                //     .read()
-                //     .await
-                //     .all_layer_conns()
-                //     .await
-                //     .unwrap_or(HashMap::new());
-                // tokio::spawn(sleep_waiting_reboot(t_sender, g_conns, l_conns));
             }
         }
     }
@@ -144,78 +130,68 @@ pub async fn start(db_path: String) -> Result<()> {
     Ok(())
 }
 
-// #[inline]
-// async fn sleep_waiting_reboot(
-//     sender: Sender<SendMessage>,
-//     groups: HashMap<GroupId, Vec<SendType>>,
-//     layers: HashMap<GroupId, Vec<(GroupId, SendType)>>,
-// ) -> std::result::Result<(), SendError<SendMessage>> {
-//     tokio::time::sleep(std::time::Duration::from_secs(10)).await;
+async fn session_remain(global: Arc<Global>) -> Result<()> {
+    loop {
+        tokio::time::sleep(std::time::Duration::from_secs(120)).await;
+        if let Some(uid) = RPC_WS_UID.get() {
+            let mut rpcs = vec![];
+            let mut addrs = vec![];
 
-//     for (gid, conns) in groups {
-//         for conn in conns {
-//             sender.send(SendMessage::Group(gid, conn)).await?;
-//         }
-//     }
+            // clear group connections.
+            let mut group_lock = global.group.write().await;
+            let mut closed = vec![];
+            for (pid, session) in group_lock.sessions.iter_mut() {
+                if session.clear() {
+                    closed.push((*pid, session.sid));
+                    addrs.push(*pid);
+                }
+            }
+            for (pid, sid) in closed {
+                group_lock.rm_online(&pid);
+                rpcs.push(session_lost(&sid));
+            }
+            drop(group_lock);
 
-//     for (fgid, conns) in layers {
-//         for (tgid, conn) in conns {
-//             sender.send(SendMessage::Layer(fgid, tgid, conn)).await?;
-//         }
-//     }
+            // clear layer connections.
+            let mut layer_lock = global.layer.write().await;
+            let mut closed = vec![];
+            for (gcid, session) in layer_lock.groups.iter_mut() {
+                if session.clear() {
+                    closed.push((*gcid, session.sid));
+                    for addr in &session.addrs {
+                        addrs.push(*addr);
+                    }
+                }
+            }
+            for (gcid, sid) in closed {
+                layer_lock.group_del(&gcid);
+                rpcs.push(session_lost(&sid));
+            }
+            drop(layer_lock);
 
-//     Ok(())
-// }
+            for rpc in rpcs {
+                let _ = global.send(SendMessage::Rpc(*uid, rpc, true)).await;
+            }
 
-// async fn session_remain(
-//     self_addr: PeerId,
-//     layer: Arc<RwLock<Layer>>,
-//     sender: Sender<SendMessage>,
-// ) -> Result<()> {
-//     loop {
-//         tokio::time::sleep(std::time::Duration::from_secs(120)).await;
-//         if let Some(uid) = RPC_WS_UID.get() {
-//             let mut layer_lock = layer.write().await;
-//             let mut rpcs = vec![];
-//             let mut addrs = HashMap::new();
+            for addr in addrs {
+                if global.group.read().await.is_online(&addr) {
+                    continue;
+                }
 
-//             for (_, running) in layer_lock.runnings.iter_mut() {
-//                 let closed = running.close_suspend(&self_addr);
-//                 for (gid, addr, sid) in closed {
-//                     addrs.insert(addr, false);
-//                     rpcs.push(crate::rpc::session_lost(gid, &sid));
-//                 }
-//             }
-//             drop(layer_lock);
+                if global.layer.read().await.is_addr_online(&addr) {
+                    continue;
+                }
 
-//             let layer_lock = layer.read().await;
-//             for (_, running) in layer_lock.runnings.iter() {
-//                 for (addr, keep) in addrs.iter_mut() {
-//                     if running.check_addr_online(addr) {
-//                         *keep = true;
-//                     }
-//                 }
-//             }
-//             drop(layer_lock);
-
-//             for rpc in rpcs {
-//                 let _ = sender.send(SendMessage::Rpc(*uid, rpc, true)).await;
-//             }
-
-//             for (addr, keep) in addrs {
-//                 if !keep {
-//                     let _ = sender
-//                         .send(SendMessage::Layer(
-//                             GroupId::default(),
-//                             GroupId::default(),
-//                             SendType::Disconnect(addr),
-//                         ))
-//                         .await;
-//                 }
-//             }
-//         }
-//     }
-// }
+                let _ = global
+                    .send(SendMessage::Layer(
+                        GroupId::default(),
+                        SendType::Disconnect(addr),
+                    ))
+                    .await;
+            }
+        }
+    }
+}
 
 #[inline]
 async fn handle(handle_result: HandleResult, uid: u64, is_ws: bool, global: &Arc<Global>) {

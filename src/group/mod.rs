@@ -209,4 +209,17 @@ impl GroupSession {
             self.remain = 6; // keep-alive 10~11 minutes 120s/time
         }
     }
+
+    pub fn clear(&mut self) -> bool {
+        if self.suspend_me && self.suspend_remote {
+            if self.remain == 0 {
+                true
+            } else {
+                self.remain -= 1;
+                false
+            }
+        } else {
+            false
+        }
+    }
 }

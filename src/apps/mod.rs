@@ -66,7 +66,7 @@ pub(crate) async fn app_layer_handle(
                                 .and_modify(|f| f.push(index))
                                 .or_insert(vec![index]);
                             if index == 0 {
-                                results.rpcs.push(session_lost(&session.s_id));
+                                results.rpcs.push(session_lost(&session.sid));
                             } else {
                                 if let Ok(mid) = group::Member::get_id(&db, &session.db_id, addr) {
                                     results
