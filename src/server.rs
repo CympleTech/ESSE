@@ -1,5 +1,4 @@
 use once_cell::sync::OnceCell;
-use simplelog::{CombinedLogger, Config as LogConfig, LevelFilter};
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -27,14 +26,7 @@ pub const DEFAULT_LOG_FILE: &'static str = "esse.log.txt";
 
 pub static RPC_WS_UID: OnceCell<u64> = OnceCell::new();
 
-pub async fn start(db_path: String) -> Result<()> {
-    let db_path = PathBuf::from(db_path);
-    if !db_path.exists() {
-        tokio::fs::create_dir_all(&db_path).await?;
-    }
-
-    init_log(db_path.clone());
-
+pub async fn start(db_path: PathBuf) -> Result<()> {
     let mut config = Config::default();
     config.db_path = Some(db_path.clone());
     config.p2p_allowlist.append(&mut network_seeds());
@@ -266,26 +258,4 @@ async fn handle(handle_result: HandleResult, uid: u64, is_ws: bool, global: &Arc
             }
         }
     }
-}
-
-#[inline]
-pub fn init_log(mut db_path: PathBuf) {
-    db_path.push(DEFAULT_LOG_FILE);
-
-    #[cfg(debug_assertions)]
-    CombinedLogger::init(vec![simplelog::TermLogger::new(
-        LevelFilter::Debug,
-        LogConfig::default(),
-        simplelog::TerminalMode::Mixed,
-        simplelog::ColorChoice::Auto,
-    )])
-    .unwrap();
-
-    #[cfg(not(debug_assertions))]
-    CombinedLogger::init(vec![simplelog::WriteLogger::new(
-        LevelFilter::Info,
-        LogConfig::default(),
-        std::fs::File::create(db_path).unwrap(),
-    )])
-    .unwrap();
 }

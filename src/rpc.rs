@@ -379,7 +379,8 @@ fn new_rpc_handler(global: Arc<Global>) -> RpcHandler<Global> {
         |_params: Vec<RpcParam>, state: Arc<Global>| async move {
             let mut results = HandleResult::new();
             results.networks.push(NetworkType::NetworkStop);
-            debug!("Account Offline: {}.", id_to_str(&state.pid().await));
+            let pid = state.pid().await;
+            debug!("Account Offline: {}.", id_to_str(&pid));
             state.clear().await;
             Ok(results)
         },

@@ -1,10 +1,12 @@
 #[macro_use]
-extern crate log;
+extern crate tracing;
 
 #[macro_use]
 extern crate anyhow;
 
 use std::env::args;
+use std::path::PathBuf;
+use tracing_subscriber::{filter::LevelFilter, prelude::*};
 
 mod account;
 mod apps;
@@ -24,13 +26,20 @@ mod utils;
 
 #[tokio::main]
 async fn main() {
-    console_subscriber::init();
+    let console_layer = console_subscriber::spawn();
+    tracing_subscriber::registry()
+        .with(console_layer)
+        .with(
+            tracing_subscriber::fmt::layer()
+                .with_level(true)
+                .with_filter(LevelFilter::DEBUG),
+        )
+        .init();
 
-    let db_path = args().nth(1).unwrap_or("./.tdn".to_owned());
-
-    if std::fs::metadata(&db_path).is_err() {
-        std::fs::create_dir(&db_path).unwrap();
+    let db_path = PathBuf::from(&args().nth(1).unwrap_or("./.tdn".to_owned()));
+    if !db_path.exists() {
+        tokio::fs::create_dir_all(&db_path).await.unwrap();
     }
 
-    let _ = server::start(db_path).await;
+    server::start(db_path).await.unwrap();
 }
