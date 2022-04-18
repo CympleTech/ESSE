@@ -278,7 +278,7 @@ async fn handle_event(
                 broadcast(&gid, global, &LayerEvent::GroupName(gid, name), results).await?;
             }
         }
-        LayerEvent::GroupClose(gid) => {
+        LayerEvent::GroupClose(_gid) => {
             // PEER
             let group = GroupChat::close(&db, &id)?;
             let s_db = session_db(&global.base, &pid, &db_key)?;

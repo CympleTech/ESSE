@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
 use tdn::{
-    prelude::{GroupId, P2pConfig, PeerId, PeerKey, ReceiveMessage, SendMessage},
+    prelude::{GroupId, P2pConfig, PeerId, ReceiveMessage, SendMessage},
     types::message::RpcSendMessage,
 };
 use tokio::{sync::mpsc::Sender, sync::RwLock};

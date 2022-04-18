@@ -7,7 +7,7 @@ use tdn::types::{
 
 use crate::global::Global;
 
-pub(crate) async fn handle(msg: RecvType, global: &Arc<Global>) -> Result<HandleResult> {
+pub(crate) async fn handle(msg: RecvType, _global: &Arc<Global>) -> Result<HandleResult> {
     let results = HandleResult::new();
 
     match msg {

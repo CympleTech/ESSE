@@ -3,7 +3,7 @@ use group_types::{Event, LayerEvent, GROUP_CHAT_ID};
 use std::sync::Arc;
 use tdn::types::{
     message::{RpcSendMessage, SendType},
-    primitives::{HandleResult, PeerId},
+    primitives::HandleResult,
     rpc::{json, rpc_response, RpcError, RpcHandler, RpcParam},
 };
 

@@ -522,7 +522,7 @@ impl Balance {
     }
 
     /// use for common and erc20.
-    pub fn update(db: &DStorage, address: &i64, token: &i64, value: &str) -> Result<()> {
+    pub fn _update(db: &DStorage, address: &i64, token: &i64, value: &str) -> Result<()> {
         let matrix = db.query(&format!(
             "SELECT id FROM balances WHERE address = {} AND token = {}",
             address, token,

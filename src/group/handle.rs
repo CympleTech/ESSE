@@ -1,9 +1,6 @@
-use esse_primitives::{MessageType, NetworkMessage};
-use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use esse_primitives::MessageType;
 use std::sync::Arc;
 use tdn::types::{
-    group::EventId,
     message::{RecvType, SendType},
     primitives::{DeliveryType, HandleResult, Peer, PeerId, Result},
 };
@@ -19,9 +16,7 @@ use crate::session::{connect_session, Session, SessionType};
 use crate::storage::{account_db, chat_db, session_db, write_avatar_sync};
 
 use super::rpc;
-use super::{
-    from_model, from_network_message, handle_nmsg, Friend, GroupEvent, InviteType, Message, Request,
-};
+use super::{handle_nmsg, Friend, GroupEvent, Message, Request};
 
 pub(crate) async fn group_handle(msg: RecvType, global: &Arc<Global>) -> Result<HandleResult> {
     debug!("---------DEBUG--------- GOT GROUP MESSAGE");
@@ -304,7 +299,7 @@ impl GroupEvent {
             GroupEvent::Close => {
                 let mut group = global.group.write().await;
                 group.rm_online(&fpid);
-                let (sid, fid) = group.get(&fpid)?;
+                let (_sid, fid) = group.get(&fpid)?;
                 let keep = group.is_online(&fpid);
                 drop(group);
 

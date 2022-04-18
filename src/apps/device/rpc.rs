@@ -16,11 +16,6 @@ pub(crate) fn device_create(device: &Device) -> RpcParam {
 }
 
 #[inline]
-pub(crate) fn _device_remove(id: i64) -> RpcParam {
-    rpc_response(0, "device-remove", json!([id]))
-}
-
-#[inline]
 pub(crate) fn device_online(id: i64) -> RpcParam {
     rpc_response(0, "device-online", json!([id]))
 }
@@ -32,6 +27,7 @@ pub(crate) fn device_offline(id: i64) -> RpcParam {
 
 #[inline]
 pub(crate) fn device_status(
+    id: i64,
     cpu: u32,
     memory: u32,
     swap: u32,
@@ -45,7 +41,7 @@ pub(crate) fn device_status(
     rpc_response(
         0,
         "device-status",
-        json!([cpu, memory, swap, disk, cpu_p, memory_p, swap_p, disk_p, uptime]),
+        json!([id, cpu, memory, swap, disk, cpu_p, memory_p, swap_p, disk_p, uptime]),
     )
 }
 
@@ -77,7 +73,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<Global>) {
             let id = params[0].as_i64().ok_or(RpcError::ParseError)?;
 
             let own_lock = state.own.read().await;
-            if id == own_lock.device()?.id {
+            if id == own_lock.current_device()?.0 {
                 let uptime = own_lock.uptime;
                 let (cpu, memory, swap, disk, cpu_p, memory_p, swap_p, disk_p) =
                     local_device_status();
@@ -95,7 +91,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<Global>) {
 
     handler.add_method(
         "device-search",
-        |_params: Vec<RpcParam>, state: Arc<Global>| async move {
+        |_params: Vec<RpcParam>, _state: Arc<Global>| async move {
             //let msg = state.own.read().await.create_message(&gid, Peer::peer(addr))?;
             //Ok(HandleResult::group(gid, msg))
             Ok(HandleResult::new())

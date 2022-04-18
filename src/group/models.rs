@@ -3,7 +3,7 @@ mod message;
 mod request;
 
 pub(crate) use self::friend::Friend;
-pub(crate) use self::message::{from_model, handle_nmsg, Message};
+pub(crate) use self::message::{handle_nmsg, Message};
 pub(crate) use self::request::Request;
 
 use esse_primitives::{id_from_str, id_to_str, MessageType, NetworkMessage};
@@ -11,7 +11,7 @@ use group_types::GroupChatId;
 use std::path::PathBuf;
 use tdn::types::primitives::{HandleResult, PeerId, Result};
 
-//use crate::apps::group::GroupChat;
+use crate::apps::group::GroupChat;
 use crate::rpc::session_create;
 use crate::storage::{
     chat_db, group_db, read_avatar, read_db_file, read_file, read_image, read_record, session_db,
@@ -57,14 +57,14 @@ pub(crate) async fn from_network_message(
                 InviteType::Group(gcd, addr, name) => {
                     // 1 add group chat.
                     let db = group_db(base, own, db_key)?;
-                    //let mut g = GroupChat::from(gcd, 0, addr, name);
-                    //g.insert(&db)?;
+                    let mut g = GroupChat::from(gcd, 0, addr, name);
+                    g.insert(&db)?;
 
                     // 2 add new session.
-                    //let mut session = g.to_session();
-                    //let s_db = session_db(base, own, db_key)?;
-                    //session.insert(&s_db)?;
-                    //results.rpcs.push(session_create(&session));
+                    let mut session = g.to_session();
+                    let s_db = session_db(base, own, db_key)?;
+                    session.insert(&s_db)?;
+                    results.rpcs.push(session_create(&session));
                 }
             }
 

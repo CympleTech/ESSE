@@ -1,19 +1,6 @@
-use esse_primitives::id_to_str;
 use group_types::GroupChatId;
-use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::path::PathBuf;
-use std::sync::Arc;
-use tdn::types::{
-    message::SendType,
-    primitives::{HandleResult, Peer, PeerId, Result},
-};
-use tokio::sync::RwLock;
-
-use crate::account::User;
-use crate::group::GroupEvent;
-use crate::own::Own;
-use crate::session::{Session, SessionType};
+use tdn::types::primitives::{PeerId, Result};
 
 /// ESSE layers.
 pub(crate) struct Layer {

@@ -19,7 +19,7 @@ pub(crate) fn friend_info(friend: &Friend) -> RpcParam {
 }
 
 #[inline]
-pub(crate) fn friend_update(fid: i64, remark: &str) -> RpcParam {
+pub(crate) fn _friend_update(fid: i64, remark: &str) -> RpcParam {
     rpc_response(0, "chat-friend-update", json!([fid, remark]))
 }
 
@@ -29,7 +29,7 @@ pub(crate) fn friend_close(fid: i64) -> RpcParam {
 }
 
 #[inline]
-pub(crate) fn friend_delete(fid: i64) -> RpcParam {
+pub(crate) fn _friend_delete(fid: i64) -> RpcParam {
     rpc_response(0, "chat-friend-delete", json!([fid]))
 }
 
@@ -69,7 +69,7 @@ pub(crate) fn message_delivery(id: i64, is_d: bool) -> RpcParam {
 }
 
 #[inline]
-pub(crate) fn message_delete(id: i64) -> RpcParam {
+pub(crate) fn _message_delete(id: i64) -> RpcParam {
     rpc_response(0, "chat-message-delete", json!([id]))
 }
 
@@ -140,7 +140,7 @@ pub(crate) fn group_rpc(handler: &mut RpcHandler<Global>) {
             let id = params[0].as_i64().ok_or(RpcError::ParseError)?;
             let remark = params[1].as_str().ok_or(RpcError::ParseError)?;
 
-            let mut results = HandleResult::new();
+            let results = HandleResult::new();
             let pid = state.pid().await;
             let db_key = state.own.read().await.db_key(&pid)?;
             let db = chat_db(&state.base, &pid, &db_key)?;
@@ -342,7 +342,7 @@ pub(crate) fn group_rpc(handler: &mut RpcHandler<Global>) {
 
             let data = bincode::serialize(&GroupEvent::Reject).unwrap_or(vec![]);
             let msg = SendType::Event(0, req.pid, data);
-            let mut results = HandleResult::group(msg);
+            let results = HandleResult::group(msg);
 
             // state.own.write().await.broadcast(
             //     &gid,
@@ -458,7 +458,6 @@ pub(crate) fn group_rpc(handler: &mut RpcHandler<Global>) {
             let db_key = state.own.read().await.db_key(&pid)?;
             let db = chat_db(&state.base, &pid, &db_key)?;
 
-            let msg = Message::get(&db, &id)?;
             Message::delete(&db, &id)?;
             drop(db);
 

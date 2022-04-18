@@ -24,6 +24,8 @@ mod session;
 mod storage;
 mod utils;
 
+const DEFAULT_LOG_FILE: &'static str = "esse.log.txt";
+
 #[cfg(target_os = "android")]
 #[allow(non_snake_case)]
 pub mod android {
@@ -60,7 +62,7 @@ pub extern "C" fn start(db_path: *const c_char) {
         }
 
         // init log file.
-        let file_appender = tracing_appender::rolling::daily(&s_path, server::DEFAULT_LOG_FILE);
+        let file_appender = tracing_appender::rolling::daily(&s_path, DEFAULT_LOG_FILE);
         let (non_blocking, _guard) = tracing_appender::non_blocking(file_appender);
         tracing_subscriber::fmt()
             .with_writer(non_blocking)

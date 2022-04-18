@@ -1,8 +1,8 @@
-pub(crate) const ACCOUNT_TABLE_PATH: i64 = 0;
-pub(crate) const FRIEND_TABLE_PATH: i64 = 1;
-pub(crate) const REQUEST_TABLE_PATH: i64 = 2;
-pub(crate) const MESSAGE_TABLE_PATH: i64 = 3;
-pub(crate) const FILE_TABLE_PATH: i64 = 4;
+//pub(crate) const ACCOUNT_TABLE_PATH: i64 = 0;
+//pub(crate) const FRIEND_TABLE_PATH: i64 = 1;
+//pub(crate) const REQUEST_TABLE_PATH: i64 = 2;
+//pub(crate) const MESSAGE_TABLE_PATH: i64 = 3;
+//pub(crate) const FILE_TABLE_PATH: i64 = 4;
 
 #[rustfmt::skip]
 pub(super) const CONSENSUS_VERSIONS: [&str; 9] = [
@@ -10,6 +10,7 @@ pub(super) const CONSENSUS_VERSIONS: [&str; 9] = [
     id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
     name TEXT NOT NULL,
     info TEXT NOT NULL,
+    assist TEXT NOT NULL,
     peer TEXT NOT NULL,
     lasttime INTEGER NOT NULL);",
   "CREATE TABLE IF NOT EXISTS db_tables(

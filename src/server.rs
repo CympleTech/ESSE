@@ -10,7 +10,6 @@ use tdn::{
     },
 };
 use tdn_storage::local::DStorage;
-use tokio::{sync::mpsc::Sender, sync::RwLock};
 
 use crate::account::Account;
 use crate::apps::app_layer_handle;
@@ -22,7 +21,6 @@ use crate::primitives::network_seeds;
 use crate::rpc::{init_rpc, inner_rpc, session_lost};
 
 pub const DEFAULT_WS_ADDR: &'static str = "127.0.0.1:7366";
-pub const DEFAULT_LOG_FILE: &'static str = "esse.log.txt";
 
 pub static RPC_WS_UID: OnceCell<u64> = OnceCell::new();
 

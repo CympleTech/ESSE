@@ -209,7 +209,7 @@ pub(crate) async fn read_avatar(base: &PathBuf, pid: &PeerId, remote: &PeerId) -
     }
 }
 
-pub(crate) fn read_avatar_sync(base: &PathBuf, pid: &PeerId, remote: &PeerId) -> Result<Vec<u8>> {
+pub(crate) fn _read_avatar_sync(base: &PathBuf, pid: &PeerId, remote: &PeerId) -> Result<Vec<u8>> {
     let mut path = base.clone();
     path.push(id_to_str(pid));
     path.push(AVATAR_DIR);
@@ -266,7 +266,7 @@ pub(crate) async fn delete_avatar(base: &PathBuf, pid: &PeerId, remote: &PeerId)
     }
 }
 
-pub(crate) fn delete_avatar_sync(base: &PathBuf, pid: &PeerId, remote: &PeerId) -> Result<()> {
+pub(crate) fn _delete_avatar_sync(base: &PathBuf, pid: &PeerId, remote: &PeerId) -> Result<()> {
     let mut path = base.clone();
     path.push(id_to_str(pid));
     path.push(AVATAR_DIR);

@@ -347,7 +347,7 @@ impl Account {
         db.delete(&sql)
     }
 
-    pub fn update_consensus(&mut self, db: &DStorage, height: u64, eid: EventId) -> Result<usize> {
+    pub fn _update_consensus(&mut self, db: &DStorage, height: u64, eid: EventId) -> Result<usize> {
         self.own_height = height;
         self.event = eid;
         let sql = format!(

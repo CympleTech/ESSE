@@ -1,22 +1,13 @@
-use esse_primitives::{MessageType, NetworkMessage};
+use esse_primitives::NetworkMessage;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::sync::Arc;
 use tdn::types::{
     group::EventId,
-    message::{RecvType, SendType},
-    primitives::{DeliveryType, HandleResult, Peer, PeerId, Result},
+    message::SendType,
+    primitives::{HandleResult, PeerId, Result},
 };
-use tdn_storage::local::DStorage;
 
-use crate::account::{Account, User};
-use crate::global::Global;
-use crate::rpc::{
-    notice_menu, session_connect, session_create, session_last, session_lost, session_suspend,
-    session_update_name,
-};
-use crate::session::{connect_session, Session, SessionType};
-use crate::storage::{account_db, chat_db, session_db, write_avatar_sync};
+use crate::account::User;
 
 mod handle;
 mod models;
@@ -24,8 +15,8 @@ mod rpc;
 
 pub(crate) use handle::{group_conn, group_handle, update_session};
 pub(crate) use models::{
-    from_model, from_network_message, handle_nmsg, raw_to_network_message, to_network_message,
-    Friend, InviteType, Message, Request,
+    from_network_message, handle_nmsg, raw_to_network_message, to_network_message, Friend,
+    InviteType, Message, Request,
 };
 pub(crate) use rpc::group_rpc;
 
@@ -175,11 +166,11 @@ impl GroupSession {
         }
     }
 
-    pub fn info(&self) -> (i64, i64, i64) {
+    pub fn _info(&self) -> (i64, i64, i64) {
         (self.height, self.sid, self.fid)
     }
 
-    pub fn increased(&mut self) -> i64 {
+    pub fn _increased(&mut self) -> i64 {
         self.height += 1;
         self.height
     }

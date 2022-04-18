@@ -143,7 +143,7 @@ impl GroupChat {
     }
 
     pub fn insert(&mut self, db: &DStorage) -> Result<()> {
-        let mut unique_check = db.query(&format!(
+        let unique_check = db.query(&format!(
             "SELECT id from groups WHERE gid = {} AND addr = '{}'",
             self.gid,
             self.addr.to_hex()

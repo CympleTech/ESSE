@@ -57,7 +57,7 @@ pub(crate) fn network_dht(peers: Vec<PeerId>) -> RpcParam {
 }
 
 #[inline]
-pub(crate) fn account_update(pid: &PeerId, name: &str, avatar: String) -> RpcParam {
+pub(crate) fn _account_update(pid: &PeerId, name: &str, avatar: String) -> RpcParam {
     rpc_response(0, "account-update", json!([id_to_str(pid), name, avatar]))
 }
 
@@ -82,7 +82,7 @@ pub(crate) fn session_update_name(id: &i64, name: &str) -> RpcParam {
 }
 
 #[inline]
-pub(crate) fn session_update(id: &i64, addr: &PeerId, name: &str, is_top: bool) -> RpcParam {
+pub(crate) fn _session_update(id: &i64, addr: &PeerId, name: &str, is_top: bool) -> RpcParam {
     rpc_response(
         0,
         "session-update",
