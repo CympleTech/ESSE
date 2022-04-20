@@ -1,4 +1,7 @@
-use rand::Rng;
+use rand_chacha::{
+    rand_core::{RngCore, SeedableRng},
+    ChaChaRng,
+};
 use serde::{Deserialize, Serialize};
 use std::time::{SystemTime, UNIX_EPOCH};
 use tdn::types::{
@@ -145,7 +148,9 @@ impl Account {
         let wallet = ChainToken::ETH.update_main(&wallet_address, "");
         let w = Address::new(ChainToken::ETH, 0, wallet_address, true);
 
-        let key = rand::thread_rng().gen::<[u8; 32]>();
+        let mut rng = ChaChaRng::from_entropy();
+        let mut key = [0u8; 32];
+        rng.fill_bytes(&mut key);
         let ckey = encrypt_key(salt, lock, &key)?;
         let mut ebytes = encrypt_multiple(
             salt,

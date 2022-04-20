@@ -1,6 +1,9 @@
 use esse_primitives::id_to_str;
 use image::{load_from_memory, DynamicImage, GenericImageView};
-use rand::{distributions::Alphanumeric, thread_rng, Rng};
+use rand_chacha::{
+    rand_core::{RngCore, SeedableRng},
+    ChaChaRng,
+};
 use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
 use tdn::types::primitives::{PeerId, Result};
@@ -127,11 +130,10 @@ pub(crate) async fn read_image(base: &PathBuf, pid: &PeerId, name: &str) -> Resu
 
 #[inline]
 fn image_name() -> String {
-    let mut name: String = thread_rng()
-        .sample_iter(&Alphanumeric)
-        .take(20)
-        .map(char::from)
-        .collect();
+    let mut rng = ChaChaRng::from_entropy();
+    let mut key = [0u8; 20];
+    rng.fill_bytes(&mut key);
+    let mut name = hex::encode(&key);
     name.push_str(".png");
     name
 }

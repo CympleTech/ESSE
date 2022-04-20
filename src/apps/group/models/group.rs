@@ -1,5 +1,8 @@
 use group_types::GroupChatId;
-use rand::Rng;
+use rand_chacha::{
+    rand_core::{RngCore, SeedableRng},
+    ChaChaRng,
+};
 use std::time::{SystemTime, UNIX_EPOCH};
 use tdn::types::{
     primitives::{PeerId, Result},
@@ -31,7 +34,8 @@ pub(crate) struct GroupChat {
 
 impl GroupChat {
     pub fn new(addr: PeerId, name: String) -> Self {
-        let gid = rand::thread_rng().gen::<GroupChatId>();
+        let mut rng = ChaChaRng::from_entropy();
+        let gid = rng.next_u64();
 
         Self {
             gid,

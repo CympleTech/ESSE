@@ -1,4 +1,7 @@
-use rand::Rng;
+use rand_chacha::{
+    rand_core::{RngCore, SeedableRng},
+    ChaChaRng,
+};
 use serde::{Deserialize, Serialize};
 use std::time::{SystemTime, UNIX_EPOCH};
 use tdn::types::{
@@ -50,7 +53,10 @@ pub(crate) struct FileDid([u8; 32]);
 
 impl FileDid {
     pub fn generate() -> Self {
-        Self(rand::thread_rng().gen::<[u8; 32]>())
+        let mut rng = ChaChaRng::from_entropy();
+        let mut key = [0u8; 32];
+        rng.fill_bytes(&mut key);
+        Self(key)
     }
 
     pub fn to_hex(&self) -> String {

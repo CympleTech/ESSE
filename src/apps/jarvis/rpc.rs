@@ -1,5 +1,8 @@
 use esse_primitives::MessageType;
-use rand::Rng;
+use rand_chacha::{
+    rand_core::{RngCore, SeedableRng},
+    ChaChaRng,
+};
 use std::sync::Arc;
 use tdn::types::{
     message::RpcSendMessage,
@@ -28,7 +31,9 @@ async fn reply(
     let content = if msg.m_type == MessageType::String {
         if msg.content.ends_with("?") || msg.content.ends_with("？") {
             // answer book. ascill ? and SBC case.
-            let answer = rand::thread_rng().gen_range(0..171);
+            let mut rng = ChaChaRng::from_entropy();
+            let n = rng.next_u32();
+            let answer = (n % 171) as usize;
             load_answer(&lang, answer)
         } else {
             msg.content

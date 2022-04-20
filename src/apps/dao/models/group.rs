@@ -1,4 +1,7 @@
-use rand::Rng;
+use rand_chacha::{
+    rand_core::{RngCore, SeedableRng},
+    ChaChaRng,
+};
 use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
 use tdn::types::{
@@ -58,7 +61,10 @@ impl GroupChat {
         is_ok: bool,
         is_remote: bool,
     ) -> Self {
-        let g_id = GroupId(rand::thread_rng().gen::<[u8; 32]>());
+        let mut rng = ChaChaRng::from_entropy();
+        let mut bytes = [0u8; 32];
+        rng.fill_bytes(&mut bytes);
+        let g_id = GroupId(bytes);
 
         let start = SystemTime::now();
         let datetime = start
