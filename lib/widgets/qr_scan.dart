@@ -25,8 +25,9 @@ class _QRScanState extends State<QRScan> {
     super.reassemble();
     if (Platform.isAndroid) {
       controller?.pauseCamera();
+    } else if (Platform.isIOS) {
+      controller?.resumeCamera();
     }
-    controller?.resumeCamera();
   }
 
   @override
@@ -109,10 +110,8 @@ class _QRScanState extends State<QRScan> {
     );
   }
 
-  void _onQRViewCreated(QRViewController controller) {
-    setState(() {
-      this.controller = controller;
-    });
+  void _onQRViewCreated(QRViewController controller) async {
+    this.controller = controller;
     controller.scannedDataStream.listen((scanData) async {
       if (scanData.code == null) {
         return;
@@ -122,14 +121,14 @@ class _QRScanState extends State<QRScan> {
         // TODO show Error.
         return;
       }
-      await controller.pauseCamera();
+      await this.controller?.pauseCamera();
       widget.callback(true, qrInfo["app"], qrInfo["params"]);
     });
   }
 
   @override
   void dispose() {
-    controller?.dispose();
+    this.controller?.dispose();
     super.dispose();
   }
 }

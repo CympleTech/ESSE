@@ -11,6 +11,7 @@ class Friend {
   String pid = '';
   String name = '';
   String wallet = '';
+  String cloud = '';
   String remark = '';
   bool isClosed = false;
   RelativeTime time = RelativeTime();
@@ -36,11 +37,12 @@ class Friend {
     this.pid = params[1];
     this.name = params[2];
     this.wallet = params[3];
-    this.remark = params[4];
-    this.isClosed = params[5];
-    this.time = RelativeTime.fromInt(params[6]);
-    if (params.length == 8) {
-      this.online = params[7];
+    this.cloud = params[4];
+    this.remark = params[5];
+    this.isClosed = params[6];
+    this.time = RelativeTime.fromInt(params[7]);
+    if (params.length == 9) {
+      this.online = params[8];
     }
   }
 }

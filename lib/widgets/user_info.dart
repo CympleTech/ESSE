@@ -84,9 +84,9 @@ class _UserInfoState extends State<UserInfo> {
                 foregroundColor: Colors.black,
               ),
               Container(
-                height: 44,
-                width: 44,
-                padding: EdgeInsets.all(2.0),
+                height: 40,
+                width: 40,
+                padding: EdgeInsets.all(1.0),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(10.0),
                   border: Border.all(color: Color(0x40ADB0BB)),

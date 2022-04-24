@@ -175,12 +175,12 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<Global>) {
             let mut msg = crate::group::Message::new(&pid, f.id, true, m_type, raw, false);
             msg.insert(&chat_db)?;
             let event = crate::group::GroupEvent::Message(msg.hash, nm);
-            let tid = state.layer.write().await.delivery(msg.id);
+            let tid = state.group.write().await.delivery(msg.id);
             let data = bincode::serialize(&event).unwrap_or(vec![]);
             results.groups.push(SendType::Event(tid, f.pid, data));
 
             // update session.
-            crate::group::update_session(&s_db, &id, &msg, &mut results);
+            crate::group::update_session(&s_db, &fid, &msg, &mut results);
 
             // handle group member
             let avatar = read_avatar(&state.base, &pid, &f.pid)

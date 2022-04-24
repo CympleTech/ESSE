@@ -35,7 +35,7 @@ pub(crate) struct GroupChat {
 impl GroupChat {
     pub fn new(addr: PeerId, name: String) -> Self {
         let mut rng = ChaChaRng::from_entropy();
-        let gid = rng.next_u64();
+        let gid = rng.next_u64() >> 1; // fixed i64
 
         Self {
             gid,

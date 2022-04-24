@@ -150,10 +150,10 @@ class Session {
     String avatar = Global.avatarPath;
     switch (this.type) {
       case SessionType.Chat:
-        avatar + this.pid + '.png';
+        avatar = avatar + this.pid + '.png';
         break;
       case SessionType.Group:
-        avatar + 'group_' + this.pid + '.png';
+        avatar = avatar + 'group_' + this.pid + '.png';
         break;
       default:
         break;

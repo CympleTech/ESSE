@@ -9,7 +9,7 @@ pub(crate) use self::request::Request;
 use esse_primitives::{id_from_str, id_to_str, MessageType, NetworkMessage};
 use group_types::GroupChatId;
 use std::path::PathBuf;
-use tdn::types::primitives::{HandleResult, PeerId, Result};
+use tdn::types::primitives::{HandleResult, PeerId, Result, PEER_ID_LENGTH};
 
 use crate::apps::group::GroupChat;
 use crate::rpc::session_create;
@@ -52,7 +52,7 @@ pub(crate) async fn from_network_message(
         }
         NetworkMessage::Invite(content) => {
             // check is Tmp group.
-            let itype = InviteType::deserialize(&content)?;
+            let itype = InviteType::deserialize(&content).unwrap();
             match itype {
                 InviteType::Group(gcd, addr, name) => {
                     // 1 add group chat.
@@ -223,19 +223,20 @@ impl InviteType {
     pub fn deserialize(s: &str) -> Result<InviteType> {
         match &s[0..3] {
             "0;;" => {
-                if s.len() < 103 {
-                    // 16(gid) + 64(pid) + 7
-                    Err(anyhow!("invite invalid"))
+                if s.len() < 63 {
+                    // 16(gid) + 40(pid) + 7
+                    Err(anyhow!("invite group invalid"))
                 } else {
+                    let bytes = &s[3..];
                     let mut gid_bytes = [0u8; 8];
-                    gid_bytes.copy_from_slice(&hex::decode(&s[3..19])?);
+                    gid_bytes.copy_from_slice(&hex::decode(&bytes[0..16])?);
                     let gid = GroupChatId::from_le_bytes(gid_bytes);
-                    let addr = PeerId::from_hex(&s[22..86])?;
-                    let name = s[88..].to_owned();
+                    let addr = PeerId::from_hex(&bytes[18..(PEER_ID_LENGTH * 2 + 18)])?;
+                    let name = bytes[(PEER_ID_LENGTH * 2 + 20)..].to_owned();
                     Ok(InviteType::Group(gid, addr, name))
                 }
             }
-            _ => Err(anyhow!("invite invalid")),
+            _ => Err(anyhow!("invite type invalid")),
         }
     }
 }

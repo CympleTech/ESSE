@@ -78,7 +78,7 @@ impl Group {
         Group {
             sessions: HashMap::new(),
             delivery: HashMap::new(),
-            delivery_count: 0,
+            delivery_count: 1,
         }
     }
 
@@ -92,7 +92,7 @@ impl Group {
     pub fn clear(&mut self) {
         self.sessions.clear();
         self.delivery.clear();
-        self.delivery_count = 0;
+        self.delivery_count = 1;
     }
 
     pub fn add(&mut self, pid: PeerId, sid: i64, fid: i64, h: i64) {

@@ -9,7 +9,7 @@ import 'package:esse/apps/primitives.dart';
 
 class GroupChat {
   int id = 0;
-  String gid = '';
+  int gid = 0;
   String addr = '';
   String name = '';
   bool isClosed = false;
@@ -26,7 +26,7 @@ class GroupChat {
     this.isLocal = params[4];
 
   Avatar showAvatar({double width = 45.0}) {
-    final avatar = Global.avatarPath + this.gid + '.png';
+    final avatar = Global.avatarPath + "${this.gid}.png";
     return Avatar(width: width, name: this.name, avatarPath: avatar);
   }
 }
