@@ -20,12 +20,12 @@ ESSE, positioned as an engine. The engine is coded in [**Rust**](https://github.
 - Distributed Devices
 - Distributed Notes & Files
 - Distributed Storage & Synchronization
-- Built-in Chat with friend application
-- Built-in Group Chat application
-- Built-in DAO social application
-- Built-in Personal Domain application
-- Built-in Wallet application (Support ETH/ERC20/ERC721)
-- Built-in Robot assistant application
+- Built-in Chat with friend (IM) service
+- Built-in Group Chat service
+- Built-in DAO social & operating service
+- Built-in Personal Domain service
+- Built-in Wallet service (Support ETH/ERC20/ERC721)
+- Built-in Robot assistant service
 - Multi-identity System
 - Multi-platform Support: Android, iOS, iPadOS, MacOS, Windows, Linux, etc.
 
