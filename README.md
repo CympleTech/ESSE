@@ -6,7 +6,7 @@ So is this "data" accessible to everyone or some companies ?
 
 What we want to do is protect this data and privacy. you can see details [what we are doing](https://docs.cympletech.com/blog/what-we-are-doing/).
 
-**ESSE** (Encrypted Symmetrical Session Engine) An open source encrypted peer-to-peer system for data security, and allow data to be sent securely from one terminal to another without going through third-party services. Also provides data visualization and interactive entry. With a friendly interface for users, it transforms abstract data concepts into software that everyone can actually experience.
+**ESSE** (Encrypted Symmetrical Session Engine) An open source encrypted peer-to-peer system for own data security, and allow data to be sent securely from one terminal to another without going through third-party services. Also provides data visualization and interactive entry. With a friendly interface for users, it transforms abstract data concepts into software that everyone can actually experience.
 
 Slogan: **My place, my rules.**
 
@@ -22,6 +22,7 @@ ESSE, positioned as an engine. The engine is coded in [**Rust**](https://github.
 - Distributed Storage & Synchronization
 - Built-in Chat with friend application
 - Built-in Group Chat application
+- Built-in DAO social application
 - Built-in Personal Domain application
 - Built-in Wallet application (Support ETH/ERC20/ERC721)
 - Built-in Robot assistant application
