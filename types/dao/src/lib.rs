@@ -8,37 +8,32 @@ pub const DAO_ID: GroupId = 2;
 /// Dao ID type.
 pub type DaoId = u64;
 
-/// Group chat types. include: Encrypted, Private, Open.
+/// DAO types. include: Encrypted, Private, Open.
 #[derive(Serialize, Deserialize, Clone, Copy, Debug, Eq, PartialEq)]
-pub enum GroupType {
-    /// encrypted group type, data is encrypted, and it can need manager
+pub enum DaoType {
+    /// encrypted dao, data is encrypted, and it can need manager
     /// or take manager's zero-knowledge-proof.
     Encrypted,
-    /// private group type, data not encrypted, and need group manager agree.
+    /// private dao, data not encrypted, and need manager agree.
     Private,
-    /// opened group type, data not encrypted, anyone can join this group.
+    /// opened dao, data not encrypted, anyone can join this dao.
     Open,
-    /// tmp group. can use descrip local tmp group chat.
-    Tmp,
 }
 
-impl GroupType {
+impl DaoType {
     pub fn to_i64(&self) -> i64 {
         match self {
-            GroupType::Tmp => 0,
-            GroupType::Open => 1,
-            GroupType::Private => 2,
-            GroupType::Encrypted => 3,
+            DaoType::Open => 0,
+            DaoType::Private => 1,
+            DaoType::Encrypted => 2,
         }
     }
 
     pub fn from_i64(u: i64) -> Self {
         match u {
-            0 => GroupType::Tmp,
-            1 => GroupType::Open,
-            2 => GroupType::Private,
-            3 => GroupType::Encrypted,
-            _ => GroupType::Tmp,
+            1 => DaoType::Private,
+            2 => DaoType::Encrypted,
+            _ => DaoType::Open,
         }
     }
 }
@@ -46,21 +41,21 @@ impl GroupType {
 /// DaoInfo transfer in the network.
 #[derive(Serialize, Deserialize)]
 pub enum DaoInfo {
-    /// params: owner, owner_name, owner_avatar, Group ID, group_type, is_must_agree_by_manager,
-    /// group_name, group_bio, group_avatar.
+    /// params: owner, owner_name, owner_avatar, dao ID, dao_type, is_must_agree_by_manager,
+    /// dao_name, dao_bio, dao_avatar.
     Common(
         PeerId,
         String,
         Vec<u8>,
         DaoId,
-        GroupType,
+        DaoType,
         bool,
         String,
         String,
         Vec<u8>,
     ),
-    /// params: owner, owner_name, owner_avatar, Group ID, is_must_agree_by_manager, key_hash,
-    /// group_name(bytes), group_bio(bytes), group_avatar(bytes).
+    /// params: owner, owner_name, owner_avatar, dao ID, is_must_agree_by_manager, key_hash,
+    /// dao_name(bytes), dao_bio(bytes), dao_avatar(bytes).
     Encrypted(
         PeerId,
         String,
@@ -74,20 +69,20 @@ pub enum DaoInfo {
     ),
 }
 
-/// Dao chat connect data structure.
-/// params: Group ID, join_proof.
+/// Dao connect data structure.
+/// params: DAO ID, join_proof.
 #[derive(Serialize, Deserialize)]
 pub struct LayerConnect(pub DaoId, pub ConnectProof);
 
-/// Dao chat connect success result data structure.
-/// params: Group ID, group current height.
+/// Dao connect success result data structure.
+/// params: DAO ID, dao current height.
 #[derive(Serialize, Deserialize)]
 pub struct LayerResult(pub DaoId, pub i64);
 
-/// Dao chat connect proof.
+/// Dao connect proof.
 #[derive(Serialize, Deserialize)]
 pub enum ConnectProof {
-    /// when is joined in group chat, can only use had to join (connect).
+    /// when is joined in dao, can only use had to join (connect).
     /// params: proof.
     Common,
     /// zero-knowledge-proof. not has account id.
@@ -95,13 +90,13 @@ pub enum ConnectProof {
     Zkp, // TODO MOCK-PROOF
 }
 
-/// Dao chat join proof.
+/// Dao join proof.
 #[derive(Serialize, Deserialize)]
 pub enum JoinProof {
-    /// when join the open group chat.
+    /// when join the open dao.
     /// params: member name, member avatar.
     Open(String, Vec<u8>),
-    /// when is invate, it will take group_manager's proof for invate.
+    /// when is invate, it will take dao manager's proof for invate.
     /// params: invite_by_account, member name, member avatar.
     Invite(PeerId, String, Vec<u8>),
     /// zero-knowledge-proof. not has account id.
@@ -112,7 +107,7 @@ pub enum JoinProof {
 /// check result type.
 #[derive(Serialize, Deserialize, Debug)]
 pub enum CheckType {
-    /// allow to create new group.
+    /// allow to create new dao.
     Allow,
     /// cannot created, remain = 0.
     None,
@@ -133,7 +128,7 @@ impl CheckType {
     }
 }
 
-/// ESSE Dao chat app's layer Event.
+/// ESSE DAO service's layer Event.
 #[derive(Serialize, Deserialize)]
 pub enum LayerEvent {
     /// offline. as BaseLayerEvent.
@@ -142,66 +137,66 @@ pub enum LayerEvent {
     Suspend(DaoId),
     /// actived. as BaseLayerEvent.
     Actived(DaoId),
-    /// check if account has permission to create group, and supported group types.
+    /// check if account has permission to create dao service, and supported types.
     Check,
     /// result check.
-    /// params: check type, provider name, remain, supported_group_types.
-    CheckResult(CheckType, String, i64, Vec<GroupType>),
-    /// create a Group Chat.
-    /// params: group_info.
+    /// params: check type, provider name, remain, supported_dao_types.
+    CheckResult(CheckType, String, i64, Vec<DaoType>),
+    /// create a DAO.
+    /// params: dao_info.
     Create(DaoInfo),
-    /// result create group success.
-    /// params: Group ID, is_ok.
+    /// result create DAO success.
+    /// params: DAO ID, is_ok.
     CreateResult(DaoId, bool),
-    /// join group request. Group ID, Join Proof and info, request db id.
+    /// join DAO request. DAO ID, Join Proof and info, request db id.
     Request(DaoId, JoinProof),
     /// request need manager to handle.
     RequestHandle(DaoId, PeerId, JoinProof, i64, i64),
-    /// manager handle request result. Group ID, request db id, is ok.
+    /// manager handle request result. DAO ID, request db id, is ok.
     RequestResult(DaoId, i64, bool),
     /// agree join request.
     Agree(DaoId, DaoInfo),
-    /// reject join request. Group ID, if lost efficacy.
+    /// reject join request. DAO ID, if lost efficacy.
     Reject(DaoId, bool),
-    /// online group member. Group ID, member id.
+    /// online DAO member. DAO ID, member id.
     MemberOnline(DaoId, PeerId),
-    /// offline group member. Group ID, member id.
+    /// offline DAO member. DAO ID, member id.
     MemberOffline(DaoId, PeerId),
     /// sync online members.
     MemberOnlineSync(DaoId),
     /// sync online members result.
     MemberOnlineSyncResult(DaoId, Vec<PeerId>),
-    /// sync group event. Group ID, height, event.
+    /// sync event. DAO ID, height, event.
     Sync(DaoId, i64, Event),
-    /// packed sync event request. Group ID, from.
+    /// packed sync event request. DAO ID, from.
     SyncReq(DaoId, i64),
-    /// packed sync event. Group ID, current height, from height, to height, packed events.
+    /// packed sync event. DAO ID, current height, from height, to height, packed events.
     Packed(DaoId, i64, i64, i64, Vec<PackedEvent>),
 }
 
 impl LayerEvent {
-    /// get event's group id.
-    pub fn gcd(&self) -> Option<&DaoId> {
+    /// get event's DAO id.
+    pub fn dao_id(&self) -> Option<&DaoId> {
         match self {
-            Self::Offline(gcd) => Some(gcd),
-            Self::Suspend(gcd) => Some(gcd),
-            Self::Actived(gcd) => Some(gcd),
+            Self::Offline(did) => Some(did),
+            Self::Suspend(did) => Some(did),
+            Self::Actived(did) => Some(did),
             Self::Check => None,
             Self::CheckResult(..) => None,
             Self::Create(..) => None,
-            Self::CreateResult(gcd, _) => Some(gcd),
-            Self::Request(gcd, _) => Some(gcd),
-            Self::RequestHandle(gcd, ..) => Some(gcd),
-            Self::RequestResult(gcd, ..) => Some(gcd),
-            Self::Agree(gcd, ..) => Some(gcd),
-            Self::Reject(gcd, ..) => Some(gcd),
-            Self::MemberOnline(gcd, ..) => Some(gcd),
-            Self::MemberOffline(gcd, ..) => Some(gcd),
-            Self::MemberOnlineSync(gcd) => Some(gcd),
-            Self::MemberOnlineSyncResult(gcd, ..) => Some(gcd),
-            Self::Sync(gcd, ..) => Some(gcd),
-            Self::SyncReq(gcd, ..) => Some(gcd),
-            Self::Packed(gcd, ..) => Some(gcd),
+            Self::CreateResult(did, _) => Some(did),
+            Self::Request(did, _) => Some(did),
+            Self::RequestHandle(did, ..) => Some(did),
+            Self::RequestResult(did, ..) => Some(did),
+            Self::Agree(did, ..) => Some(did),
+            Self::Reject(did, ..) => Some(did),
+            Self::MemberOnline(did, ..) => Some(did),
+            Self::MemberOffline(did, ..) => Some(did),
+            Self::MemberOnlineSync(did) => Some(did),
+            Self::MemberOnlineSyncResult(did, ..) => Some(did),
+            Self::Sync(did, ..) => Some(did),
+            Self::SyncReq(did, ..) => Some(did),
+            Self::Packed(did, ..) => Some(did),
         }
     }
 
@@ -225,14 +220,14 @@ impl LayerEvent {
     }
 }
 
-/// Dao chat packed event.
+/// DAO packed event.
 #[derive(Serialize, Deserialize)]
 pub enum PackedEvent {
-    GroupInfo,
-    GroupTransfer,
-    GroupManagerAdd,
-    GroupManagerDel,
-    GroupClose,
+    Info,
+    Transfer,
+    ManagerAdd,
+    ManagerDel,
+    Close,
     /// params: member id, member name, member avatar.
     MemberInfo(PeerId, String, Vec<u8>),
     /// params: member id, member name, member avatar, member join time.
@@ -248,11 +243,11 @@ pub enum PackedEvent {
 /// Dao chat event.
 #[derive(Serialize, Deserialize, Clone)]
 pub enum Event {
-    GroupInfo,
-    GroupTransfer,
-    GroupManagerAdd,
-    GroupManagerDel,
-    GroupClose,
+    Info,
+    Transfer,
+    ManagerAdd,
+    ManagerDel,
+    Close,
     /// params: member id, member name, member avatar.
     MemberInfo(PeerId, String, Vec<u8>),
     /// params: member id, member name, member avatar, member join time.
