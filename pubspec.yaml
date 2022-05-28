@@ -34,7 +34,10 @@ dependencies:
   crop: any
   unorm_dart: any
   qr_flutter: any
-  qr_code_scanner: any
+  qr_code_scanner: # waiting PR merge
+    git:
+      url: https://github.com/X-SLAYER/qr_code_scanner.git
+      ref: flutter-beta
   web_socket_channel: any
   record: any
   just_audio: any
