@@ -6,7 +6,7 @@ publish_to: 'none'
 version: 1.0.0+1
 
 environment:
-  sdk: ">=2.12.0 <3.0.0"
+  sdk: ">=2.17.6 <3.0.0"
 
 dependencies:
   flutter:
@@ -26,18 +26,11 @@ dependencies:
   image_save: any # Mobile save image to gallery
   file_picker: any # pick file
   file_selector: any # pick file
-  file_selector_linux:
-    git:
-      url: https://github.com/google/flutter-desktop-embedding
-      path: plugins/file_selector/file_selector_linux
   open_file: any # open file in mobile.
   crop: any
   unorm_dart: any
   qr_flutter: any
-  qr_code_scanner: # waiting PR merge
-    git:
-      url: https://github.com/X-SLAYER/qr_code_scanner.git
-      ref: flutter-beta
+  qr_code_scanner: any
   web_socket_channel: any
   record: any
   just_audio: any
@@ -49,7 +42,7 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^1.0.0
+  flutter_lints: ^2.0.0
   integration_test:
     sdk: flutter
   flutter_launcher_icons: any #flutter pub run flutter_launcher_icons:main
@@ -61,7 +54,7 @@ msix_config:
   display_name: ESSE
   publisher_display_name: ESSE
   identity_name: CympleTech.com.ESSE
-  msix_version: 0.5.0.0
+  msix_version: 1.0.0.0
   logo_path: .\assets\logo\esse_desktop.png
   capabilities: "internetClient,microphone,webcam"
 
