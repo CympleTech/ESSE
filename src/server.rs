@@ -31,7 +31,7 @@ pub async fn start(db_path: PathBuf) -> Result<()> {
     config.rpc_ws = Some(DEFAULT_WS_ADDR.parse().unwrap());
     let config = Config::load_save(db_path.clone(), config).await?;
 
-    info!("Config RPC HTTP : {:?}", config.rpc_addr);
+    info!("Config RPC HTTP : {:?}", config.rpc_http);
     info!("Config RPC WS   : {:?}", config.rpc_ws);
     info!(
         "Config P2P      : {} {:?}",
