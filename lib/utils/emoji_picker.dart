@@ -722,22 +722,21 @@ class _EmojiPickerState extends State<EmojiPicker> {
                 SizedBox(
                   width: categoryWidth,
                   height: categoryWidth,
-                  child: FlatButton(
-                    padding: EdgeInsets.all(0),
-                    color: widget.selectedCategory == Category.SMILEYS
-                    ? Colors.black12
-                    : Colors.transparent,
-                    shape: RoundedRectangleBorder(
-                      borderRadius:
-                      BorderRadius.all(Radius.circular(0))),
+                  child: TextButton(
+                    style: TextButton.styleFrom(padding: EdgeInsets.all(0),
+                      backgroundColor: widget.selectedCategory == Category.SMILEYS
+                      ? Colors.black12
+                      : Colors.transparent,
+                      shape: RoundedRectangleBorder(
+                        borderRadius:
+                        BorderRadius.all(Radius.circular(0)))),
                     child: Center(
                       child: Icon(
                         widget.categoryIcons!.smileyIcon.icon,
                         size: 22,
                         color:
                         widget.selectedCategory == Category.SMILEYS
-                        ? widget.categoryIcons!.smileyIcon
-                        .selectedColor
+                        ? widget.categoryIcons!.smileyIcon.selectedColor
                         : widget.categoryIcons!.smileyIcon.color,
                       ),
                     ),
@@ -753,22 +752,23 @@ class _EmojiPickerState extends State<EmojiPicker> {
                 SizedBox(
                   width: categoryWidth,
                   height: categoryWidth,
-                  child: FlatButton(
-                    padding: EdgeInsets.all(0),
-                    color: widget.selectedCategory == Category.ANIMALS
-                    ? Colors.black12
-                    : Colors.transparent,
-                    shape: RoundedRectangleBorder(
-                      borderRadius:
-                      BorderRadius.all(Radius.circular(0))),
+                  child: TextButton(
+                    style: TextButton.styleFrom(
+                      padding: EdgeInsets.all(0),
+                      backgroundColor: widget.selectedCategory == Category.ANIMALS
+                      ? Colors.black12
+                      : Colors.transparent,
+                      shape: RoundedRectangleBorder(
+                        borderRadius:
+                        BorderRadius.all(Radius.circular(0))),
+                    ),
                     child: Center(
                       child: Icon(
                         widget.categoryIcons!.animalIcon.icon,
                         size: 22,
                         color:
                         widget.selectedCategory == Category.ANIMALS
-                        ? widget.categoryIcons!.animalIcon
-                        .selectedColor
+                        ? widget.categoryIcons!.animalIcon.selectedColor
                         : widget.categoryIcons!.animalIcon.color,
                       ),
                     ),
@@ -785,21 +785,22 @@ class _EmojiPickerState extends State<EmojiPicker> {
                 SizedBox(
                   width: categoryWidth,
                   height: categoryWidth,
-                  child: FlatButton(
-                    padding: EdgeInsets.all(0),
-                    color: widget.selectedCategory == Category.FOODS
-                    ? Colors.black12
-                    : Colors.transparent,
-                    shape: RoundedRectangleBorder(
-                      borderRadius:
-                      BorderRadius.all(Radius.circular(0))),
+                  child: TextButton(
+                    style: TextButton.styleFrom(
+                      padding: EdgeInsets.all(0),
+                      backgroundColor: widget.selectedCategory == Category.FOODS
+                      ? Colors.black12
+                      : Colors.transparent,
+                      shape: RoundedRectangleBorder(
+                        borderRadius:
+                        BorderRadius.all(Radius.circular(0))),
+                    ),
                     child: Center(
                       child: Icon(
                         widget.categoryIcons!.foodIcon.icon,
                         size: 22,
                         color: widget.selectedCategory == Category.FOODS
-                        ? widget
-                        .categoryIcons!.foodIcon.selectedColor
+                        ? widget.categoryIcons!.foodIcon.selectedColor
                         : widget.categoryIcons!.foodIcon.color,
                       ),
                     ),
@@ -817,22 +818,22 @@ class _EmojiPickerState extends State<EmojiPicker> {
                 SizedBox(
                   width: categoryWidth,
                   height: categoryWidth,
-                  child: FlatButton(
-                    padding: EdgeInsets.all(0),
-                    color: widget.selectedCategory == Category.TRAVEL
-                    ? Colors.black12
-                    : Colors.transparent,
-                    shape: RoundedRectangleBorder(
-                      borderRadius:
-                      BorderRadius.all(Radius.circular(0))),
+                  child: TextButton(
+                    style: TextButton.styleFrom(
+                      padding: EdgeInsets.all(0),
+                      backgroundColor: widget.selectedCategory == Category.TRAVEL
+                      ? Colors.black12
+                      : Colors.transparent,
+                      shape: RoundedRectangleBorder(
+                        borderRadius:
+                        BorderRadius.all(Radius.circular(0))),
+                    ),
                     child: Center(
                       child: Icon(
                         widget.categoryIcons!.travelIcon.icon,
                         size: 22,
-                        color:
-                        widget.selectedCategory == Category.TRAVEL
-                        ? widget.categoryIcons!.travelIcon
-                        .selectedColor
+                        color: widget.selectedCategory == Category.TRAVEL
+                        ? widget.categoryIcons!.travelIcon.selectedColor
                         : widget.categoryIcons!.travelIcon.color,
                       ),
                     ),
@@ -851,23 +852,22 @@ class _EmojiPickerState extends State<EmojiPicker> {
                 SizedBox(
                   width: categoryWidth,
                   height: categoryWidth,
-                  child: FlatButton(
-                    padding: EdgeInsets.all(0),
-                    color:
-                    widget.selectedCategory == Category.ACTIVITIES
-                    ? Colors.black12
-                    : Colors.transparent,
-                    shape: RoundedRectangleBorder(
-                      borderRadius:
-                      BorderRadius.all(Radius.circular(0))),
+                  child: TextButton(
+                    style: TextButton.styleFrom(
+                      padding: EdgeInsets.all(0),
+                      backgroundColor: widget.selectedCategory == Category.ACTIVITIES
+                      ? Colors.black12
+                      : Colors.transparent,
+                      shape: RoundedRectangleBorder(
+                        borderRadius:
+                        BorderRadius.all(Radius.circular(0))),
+                    ),
                     child: Center(
                       child: Icon(
                         widget.categoryIcons!.activityIcon.icon,
                         size: 22,
-                        color: widget.selectedCategory ==
-                        Category.ACTIVITIES
-                        ? widget.categoryIcons!.activityIcon
-                        .selectedColor
+                        color: widget.selectedCategory == Category.ACTIVITIES
+                        ? widget.categoryIcons!.activityIcon.selectedColor
                         : widget.categoryIcons!.activityIcon.color,
                       ),
                     ),
@@ -888,22 +888,22 @@ class _EmojiPickerState extends State<EmojiPicker> {
                 SizedBox(
                   width: categoryWidth,
                   height: categoryWidth,
-                  child: FlatButton(
-                    padding: EdgeInsets.all(0),
-                    color: widget.selectedCategory == Category.OBJECTS
-                    ? Colors.black12
-                    : Colors.transparent,
-                    shape: RoundedRectangleBorder(
-                      borderRadius:
-                      BorderRadius.all(Radius.circular(0))),
+                  child: TextButton(
+                    style: TextButton.styleFrom(
+                      padding: EdgeInsets.all(0),
+                      backgroundColor: widget.selectedCategory == Category.OBJECTS
+                      ? Colors.black12
+                      : Colors.transparent,
+                      shape: RoundedRectangleBorder(
+                        borderRadius:
+                        BorderRadius.all(Radius.circular(0))),
+                    ),
                     child: Center(
                       child: Icon(
                         widget.categoryIcons!.objectIcon.icon,
                         size: 22,
-                        color:
-                        widget.selectedCategory == Category.OBJECTS
-                        ? widget.categoryIcons!.objectIcon
-                        .selectedColor
+                        color: widget.selectedCategory == Category.OBJECTS
+                        ? widget.categoryIcons!.objectIcon.selectedColor
                         : widget.categoryIcons!.objectIcon.color,
                       ),
                     ),
@@ -924,22 +924,22 @@ class _EmojiPickerState extends State<EmojiPicker> {
                 SizedBox(
                   width: categoryWidth,
                   height: categoryWidth,
-                  child: FlatButton(
-                    padding: EdgeInsets.all(0),
-                    color: widget.selectedCategory == Category.SYMBOLS
-                    ? Colors.black12
-                    : Colors.transparent,
-                    shape: RoundedRectangleBorder(
-                      borderRadius:
-                      BorderRadius.all(Radius.circular(0))),
+                  child: TextButton(
+                    style: TextButton.styleFrom(
+                      padding: EdgeInsets.all(0),
+                      backgroundColor: widget.selectedCategory == Category.SYMBOLS
+                      ? Colors.black12
+                      : Colors.transparent,
+                      shape: RoundedRectangleBorder(
+                        borderRadius:
+                        BorderRadius.all(Radius.circular(0))),
+                    ),
                     child: Center(
                       child: Icon(
                         widget.categoryIcons!.symbolIcon.icon,
                         size: 22,
-                        color:
-                        widget.selectedCategory == Category.SYMBOLS
-                        ? widget.categoryIcons!.symbolIcon
-                        .selectedColor
+                        color: widget.selectedCategory == Category.SYMBOLS
+                        ? widget.categoryIcons!.symbolIcon.selectedColor
                         : widget.categoryIcons!.symbolIcon.color,
                       ),
                     ),
@@ -961,21 +961,22 @@ class _EmojiPickerState extends State<EmojiPicker> {
                 SizedBox(
                   width: categoryWidth,
                   height: categoryWidth,
-                  child: FlatButton(
-                    padding: EdgeInsets.all(0),
-                    color: widget.selectedCategory == Category.FLAGS
-                    ? Colors.black12
-                    : Colors.transparent,
-                    shape: RoundedRectangleBorder(
-                      borderRadius:
-                      BorderRadius.all(Radius.circular(0))),
+                  child: TextButton(
+                    style: TextButton.styleFrom(
+                      padding: EdgeInsets.all(0),
+                      backgroundColor: widget.selectedCategory == Category.FLAGS
+                      ? Colors.black12
+                      : Colors.transparent,
+                      shape: RoundedRectangleBorder(
+                        borderRadius:
+                        BorderRadius.all(Radius.circular(0))),
+                    ),
                     child: Center(
                       child: Icon(
                         widget.categoryIcons!.flagIcon.icon,
                         size: 22,
                         color: widget.selectedCategory == Category.FLAGS
-                        ? widget
-                        .categoryIcons!.flagIcon.selectedColor
+                        ? widget.categoryIcons!.flagIcon.selectedColor
                         : widget.categoryIcons!.flagIcon.color,
                       ),
                     ),

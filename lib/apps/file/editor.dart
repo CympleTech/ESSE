@@ -185,10 +185,10 @@ class _EditorPageState extends State<EditorPage> {
               controller: this._controller!,
               showAlignmentButtons: true,
               multiRowsDisplay: isDesktop,
-              onImagePickCallback: _onImagePickCallback,
-              onVideoPickCallback: _onImagePickCallback,
-              mediaPickSettingSelector: _selectMediaPickSetting,
-              filePickImpl: pickMedia,
+              //onImagePickCallback: _onImagePickCallback,
+              //onVideoPickCallback: _onImagePickCallback,
+              //mediaPickSettingSelector: _selectMediaPickSetting,
+              //filePickImpl: pickMedia,
               showLink: false,
             )
           ),
@@ -206,31 +206,31 @@ class _EditorPageState extends State<EditorPage> {
     );
   }
 
-  Future<MediaPickSetting?> _selectMediaPickSetting(BuildContext context) {
-    final lang = AppLocalizations.of(context);
-    return showDialog<MediaPickSetting>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        contentPadding: const EdgeInsets.all(20.0),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextButton.icon(
-              icon: const Icon(Icons.collections),
-              label: Text(lang.gallery),
-              onPressed: () => Navigator.pop(ctx, MediaPickSetting.Gallery),
-            ),
-            const Divider(height: 32.0),
-            TextButton.icon(
-              icon: const Icon(Icons.link),
-              label: Text(lang.link),
-              onPressed: () => Navigator.pop(ctx, MediaPickSetting.Link),
-            )
-          ],
-        ),
-      ),
-    );
-  }
+  // Future<MediaPickSetting?> _selectMediaPickSetting(BuildContext context) {
+  //   final lang = AppLocalizations.of(context);
+  //   return showDialog<MediaPickSetting>(
+  //     context: context,
+  //     builder: (ctx) => AlertDialog(
+  //       contentPadding: const EdgeInsets.all(20.0),
+  //       content: Column(
+  //         mainAxisSize: MainAxisSize.min,
+  //         children: [
+  //           TextButton.icon(
+  //             icon: const Icon(Icons.collections),
+  //             label: Text(lang.gallery),
+  //             onPressed: () => Navigator.pop(ctx, MediaPickSetting.Gallery),
+  //           ),
+  //           const Divider(height: 32.0),
+  //           TextButton.icon(
+  //             icon: const Icon(Icons.link),
+  //             label: Text(lang.link),
+  //             onPressed: () => Navigator.pop(ctx, MediaPickSetting.Link),
+  //           )
+  //         ],
+  //       ),
+  //     ),
+  //   );
+  // }
 
   Future<String> _checkName(String path, String name) async {
     String tryName = name;
@@ -245,14 +245,14 @@ class _EditorPageState extends State<EditorPage> {
     return path + name;
   }
 
-  Future<String> _onImagePickCallback(File file) async {
-    final dir = Directory(Global.filePath + widget.path.did + '_assets');
-    final isExists = await dir.exists();
-    if (!isExists) {
-      await dir.create(recursive: true);
-    }
-    final pathname = await _checkName(dir.path + '/', basename(file.path));
-    final copiedFile = await file.copy(pathname);
-    return copiedFile.path.toString();
-  }
+  // Future<String> _onImagePickCallback(File file) async {
+  //   final dir = Directory(Global.filePath + widget.path.did + '_assets');
+  //   final isExists = await dir.exists();
+  //   if (!isExists) {
+  //     await dir.create(recursive: true);
+  //   }
+  //   final pathname = await _checkName(dir.path + '/', basename(file.path));
+  //   final copiedFile = await file.copy(pathname);
+  //   return copiedFile.path.toString();
+  // }
 }
