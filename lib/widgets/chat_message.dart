@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_save/image_save.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:open_file/open_file.dart';
+import 'package:open_filex/open_filex.dart';
 
 import 'package:esse/l10n/localizations.dart';
 import 'package:esse/utils/adaptive.dart';
@@ -160,7 +160,7 @@ class ChatMessage extends StatelessWidget {
             ),
             SizedBox(height: 15.0),
             InkWell(
-              onTap: () => OpenFile.open(filePath),
+              onTap: () => OpenFilex.open(filePath),
               hoverColor: Colors.transparent,
               child: Container(
                 width: 200.0,
