@@ -21,7 +21,7 @@ dependencies:
   shared_preferences: any
   path_provider: any
   url_launcher: any
-  permission_handler: any
+  permission_handler: ^10.2.0
   image_picker: any # pick image
   image_save: any # Mobile save image to gallery
   file_picker: any # pick file
