@@ -32,7 +32,7 @@ dependencies:
   qr_flutter: any
   qr_code_scanner: any
   web_socket_channel: any
-  record: any
+  record: ^4.4.3
   just_audio: any
   percent_indicator: any
   bottom_navy_bar: any
