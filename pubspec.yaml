@@ -47,7 +47,7 @@ dev_dependencies:
     sdk: flutter
   flutter_launcher_icons: any #flutter pub run flutter_launcher_icons:main
   flutter_native_splash: any #flutter pub run flutter_native_splash:create
-  msix: any # 1. flutter build windows 2. flutter pub run msix:create
+  msix: ^3.7.0 # 1. flutter build windows 2. flutter pub run msix:create
 
 # make windows installer.
 msix_config:
