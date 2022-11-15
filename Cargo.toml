@@ -35,7 +35,7 @@ codegen-units = 1
 panic = 'abort'
 
 [dependencies]
-aes-gcm = "0.9"
+aes-gcm = "0.10"
 anyhow = "1.0"
 argon2 = "0.3"
 base64 = "0.13"
