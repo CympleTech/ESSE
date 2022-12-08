@@ -86,7 +86,7 @@ class _CropAvatarState extends State<_CropAvatar> {
             onTap: () async {
               final pixelRatio = MediaQuery.of(context).devicePixelRatio;
               final cropped = await _imageController.crop(pixelRatio: pixelRatio);
-              final byteData = await cropped.toByteData(format: ImageByteFormat.png);
+              final byteData = await cropped?.toByteData(format: ImageByteFormat.png);
               Navigator.of(context).pop();
               widget.callback(byteData!.buffer.asUint8List());
             },
