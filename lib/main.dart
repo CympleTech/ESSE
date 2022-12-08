@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:window_manager/window_manager.dart';
 import 'package:esse_core/esse_core.dart';
 
 import 'package:esse/l10n/localizations.dart';
@@ -27,9 +28,24 @@ void coreServer() async {
   }
 }
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   coreServer(); // daemon running.
+
+  // fix the window size
+  await windowManager.ensureInitialized();
+  WindowOptions windowOptions = WindowOptions(
+    size: Size(1024, 768),
+    center: true,
+    backgroundColor: Colors.transparent,
+    skipTaskbar: false,
+    titleBarStyle: TitleBarStyle.hidden,
+  );
+  windowManager.waitUntilReadyToShow(windowOptions, () async {
+      await windowManager.show();
+      await windowManager.focus();
+  });
+
   runApp(MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) {

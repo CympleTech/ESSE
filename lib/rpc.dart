@@ -25,10 +25,11 @@ class Response {
 Future<Response> httpPost(String method, List params) async {
   jsonrpc['method'] = method;
   jsonrpc['params'] = params;
-  //print(json.encode(jsonrpc));
+  print(json.encode(jsonrpc));
 
   try {
     final response = await http.post(Uri.http(Global.httpRpc, ''), body: json.encode(jsonrpc));
+    print(response);
     Map data = json.decode(utf8.decode(response.bodyBytes));
 
     if (data['result'] != null) {
