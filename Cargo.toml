@@ -55,7 +55,7 @@ tokio = { version = "1", features = ["full"] }
 tracing = "0.1"
 tracing-appender = "0.2"
 tracing-subscriber = "0.3"
-web3 = { version = "0.18", default-features = false, features = ["http-tls", "signing"] }
+web3 = { git = "https://github.com/sunhuachuang/rust-web3.git", default-features = false, features = ["http-tls", "signing"] }
 
 esse_primitives = { version = "0.1", path = "./types/primitives" }
 group_types = { version = "0.1", path = "./types/group" }
