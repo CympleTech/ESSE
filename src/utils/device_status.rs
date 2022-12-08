@@ -1,4 +1,4 @@
-use sysinfo::{DiskExt, ProcessorExt, System, SystemExt};
+use sysinfo::{CpuExt, DiskExt, System, SystemExt};
 
 /// get this device status.
 /// return: (cpu_num, memory space, swap space, disk space, cpu%, memory%, swap%, disk%)
@@ -6,9 +6,10 @@ use sysinfo::{DiskExt, ProcessorExt, System, SystemExt};
 /// only 4-length number, max is 9999 (99.99%), min is 0 (0.00%)
 pub(crate) fn device_status() -> (u32, u32, u32, u32, u16, u16, u16, u16) {
     let s = System::new_all();
-    let cpu_n = s.physical_core_count().unwrap_or(0) as u32;
-    let cpu = s.global_processor_info().cpu_usage();
-    let cpu_p = (cpu * 100f32) as u16;
+
+    let cpu_n = s.cpus().len() as f32;
+    let cpu_total: f32 = s.cpus().iter().map(|c| c.cpu_usage()).sum();
+    let cpu_p = (cpu_total / cpu_n) as u16;
 
     let memory_t = (s.total_memory() / 1024) as u32; // MB
     let memory_u = (s.used_memory() / 1024) as f32;
@@ -30,7 +31,14 @@ pub(crate) fn device_status() -> (u32, u32, u32, u32, u16, u16, u16, u16) {
     let disk_p = ((disk_t_f - disk_a_f) / disk_t_f * 10000f32) as u16;
 
     (
-        cpu_n, memory_t, swap_t, disk_t_n, cpu_p, memory_p, swap_p, disk_p,
+        cpu_n as u32,
+        memory_t,
+        swap_t,
+        disk_t_n,
+        cpu_p,
+        memory_p,
+        swap_p,
+        disk_p,
     )
 }
 

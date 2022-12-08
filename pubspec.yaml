@@ -24,10 +24,10 @@ dependencies:
   permission_handler: ^10.2.0
   image_picker: ^0.8.6 # pick image
   image_save: ^5.0.0 # Mobile save image to gallery
-  file_picker: ^5.2.2 # pick file
+  file_picker: ^5.2.3 # pick file
   file_selector: ^0.9.2+2 # pick file
   open_filex: ^4.3.1 # open file in mobile.
-  crop: ^0.5.3
+  crop: ^0.5.4
   unorm_dart: ^0.2.0
   qr_flutter: ^4.0.0
   qr_code_scanner: ^1.0.1
@@ -36,7 +36,7 @@ dependencies:
   just_audio: ^0.9.30
   percent_indicator: ^4.2.2
   bottom_navy_bar: ^6.0.0
-  flutter_quill: ^6.1.5
+  flutter_quill: ^6.1.6
   fluttertoast: ^8.1.1
 
 dev_dependencies:
@@ -46,7 +46,7 @@ dev_dependencies:
   integration_test:
     sdk: flutter
   flutter_launcher_icons: ^0.11.0 #flutter pub run flutter_launcher_icons:main
-  flutter_native_splash: ^2.2.14 #flutter pub run flutter_native_splash:create
+  flutter_native_splash: ^2.2.16 #flutter pub run flutter_native_splash:create
   msix: ^3.7.0 # 1. flutter build windows 2. flutter pub run msix:create
 
 # make windows installer.

@@ -1,6 +1,6 @@
 use aes_gcm::{
-    aead::{generic_array::GenericArray, Aead, NewAead},
-    Aes256Gcm,
+    aead::{generic_array::GenericArray, Aead},
+    Aes256Gcm, KeyInit,
 };
 use argon2::{
     password_hash::{rand_core::OsRng, PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
