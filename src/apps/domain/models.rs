@@ -53,7 +53,7 @@ impl Provider {
             is_proxy: v.pop().unwrap().as_bool(),
             is_default: v.pop().unwrap().as_bool(),
             is_ok: v.pop().unwrap().as_bool(),
-            addr: PeerId::from_hex(v.pop().unwrap().as_string()).unwrap_or(Default::default()),
+            addr: PeerId::from_hex(v.pop().unwrap().as_str()).unwrap_or(Default::default()),
             name: v.pop().unwrap().as_string(),
             id: v.pop().unwrap().as_i64(),
         }

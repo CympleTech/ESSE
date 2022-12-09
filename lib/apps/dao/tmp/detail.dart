@@ -732,7 +732,7 @@ class _MemberDetailState extends State<MemberDetail> {
         const Divider(height: 1.0, color: Color(0x40ADB0BB)),
         const SizedBox(height: 10.0),
         _infoListTooltip(Icons.person, color.primary, gidText(widget.member.mid), gidPrint(widget.member.mid)),
-        _infoListTooltip(Icons.location_on, color.primary, addrText(widget.member.addr), addrPrint(widget.member.addr)),
+        _infoListTooltip(Icons.location_on, color.primary, widget.member.addr, pidPrint(widget.member.addr)),
         if (widget.isGroupOwner)
         Container(
           padding: const EdgeInsets.only(top: 20.0, bottom: 10.0),

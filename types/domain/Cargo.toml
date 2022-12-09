@@ -11,4 +11,4 @@ license = "MIT/Apache-2.0"
 
 [dependencies]
 serde = { version = "1", features = ["derive"] }
-tdn_types = { version = "0.8", default-features = false }
+tdn_types = { version = "0.10", default-features = false }

@@ -303,7 +303,7 @@ class _ListProviderScreen extends StatelessWidget {
         title: Text(provider.name, style: TextStyle(fontWeight: FontWeight.bold)),
         subtitle: Row(
           children: <Widget>[
-            Expanded(child: Text(addrPrint(provider.addr), style: TextStyle(fontSize: 14.0))),
+            Expanded(child: Text(pidPrint(provider.addr), style: TextStyle(fontSize: 14.0))),
           ],
         ),
         trailing: Container(
@@ -505,7 +505,7 @@ class _AddProviderScreenState extends State<_AddProviderScreen> {
         ButtonText(
           enable: !this._waiting,
           action: () {
-            final addr = addrParse(_addrController.text.trim());
+            final addr = _addrController.text.trim();
             if (addr.length < 2) {
               return;
             }

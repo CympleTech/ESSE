@@ -1,15 +1,14 @@
 use std::sync::Arc;
 use tdn::types::{
     message::RpcSendMessage,
-    primitives::{HandleResult, Result},
+    primitives::{HandleResult, PeerKey, PeerSecretKey, Result},
     rpc::{json, rpc_response, RpcError, RpcHandler, RpcParam},
 };
-use tdn_did::{generate_btc_account, generate_eth_account, secp256k1::SecretKey};
+use tdn_did::{generate_btc_account, generate_eth_account};
 use tdn_storage::local::DStorage;
 use tokio::sync::mpsc::Sender;
 use web3::{
     contract::{tokens::Tokenize, Contract},
-    signing::Key,
     transports::http::Http,
     types::{Address as EthAddress, Bytes, CallRequest, TransactionParameters, U256},
     Web3,
@@ -185,7 +184,7 @@ async fn token_transfer(
     to_str: &str,
     amount_str: &str,
     c_str: &str,
-    secret: &SecretKey,
+    key: &PeerKey,
     network: &Network,
     chain: &ChainToken,
 ) -> Result<String> {
@@ -232,7 +231,10 @@ async fn token_transfer(
         _ => return Err(anyhow!("not supported")),
     };
 
-    let signed = web3.accounts().sign_transaction(tx, secret).await?;
+    let signed = web3
+        .accounts()
+        .sign_transaction(tx, key.sec_key.raw())
+        .await?;
     let result = web3
         .eth()
         .send_raw_transaction(signed.raw_transaction)
@@ -357,8 +359,8 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<Global>) {
             let index = Address::next_index(&db, &chain)?;
             let mut address = match chain {
                 ChainToken::ETH | ChainToken::ERC20 | ChainToken::ERC721 => {
-                    let sk = generate_eth_account(lang, &mnemonic, account_index, index, pass)?;
-                    let address = format!("{:?}", (&sk).address());
+                    let key = generate_eth_account(lang, &mnemonic, account_index, index, pass)?;
+                    let address = key.peer_id().to_hex();
                     Address::new(chain, index as i64, address, index == 0)
                 }
                 ChainToken::BTC => {
@@ -393,15 +395,16 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<Global>) {
             let secret = params[1].as_str().ok_or(RpcError::ParseError)?;
             let lock = params[2].as_str().ok_or(RpcError::ParseError)?;
 
-            let sk: SecretKey = secret.parse().or(Err(RpcError::ParseError))?;
-            let addr = format!("{:?}", (&sk).address());
+            let sk: PeerSecretKey = secret.try_into().or(Err(RpcError::ParseError))?;
+            let key = PeerKey::from_sec_key(sk);
+            let addr = key.peer_id().to_hex();
 
             let pid = state.pid().await;
 
             let own_lock = state.own.read().await;
             let ckey = &own_lock.account(&pid)?.encrypt;
             let db_key = own_lock.db_key(&pid)?;
-            let cbytes = encrypt(&state.secret, lock, ckey, sk.as_ref())?;
+            let cbytes = encrypt(&state.secret, lock, ckey, &key.to_db_bytes())?;
             drop(own_lock);
 
             let db = wallet_db(&state.base, &pid, &db_key)?;
@@ -506,7 +509,7 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<Global>) {
                 None
             };
 
-            let sk: SecretKey = if address.is_gen() {
+            let key: PeerKey = if address.is_gen() {
                 match chain {
                     ChainToken::ETH | ChainToken::ERC20 | ChainToken::ERC721 => {
                         generate_eth_account(
@@ -522,15 +525,15 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<Global>) {
                     }
                 }
             } else {
-                let sk = SecretKey::from_slice(&pbytes)
+                let key = PeerKey::from_db_bytes(&pbytes)
                     .or(Err(RpcError::Custom("Secret is invalid!".to_owned())))?;
-                if format!("{:?}", (&sk).address()) != address.address {
+                if key.peer_id().to_hex().to_lowercase() != address.address.to_lowercase() {
                     return Err(RpcError::Custom("Secret is invalid!".to_owned()));
                 }
-                sk
+                key
             };
 
-            let hash = token_transfer(&address.address, to, amount, c_str, &sk, &network, &chain)
+            let hash = token_transfer(&address.address, to, amount, c_str, &key, &network, &chain)
                 .await
                 .map_err(|e| RpcError::Custom(format!("{:?}", e)))?;
 

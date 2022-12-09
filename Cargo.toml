@@ -48,9 +48,9 @@ rand_chacha = "0.3"
 sha2 = "0.10"
 sysinfo = "0.26"
 serde = { version = "1", features = ["derive"] }
-tdn = { version = "0.8", default-features = false, features = ["std"] }
-tdn_did = { version = "0.8" }
-tdn_storage = { version = "0.8" }
+tdn = { version = "0.10", default-features = false, features = ["std"] }
+tdn_did = { version = "0.10" }
+tdn_storage = { version = "0.10" }
 tokio = { version = "1", features = ["full"] }
 tracing = "0.1"
 tracing-appender = "0.2"

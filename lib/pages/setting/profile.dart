@@ -167,7 +167,7 @@ class _ProfileDetailState extends State<ProfileDetail> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.max,
                   children: [
-                    _infoListTooltip(Icons.person, color.primary, pidText(account.pid), pidPrint(account.pid)),
+                    _infoListTooltip(Icons.person, color.primary, account.pid, pidPrint(account.pid)),
                     SizedBox(
                       height: 40.0,
                       child: Row(

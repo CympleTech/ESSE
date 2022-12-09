@@ -199,7 +199,7 @@ class _NetworkDetailState extends State<NetworkDetail> {
                             size: 18.0,
                             color: color.primary),
                           SizedBox(width: 15.0),
-                          Text(addrPrint(item[0]),
+                          Text(pidPrint(item[0]),
                             style: TextStyle(fontSize: 14.0))
                     ]));
                 }),
@@ -225,7 +225,7 @@ class _NetworkDetailState extends State<NetworkDetail> {
                           Icon(Icons.cloud_done_outlined,
                             size: 18.0, color: color.primary),
                           SizedBox(width: 15.0),
-                          Text(addrPrint(item),
+                          Text(pidPrint(item),
                             style: TextStyle(fontSize: 14.0)),
                     ]));
                 }),

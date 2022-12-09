@@ -93,7 +93,7 @@ impl GroupChat {
             local: v.pop().unwrap().as_bool(),
             close: v.pop().unwrap().as_bool(),
             name: v.pop().unwrap().as_string(),
-            addr: PeerId::from_hex(v.pop().unwrap().as_string()).unwrap_or(Default::default()),
+            addr: PeerId::from_hex(v.pop().unwrap().as_str()).unwrap_or(Default::default()),
             gid: v.pop().unwrap().as_i64() as GroupChatId,
             height: v.pop().unwrap().as_i64(),
             id: v.pop().unwrap().as_i64(),

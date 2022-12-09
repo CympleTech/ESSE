@@ -182,7 +182,7 @@ class _GroupAddPageState extends State<GroupAddPage> {
     print(params);
     if (isOk && app == 'add-group' && params.length == 3) {
       this._joinIdController.text = gidText(params[0]);
-      this._joinAddrController.text = addrText(params[1]);
+      this._joinAddrController.text = params[1];
       this._joinNameController.text = params[2];
       setState(() {});
     }
@@ -193,7 +193,7 @@ class _GroupAddPageState extends State<GroupAddPage> {
     if (id.length < 2) {
       return;
     }
-    final addr = addrParse(_joinAddrController.text.trim());
+    final addr = _joinAddrController.text.trim();
     final name = _joinNameController.text.trim();
     context.read<GroupChatProvider>().join(GroupType.Open, id, addr, name, "");
     setState(() {
@@ -231,7 +231,7 @@ class _GroupAddPageState extends State<GroupAddPage> {
     _addrChecked = false;
 
     _joinIdController.text = gidText(widget.id, 'EG');
-    _joinAddrController.text = addrText(widget.addr);
+    _joinAddrController.text = widget.addr;
     _joinNameController.text = widget.name;
 
     _joinIdFocus.addListener(() {
@@ -485,7 +485,7 @@ class _GroupAddPageState extends State<GroupAddPage> {
                               ),
                               trailing: IconButton(icon: Icon(Icons.send, color: color.primary),
                                 onPressed: () {
-                                  final addr = addrParse(_createAddrController.text.trim());
+                                  final addr = _createAddrController.text.trim();
                                   if (addr.length > 0) {
                                     rpc.send('group-chat-provider-check', [0, addr]);
                                   }
@@ -692,7 +692,7 @@ class _RequestItem extends StatelessWidget {
           request.isMe ? gidText(request.gid, 'EG') : gidText(request.gid),
           request.isMe ? gidPrint(request.gid, 'EG') : gidPrint(request.gid),
         ),
-        _infoListTooltip(Icons.location_on, color.primary, addrText(request.addr), addrPrint(request.addr)),
+        _infoListTooltip(Icons.location_on, color.primary, request.addr, pidPrint(request.addr)),
         _infoList(Icons.turned_in, color.primary, request.remark),
         _infoList(Icons.access_time_rounded, color.primary, request.time.toString()),
         const SizedBox(height: 10.0),
@@ -824,7 +824,7 @@ class _RequestItem extends StatelessWidget {
                           Text(request.name, maxLines: 1, overflow: TextOverflow.ellipsis,
                             style: TextStyle(fontSize: 16.0)),
                           Text(
-                            gidPrint(request.gid, 'EG') + " (${addrPrint(request.addr)})",
+                            gidPrint(request.gid, 'EG') + " (${pidPrint(request.addr)})",
                             maxLines: 1, overflow: TextOverflow.ellipsis,
                             style: TextStyle(color: Color(0xFFADB0BB),
                               fontSize: 12.0)),

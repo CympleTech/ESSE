@@ -36,7 +36,7 @@ class _DevicesPageState extends State<DevicesPage> {
           const SizedBox(height: 32.0),
           ButtonText(
             action: () {
-              final addr = addrParse(this._addrController.text.trim());
+              final addr = this._addrController.text.trim();
               if (addr.length > 0) {
                 Provider.of<DeviceProvider>(context, listen: false).connect(addr);
                 Navigator.pop(context);
@@ -52,7 +52,7 @@ class _DevicesPageState extends State<DevicesPage> {
     final res = await httpPost('account-mnemonic', [lock]);
     if (res.isOk) {
       final words = res.params[0];
-      final info = json.encode({'app': 'distribute', 'params': [name, pidText(id), words]});
+      final info = json.encode({'app': 'distribute', 'params': [name, id, words]});
       showShadowDialog(context, Icons.qr_code_rounded, lang.deviceQrcode,
         Column(
           children: [

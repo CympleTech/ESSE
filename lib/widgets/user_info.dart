@@ -18,7 +18,6 @@ class UserInfo extends StatefulWidget {
   final bool showQr;
   final Widget? avatar;
   Map? qrInfo;
-  final String pre;
 
   UserInfo({Key? key,
       required this.id,
@@ -30,12 +29,11 @@ class UserInfo extends StatefulWidget {
       this.avatar,
       this.title,
       this.showQr = true,
-      this.pre = 'EH',
   }) : super(key: key) {
     if (this.showQr) {
       this.qrInfo = {
         "app": this.app,
-        "params": [pidText(this.id, this.pre), this.name],
+        "params": [this.id, this.name],
       };
     }
   }
@@ -54,7 +52,7 @@ class _UserInfoState extends State<UserInfo> {
 
 
     Color idColor = idCopy ? color.primary : color.onPrimary;
-    print(pidText(widget.id));
+    print(widget.id);
 
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -108,7 +106,7 @@ class _UserInfoState extends State<UserInfo> {
         Text(widget.title!, style: TextStyle(fontSize: 16.0, fontStyle: FontStyle.italic)),
         InkWell(
           onTap: () {
-            Clipboard.setData(ClipboardData(text: pidText(widget.id)));
+            Clipboard.setData(ClipboardData(text: widget.id));
             setState(() {
                 idCopy = true;
             });
@@ -118,7 +116,7 @@ class _UserInfoState extends State<UserInfo> {
             child: Row(
               children: [
                 Expanded(
-                  child: Text(pidText(widget.id, widget.pre),
+                  child: Text(widget.id,
                     textAlign: TextAlign.center,
                     style: TextStyle(fontSize: 14, color: idColor))),
                 Padding(

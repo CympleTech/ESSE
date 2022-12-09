@@ -45,7 +45,7 @@ class _ChatAddState extends State<ChatAdd> {
       setState(() {
           this._showHome = false;
           final avatar = Avatar(name: params[1], width: 100.0, colorSurface: false);
-          String id = pidParse(params[0].trim());
+          String id = params[0].trim();
 
           this._coreScreen = _InfoScreen(
             callback: this._sendCallback,
@@ -312,7 +312,7 @@ class _ChatAddState extends State<ChatAdd> {
         const SizedBox(height: 10.0),
         const Divider(height: 1.0, color: Color(0x40ADB0BB)),
         const SizedBox(height: 10.0),
-        _infoListTooltip(Icons.person, color.primary, pidText(request.pid), pidPrint(request.pid)),
+        _infoListTooltip(Icons.person, color.primary, request.pid, pidPrint(request.pid)),
         _infoList(Icons.turned_in, color.primary, request.remark),
         _infoList(Icons.access_time_rounded, color.primary, request.time.toString()),
         const SizedBox(height: 10.0),
@@ -666,7 +666,7 @@ class _InputScreenState extends State<_InputScreen> {
   FocusNode remarkFocus = FocusNode();
 
   send() {
-    final id = pidParse(userIdEditingController.text.trim());
+    final id = userIdEditingController.text.trim();
     if (id == '') {
       return;
     }
@@ -694,7 +694,7 @@ class _InputScreenState extends State<_InputScreen> {
         const SizedBox(height: 20.0),
         InputText(
           icon: Icons.person,
-          text: lang.id + ' (EH00..00)',
+          text: lang.id + ' (0x00..00)',
           controller: userIdEditingController,
           focus: userIdFocus),
         const SizedBox(height: 20.0),
@@ -752,7 +752,7 @@ class _InfoScreen extends StatelessWidget {
             title: Text(pidPrint(this.id), style: TextStyle(fontSize: 16.0)),
             trailing: TextButton(
               child: Icon(Icons.copy, size: 20.0),
-              onPressed: () => Clipboard.setData(ClipboardData(text: pidText(this.id))),
+              onPressed: () => Clipboard.setData(ClipboardData(text: this.id)),
             )
           ),
           ListTile(

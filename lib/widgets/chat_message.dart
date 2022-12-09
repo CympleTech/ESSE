@@ -28,7 +28,7 @@ class ChatMessage extends StatelessWidget {
 
   const ChatMessage({Key? key, required this.fpid, required this.name, required this.message, this.avatar}): super(key: key);
 
-  Widget _showContactCard(Widget avatar, String pid, String name, String title, ColorScheme color, [String pre='EH']) {
+  Widget _showContactCard(Widget avatar, String pid, String name, String title, ColorScheme color) {
     return Container(
       padding: const EdgeInsets.only(top: 10, bottom: 6.0, left: 10.0, right: 10.0),
       width: 200.0,
@@ -41,7 +41,7 @@ class ChatMessage extends StatelessWidget {
                 child: Column(children: [
                     Text(name, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: color.onPrimary, fontSize: 16.0)),
                     const SizedBox(height: 4.0),
-                    Text(pidPrint(pid, pre), style: TextStyle(color: Colors.grey, fontSize: 12.0)),
+                    Text(pidPrint(pid), style: TextStyle(color: Colors.grey, fontSize: 12.0)),
           ]))]),
           const SizedBox(height: 5.0),
           const Divider(height: 1.0, color: Color(0x40ADB0BB)),
@@ -260,7 +260,7 @@ class ChatMessage extends StatelessWidget {
           context,
           Icons.groups_rounded,
           lang.groupChat,
-          UserInfo(showQr: false, id: infos[1], name: infos[3], pre: 'EG',
+          UserInfo(showQr: false, id: infos[1], name: infos[3],
             title: gtype.lang(lang),
             avatar: Container(width: 100.0, height: 100.0,
               padding: const EdgeInsets.all(8.0),
@@ -281,7 +281,7 @@ class ChatMessage extends StatelessWidget {
             decoration: BoxDecoration(color: color.surface, borderRadius: BorderRadius.circular(10.0)),
             child: Icon(Icons.groups_rounded, color: color.primary, size: 20.0),
           ),
-          infos[1], infos[3], lang.groupChat, color, 'EG')
+          infos[1], infos[3], lang.groupChat, color)
       );
     } else {
       return _showText(context, color, maxWidth);

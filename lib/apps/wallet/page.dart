@@ -1025,7 +1025,7 @@ class _TransferTokenState extends State<_TransferToken> {
                         items: this._nft.map((value) {
                             return DropdownMenuItem<String>(
                               value: value,
-                              child: Text(pidPrint(value, '', 6)),
+                              child: Text(pidPrint(value, 6)),
                             );
                         }).toList(),
                       ),
@@ -1248,7 +1248,7 @@ class _ImportNftState extends State<_ImportNft> {
             itemBuilder: (BuildContext context, int index) {
               final hash = this._nft[index];
               return ListTile(
-                title: Text('TokenID: ' + pidPrint(hash, '', 6)),
+                title: Text('TokenID: ' + pidPrint(hash, 6)),
                 trailing: IconButton(icon: Icon(Icons.link, color: color.primary),
                   onPressed: () {
                     launch(widget.token.nftUrl(hash));

@@ -99,7 +99,7 @@ class _HomeListState extends State<HomeList> {
         builder: (context) => QRScan(callback: (isOk, app, params) {
             Navigator.of(context).pop();
             if (app == 'add-friend' && params.length == 2) {
-              final id = pidParse(params[0]);
+              final id = params[0];
               final name = params[1].trim();
               final widget = ChatAdd(id: id, name: name);
               Provider.of<AccountProvider>(context, listen: false).systemAppFriendAddNew = false;

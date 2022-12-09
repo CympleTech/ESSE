@@ -8,9 +8,8 @@ use tdn::types::{
     group::EventId,
     primitives::{PeerId, PeerKey, Result},
 };
-use tdn_did::{generate_eth_account, generate_peer, Language};
+use tdn_did::{generate_eth_account, Language};
 use tdn_storage::local::{DStorage, DsValue};
-use web3::signing::Key;
 
 use esse_primitives::{id_from_str, id_to_str};
 
@@ -133,18 +132,11 @@ impl Account {
         avatar: Vec<u8>,
     ) -> Result<(Account, PeerKey, Address)> {
         let lang = lang_from_i64(rlang);
-        let sk = generate_peer(
-            lang,
-            mnemonic,
-            index,
-            0, // account default multiple address index is 0.
-            if pass.len() > 0 { Some(pass) } else { None },
-        )?;
 
         // Default ETH wallet account.
         let wallet_pass = if pass.len() > 0 { Some(pass) } else { None };
         let wallet_sk = generate_eth_account(lang, mnemonic, index, 0, wallet_pass)?;
-        let wallet_address = format!("{:?}", (&wallet_sk).address());
+        let wallet_address = format!("{:?}", (&wallet_sk).peer_id());
         let wallet = ChainToken::ETH.update_main(&wallet_address, "");
         let w = Address::new(ChainToken::ETH, 0, wallet_address, true);
 
@@ -156,7 +148,7 @@ impl Account {
             salt,
             lock,
             &ckey,
-            vec![&sk.to_db_bytes(), mnemonic.as_bytes()],
+            vec![&wallet_sk.to_db_bytes(), mnemonic.as_bytes()],
         )?;
         let mnemonic = ebytes.pop().unwrap_or(vec![]);
         let secret = ebytes.pop().unwrap_or(vec![]);
@@ -164,7 +156,7 @@ impl Account {
 
         Ok((
             Account::new(
-                sk.peer_id(),
+                wallet_sk.peer_id(),
                 index,
                 rlang,
                 pass.to_string(),
@@ -179,7 +171,7 @@ impl Account {
                 PeerId::default(),
                 [0u8; 32],
             ),
-            sk,
+            wallet_sk,
             w,
         ))
     }

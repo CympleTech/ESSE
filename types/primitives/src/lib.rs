@@ -1,8 +1,5 @@
 use serde::{Deserialize, Serialize};
-use tdn_types::{
-    group::GroupId,
-    primitives::{new_io_error, PeerId, PEER_ID_LENGTH},
-};
+use tdn_types::{group::GroupId, primitives::PeerId};
 
 /// ESSE chat service default TDN GROUP ID.
 pub const ESSE_ID: GroupId = 0;
@@ -70,18 +67,14 @@ impl MessageType {
     }
 }
 
+#[inline]
 pub fn id_to_str(peer: &PeerId) -> String {
-    bs32::encode(&peer.0)
+    peer.to_hex()
 }
 
+#[inline]
 pub fn id_from_str(s: &str) -> std::io::Result<PeerId> {
-    let data = bs32::decode(s).ok_or(new_io_error("id from string is failure."))?;
-    if data.len() != PEER_ID_LENGTH {
-        return Err(new_io_error("id from string is failure."));
-    }
-    let mut bytes = [0u8; PEER_ID_LENGTH];
-    bytes.copy_from_slice(&data);
-    Ok(PeerId(bytes))
+    PeerId::from_hex(s)
 }
 
 pub mod bs32 {
