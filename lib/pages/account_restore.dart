@@ -31,6 +31,7 @@ class _AccountRestorePageState extends State<AccountRestorePage> {
   List<String> _mnemoicWords = [];
   bool _wordChecked = false;
   bool _loading = false;
+  String _account = '';
 
   @override
   initState() {
@@ -227,7 +228,9 @@ class _AccountRestorePageState extends State<AccountRestorePage> {
                                           color: Colors.white))),
                               ))),
                         ])),
-                        const SizedBox(height: 32.0),
+                        SizedBox(height: 40.0, child: Center(child: Text(
+                          this._account.isEmpty ? '' : "Account: " + this._account
+                        ))),
                         ButtonText(
                           text: this._loading ? lang.waiting : lang.next,
                           enable: _statusChecked && !this._loading,
@@ -260,24 +263,34 @@ class _AccountRestorePageState extends State<AccountRestorePage> {
     })));
   }
 
-  _addWord() {
+  _addWord() async {
     final word = this._wordController.text.trim();
     if (word.length == 0) {
       return;
     }
 
-    setState(() {
-      this._mnemoicWords.add(word);
-      if (this._mnemoicWords.length < 12) {
-        this._wordController.text = '';
-        this._wordFocus.requestFocus();
-        this._wordChecked = false;
-      } else {
-        this._wordController.text = '';
-        this._wordChecked = false;
+    this._mnemoicWords.add(word);
+    if (this._mnemoicWords.length < 12) {
+      this._wordController.text = '';
+      this._wordFocus.requestFocus();
+      this._wordChecked = false;
+    } else {
+      this._wordController.text = '';
+      this._wordChecked = false;
+
+      // check
+      final mnemonic = this._mnemoicWords.join(' ');
+      final res = await httpPost('account-check', [_selectedLang.toInt(), mnemonic, ""]);
+      if (res.isOk) {
+        this._account = res.params[0];
         this._statusChecked = true;
+      } else {
+        // TODO tostor error
+        print(res.error);
       }
-    });
+    }
+
+    setState(() {});
   }
 
   _deleteWord(int index) {

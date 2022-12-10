@@ -202,14 +202,8 @@ impl GroupEvent {
                         r.is_over = true;
                         r.is_ok = true;
                         r.update(&db)?;
-                        let friend = Friend::from_remote(
-                            &db,
-                            fpid,
-                            r.name,
-                            "".to_owned(),
-                            PeerId::default(),
-                            [0u8; 32],
-                        )?;
+                        let friend =
+                            Friend::from_remote(&db, fpid, r.name, PeerId::default(), [0u8; 32])?;
                         results.rpcs.push(rpc::request_agree(r.id, &friend));
 
                         // ADD NEW SESSION.
@@ -265,7 +259,6 @@ impl GroupEvent {
                     let info = GroupEvent::InfoRes(User::info(
                         account.pub_height,
                         account.name,
-                        account.wallet,
                         account.cloud,
                         account.cloud_key,
                         account.avatar,
@@ -283,7 +276,6 @@ impl GroupEvent {
                 let mut f = Friend::get(&db, &fid)?;
                 let name = remote.name.clone();
                 f.name = remote.name;
-                f.wallet = remote.wallet;
                 f.height = remote.height as i64;
                 f.cloud = remote.cloud;
                 f.cloud_key = remote.cloud_key;

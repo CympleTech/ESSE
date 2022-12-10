@@ -4,7 +4,6 @@ pub(super) const CHAT_VERSIONS: [&str; 3] = [
     id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
     pid TEXT NOT NULL,
     name TEXT NOT NULL,
-    wallet TEXT NOT NULL,
     cloud TEXT NOT NULL,
     cloud_key TEXT NOT NULL,
     height INTEGER NOT NULL,

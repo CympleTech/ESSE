@@ -61,7 +61,6 @@ pub(crate) struct Account {
     pub lock: String,        // hashed-lock.
     pub secret: Vec<u8>,     // encrypted value.
     pub encrypt: Vec<u8>,    // encrypted encrypt key.
-    pub wallet: String,      // main wallet info.
     pub cloud: PeerId,       // main cloud service.
     pub cloud_key: [u8; 32], // main cloud session key.
     pub pub_height: u64,     // public information height.
@@ -84,7 +83,6 @@ impl Account {
         secret: Vec<u8>,
         encrypt: Vec<u8>,
         plainkey: Vec<u8>,
-        wallet: String,
         cloud: PeerId,
         cloud_key: [u8; 32],
     ) -> Self {
@@ -108,7 +106,6 @@ impl Account {
             mnemonic,
             secret,
             encrypt,
-            wallet,
             cloud,
             cloud_key,
             plainkey,
@@ -133,22 +130,25 @@ impl Account {
     ) -> Result<(Account, PeerKey, Address)> {
         let lang = lang_from_i64(rlang);
 
+        println!("Lang: {:?}, seed :{}", lang, mnemonic);
+
         // Default ETH wallet account.
-        let wallet_pass = if pass.len() > 0 { Some(pass) } else { None };
-        let wallet_sk = generate_eth_account(lang, mnemonic, index, 0, wallet_pass)?;
-        let wallet_address = format!("{:?}", (&wallet_sk).peer_id());
-        let wallet = ChainToken::ETH.update_main(&wallet_address, "");
-        let w = Address::new(ChainToken::ETH, 0, wallet_address, true);
+        let wpass = if pass.len() > 0 { Some(pass) } else { None };
+        let key = generate_eth_account(lang, mnemonic, index, 0, wpass)?;
+        let address = key.peer_id().to_hex();
+        println!("Lang: {:?}, seed: {}, address: {}", lang, mnemonic, address);
+
+        let w = Address::new(ChainToken::ETH, 0, address, true);
 
         let mut rng = ChaChaRng::from_entropy();
-        let mut key = [0u8; 32];
-        rng.fill_bytes(&mut key);
-        let ckey = encrypt_key(salt, lock, &key)?;
+        let mut eckey = [0u8; 32];
+        rng.fill_bytes(&mut eckey);
+        let ckey = encrypt_key(salt, lock, &eckey)?;
         let mut ebytes = encrypt_multiple(
             salt,
             lock,
             &ckey,
-            vec![&wallet_sk.to_db_bytes(), mnemonic.as_bytes()],
+            vec![&key.to_db_bytes(), mnemonic.as_bytes()],
         )?;
         let mnemonic = ebytes.pop().unwrap_or(vec![]);
         let secret = ebytes.pop().unwrap_or(vec![]);
@@ -156,7 +156,7 @@ impl Account {
 
         Ok((
             Account::new(
-                wallet_sk.peer_id(),
+                key.peer_id(),
                 index,
                 rlang,
                 pass.to_string(),
@@ -166,12 +166,11 @@ impl Account {
                 mnemonic,
                 secret,
                 ckey,
-                key.to_vec(),
-                wallet,
+                eckey.to_vec(),
                 PeerId::default(),
                 [0u8; 32],
             ),
-            wallet_sk,
+            key,
             w,
         ))
     }
@@ -231,7 +230,6 @@ impl Account {
                 })
                 .unwrap_or([0u8; 32]),
             cloud: PeerId::from_hex(v.pop().unwrap().as_str()).unwrap_or(PeerId::default()),
-            wallet: v.pop().unwrap().as_string(),
             avatar: base64::decode(v.pop().unwrap().as_str()).unwrap_or(vec![]),
             encrypt: base64::decode(v.pop().unwrap().as_str()).unwrap_or(vec![]),
             secret: base64::decode(v.pop().unwrap().as_str()).unwrap_or(vec![]),
@@ -249,7 +247,7 @@ impl Account {
 
     pub fn get(db: &DStorage, pid: &PeerId) -> Result<Account> {
         let sql = format!(
-            "SELECT id, pid, indx, lang, pass, name, lock, mnemonic, secret, encrypt, avatar, wallet, cloud, cloud_key, pub_height, own_height, event, datetime FROM accounts WHERE pid = '{}'",
+            "SELECT id, pid, indx, lang, pass, name, lock, mnemonic, secret, encrypt, avatar, cloud, cloud_key, pub_height, own_height, event, datetime FROM accounts WHERE pid = '{}'",
             id_to_str(pid)
         );
         let mut matrix = db.query(&sql)?;
@@ -263,7 +261,7 @@ impl Account {
 
     pub fn all(db: &DStorage) -> Result<Vec<Account>> {
         let matrix = db.query(
-            "SELECT id, pid, indx, lang, pass, name, lock, mnemonic, secret, encrypt, avatar, wallet, cloud, cloud_key, pub_height, own_height, event, datetime FROM accounts ORDER BY datetime DESC",
+            "SELECT id, pid, indx, lang, pass, name, lock, mnemonic, secret, encrypt, avatar, cloud, cloud_key, pub_height, own_height, event, datetime FROM accounts ORDER BY datetime DESC",
         )?;
         let mut accounts = vec![];
         for values in matrix {
@@ -282,7 +280,7 @@ impl Account {
             self.id = id;
             self.update(db)?;
         } else {
-            let sql = format!("INSERT INTO accounts (pid, indx, lang, pass, name, lock, mnemonic, secret, encrypt, avatar, wallet, cloud, cloud_key, pub_height, own_height, event, datetime) VALUES ('{}', {}, {}, '{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}', {}, {}, '{}', {})",
+            let sql = format!("INSERT INTO accounts (pid, indx, lang, pass, name, lock, mnemonic, secret, encrypt, avatar, cloud, cloud_key, pub_height, own_height, event, datetime) VALUES ('{}', {}, {}, '{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}', {}, {}, '{}', {})",
             id_to_str(&self.pid),
             self.index,
             self.lang,
@@ -293,7 +291,6 @@ impl Account {
             base64::encode(&self.secret),
             base64::encode(&self.encrypt),
             base64::encode(&self.avatar),
-            self.wallet,
             self.cloud.to_hex(),
             hex::encode(&self.cloud_key),
             self.pub_height,
@@ -308,12 +305,11 @@ impl Account {
     }
 
     pub fn update(&self, db: &DStorage) -> Result<usize> {
-        let sql = format!("UPDATE accounts SET name='{}', lock='{}', encrypt='{}', avatar='{}', wallet='{}', cloud='{}', cloud_key='{}', pub_height={}, own_height={}, event='{}', datetime={} WHERE id = {}",
+        let sql = format!("UPDATE accounts SET name='{}', lock='{}', encrypt='{}', avatar='{}', cloud='{}', cloud_key='{}', pub_height={}, own_height={}, event='{}', datetime={} WHERE id = {}",
             self.name,
             self.lock,
             base64::encode(&self.encrypt),
             base64::encode(&self.avatar),
-            self.wallet,
             self.cloud.to_hex(),
             hex::encode(&self.cloud_key),
             self.pub_height,
@@ -327,10 +323,9 @@ impl Account {
 
     pub fn update_info(&self, db: &DStorage) -> Result<usize> {
         let sql = format!(
-            "UPDATE accounts SET name='{}', avatar='{}', wallet='{}', cloud='{}', cloud_key='{}', pub_height={} WHERE id = {}",
+            "UPDATE accounts SET name='{}', avatar='{}', cloud='{}', cloud_key='{}', pub_height={} WHERE id = {}",
             self.name,
             base64::encode(&self.avatar),
-            self.wallet,
             self.cloud.to_hex(),
             hex::encode(&self.cloud_key),
             self.pub_height,
@@ -361,7 +356,6 @@ impl Account {
 pub(crate) struct User {
     pub height: u64,
     pub name: String,
-    pub wallet: String,
     pub cloud: PeerId,
     pub cloud_key: [u8; 32],
     pub avatar: Vec<u8>,
@@ -371,7 +365,6 @@ impl User {
     pub fn info(
         height: u64,
         name: String,
-        wallet: String,
         cloud: PeerId,
         cloud_key: [u8; 32],
         avatar: Vec<u8>,
@@ -379,7 +372,6 @@ impl User {
         Self {
             height,
             name,
-            wallet,
             cloud,
             cloud_key,
             avatar,

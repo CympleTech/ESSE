@@ -302,14 +302,8 @@ pub(crate) fn group_rpc(handler: &mut RpcHandler<Global>) {
             request.is_over = true;
             request.update(&db)?;
 
-            let friend = Friend::from_remote(
-                &db,
-                request.pid,
-                request.name,
-                "".to_owned(),
-                PeerId::default(),
-                [0u8; 32],
-            )?;
+            let friend =
+                Friend::from_remote(&db, request.pid, request.name, PeerId::default(), [0u8; 32])?;
             results.rpcs.push(json!([id, friend.to_rpc()]));
 
             // ADD NEW SESSION.

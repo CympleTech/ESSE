@@ -14,7 +14,6 @@ pub(crate) struct Friend {
     pub id: i64,
     pub pid: PeerId,
     pub name: String,
-    pub wallet: String,
     pub cloud: PeerId,
     pub cloud_key: [u8; 32],
     pub height: i64,
@@ -27,7 +26,6 @@ impl Friend {
     pub fn new(
         pid: PeerId,
         name: String,
-        wallet: String,
         cloud: PeerId,
         cloud_key: [u8; 32],
         remark: String,
@@ -43,7 +41,6 @@ impl Friend {
             id: 0,
             pid,
             name,
-            wallet,
             cloud,
             cloud_key,
             height,
@@ -68,7 +65,6 @@ impl Friend {
                 })
                 .unwrap_or([0u8; 32]),
             cloud: PeerId::from_hex(v.pop().unwrap().as_str()).unwrap_or(PeerId::default()),
-            wallet: v.pop().unwrap().as_string(),
             name: v.pop().unwrap().as_string(),
             pid: id_from_str(v.pop().unwrap().as_str()).unwrap_or(PeerId::default()),
             id: v.pop().unwrap().as_i64(),
@@ -79,20 +75,18 @@ impl Friend {
         db: &DStorage,
         pid: PeerId,
         name: String,
-        wallet: String,
         cloud: PeerId,
         cloud_key: [u8; 32],
     ) -> Result<Friend> {
         if let Ok(mut friend) = Friend::get_id(&db, &pid) {
             friend.name = name;
-            friend.wallet = wallet;
             friend.cloud = cloud;
             friend.cloud_key = cloud_key;
             friend.is_closed = false;
             friend.remote_update(&db)?;
             Ok(friend)
         } else {
-            let mut friend = Friend::new(pid, name, wallet, cloud, cloud_key, "".to_owned(), 0);
+            let mut friend = Friend::new(pid, name, cloud, cloud_key, "".to_owned(), 0);
             friend.insert(&db)?;
             Ok(friend)
         }
@@ -114,7 +108,6 @@ impl Friend {
             self.id,
             id_to_str(&self.pid),
             self.name,
-            self.wallet,
             self.cloud.to_hex(),
             self.remark,
             self.is_closed,
@@ -127,7 +120,6 @@ impl Friend {
             self.id,
             id_to_str(&self.pid),
             self.name,
-            self.wallet,
             self.cloud.to_hex(),
             self.remark,
             self.is_closed,
@@ -137,7 +129,7 @@ impl Friend {
     }
 
     pub fn get_id(db: &DStorage, pid: &PeerId) -> Result<Friend> {
-        let sql = format!("SELECT id, pid, name, wallet, cloud, cloud_key, height, remark, is_closed, datetime FROM friends WHERE pid = '{}'", id_to_str(pid));
+        let sql = format!("SELECT id, pid, name, cloud, cloud_key, height, remark, is_closed, datetime FROM friends WHERE pid = '{}'", id_to_str(pid));
         let mut matrix = db.query(&sql)?;
         if matrix.len() > 0 {
             Ok(Friend::from_values(matrix.pop().unwrap())) // safe unwrap()
@@ -147,7 +139,7 @@ impl Friend {
     }
 
     pub fn get(db: &DStorage, id: &i64) -> Result<Friend> {
-        let sql = format!("SELECT id, pid, name, wallet, cloud, cloud_key, height, remark, is_closed, datetime FROM friends WHERE id = {}", id);
+        let sql = format!("SELECT id, pid, name, cloud, cloud_key, height, remark, is_closed, datetime FROM friends WHERE id = {}", id);
         let mut matrix = db.query(&sql)?;
         if matrix.len() > 0 {
             Ok(Friend::from_values(matrix.pop().unwrap())) // safe unwrap()
@@ -159,7 +151,7 @@ impl Friend {
     /// use in rpc when load account friends.
     pub fn list(db: &DStorage) -> Result<Vec<Friend>> {
         let matrix = db.query(
-            "SELECT id, pid, name, wallet, cloud, cloud_key, height, remark, is_closed, datetime FROM friends",
+            "SELECT id, pid, name, cloud, cloud_key, height, remark, is_closed, datetime FROM friends",
         )?;
         let mut friends = vec![];
         for values in matrix {
@@ -169,10 +161,9 @@ impl Friend {
     }
 
     pub fn insert(&mut self, db: &DStorage) -> Result<()> {
-        let sql = format!("INSERT INTO friends (pid, name, wallet, cloud, cloud_key, height, remark, is_closed, datetime) VALUES ('{}', '{}', '{}', '{}', '{}', {}, '{}', {}, {})",
+        let sql = format!("INSERT INTO friends (pid, name, cloud, cloud_key, height, remark, is_closed, datetime) VALUES ('{}', '{}', '{}', '{}', {}, '{}', {}, {})",
             id_to_str(&self.pid),
             self.name,
-            self.wallet,
             self.cloud.to_hex(),
             hex::encode(&self.cloud_key),
             self.height,
@@ -186,9 +177,8 @@ impl Friend {
     }
 
     pub fn update(&self, db: &DStorage) -> Result<usize> {
-        let sql = format!("UPDATE friends SET name='{}', wallet='{}', cloud='{}', cloud_key='{}', height={}, remark='{}', is_closed={} WHERE id={}",
+        let sql = format!("UPDATE friends SET name='{}', cloud='{}', cloud_key='{}', height={}, remark='{}', is_closed={} WHERE id={}",
             self.name,
-            self.wallet,
             self.cloud.to_hex(),
             hex::encode(&self.cloud_key),
             self.height,
@@ -209,9 +199,8 @@ impl Friend {
 
     pub fn remote_update(&self, db: &DStorage) -> Result<usize> {
         let sql = format!(
-            "UPDATE friends SET name='{}', wallet='{}', cloud='{}', cloud_key='{}', height={}, is_closed = false WHERE id = {}",
+            "UPDATE friends SET name='{}', cloud='{}', cloud_key='{}', height={}, is_closed = false WHERE id = {}",
             self.name,
-            self.wallet,
             self.cloud.to_hex(),
             hex::encode(&self.cloud_key),
             self.height,

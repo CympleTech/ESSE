@@ -226,7 +226,6 @@ impl Own {
             Ok(User::info(
                 u.pub_height,
                 u.name.clone(),
-                u.wallet.clone(),
                 u.cloud.clone(),
                 u.cloud_key.clone(),
                 u.avatar.clone(),

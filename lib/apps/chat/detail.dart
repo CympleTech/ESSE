@@ -273,7 +273,7 @@ class _ChatDetailState extends State<ChatDetail> {
             sid: session.id,
             online: this._friend.online,
             callback: _send,
-            transferTo: this._friend.wallet,
+            transferTo: this._friend.pid,
             waiting: session.online == OnlineType.Waiting
           ),
         ]

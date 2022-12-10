@@ -375,7 +375,6 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<Global>) {
                 let a_db = account_db(&state.base, &state.secret)?;
                 let mut own_lock = state.own.write().await;
                 let account = own_lock.account_mut(&pid)?;
-                account.wallet = address.chain.update_main(&address.address, &account.wallet);
                 account.pub_height = account.pub_height + 1;
                 account.update_info(&a_db)?;
                 let user = own_lock.clone_user(&pid)?;
@@ -615,14 +614,13 @@ pub(crate) fn new_rpc_handler(handler: &mut RpcHandler<Global>) {
             let db = wallet_db(&state.base, &pid, &db_key)?;
             let a_db = account_db(&state.base, &state.secret)?;
 
-            let address = Address::get(&db, &id)?;
+            let _address = Address::get(&db, &id)?;
             Address::main(&db, &id)?;
 
             let mut results = HandleResult::new();
 
             let mut own_lock = state.own.write().await;
             let account = own_lock.account_mut(&pid)?;
-            account.wallet = address.chain.update_main(&address.address, &account.wallet);
             account.pub_height = account.pub_height + 1;
             account.update_info(&a_db)?;
             let user = own_lock.clone_user(&pid)?;

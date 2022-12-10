@@ -12,7 +12,6 @@ pub(super) const ACCOUNT_VERSIONS: [&str; 13] = [
     encrypt TEXT NOT NULL,
     mnemonic TEXT NOT NULL,
     avatar TEXT NOT NULL,
-    wallet TEXT NOT NULL,
     cloud TEXT NOT NULL,
     cloud_key TEXT NOT NULL,
     pub_height INTEGER NOT NULL,

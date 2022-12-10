@@ -12,7 +12,7 @@ use tdn::{
         rpc::{json, rpc_response, RpcError, RpcHandler, RpcParam},
     },
 };
-use tdn_did::{generate_mnemonic, Count};
+use tdn_did::{generate_eth_account, generate_mnemonic, Count};
 
 use crate::account::lang_from_i64;
 use crate::apps::app_rpc_inject;
@@ -198,7 +198,9 @@ fn new_rpc_handler(global: Arc<Global>) -> RpcHandler<Global> {
             let lang = params[0].as_i64().ok_or(RpcError::ParseError)?;
             let language = lang_from_i64(lang);
             let words = generate_mnemonic(language, Count::Words12);
-            Ok(HandleResult::rpc(json!([words])))
+            let key = generate_eth_account(language, &words, 0, 0, None)?;
+            let pid = key.peer_id().to_hex();
+            Ok(HandleResult::rpc(json!([words, pid])))
         },
     );
 
@@ -231,6 +233,23 @@ fn new_rpc_handler(global: Arc<Global>) -> RpcHandler<Global> {
                 .await?;
 
             Ok(HandleResult::rpc(json!(vec![id_to_str(&pid)])))
+        },
+    );
+
+    handler.add_method(
+        "account-check",
+        |params: Vec<RpcParam>, state: Arc<Global>| async move {
+            let lang = params[0].as_i64().ok_or(RpcError::ParseError)?;
+            let seed = params[1].as_str().ok_or(RpcError::ParseError)?;
+            let pass = params[2].as_str().ok_or(RpcError::ParseError)?;
+
+            let np = if pass.is_empty() { Some(pass) } else { None };
+            let language = lang_from_i64(lang);
+            println!("Lang: {:?}, seed :{}", language, seed);
+            let key = generate_eth_account(language, seed, 0, 0, np)?;
+            let pid = key.peer_id().to_hex();
+
+            Ok(HandleResult::rpc(json!(vec![pid])))
         },
     );
 
