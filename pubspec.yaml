@@ -17,14 +17,14 @@ dependencies:
   flutter_localizations: # localizations i18n.
     sdk: flutter
   flutter_localized_locales: ^2.0.3
-  provider: ^6.0.4 # state manager
+  provider: ^6.0.5 # state manager
   shared_preferences: ^2.0.15
   path_provider: ^2.0.11
   url_launcher: ^6.1.6
   permission_handler: ^10.2.0
   image_picker: ^0.8.6 # pick image
   image_save: ^5.0.0 # Mobile save image to gallery
-  file_picker: ^5.2.3 # pick file
+  file_picker: ^5.2.4 # pick file
   file_selector: ^0.9.2+2 # pick file
   open_filex: ^4.3.1 # open file in mobile.
   crop: ^0.5.4
@@ -36,7 +36,7 @@ dependencies:
   just_audio: ^0.9.30
   percent_indicator: ^4.2.2
   bottom_navy_bar: ^6.0.0
-  flutter_quill: ^6.1.6
+  flutter_quill: ^6.1.7
   fluttertoast: ^8.1.2
   window_manager: ^0.2.8
 
