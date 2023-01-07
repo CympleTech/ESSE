@@ -33,7 +33,7 @@ dependencies:
   qr_code_scanner: ^1.0.1
   web_socket_channel: ^2.2.0
   record: ^4.4.4
-  just_audio: ^0.9.30
+  just_audio: ^0.9.31
   percent_indicator: ^4.2.2
   bottom_navy_bar: ^6.0.0
   flutter_quill: ^6.1.11
