@@ -31,7 +31,7 @@ dependencies:
   unorm_dart: ^0.2.0
   qr_flutter: ^4.0.0
   qr_code_scanner: ^1.0.1
-  web_socket_channel: ^2.2.0
+  web_socket_channel: ^2.3.0
   record: ^4.4.4
   just_audio: ^0.9.31
   percent_indicator: ^4.2.2
