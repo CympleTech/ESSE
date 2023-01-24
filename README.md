@@ -2,7 +2,7 @@
 
 Do you have watched "Black Mirror" The first episode of the second season?  The story of the “rebirth” to accompany the lover based on the text, photos, videos and other information posted on the Internet.
 
-So is this "data" accessible to everyone or some companies ?
+So is this "data" accessible to everyone or some companies?
 
 What we want to do is protect this data and privacy. you can see details [what we are doing](https://docs.cympletech.com/blog/what-we-are-doing/).
 
@@ -37,7 +37,7 @@ ESSE, positioned as an engine. The engine is coded in [**Rust**](https://github.
 ### 🚀 Use pre-compiled executable
 [Download](https://github.com/cympletech/esse/releases)
 
-### 🚲 Compile from souce
+### 🚲 Compile from source
 #### 1. Pre-installed
 - Rustup [install](https://rustup.rs/)
 - Rust (Lastest Stable version)
