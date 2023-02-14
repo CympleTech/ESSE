@@ -68,7 +68,7 @@ openssl = { version = "0.10", features = ["vendored"] } # Add for cross-compile.
 console-subscriber = { version = "0.1", optional = true } # only use in bin daemon.
 
 [target.'cfg(target_os="android")'.dependencies]
-jni = { version = "0.20", default-features = false }
+jni = { version = "0.21", default-features = false }
 
 # DEBUG patch.
 [patch.crates-io]
