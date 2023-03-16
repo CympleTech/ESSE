@@ -18,27 +18,27 @@ dependencies:
     sdk: flutter
   flutter_localized_locales: ^2.0.3
   provider: ^6.0.5 # state manager
-  shared_preferences: ^2.0.15
+  shared_preferences: ^2.0.18
   path_provider: ^2.0.11
   url_launcher: ^6.1.6
   permission_handler: ^10.2.0
   image_picker: ^0.8.6 # pick image
   image_save: ^5.0.0 # Mobile save image to gallery
-  file_picker: ^5.2.4 # pick file
+  file_picker: ^5.2.6 # pick file
   file_selector: ^0.9.2+2 # pick file
   open_filex: ^4.3.2 # open file in mobile.
   crop: ^0.5.4
   unorm_dart: ^0.2.0
   qr_flutter: ^4.0.0
   qr_code_scanner: ^1.0.1
-  web_socket_channel: ^2.2.0
+  web_socket_channel: ^2.3.0
   record: ^4.4.4
   just_audio: ^0.9.31
   percent_indicator: ^4.2.2
   bottom_navy_bar: ^6.0.0
   flutter_quill: ^7.0.1
   fluttertoast: ^8.1.2
-  window_manager: ^0.2.9
+  window_manager: ^0.3.1
 
 dev_dependencies:
   flutter_test:
