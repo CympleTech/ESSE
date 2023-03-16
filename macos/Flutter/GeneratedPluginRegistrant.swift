@@ -11,10 +11,10 @@ import esse_core
 import file_selector_macos
 import just_audio
 import pasteboard
-import path_provider_macos
+import path_provider_foundation
 import record_macos
 import screen_retriever
-import shared_preferences_macos
+import shared_preferences_foundation
 import url_launcher_macos
 import window_manager
 

@@ -46,7 +46,7 @@ dev_dependencies:
   flutter_lints: ^2.0.0
   integration_test:
     sdk: flutter
-  flutter_launcher_icons: ^0.11.0 #flutter pub run flutter_launcher_icons:main
+  flutter_launcher_icons: ^0.12.0 #flutter pub run flutter_launcher_icons:main
   flutter_native_splash: ^2.2.16 #flutter pub run flutter_native_splash:create
   msix: ^3.7.0 # 1. flutter build windows 2. flutter pub run msix:create
 
