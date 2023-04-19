@@ -24,7 +24,7 @@ dependencies:
   permission_handler: ^10.2.0
   image_picker: ^0.8.6 # pick image
   image_save: ^5.0.0 # Mobile save image to gallery
-  file_picker: ^5.2.6 # pick file
+  file_picker: ^5.2.10 # pick file
   file_selector: ^0.9.2+2 # pick file
   open_filex: ^4.3.2 # open file in mobile.
   crop: ^0.5.4
