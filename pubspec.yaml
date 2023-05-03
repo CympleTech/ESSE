@@ -36,7 +36,7 @@ dependencies:
   just_audio: ^0.9.32
   percent_indicator: ^4.2.2
   bottom_navy_bar: ^6.0.0
-  flutter_quill: ^7.0.1
+  flutter_quill: ^7.1.14
   fluttertoast: ^8.1.2
   window_manager: ^0.3.1
 
