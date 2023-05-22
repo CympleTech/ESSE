@@ -38,7 +38,7 @@ dependencies:
   bottom_navy_bar: ^6.0.0
   flutter_quill: ^7.0.1
   fluttertoast: ^8.1.2
-  window_manager: ^0.3.1
+  window_manager: ^0.3.4
 
 dev_dependencies:
   flutter_test:
